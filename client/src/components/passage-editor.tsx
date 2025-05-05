@@ -1,0 +1,245 @@
+import { useState, useEffect, useRef, ChangeEvent } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
+import { X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { extractHighlightedWords, formatPassageWithHighlights } from "@/lib/utils";
+
+interface PassageEditorProps {
+  onSuccess: () => void;
+}
+
+export function PassageEditor({ onSuccess }: PassageEditorProps) {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [title, setTitle] = useState("");
+  const [passage, setPassage] = useState("");
+  const [selectedWords, setSelectedWords] = useState<string[]>([]);
+  const passageRef = useRef<HTMLDivElement>(null);
+  const [dueDate, setDueDate] = useState("");
+
+  // Mutation to create a new vocabulary list
+  const createListMutation = useMutation({
+    mutationFn: async (data: {
+      title: string;
+      passage: string;
+      words: string[];
+      dueDate?: Date;
+    }) => {
+      const res = await apiRequest("POST", "/api/vocabulary-lists", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      onSuccess();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error creating list",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle highlighting words in the passage
+  useEffect(() => {
+    const handleSelection = () => {
+      const selection = window.getSelection();
+      if (!selection || selection.isCollapsed) return;
+      
+      const selectedText = selection.toString().trim();
+      if (selectedText.length > 0 && !selectedWords.includes(selectedText)) {
+        // Add the selected word to the list
+        setSelectedWords((prev) => [...prev, selectedText]);
+        
+        // Clear the selection
+        window.getSelection()?.removeAllRanges();
+      }
+    };
+
+    const passageElement = passageRef.current;
+    if (passageElement) {
+      passageElement.addEventListener("mouseup", handleSelection);
+      return () => {
+        passageElement.removeEventListener("mouseup", handleSelection);
+      };
+    }
+  }, [selectedWords]);
+
+  // Update the passage display whenever selected words change
+  useEffect(() => {
+    if (passageRef.current && passage) {
+      const highlightedPassage = formatPassageWithHighlights(passage, selectedWords);
+      passageRef.current.innerHTML = highlightedPassage;
+    }
+  }, [passage, selectedWords]);
+
+  const handleRemoveWord = (word: string) => {
+    setSelectedWords((prev) => prev.filter((w) => w !== word));
+  };
+
+  const handlePassageChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    const newPassage = e.target.value;
+    setPassage(newPassage);
+    
+    // Clear any existing highlights when the passage changes
+    setSelectedWords([]);
+  };
+
+  const handleSaveDraft = () => {
+    if (!title || !passage || selectedWords.length === 0) {
+      toast({
+        title: "Incomplete list",
+        description: "Please provide a title, passage, and select at least one vocabulary word.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    let dueDateObj: Date | undefined;
+    if (dueDate) {
+      dueDateObj = new Date(dueDate);
+    }
+
+    createListMutation.mutate({
+      title,
+      passage,
+      words: selectedWords,
+      dueDate: dueDateObj,
+    });
+  };
+
+  const handlePublish = () => {
+    if (!title || !passage || selectedWords.length === 0) {
+      toast({
+        title: "Incomplete list",
+        description: "Please provide a title, passage, and select at least one vocabulary word.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    let dueDateObj: Date | undefined;
+    if (dueDate) {
+      dueDateObj = new Date(dueDate);
+    }
+
+    createListMutation.mutate({
+      title,
+      passage,
+      words: selectedWords,
+      dueDate: dueDateObj,
+      published: true
+    });
+  };
+
+  if (!user || user.role !== "educator") {
+    return <div>Only educators can create vocabulary lists.</div>;
+  }
+
+  return (
+    <div className="px-4 py-5 sm:p-6">
+      <form className="space-y-6">
+        <div>
+          <Label htmlFor="list-name">List Name</Label>
+          <Input
+            id="list-name"
+            type="text"
+            placeholder="Week 5 - Science Reading"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="mt-1"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="due-date">Due Date (Optional)</Label>
+          <Input
+            id="due-date"
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+            className="mt-1"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="reading-passage">Reading Passage</Label>
+          <Textarea
+            id="reading-passage"
+            placeholder="Paste or type your reading passage here..."
+            value={passage}
+            onChange={handlePassageChange}
+            rows={8}
+            className="mt-1"
+          />
+          <p className="mt-2 text-xs text-gray-500">
+            Select text with your mouse to add vocabulary words.
+          </p>
+        </div>
+
+        <div>
+          <Label className="block text-sm font-medium text-gray-700">
+            Passage Preview (Select text to highlight words)
+          </Label>
+          <div
+            ref={passageRef}
+            className="mt-1 p-4 border border-gray-300 rounded-md bg-white passage-container min-h-[100px]"
+          >
+            {passage}
+          </div>
+        </div>
+
+        <div>
+          <Label className="block text-sm font-medium text-gray-700">
+            Selected Vocabulary Words ({selectedWords.length})
+          </Label>
+          <div className="mt-1 flex flex-wrap gap-2">
+            {selectedWords.map((word) => (
+              <Badge key={word} className="highlighted-word">
+                {word}
+                <button
+                  type="button"
+                  className="flex-shrink-0 ml-1 h-4 w-4 rounded-full inline-flex items-center justify-center text-blue-400 hover:bg-blue-200 hover:text-blue-500 focus:outline-none focus:bg-blue-500 focus:text-white"
+                  onClick={() => handleRemoveWord(word)}
+                  aria-label={`Remove ${word}`}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            ))}
+            {selectedWords.length === 0 && (
+              <p className="text-sm text-gray-500">
+                No words selected yet. Highlight words in the passage above.
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="flex justify-end space-x-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleSaveDraft}
+            disabled={createListMutation.isPending}
+          >
+            Save Draft
+          </Button>
+          <Button
+            type="button"
+            onClick={handlePublish}
+            disabled={createListMutation.isPending}
+          >
+            {createListMutation.isPending ? "Saving..." : "Publish"}
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+}
