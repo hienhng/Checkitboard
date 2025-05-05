@@ -186,13 +186,29 @@ export class DatabaseStorage {
     });
   }
 
-  async getSubmissionByStudentAndList(studentId: number, listId: number) {
-    return await db.query.submissions.findFirst({
-      where: and(
-        eq(submissions.studentId, studentId),
-        eq(submissions.listId, listId)
-      ),
-    });
+  async getSubmissionByStudentAndList(studentId: number, listId: number, includeRedo: boolean = false) {
+    if (includeRedo) {
+      // Return all submissions for the student and list
+      return await db.query.submissions.findFirst({
+        where: and(
+          eq(submissions.studentId, studentId),
+          eq(submissions.listId, listId),
+          eq(submissions.completed, false) // Return only incomplete ones
+        ),
+      });
+    } else {
+      // Return only non-redo submissions or incomplete redo submissions
+      return await db.query.submissions.findFirst({
+        where: and(
+          eq(submissions.studentId, studentId),
+          eq(submissions.listId, listId),
+          or(
+            eq(submissions.isRedo, false),
+            eq(submissions.completed, false)
+          )
+        ),
+      });
+    }
   }
 
   async getPendingSubmissionsForEducator(educatorId: number) {

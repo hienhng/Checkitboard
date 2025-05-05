@@ -518,7 +518,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         validatedData.listId
       );
 
-      if (existingSubmission) {
+      if (existingSubmission && !validatedData.isRedo) {
         return res.status(400).json({ 
           message: "You already have a submission for this list",
           submissionId: existingSubmission.id

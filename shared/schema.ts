@@ -67,6 +67,7 @@ export const submissions = pgTable("submissions", {
   score: integer("score"),
   submittedAt: timestamp("submitted_at"),
   gradedAt: timestamp("graded_at"),
+  isRedo: boolean("is_redo").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -214,6 +215,7 @@ export const insertVocabularyWordSchema = createInsertSchema(vocabularyWords, {
 export const insertSubmissionSchema = createInsertSchema(submissions, {
   studentId: (schema) => schema,
   listId: (schema) => schema,
+  isRedo: (schema) => schema,
 }).omit({ id: true, createdAt: true, completed: true, score: true, submittedAt: true, gradedAt: true });
 
 export const insertWordDefinitionSchema = createInsertSchema(wordDefinitions, {
