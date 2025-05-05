@@ -307,10 +307,15 @@ export class DatabaseStorage {
     return definition;
   }
 
-  async gradeWordDefinition(id: number, isCorrect: boolean, addedToFlashcards: boolean) {
+  async gradeWordDefinition(id: number, isCorrect: boolean, addedToFlashcards: boolean, correctDefinition: string = '', showCorrectDefinition: boolean = true) {
     const [updatedDefinition] = await db
       .update(wordDefinitions)
-      .set({ isCorrect, addedToFlashcards })
+      .set({ 
+        isCorrect, 
+        addedToFlashcards,
+        correctDefinition, 
+        showCorrectDefinition 
+      })
       .where(eq(wordDefinitions.id, id))
       .returning();
     return updatedDefinition;

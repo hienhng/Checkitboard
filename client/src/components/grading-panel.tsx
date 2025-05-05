@@ -90,6 +90,8 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
         definitionId: number;
         isCorrect: boolean;
         addToFlashcards: boolean;
+        correctDefinition: string;
+        showCorrectDefinition: boolean;
       }[];
       score: number;
     }) => {
@@ -284,6 +286,32 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
                         <p className="text-sm italic text-gray-600">"{definition.studentDefinition}"</p>
                       </div>
                       
+                      <div className="mt-4 space-y-4 pt-2 border-t border-gray-100">
+                        <div>
+                          <p className="text-sm font-medium text-gray-700">Correct definition:</p>
+                          <div className="mt-1">
+                            <Input
+                              id={`correct-def-${definition.id}`}
+                              value={gradingData.definitions.find(d => d.definitionId === definition.id)?.correctDefinition || ''}
+                              onChange={(e) => handleCorrectDefinitionChange(definition.id, e.target.value)}
+                              className="text-sm"
+                              placeholder="Provide the correct definition..."
+                            />
+                          </div>
+                          <div className="flex items-center justify-between mt-2">
+                            <div className="flex items-center space-x-2">
+                              <Switch
+                                id={`show-def-${definition.id}`}
+                                checked={gradingData.definitions.find(d => d.definitionId === definition.id)?.showCorrectDefinition || false}
+                                onCheckedChange={(checked) => handleToggleShowCorrection(definition.id, checked)}
+                              />
+                              <Label htmlFor={`show-def-${definition.id}`} className="text-sm cursor-pointer">
+                                Show correction to student
+                              </Label>
+                            </div>
+                          </div>
+                        </div>
+                      
                       {!gradingData.definitions.find(d => d.definitionId === definition.id)?.isCorrect && (
                         <div className="flex items-center justify-between pt-2">
                           <div className="flex items-center space-x-2">
@@ -298,6 +326,7 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
                           </div>
                         </div>
                       )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

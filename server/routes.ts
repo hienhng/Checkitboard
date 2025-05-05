@@ -329,6 +329,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           definitionId: z.number(),
           isCorrect: z.boolean(),
           addToFlashcards: z.boolean().optional(),
+          correctDefinition: z.string().optional(),
+          showCorrectDefinition: z.boolean().optional(),
         })),
         score: z.number().min(0).max(100),
       });
@@ -340,7 +342,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.gradeWordDefinition(
           def.definitionId, 
           def.isCorrect, 
-          def.addToFlashcards || false
+          def.addToFlashcards || false,
+          def.correctDefinition || '',
+          def.showCorrectDefinition !== undefined ? def.showCorrectDefinition : true
         );
 
         // If adding to flashcards, create a flashcard
