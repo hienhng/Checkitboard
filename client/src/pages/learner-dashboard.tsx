@@ -307,7 +307,7 @@ export default function LearnerDashboard() {
                 {selectedResult?.wordDefinitions?.map((def: any) => (
                   <div key={def.id} className="p-4 border rounded-md">
                     <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-neutral-dark">{def.word.word}</h4>
+                      <h4 className="font-medium text-neutral-dark">{def.word?.word || 'Unknown word'}</h4>
                       {def.isCorrect ? (
                         <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
                           Correct
