@@ -9,7 +9,14 @@ import { User } from "@shared/schema";
 
 declare global {
   namespace Express {
-    interface User extends User {}
+    // Define the interface without extending User
+    interface User {
+      id: number;
+      email: string;
+      name: string;
+      role: string;
+      createdAt?: Date;
+    }
   }
 }
 
