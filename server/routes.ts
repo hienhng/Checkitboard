@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { sendParentEmail } from "./email";
 import { eq, and, desc, isNull, asc } from "drizzle-orm";
+import { db, pool } from "../db";
 import {
   insertVocabularyListSchema,
   insertVocabularyWordSchema,
