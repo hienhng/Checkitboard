@@ -15,7 +15,7 @@ import {
   InsertFlashcard,
   InsertParentStudent,
 } from "@shared/schema";
-import { eq, and, desc, isNull, asc, count, sql } from "drizzle-orm";
+import { eq, and, desc, isNull, asc, count, sql, or } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "@db";

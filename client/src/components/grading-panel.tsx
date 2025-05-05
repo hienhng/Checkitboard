@@ -115,6 +115,29 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
     },
   });
 
+  // Mutation to reassign submission
+  const reassignMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/submissions/${submissionId}/reassign`, {});
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/educator/submissions"] });
+      toast({
+        title: "Submission reassigned",
+        description: "A new submission has been created for the student to redo.",
+      });
+      onComplete();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error reassigning submission",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleToggleCorrect = (definitionId: number, isCorrect: boolean) => {
     setGradingData((prev) => ({
       definitions: prev.definitions.map((def) =>
@@ -336,19 +359,30 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
         </div>
       </div>
       
-      <div className="flex justify-end space-x-3">
+      <div className="flex justify-between space-x-3">
         <Button
           variant="outline"
-          onClick={onComplete}
+          className="border-amber-500 text-amber-600 hover:bg-amber-50 hover:text-amber-700"
+          onClick={() => reassignMutation.mutate()}
+          disabled={reassignMutation.isPending}
         >
-          Cancel
+          {reassignMutation.isPending ? "Reassigning..." : "Reassign to Student"}
         </Button>
-        <Button
-          onClick={handleSubmitGrading}
-          disabled={gradeMutation.isPending}
-        >
-          {gradeMutation.isPending ? "Submitting..." : "Submit Grading"}
-        </Button>
+        
+        <div className="flex space-x-3">
+          <Button
+            variant="outline"
+            onClick={onComplete}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmitGrading}
+            disabled={gradeMutation.isPending}
+          >
+            {gradeMutation.isPending ? "Submitting..." : "Submit Grading"}
+          </Button>
+        </div>
       </div>
     </div>
   );
