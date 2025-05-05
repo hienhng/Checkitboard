@@ -15,7 +15,7 @@ import {
   InsertFlashcard,
   InsertParentStudent,
 } from "@shared/schema";
-import { eq, and, desc, isNull, asc, count } from "drizzle-orm";
+import { eq, and, desc, isNull, asc, count, sql } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "@db";
@@ -196,8 +196,9 @@ export class DatabaseStorage {
   }
 
   async getPendingSubmissionsForEducator(educatorId: number) {
-    // Get all submissions for lists created by this educator that are completed but not graded
-    return await db.query.submissions.findMany({
+    // Simplified approach: Find all the vocabulary lists created by this educator
+    // And query submissions with a join to ensure proper filtering
+    const pendingSubmissions = await db.query.submissions.findMany({
       where: and(
         eq(submissions.completed, true),
         isNull(submissions.gradedAt)
@@ -224,6 +225,9 @@ export class DatabaseStorage {
       },
       orderBy: [desc(submissions.submittedAt)],
     });
+
+    // Filter out any submissions where list is null (these are not for this educator)
+    return pendingSubmissions.filter(submission => submission.list !== null);
   }
 
   async getGradedSubmissionsByStudent(studentId: number) {

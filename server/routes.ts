@@ -201,7 +201,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied" });
       }
 
-      const submissions = await storage.getPendingSubmissionsForEducator(req.user.id);
+      // Get all vocabulary lists created by this educator
+      const educatorLists = await db.query.vocabularyLists.findMany({
+        where: eq(vocabularyLists.educatorId, req.user.id),
+        columns: {
+          id: true,
+        },
+      });
+      
+      const listIds = educatorLists.map(list => list.id);
+      
+      // If no lists, return empty array
+      if (listIds.length === 0) {
+        return res.json([]);
+      }
+      
+      // Get all completed but not graded submissions
+      // Use raw SQL for the listing query since we're having issues with the ORM
+      const result = await pool.query(`
+        SELECT 
+          s.id, 
+          s.student_id, 
+          s.list_id, 
+          s.submitted_at,
+          u.name as student_name, 
+          u.email as student_email,
+          v.title as list_title
+        FROM submissions s
+        JOIN users u ON s.student_id = u.id
+        JOIN vocabulary_lists v ON s.list_id = v.id
+        WHERE s.completed = true 
+        AND s.graded_at IS NULL
+        AND v.educator_id = $1
+        ORDER BY s.submitted_at DESC
+      `, [req.user.id]);
+      
+      // Format the results to match the expected structure
+      const submissions = result.rows.map(row => ({
+        id: row.id,
+        studentId: row.student_id,
+        listId: row.list_id,
+        submittedAt: row.submitted_at,
+        student: {
+          id: row.student_id,
+          name: row.student_name,
+          email: row.student_email
+        },
+        list: {
+          id: row.list_id,
+          title: row.list_title,
+          educatorId: req.user.id
+        }
+      }));
+      
       res.json(submissions);
     } catch (error) {
       console.error("Error fetching submissions:", error);
