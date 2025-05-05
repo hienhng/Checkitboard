@@ -274,7 +274,7 @@ export default function LearnerDashboard() {
       {/* Result Details Dialog */}
       {selectedResult && (
         <Dialog open={!!selectedResult} onOpenChange={(open) => !open && setSelectedResult(null)}>
-          <DialogContent className="sm:max-w-3xl">
+          <DialogContent className="sm:max-w-3xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-xl font-bold flex items-center">
                 <Award className="mr-2 h-5 w-5 text-secondary" />
