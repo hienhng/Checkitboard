@@ -243,12 +243,14 @@ export default function LearnerDashboard() {
                           ))}
                       </div>
                       
-                      {flashcards.filter(card => !card.learned).length > 3 && (
+                      {flashcards.filter(card => !card.learned).length > 0 && (
                         <div className="mt-4 text-center">
                           <Button 
                             className="inline-flex items-center"
+                            onClick={() => navigate('/learner/flashcards')}
                           >
                             Review All Flashcards
+                            <ChevronRight className="ml-1 h-3.5 w-3.5" />
                           </Button>
                         </div>
                       )}

@@ -23,11 +23,22 @@ export default function FlashcardsPage() {
     queryFn: getQueryFn({ on401: "throw" }),
   });
 
+  // Define the flashcard type
+  type Flashcard = {
+    id: number;
+    word: { word: string };
+    definition: { 
+      studentDefinition: string;
+      submission: { list: { title: string } }
+    };
+    learned: boolean;
+  };
+
   // Get learning cards (not yet learned)
-  const learningCards = flashcards?.filter(card => !card.learned) || [];
+  const learningCards = (flashcards as Flashcard[] || []).filter(card => !card.learned);
   
   // Get learned cards
-  const learnedCards = flashcards?.filter(card => card.learned) || [];
+  const learnedCards = (flashcards as Flashcard[] || []).filter(card => card.learned);
 
   // Shuffle cards
   const shuffleCards = () => {

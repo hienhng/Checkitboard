@@ -35,11 +35,11 @@ export function Flashcard({ flashcard }: FlashcardProps) {
       const res = await apiRequest("PATCH", `/api/flashcards/${flashcard.id}`, { learned });
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/learner/flashcards"] });
       toast({
         title: "Flashcard updated",
-        description: learned ? "This word has been marked as learned." : "This word has been marked as still learning.",
+        description: data.learned ? "This word has been marked as learned." : "This word has been marked as still learning.",
       });
     },
     onError: (error: Error) => {
