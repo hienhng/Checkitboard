@@ -15,6 +15,9 @@ interface FlashcardProps {
     };
     definition: {
       studentDefinition: string;
+      correctDefinition?: string;
+      showCorrectDefinition?: boolean;
+      isCorrect?: boolean;
       submission: {
         list: {
           title: string;
@@ -130,7 +133,22 @@ export function Flashcard({ flashcard }: FlashcardProps) {
             </div>
           </CardHeader>
           <CardContent className="p-6 flex flex-col justify-between h-[calc(100%-90px)]">
-            <p className="text-gray-700 italic">"{flashcard.definition.studentDefinition}"</p>
+            <div>
+              <p className="text-gray-700 italic">"{flashcard.definition.studentDefinition}"</p>
+              
+              {/* Show correct definition if available and showCorrectDefinition is true */}
+              {flashcard.definition.correctDefinition && flashcard.definition.showCorrectDefinition && (
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <Badge 
+                    variant="outline" 
+                    className={`mb-1 ${flashcard.definition.isCorrect ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}
+                  >
+                    {flashcard.definition.isCorrect ? 'Correct' : 'Correct Definition'}
+                  </Badge>
+                  <p className="text-gray-700 text-sm">{flashcard.definition.correctDefinition}</p>
+                </div>
+              )}
+            </div>
             <div className="flex justify-between items-center mt-4">
               {flashcard.learned ? (
                 <Button
