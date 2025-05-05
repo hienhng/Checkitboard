@@ -13,6 +13,23 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Classes/Groups for organizing students
+export const classes = pgTable("classes", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  educatorId: integer("educator_id").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Student-Class relationships
+export const studentClass = pgTable("student_class", {
+  id: serial("id").primaryKey(),
+  studentId: integer("student_id").references(() => users.id).notNull(),
+  classId: integer("class_id").references(() => classes.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Parent-student relationships
 export const parentStudent = pgTable("parent_student", {
   id: serial("id").primaryKey(),
@@ -59,6 +76,8 @@ export const wordDefinitions = pgTable("word_definitions", {
   submissionId: integer("submission_id").references(() => submissions.id).notNull(),
   wordId: integer("word_id").references(() => vocabularyWords.id).notNull(),
   studentDefinition: text("student_definition").notNull(),
+  correctDefinition: text("correct_definition"),
+  showCorrectDefinition: boolean("show_correct_definition").default(true).notNull(),
   isCorrect: boolean("is_correct"),
   addedToFlashcards: boolean("added_to_flashcards").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -79,6 +98,29 @@ export const usersRelations = relations(users, ({ many }) => ({
   vocabularyLists: many(vocabularyLists),
   submissions: many(submissions),
   flashcards: many(flashcards),
+  createdClasses: many(classes, { relationName: 'educator' }),
+  enrolledClasses: many(studentClass, { relationName: 'student' }),
+}));
+
+export const classesRelations = relations(classes, ({ one, many }) => ({
+  educator: one(users, {
+    fields: [classes.educatorId],
+    references: [users.id],
+    relationName: 'educator'
+  }),
+  students: many(studentClass),
+}));
+
+export const studentClassRelations = relations(studentClass, ({ one }) => ({
+  student: one(users, {
+    fields: [studentClass.studentId],
+    references: [users.id],
+    relationName: 'student'
+  }),
+  class: one(classes, {
+    fields: [studentClass.classId],
+    references: [classes.id],
+  }),
 }));
 
 export const vocabularyListsRelations = relations(vocabularyLists, ({ one, many }) => ({
@@ -184,6 +226,12 @@ export const insertParentStudentSchema = createInsertSchema(parentStudent, {
 
 export const insertFlashcardSchema = createInsertSchema(flashcards).omit({ id: true, createdAt: true, learned: true });
 
+export const insertClassSchema = createInsertSchema(classes, {
+  name: (schema) => schema.min(2, "Class name must be at least 2 characters"),
+}).omit({ id: true, createdAt: true });
+
+export const insertStudentClassSchema = createInsertSchema(studentClass).omit({ id: true, createdAt: true });
+
 // Export types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -200,6 +248,10 @@ export type ParentStudent = typeof parentStudent.$inferSelect;
 export type InsertParentStudent = z.infer<typeof insertParentStudentSchema>;
 export type Flashcard = typeof flashcards.$inferSelect;
 export type InsertFlashcard = z.infer<typeof insertFlashcardSchema>;
+export type Class = typeof classes.$inferSelect;
+export type InsertClass = z.infer<typeof insertClassSchema>;
+export type StudentClass = typeof studentClass.$inferSelect;
+export type InsertStudentClass = z.infer<typeof insertStudentClassSchema>;
 
 // Export select schemas
 export const selectUserSchema = createSelectSchema(users);
@@ -209,3 +261,5 @@ export const selectSubmissionSchema = createSelectSchema(submissions);
 export const selectWordDefinitionSchema = createSelectSchema(wordDefinitions);
 export const selectFlashcardSchema = createSelectSchema(flashcards);
 export const selectParentStudentSchema = createSelectSchema(parentStudent);
+export const selectClassSchema = createSelectSchema(classes);
+export const selectStudentClassSchema = createSelectSchema(studentClass);
