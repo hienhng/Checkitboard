@@ -37,7 +37,6 @@ export function setupAuth(app: Express) {
     secret: process.env.SESSION_SECRET || "default_secret_for_development_only",
     resave: false,
     saveUninitialized: false,
-    store: storage.sessionStore,
     cookie: {
       secure: process.env.NODE_ENV === "production",
       maxAge: 24 * 60 * 60 * 1000, // 24 hours

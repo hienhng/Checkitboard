@@ -16,25 +16,7 @@ import {
   InsertParentStudent,
 } from "@shared/schema";
 import { eq, and, desc, isNull, asc, count, sql, or } from "drizzle-orm";
-import session from "express-session";
-import connectPg from "connect-pg-simple";
-import { pool } from "@db";
-
-const PostgresSessionStore = connectPg(session);
-
 export class DatabaseStorage {
-  sessionStore: session.SessionStore;
-
-  constructor() {
-    this.sessionStore = new PostgresSessionStore({
-      pool,
-      createTableIfMissing: true,
-      tableName: 'session',
-      // Add these explicit settings to match Neon's expectations
-      conString: process.env.DATABASE_URL,
-      errorLog: console.error,
-    });
-  }
 
   // User methods
   async getUser(id: number) {
