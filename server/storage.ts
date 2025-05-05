@@ -29,6 +29,10 @@ export class DatabaseStorage {
     this.sessionStore = new PostgresSessionStore({
       pool,
       createTableIfMissing: true,
+      tableName: 'session',
+      // Add these explicit settings to match Neon's expectations
+      conString: process.env.DATABASE_URL,
+      errorLog: console.error,
     });
   }
 

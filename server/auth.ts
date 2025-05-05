@@ -6,7 +6,6 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User } from "@shared/schema";
-import connectPg from "connect-pg-simple";
 
 declare global {
   namespace Express {
@@ -34,19 +33,11 @@ export function setupAuth(app: Express) {
     console.warn("No SESSION_SECRET env variable set. Using a default secret for development.");
   }
 
-  const PostgresSessionStore = connectPg(session);
-  const sessionStore = new PostgresSessionStore({
-    conObject: {
-      connectionString: process.env.DATABASE_URL,
-    },
-    createTableIfMissing: true,
-  });
-
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "default_secret_for_development_only",
     resave: false,
     saveUninitialized: false,
-    store: sessionStore,
+    store: storage.sessionStore,
     cookie: {
       secure: process.env.NODE_ENV === "production",
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
