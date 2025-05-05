@@ -1,5 +1,6 @@
 import { db } from "./index";
 import * as schema from "@shared/schema";
+import { eq } from "drizzle-orm";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 
@@ -152,7 +153,7 @@ async function seed() {
 
     // Get math vocabulary words
     const mathVocabWords = await db.query.vocabularyWords.findMany({
-      where: (vw) => schema.eq(vw.listId, mathList.id),
+      where: eq(schema.vocabularyWords.listId, mathList.id),
     });
 
     // Add word definitions for math submission (one incorrect)
@@ -183,7 +184,7 @@ async function seed() {
 
     // Get science vocabulary words
     const scienceVocabWords = await db.query.vocabularyWords.findMany({
-      where: (vw) => schema.eq(vw.listId, vocabList.id),
+      where: eq(schema.vocabularyWords.listId, vocabList.id),
     });
 
     // Add word definitions for science submission (three incorrect)
