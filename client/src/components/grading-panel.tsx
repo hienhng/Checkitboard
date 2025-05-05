@@ -41,6 +41,8 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
       definitionId: number;
       isCorrect: boolean;
       addToFlashcards: boolean;
+      correctDefinition: string;
+      showCorrectDefinition: boolean;
     }[];
   }>({
     definitions: [],
@@ -55,11 +57,18 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
   // Set up initial grading data when submission is loaded
   useEffect(() => {
     if (submission?.wordDefinitions) {
-      const definitions = submission.wordDefinitions.map((def) => ({
-        definitionId: def.id,
-        isCorrect: false, // Default to incorrect
-        addToFlashcards: true, // Default to adding to flashcards if incorrect
-      }));
+      const definitions = submission.wordDefinitions.map((def) => {
+        // Get word definition from vocab list if available, or create an empty one
+        const wordDef = def.word.definition || '';
+        
+        return {
+          definitionId: def.id,
+          isCorrect: false, // Default to incorrect
+          addToFlashcards: true, // Default to adding to flashcards if incorrect
+          correctDefinition: def.correctDefinition || wordDef, // Use existing or word definition
+          showCorrectDefinition: true, // Default to showing correct definition
+        };
+      });
       setGradingData({ definitions });
     }
   }, [submission]);
@@ -119,6 +128,26 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
       definitions: prev.definitions.map((def) =>
         def.definitionId === definitionId
           ? { ...def, addToFlashcards }
+          : def
+      ),
+    }));
+  };
+
+  const handleCorrectDefinitionChange = (definitionId: number, correctDefinition: string) => {
+    setGradingData((prev) => ({
+      definitions: prev.definitions.map((def) =>
+        def.definitionId === definitionId
+          ? { ...def, correctDefinition }
+          : def
+      ),
+    }));
+  };
+  
+  const handleToggleShowCorrection = (definitionId: number, showCorrectDefinition: boolean) => {
+    setGradingData((prev) => ({
+      definitions: prev.definitions.map((def) =>
+        def.definitionId === definitionId
+          ? { ...def, showCorrectDefinition }
           : def
       ),
     }));
