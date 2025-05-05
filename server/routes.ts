@@ -428,7 +428,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!submission) {
         return res.status(404).json({ message: "Submission not found" });
       }
-
+      
       if (!submission.completed) {
         return res.status(400).json({ message: "Cannot reassign an incomplete submission" });
       }
