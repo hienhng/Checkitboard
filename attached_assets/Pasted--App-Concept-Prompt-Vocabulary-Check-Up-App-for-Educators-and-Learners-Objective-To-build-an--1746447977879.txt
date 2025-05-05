@@ -1,0 +1,196 @@
+📚 App Concept Prompt: Vocabulary Check-Up App for Educators and Learners
+
+🧠 Objective
+To build an intuitive web/mobile app that simplifies the process of teaching, checking, and reinforcing vocabulary based on reading passages. The app is designed to empower educators with tools to monitor students’ vocabulary understanding, while providing students with interactive learning and review experiences.
+
+🖥️ Welcome & Onboarding Flow
+Upon opening the app, users are welcomed with a clean, minimal welcome screen.
+
+Users must choose their role: Educator or Learner during sign-in.
+
+🎓 Educator Experience
+After logging in, educators:
+
+Input a reading passage (via text box or upload).
+
+Can highlight any word in the passage. Each highlighted word gets automatically added to the Daily Vocabulary Check-Up List.
+
+After finalizing the selection, the educator can publish the vocabulary list to the Dashboard.
+
+The published list becomes accessible to all assigned learners.
+
+Post-submission actions:
+
+Educators can view each student’s answers, assess them, and grade vocabulary comprehension.
+
+For each incorrect word, the educator can mark it wrong, and the system will automatically add it to a reviewable flashcard list for that student.
+
+🧑‍🎓 Learner Experience
+After logging in, learners:
+
+Can view the available Vocabulary Check-Up Lists on their Dashboard.
+
+Upon clicking a list, they enter a split-screen interface:
+
+Left side: The reading passage.
+
+Right side: A vocab check-up test, displaying each word one-by-one.
+
+For each word, learners write what they believe the word means.
+
+After completing all words, they submit their answers.
+
+If a word is marked wrong:
+
+It is added to their personal flashcard review list.
+
+They can later review and study these flashcards for future check-ups.
+
+👪 Parent Integration
+After grading, the system automatically sends a summary of the child’s performance to their parent’s email, including:
+
+Overall score
+
+List of incorrectly defined words
+
+Encouragement tips or reminders for review
+
+📦 Core Features
+Role-based dashboard: Educator / Learner
+
+Passage input + vocab selection via highlight
+
+Auto-generated vocab list and daily check-up
+
+Grading interface for educators
+
+Flashcard system for reinforcement
+
+Email report system for parents
+
+Responsive UI (web/tablet/mobile)
+
+🎯 Goals
+Save educators’ time in vocabulary creation and assessment
+
+Promote active recall and retention for learners
+
+Keep parents informed and involved in vocabulary development
+
+Use tech to personalize and adapt vocabulary learning journeys
+
+Would you like this prompt rephrased as a product spec document, pitch deck copy, or user flow diagram next?
+
+
+
+
+
+
+
+You said:
+Rewrite it, as users have to log in with email 
+ChatGPT said:
+Absolutely! Here's the revised prompt, with email-based login included and a few other flow clarifications to make it even smoother and clearer:
+
+📚 App Concept Prompt: Vocabulary Check-Up App for Educators and Learners
+
+🧠 Objective
+To create a streamlined web/mobile application that helps educators efficiently assess and reinforce vocabulary comprehension through reading passages. The app enables learners to engage actively with words, while giving educators and parents insight into each student’s vocabulary progress.
+
+🔐 Login & User Roles
+All users must log in using their email and a secure password.
+
+Upon first login, users select their role as either:
+
+Educator
+
+Learner (Student)
+
+🎓 Educator Flow
+Once logged in as an educator, the user can:
+
+Create a new reading activity by pasting or typing a passage.
+
+Highlight specific words in the passage to add them to a Vocabulary Check-Up List.
+
+After selecting the words, the educator can finalize and publish the list.
+
+The published list appears on students' dashboards.
+
+After students submit their check-ups:
+
+Educators can view individual student responses, then grade each one.
+
+Any incorrectly defined word can be marked, triggering it to be added automatically to that student’s flashcard review list.
+
+🧑‍🎓 Learner Flow
+After logging in via email as a learner:
+
+Students see available Vocabulary Check-Up Lists on their dashboard.
+
+Clicking a list opens a split-screen interface:
+
+Left panel: The full reading passage.
+
+Right panel: The check-up test, showing the highlighted words one at a time.
+
+For each word, students type in what they believe the word means.
+
+After finishing all words, they click Submit.
+
+Once submitted:
+
+The list is sent to the educator for grading.
+
+Any word marked incorrect is automatically added to the student’s flashcard review list.
+
+📩 Parent Integration
+After grading, an email summary is sent to the parent (linked to the student’s account), including:
+
+The student’s score
+
+A list of incorrect words
+
+Suggestions for improvement and study reminders
+
+🧠 Flashcard System
+Words marked incorrect during a check-up are stored in a personal flashcard list.
+
+Students can access their flashcards anytime to review vocabulary.
+
+Each flashcard includes:
+
+The word
+
+Student’s past answer
+
+Correct definition
+
+Option to mark as “learned”
+
+⚙️ Core Features
+Email-based login system
+
+Role-based dashboards (Educator / Learner)
+
+Passage input + interactive word selection
+
+Automated vocab list creation
+
+Daily vocab check-up interface
+
+Educator grading panel
+
+Flashcard generation for incorrect answers
+
+Parent report emails
+
+🎯 Goals
+Make vocabulary assessment intuitive and efficient for educators
+
+Encourage active learning and retention for students
+
+Keep parents in the loop about their child’s vocabulary growth
+
+Use simple tools to create a meaningful feedback and review cycle
+
