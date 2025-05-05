@@ -406,6 +406,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error grading submission" });
     }
   });
+
+  // Reassign a vocabulary list to a student (for redoing)
+  app.post("/api/submissions/:id/reassign", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "educator") {
+        return res.status(403).json({ message: "Only educators can reassign submissions" });
+      }
+
+      const submissionId = parseInt(req.params.id);
+      if (isNaN(submissionId)) {
+        return res.status(400).json({ message: "Invalid submission ID" });
+      }
+
+      const submission = await storage.getSubmission(submissionId);
+      
+      if (!submission) {
+        return res.status(404).json({ message: "Submission not found" });
+      }
+
+      if (!submission.completed) {
+        return res.status(400).json({ message: "Cannot reassign an incomplete submission" });
+      }
+
+      // Check if educator owns the vocabulary list
+      const list = await storage.getVocabularyList(submission.listId);
+      if (!list || list.educatorId !== req.user.id) {
+        return res.status(403).json({ message: "You don't have permission to reassign this submission" });
+      }
+      
+      // Create a new submission for the same list but marked as a redo
+      const newSubmission = await storage.createSubmission({
+        studentId: submission.studentId,
+        listId: submission.listId,
+        isRedo: true // This marks it as a redoing attempt
+      });
+
+      res.status(201).json(newSubmission);
+    } catch (error) {
+      console.error("Error reassigning submission:", error);
+      res.status(500).json({ message: "Error reassigning submission" });
+    }
+  });
   // #endregion
 
   // #region Learner Routes
