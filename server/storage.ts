@@ -257,6 +257,7 @@ export class DatabaseStorage {
           columns: {
             id: true,
             title: true,
+            passage: true,
           },
           with: {
             educator: {
@@ -268,14 +269,27 @@ export class DatabaseStorage {
             words: {
               columns: {
                 id: true,
+                word: true,
               },
             },
           },
         },
         wordDefinitions: {
+          with: {
+            word: {
+              columns: {
+                id: true,
+                word: true,
+              },
+            },
+          },
           columns: {
             id: true,
             isCorrect: true,
+            studentDefinition: true,
+            correctDefinition: true,
+            showCorrectDefinition: true,
+            addedToFlashcards: true,
           },
         },
       },
