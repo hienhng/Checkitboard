@@ -73,6 +73,7 @@ import { Progress } from "@/components/ui/progress";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { formatDate, getScoreBgColor } from "@/lib/utils";
 
 // Schema for creating a class
 const createClassSchema = z.object({
