@@ -50,9 +50,7 @@ export function ClassSelect({
   const { data: classes, isLoading } = useQuery({
     queryKey: ["/api/educator/classes"],
     queryFn: async () => {
-      const response = await apiRequest("/api/educator/classes", {
-        method: "GET",
-      });
+      const response = await apiRequest("GET", "/api/educator/classes");
       return response;
     },
   });

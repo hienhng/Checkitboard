@@ -12,13 +12,16 @@ import {
   FileText,
   ChevronRight,
   Brain,
-  Eye
+  Eye,
+  School
 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getQueryFn, apiRequest } from "@/lib/queryClient";
 import { formatDate, formatDueDate, getScoreBgColor } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Flashcard } from "@/components/flashcard";
+import { JoinClass } from "@/components/join-class";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose, DialogDescription } from "@/components/ui/dialog";
 
 export default function LearnerDashboard() {
@@ -27,6 +30,7 @@ export default function LearnerDashboard() {
   
   // State for the result details dialog
   const [selectedResult, setSelectedResult] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   // Fetch published vocabulary lists
   const { data: vocabularyLists, isLoading: listsLoading } = useQuery({
@@ -43,6 +47,12 @@ export default function LearnerDashboard() {
   // Fetch learner's flashcards
   const { data: flashcards, isLoading: flashcardsLoading } = useQuery({
     queryKey: ["/api/learner/flashcards"],
+    queryFn: getQueryFn({ on401: "throw" }),
+  });
+
+  // Fetch the student's classes
+  const { data: classes, isLoading: classesLoading } = useQuery({
+    queryKey: ["/api/learner/classes"],
     queryFn: getQueryFn({ on401: "throw" }),
   });
 
@@ -89,183 +99,202 @@ export default function LearnerDashboard() {
             <div className="px-4 py-5 sm:px-6">
               <h2 className="text-2xl font-bold text-neutral-dark">Student Dashboard</h2>
               <p className="mt-1 max-w-2xl text-sm text-gray-500">
-                Complete vocabulary check-ups and review your flashcards.
+                Complete vocabulary check-ups, join classes, and review your flashcards.
               </p>
             </div>
             
             {/* Content */}
             <div className="px-4 sm:px-6 lg:px-8">
-              <div className="space-y-6">
-                {/* Pending Vocabulary Check-Ups */}
-                <Card>
-                  <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-                    <div>
-                      <CardTitle className="flex items-center text-xl">
-                        <BookOpen className="mr-2 h-5 w-5 text-primary" />
-                        Pending Vocabulary Check-Ups
-                      </CardTitle>
-                      <CardDescription>
-                        Complete these vocabulary check-ups assigned by your teacher.
-                      </CardDescription>
-                    </div>
-                    {vocabularyLists && vocabularyLists.filter(list => 
-                      !list.submission || !list.submission.completed
-                    ).length > 0 && (
-                      <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
-                        {vocabularyLists.filter(list => 
-                          !list.submission || !list.submission.completed
-                        ).length} Pending
-                      </Badge>
-                    )}
-                  </CardHeader>
-                  <CardContent>
-                    {listsLoading ? (
-                      <div className="py-4 text-center text-sm text-gray-500">Loading check-ups...</div>
-                    ) : vocabularyLists && vocabularyLists.filter(list => 
-                      !list.submission || !list.submission.completed
-                    ).length > 0 ? (
-                      <div className="divide-y divide-gray-200">
-                        {vocabularyLists
-                          .filter(list => !list.submission || !list.submission.completed)
-                          .map((list) => (
-                            <div key={list.id} className="py-4 flex items-center">
-                              <div className="h-10 w-10 flex-shrink-0 rounded-full bg-primary text-white flex items-center justify-center">
-                                <FileText className="h-5 w-5" />
-                              </div>
-                              <div className="ml-3 flex-1">
-                                <div className="flex items-center justify-between">
-                                  <h4 className="text-sm font-medium text-neutral-dark">{list.title}</h4>
-                                  <p className="text-sm text-gray-500">{formatDueDate(list.dueDate)}</p>
-                                </div>
-                                <div className="mt-1 flex items-center">
-                                  <p className="text-sm text-gray-500">
-                                    {list.words?.length || 0} vocabulary words - {list.educator?.name}
-                                  </p>
-                                </div>
-                                <div className="mt-2">
-                                  <Button 
-                                    size="sm"
-                                    variant="outline"
-                                    className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-primary hover:bg-blue-50"
-                                    onClick={() => startCheckUp(list.id)}
-                                  >
-                                    Start Check-Up
-                                    <ChevronRight className="ml-1 h-3.5 w-3.5" />
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                      </div>
-                    ) : (
-                      <div className="py-4 text-center text-sm text-gray-500">
-                        No pending vocabulary check-ups.
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-                
-                {/* Recent Results */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center text-xl">
-                      <Award className="mr-2 h-5 w-5 text-secondary" />
-                      Recent Results
-                    </CardTitle>
-                    <CardDescription>
-                      Your recent vocabulary check-up results.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {resultsLoading ? (
-                      <div className="py-4 text-center text-sm text-gray-500">Loading results...</div>
-                    ) : results && results.length > 0 ? (
-                      <div className="divide-y divide-gray-200">
-                        {results.map((result) => (
-                          <div key={result.id} className="py-4 flex items-center cursor-pointer hover:bg-gray-50 px-2 rounded-md transition-colors" onClick={() => setSelectedResult(result)}>
-                            <div className="h-10 w-10 flex-shrink-0 rounded-full bg-green-500 text-white flex items-center justify-center">
-                              <CheckCircle className="h-5 w-5" />
-                            </div>
-                            <div className="ml-3 flex-1">
-                              <div className="flex items-center justify-between">
-                                <h4 className="text-sm font-medium text-neutral-dark">{result.list.title}</h4>
-                                <Badge className={getScoreBgColor(result.score)}>
-                                  {result.score}% Score
-                                </Badge>
-                              </div>
-                              <div className="mt-1 flex items-center justify-between">
-                                <p className="text-sm text-gray-500">
-                                  Completed on {formatDate(result.submittedAt)} - 
-                                  {result.wordDefinitions?.filter(d => d.isCorrect).length || 0}/
-                                  {result.wordDefinitions?.length || 0} correct
-                                </p>
-                                <Button variant="ghost" size="sm" className="gap-1 text-xs text-blue-600 h-6">
-                                  <Eye className="h-3.5 w-3.5" /> View Details
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="py-4 text-center text-sm text-gray-500">
-                        No completed check-ups yet.
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-                
-                {/* My Flashcards */}
-                <Card>
-                  <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-                    <div>
-                      <CardTitle className="flex items-center text-xl">
-                        <Brain className="mr-2 h-5 w-5 text-accent" />
-                        My Flashcards
-                      </CardTitle>
-                      <CardDescription>
-                        Review vocabulary words you're still learning.
-                      </CardDescription>
-                    </div>
-                    {flashcards && flashcards.filter(card => !card.learned).length > 0 && (
-                      <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-100">
-                        {flashcards.filter(card => !card.learned).length} Cards
-                      </Badge>
-                    )}
-                  </CardHeader>
-                  <CardContent>
-                    {flashcardsLoading ? (
-                      <div className="py-4 text-center text-sm text-gray-500">Loading flashcards...</div>
-                    ) : flashcards && flashcards.filter(card => !card.learned).length > 0 ? (
-                      <div>
-                        <div className="flex overflow-x-auto hide-scrollbar pb-4 space-x-4">
-                          {flashcards
-                            .filter(card => !card.learned)
-                            .map((card) => (
-                              <Flashcard key={card.id} flashcard={card} />
-                            ))}
+              <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab}>
+                <TabsList>
+                  <TabsTrigger value="dashboard" className="flex items-center">
+                    <BookOpen className="mr-2 h-4 w-4" />
+                    Dashboard
+                  </TabsTrigger>
+                  <TabsTrigger value="classes" className="flex items-center">
+                    <School className="mr-2 h-4 w-4" />
+                    My Classes
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="dashboard">
+                  <div className="space-y-6">
+                    {/* Pending Vocabulary Check-Ups */}
+                    <Card>
+                      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+                        <div>
+                          <CardTitle className="flex items-center text-xl">
+                            <BookOpen className="mr-2 h-5 w-5 text-primary" />
+                            Pending Vocabulary Check-Ups
+                          </CardTitle>
+                          <CardDescription>
+                            Complete these vocabulary check-ups assigned by your teacher.
+                          </CardDescription>
                         </div>
-                        
-                        {flashcards.filter(card => !card.learned).length > 0 && (
-                          <div className="mt-4 text-center">
-                            <Button 
-                              className="inline-flex items-center"
-                              onClick={() => navigate('/learner/flashcards')}
-                            >
-                              Review All Flashcards
-                              <ChevronRight className="ml-1 h-3.5 w-3.5" />
-                            </Button>
+                        {vocabularyLists && Array.isArray(vocabularyLists) && vocabularyLists.filter((list: any) => 
+                          !list.submission || !list.submission.completed
+                        ).length > 0 && (
+                          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
+                            {vocabularyLists.filter((list: any) => 
+                              !list.submission || !list.submission.completed
+                            ).length} Pending
+                          </Badge>
+                        )}
+                      </CardHeader>
+                      <CardContent>
+                        {listsLoading ? (
+                          <div className="py-4 text-center text-sm text-gray-500">Loading check-ups...</div>
+                        ) : vocabularyLists && Array.isArray(vocabularyLists) && vocabularyLists.filter((list: any) => 
+                          !list.submission || !list.submission.completed
+                        ).length > 0 ? (
+                          <div className="divide-y divide-gray-200">
+                            {vocabularyLists
+                              .filter((list: any) => !list.submission || !list.submission.completed)
+                              .map((list: any) => (
+                                <div key={list.id} className="py-4 flex items-center">
+                                  <div className="h-10 w-10 flex-shrink-0 rounded-full bg-primary text-white flex items-center justify-center">
+                                    <FileText className="h-5 w-5" />
+                                  </div>
+                                  <div className="ml-3 flex-1">
+                                    <div className="flex items-center justify-between">
+                                      <h4 className="text-sm font-medium text-neutral-dark">{list.title}</h4>
+                                      <p className="text-sm text-gray-500">{formatDueDate(list.dueDate)}</p>
+                                    </div>
+                                    <div className="mt-1 flex items-center">
+                                      <p className="text-sm text-gray-500">
+                                        {list.words?.length || 0} vocabulary words - {list.educator?.name}
+                                      </p>
+                                    </div>
+                                    <div className="mt-2">
+                                      <Button 
+                                        size="sm"
+                                        variant="outline"
+                                        className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-primary hover:bg-blue-50"
+                                        onClick={() => startCheckUp(list.id)}
+                                      >
+                                        Start Check-Up
+                                        <ChevronRight className="ml-1 h-3.5 w-3.5" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
+                        ) : (
+                          <div className="py-4 text-center text-sm text-gray-500">
+                            No pending vocabulary check-ups.
                           </div>
                         )}
-                      </div>
-                    ) : (
-                      <div className="py-4 text-center text-sm text-gray-500">
-                        No flashcards to review.
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
+                      </CardContent>
+                    </Card>
+                    
+                    {/* Recent Results */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center text-xl">
+                          <Award className="mr-2 h-5 w-5 text-secondary" />
+                          Recent Results
+                        </CardTitle>
+                        <CardDescription>
+                          Your recent vocabulary check-up results.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {resultsLoading ? (
+                          <div className="py-4 text-center text-sm text-gray-500">Loading results...</div>
+                        ) : results && Array.isArray(results) && results.length > 0 ? (
+                          <div className="divide-y divide-gray-200">
+                            {results.map((result: any) => (
+                              <div key={result.id} className="py-4 flex items-center cursor-pointer hover:bg-gray-50 px-2 rounded-md transition-colors" onClick={() => setSelectedResult(result)}>
+                                <div className="h-10 w-10 flex-shrink-0 rounded-full bg-green-500 text-white flex items-center justify-center">
+                                  <CheckCircle className="h-5 w-5" />
+                                </div>
+                                <div className="ml-3 flex-1">
+                                  <div className="flex items-center justify-between">
+                                    <h4 className="text-sm font-medium text-neutral-dark">{result.list.title}</h4>
+                                    <Badge className={getScoreBgColor(result.score)}>
+                                      {result.score}% Score
+                                    </Badge>
+                                  </div>
+                                  <div className="mt-1 flex items-center justify-between">
+                                    <p className="text-sm text-gray-500">
+                                      Completed on {formatDate(result.submittedAt)} - 
+                                      {result.wordDefinitions?.filter((d: any) => d.isCorrect).length || 0}/
+                                      {result.wordDefinitions?.length || 0} correct
+                                    </p>
+                                    <Button variant="ghost" size="sm" className="gap-1 text-xs text-blue-600 h-6">
+                                      <Eye className="h-3.5 w-3.5" /> View Details
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="py-4 text-center text-sm text-gray-500">
+                            No completed check-ups yet.
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                    
+                    {/* My Flashcards */}
+                    <Card>
+                      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+                        <div>
+                          <CardTitle className="flex items-center text-xl">
+                            <Brain className="mr-2 h-5 w-5 text-accent" />
+                            My Flashcards
+                          </CardTitle>
+                          <CardDescription>
+                            Review vocabulary words you're still learning.
+                          </CardDescription>
+                        </div>
+                        {flashcards && Array.isArray(flashcards) && flashcards.filter((card: any) => !card.learned).length > 0 && (
+                          <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+                            {flashcards.filter((card: any) => !card.learned).length} Cards
+                          </Badge>
+                        )}
+                      </CardHeader>
+                      <CardContent>
+                        {flashcardsLoading ? (
+                          <div className="py-4 text-center text-sm text-gray-500">Loading flashcards...</div>
+                        ) : flashcards && Array.isArray(flashcards) && flashcards.filter((card: any) => !card.learned).length > 0 ? (
+                          <div>
+                            <div className="flex overflow-x-auto hide-scrollbar pb-4 space-x-4">
+                              {flashcards
+                                .filter((card: any) => !card.learned)
+                                .map((card: any) => (
+                                  <Flashcard key={card.id} flashcard={card} />
+                                ))}
+                            </div>
+                            
+                            {flashcards.filter((card: any) => !card.learned).length > 0 && (
+                              <div className="mt-4 text-center">
+                                <Button 
+                                  className="inline-flex items-center"
+                                  onClick={() => navigate('/learner/flashcards')}
+                                >
+                                  Review All Flashcards
+                                  <ChevronRight className="ml-1 h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="py-4 text-center text-sm text-gray-500">
+                            No flashcards to review.
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="classes">
+                  <JoinClass />
+                </TabsContent>
+              </Tabs>
             </div>
           </div>
         </div>
@@ -318,25 +347,21 @@ export default function LearnerDashboard() {
                         </Badge>
                       )}
                     </div>
-                    <p className="text-gray-700 text-sm">
-                      <span className="font-medium">Your definition: </span>
-                      {def.studentDefinition}
-                    </p>
-                    {def.correctDefinition && def.showCorrectDefinition && (
-                      <p className="text-gray-700 text-sm mt-2 pt-2 border-t">
-                        <span className="font-medium">Correct definition: </span>
-                        {def.correctDefinition}
-                      </p>
-                    )}
+                    <div className="mt-2 space-y-2">
+                      <div>
+                        <p className="text-sm text-gray-500">Your definition:</p>
+                        <p className="text-sm">{def.studentDefinition}</p>
+                      </div>
+                      {!def.isCorrect && def.showCorrectDefinition && def.correctDefinition && (
+                        <div>
+                          <p className="text-sm text-gray-500">Correct definition:</p>
+                          <p className="text-sm text-green-700">{def.correctDefinition}</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
-            </div>
-            
-            <div className="mt-6 flex justify-end">
-              <DialogClose asChild>
-                <Button variant="outline">Close</Button>
-              </DialogClose>
             </div>
           </DialogContent>
         </Dialog>

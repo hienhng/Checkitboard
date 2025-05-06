@@ -84,25 +84,25 @@ export function ClassManagement() {
 
   // Query for fetching educator's classes
   const { 
-    data: classes, 
+    data: classes = [], 
     isLoading: classesLoading 
-  } = useQuery({
+  } = useQuery<any[]>({
     queryKey: ["/api/educator/classes"],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/educator/classes");
-      return response;
+      return response.json();
     },
   });
 
   // Query for fetching pending join requests
   const { 
-    data: joinRequests, 
+    data: joinRequests = [], 
     isLoading: requestsLoading 
-  } = useQuery({
+  } = useQuery<any[]>({
     queryKey: ["/api/educator/join-requests"],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/educator/join-requests");
-      return response;
+      return response.json();
     },
   });
 
@@ -248,7 +248,7 @@ export function ClassManagement() {
                             >
                               <span>{list.title}</span>
                               {list.published ? (
-                                <Badge variant="success">Published</Badge>
+                                <Badge variant="secondary" className="bg-green-100 text-green-800">Published</Badge>
                               ) : (
                                 <Badge variant="outline">Draft</Badge>
                               )}

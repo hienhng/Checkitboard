@@ -28,6 +28,13 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
   const passageRef = useRef<HTMLDivElement>(null);
   const [dueDate, setDueDate] = useState("");
 
+  // Form for class selection
+  const form = useForm({
+    defaultValues: {
+      classId: null as number | null,
+    }
+  });
+
   // Define the type for vocabulary list data
   type VocabularyListData = {
     title: string;
@@ -35,6 +42,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
     words: string[];
     dueDate?: Date;
     published?: boolean;
+    classId?: number | null;
   };
 
   // Mutation to create a new vocabulary list
@@ -178,11 +186,15 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
       dueDateObj = new Date(dueDate);
     }
 
+    // Get the class ID from the form
+    const { classId } = form.getValues();
+
     createListMutation.mutate({
       title,
       passage,
       words: selectedWords,
       dueDate: dueDateObj,
+      classId: classId
     });
   };
 
@@ -201,11 +213,15 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
       dueDateObj = new Date(dueDate);
     }
 
+    // Get the class ID from the form
+    const { classId } = form.getValues();
+
     createListMutation.mutate({
       title,
       passage,
       words: selectedWords,
       dueDate: dueDateObj,
+      classId: classId,
       published: true
     });
   };
@@ -239,6 +255,13 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
             className="mt-1"
           />
         </div>
+
+        <ClassSelect
+          formControl={form.control}
+          name="classId"
+          label="Assign to Class"
+          description="Assign this vocabulary list to a specific class, or leave empty to make it available to all students."
+        />
 
         <div>
           <Label htmlFor="reading-passage">Reading Passage</Label>

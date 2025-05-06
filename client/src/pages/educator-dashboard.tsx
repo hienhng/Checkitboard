@@ -17,12 +17,17 @@ import {
   Clock, 
   CalendarDays,
   ClipboardList,
-  ArrowRight
+  ArrowRight,
+  User,
+  Users,
+  School
 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { VocabularyList } from "@shared/schema";
 import { formatDate, formatDueDate } from "@/lib/utils";
 import { GradingPanel } from "@/components/grading-panel";
+import { ClassManagement } from "@/components/class-management";
 import { useToast } from "@/hooks/use-toast";
 
 export default function EducatorDashboard() {
@@ -88,6 +93,8 @@ export default function EducatorDashboard() {
     });
   };
 
+  const [activeTab, setActiveTab] = useState("dashboard");
+
   return (
     <div className="flex flex-col min-h-screen bg-neutral-light">
       <Navbar />
@@ -99,7 +106,7 @@ export default function EducatorDashboard() {
           <div className="px-4 py-5 sm:px-6">
             <h2 className="text-2xl font-bold text-neutral-dark">Educator Dashboard</h2>
             <p className="mt-1 max-w-2xl text-sm text-gray-500">
-              Create and manage vocabulary lists, grade responses, and track student progress.
+              Create and manage vocabulary lists, classes, and grade student submissions.
             </p>
           </div>
           
@@ -135,125 +142,148 @@ export default function EducatorDashboard() {
                 <GradingPanel submissionId={selectedSubmissionId} onComplete={handleGradingComplete} />
               </div>
             ) : (
-              <div className="mb-6 flex">
-                <Button 
-                  onClick={() => setShowCreateList(true)}
-                  className="flex items-center"
-                >
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Create New Vocabulary List
-                </Button>
-              </div>
-            )}
+              <>
+                <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab} className="mb-6">
+                  <TabsList>
+                    <TabsTrigger value="dashboard" className="flex items-center">
+                      <BookOpen className="mr-2 h-4 w-4" />
+                      Dashboard
+                    </TabsTrigger>
+                    <TabsTrigger value="classes" className="flex items-center">
+                      <School className="mr-2 h-4 w-4" />
+                      Classes
+                    </TabsTrigger>
+                  </TabsList>
 
-            <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-              {/* Vocabulary Lists */}
-              {!showCreateList && !showGrading && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <BookOpen className="mr-2 h-5 w-5 text-primary" />
-                      My Vocabulary Lists
-                    </CardTitle>
-                    <CardDescription>
-                      Manage your created vocabulary lists
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {listsLoading ? (
-                      <div className="py-4 text-center text-sm text-gray-500">Loading vocabulary lists...</div>
-                    ) : vocabularyLists && vocabularyLists.length > 0 ? (
-                      <div className="divide-y divide-gray-200">
-                        {vocabularyLists.map((list) => (
-                          <div key={list.id} className="py-4 flex justify-between items-center">
-                            <div className="flex-1">
-                              <h4 className="text-sm font-medium text-neutral-dark">{list.title}</h4>
-                              <div className="mt-1 flex items-center text-xs text-gray-500">
-                                <CalendarDays className="mr-1 h-3.5 w-3.5" />
-                                Created: {formatDate(list.createdAt)}
-                              </div>
-                              <div className="mt-1 flex items-center text-xs text-gray-500">
-                                <ClipboardList className="mr-1 h-3.5 w-3.5" />
-                                {list.words?.length || 0} vocabulary words
-                              </div>
+                  <TabsContent value="dashboard">
+                    <div className="mb-6 flex">
+                      <Button 
+                        onClick={() => setShowCreateList(true)}
+                        className="flex items-center"
+                      >
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Create New Vocabulary List
+                      </Button>
+                    </div>
+
+                    <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+                      {/* Vocabulary Lists */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center">
+                            <BookOpen className="mr-2 h-5 w-5 text-primary" />
+                            My Vocabulary Lists
+                          </CardTitle>
+                          <CardDescription>
+                            Manage your created vocabulary lists
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          {listsLoading ? (
+                            <div className="py-4 text-center text-sm text-gray-500">Loading vocabulary lists...</div>
+                          ) : vocabularyLists && vocabularyLists.length > 0 ? (
+                            <div className="divide-y divide-gray-200">
+                              {vocabularyLists.map((list) => (
+                                <div key={list.id} className="py-4 flex justify-between items-center">
+                                  <div className="flex-1">
+                                    <h4 className="text-sm font-medium text-neutral-dark">{list.title}</h4>
+                                    <div className="mt-1 flex items-center text-xs text-gray-500">
+                                      <CalendarDays className="mr-1 h-3.5 w-3.5" />
+                                      Created: {formatDate(list.createdAt)}
+                                    </div>
+                                    <div className="mt-1 flex items-center text-xs text-gray-500">
+                                      <ClipboardList className="mr-1 h-3.5 w-3.5" />
+                                      {list.words?.length || 0} vocabulary words
+                                    </div>
+                                    {list.class && (
+                                      <div className="mt-1 flex items-center text-xs text-gray-500">
+                                        <School className="mr-1 h-3.5 w-3.5" />
+                                        Class: {list.class.name}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="ml-4 flex-shrink-0 flex items-center space-x-2">
+                                    <Button 
+                                      variant={list.published ? "outline" : "default"} 
+                                      size="sm"
+                                      onClick={() => handlePublishToggle(list.id, list.published)}
+                                    >
+                                      {list.published ? "Unpublish" : "Publish"}
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                            <div className="ml-4 flex-shrink-0 flex items-center space-x-2">
-                              <Button 
-                                variant={list.published ? "outline" : "default"} 
-                                size="sm"
-                                onClick={() => handlePublishToggle(list.id, list.published)}
-                              >
-                                {list.published ? "Unpublish" : "Publish"}
-                              </Button>
+                          ) : (
+                            <div className="py-4 text-center text-sm text-gray-500">
+                              You haven't created any vocabulary lists yet.
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="py-4 text-center text-sm text-gray-500">
-                        You haven't created any vocabulary lists yet.
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-              
-              {/* Pending Submissions */}
-              {!showCreateList && !showGrading && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Clock className="mr-2 h-5 w-5 text-primary" />
-                      Pending Submissions
-                    </CardTitle>
-                    <CardDescription>
-                      Review and grade student submissions
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {submissionsLoading ? (
-                      <div className="py-4 text-center text-sm text-gray-500">Loading submissions...</div>
-                    ) : pendingSubmissions && pendingSubmissions.length > 0 ? (
-                      <div className="divide-y divide-gray-200">
-                        {pendingSubmissions.map((submission) => (
-                          <div key={submission.id} className="py-4 flex justify-between items-center">
-                            <div className="flex-1">
-                              <h4 className="text-sm font-medium text-neutral-dark">
-                                {submission.list.title}
-                              </h4>
-                              <div className="mt-1 flex items-center text-xs text-gray-500">
-                                <CheckCircle className="mr-1 h-3.5 w-3.5" />
-                                Student: {submission.student.name}
-                              </div>
-                              <div className="mt-1 flex items-center text-xs text-gray-500">
-                                <Clock className="mr-1 h-3.5 w-3.5" />
-                                Submitted: {formatDate(submission.submittedAt)}
-                              </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                      
+                      {/* Pending Submissions */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center">
+                            <Clock className="mr-2 h-5 w-5 text-primary" />
+                            Pending Submissions
+                          </CardTitle>
+                          <CardDescription>
+                            Review and grade student submissions
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          {submissionsLoading ? (
+                            <div className="py-4 text-center text-sm text-gray-500">Loading submissions...</div>
+                          ) : pendingSubmissions && pendingSubmissions.length > 0 ? (
+                            <div className="divide-y divide-gray-200">
+                              {pendingSubmissions.map((submission) => (
+                                <div key={submission.id} className="py-4 flex justify-between items-center">
+                                  <div className="flex-1">
+                                    <h4 className="text-sm font-medium text-neutral-dark">
+                                      {submission.list.title}
+                                    </h4>
+                                    <div className="mt-1 flex items-center text-xs text-gray-500">
+                                      <CheckCircle className="mr-1 h-3.5 w-3.5" />
+                                      Student: {submission.student.name}
+                                    </div>
+                                    <div className="mt-1 flex items-center text-xs text-gray-500">
+                                      <Clock className="mr-1 h-3.5 w-3.5" />
+                                      Submitted: {formatDate(submission.submittedAt)}
+                                    </div>
+                                  </div>
+                                  <div className="ml-4 flex-shrink-0">
+                                    <Button 
+                                      size="sm"
+                                      onClick={() => {
+                                        setSelectedSubmissionId(submission.id);
+                                        setShowGrading(true);
+                                      }}
+                                    >
+                                      Grade
+                                      <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                            <div className="ml-4 flex-shrink-0">
-                              <Button 
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedSubmissionId(submission.id);
-                                  setShowGrading(true);
-                                }}
-                              >
-                                Grade
-                                <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                              </Button>
+                          ) : (
+                            <div className="py-4 text-center text-sm text-gray-500">
+                              No pending submissions to grade.
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="py-4 text-center text-sm text-gray-500">
-                        No pending submissions to grade.
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="classes">
+                    <ClassManagement />
+                  </TabsContent>
+                </Tabs>
+              </>
+            )}
           </div>
         </div>
       </div>
