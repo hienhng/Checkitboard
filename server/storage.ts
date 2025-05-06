@@ -244,8 +244,23 @@ export class DatabaseStorage {
   }
 
   async getPendingSubmissionsForEducator(educatorId: number) {
-    // Simplified approach: Find all the vocabulary lists created by this educator
-    // And query submissions with a join to ensure proper filtering
+    // Get all vocabulary lists created by this educator
+    const educatorLists = await db.query.vocabularyLists.findMany({
+      where: eq(vocabularyLists.educatorId, educatorId),
+      columns: {
+        id: true
+      }
+    });
+    
+    // Get list IDs
+    const listIds = educatorLists.map(list => list.id);
+    
+    // If educator has no lists, return empty array
+    if (listIds.length === 0) {
+      return [];
+    }
+    
+    // Find all completed but ungraded submissions
     const pendingSubmissions = await db.query.submissions.findMany({
       where: and(
         eq(submissions.completed, true),
@@ -260,6 +275,11 @@ export class DatabaseStorage {
           },
         },
         list: {
+          columns: {
+            id: true, 
+            title: true,
+            educatorId: true
+          },
           with: {
             words: {
               columns: {
@@ -272,10 +292,11 @@ export class DatabaseStorage {
       },
       orderBy: [desc(submissions.submittedAt)],
     });
-
-    // Filter out any submissions that don't belong to this educator
-    // @ts-ignore - Type definition doesn't correctly include the related entities
-    return pendingSubmissions.filter(submission => submission.list !== null && submission.list.educatorId === educatorId);
+    
+    // Filter submissions to only include those for lists created by this educator
+    return pendingSubmissions.filter(submission => 
+      submission.list && submission.list.educatorId === educatorId
+    );
   }
 
   async getGradedSubmissionsByStudent(studentId: number) {
