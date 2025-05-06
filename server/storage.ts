@@ -90,6 +90,15 @@ export class DatabaseStorage {
       orderBy: [
         desc(vocabularyLists.createdAt),
       ],
+      columns: {
+        id: true,
+        title: true,
+        dueDate: true,
+        published: true,
+        educatorId: true,
+        createdAt: true,
+        passage: true, // Include the passage text
+      },
       with: {
         words: {
           columns: {
