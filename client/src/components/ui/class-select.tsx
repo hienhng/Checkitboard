@@ -26,9 +26,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Control } from "react-hook-form";
 
 interface ClassSelectProps {
-  formControl: any;
+  formControl: Control<any>;
   name: string;
   label: string;
   description?: string;

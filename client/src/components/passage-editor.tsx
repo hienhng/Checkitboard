@@ -28,10 +28,16 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
   const passageRef = useRef<HTMLDivElement>(null);
   const [dueDate, setDueDate] = useState("");
 
+  // Schema for form validation
+  const formSchema = z.object({
+    classId: z.number().nullable(),
+  });
+
   // Form for class selection
-  const form = useForm({
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      classId: null as number | null,
+      classId: null,
     }
   });
 
