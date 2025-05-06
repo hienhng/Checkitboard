@@ -86,7 +86,7 @@ export function ClassSelect({
               value={field.value ? field.value.toString() : ""}
               onValueChange={(value) => {
                 // Convert to number or null
-                field.onChange(value ? parseInt(value) : null);
+                field.onChange(value === "" ? null : parseInt(value));
               }}
               disabled={isLoading}
             >

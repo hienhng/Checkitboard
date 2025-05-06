@@ -239,8 +239,9 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
 
   return (
     <div className="px-4 py-5 sm:p-6">
+      {/* Use FormProvider from react-hook-form */}
       <Form {...form}>
-        <form className="space-y-6" onSubmit={form.handleSubmit(handleSaveDraft)}>
+        <form className="space-y-6">
         <div>
           <Label htmlFor="list-name">List Name</Label>
           <Input
