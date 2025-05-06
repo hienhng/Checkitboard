@@ -223,7 +223,6 @@ export class DatabaseStorage {
           },
         },
         list: {
-          where: eq(vocabularyLists.educatorId, educatorId),
           with: {
             words: {
               columns: {
@@ -237,8 +236,9 @@ export class DatabaseStorage {
       orderBy: [desc(submissions.submittedAt)],
     });
 
-    // Filter out any submissions where list is null (these are not for this educator)
-    return pendingSubmissions.filter(submission => submission.list !== null);
+    // Filter out any submissions that don't belong to this educator
+    // @ts-ignore - Type definition doesn't correctly include the related entities
+    return pendingSubmissions.filter(submission => submission.list !== null && submission.list.educatorId === educatorId);
   }
 
   async getGradedSubmissionsByStudent(studentId: number) {
