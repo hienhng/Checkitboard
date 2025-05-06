@@ -54,6 +54,12 @@ export default function FlashcardsPage() {
   // Navigate to next or previous card
   const navigateCard = (direction: "next" | "prev") => {
     const currentCards = activeTab === "learning" ? learningCards : learnedCards;
+    
+    // Safety check to avoid division by zero or empty array problems
+    if (!currentCards || currentCards.length === 0) {
+      return;
+    }
+    
     if (direction === "next") {
       setCurrentIndex(prev => (prev + 1) % currentCards.length);
     } else {
@@ -99,7 +105,15 @@ export default function FlashcardsPage() {
           
           {/* Content */}
           <div className="px-4 sm:px-6 lg:px-8">
-            <Tabs defaultValue="learning" value={activeTab} onValueChange={setActiveTab}>
+            <Tabs 
+              defaultValue="learning" 
+              value={activeTab} 
+              onValueChange={(value) => {
+                setActiveTab(value);
+                // Reset to first card when switching tabs to avoid index out of bounds
+                setCurrentIndex(0);
+              }}
+            >
               <div className="flex justify-between items-center">
                 <TabsList>
                   <TabsTrigger value="learning" className="flex items-center">

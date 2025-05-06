@@ -29,6 +29,15 @@ interface FlashcardProps {
 }
 
 export function Flashcard({ flashcard }: FlashcardProps) {
+  // Guard against undefined flashcard
+  if (!flashcard || !flashcard.word) {
+    return (
+      <div className="flex-shrink-0 w-80 h-56 flex items-center justify-center">
+        <p className="text-gray-500">Flashcard not available</p>
+      </div>
+    );
+  }
+
   const { toast } = useToast();
   const [isFlipped, setIsFlipped] = useState(false);
 
