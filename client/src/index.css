@@ -137,10 +137,26 @@
 
 .passage-container {
   @apply break-words whitespace-pre-wrap;
+  cursor: text;
 }
 
 .passage-container mark {
   @apply bg-yellow-200 px-1 rounded;
+}
+
+/* Add interactive hover effect on words in the passage */
+.passage-container:not(:empty) {
+  word-spacing: 0.25em;
+}
+
+.passage-container:not(:empty) span.word {
+  @apply border-b border-transparent transition-colors;
+  cursor: pointer;
+}
+
+.passage-container:not(:empty) span.word:hover {
+  @apply border-primary text-primary;
+  cursor: pointer;
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */

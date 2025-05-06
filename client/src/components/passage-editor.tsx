@@ -68,64 +68,63 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
       }
     };
 
-    // Handle word click - split text into words and allow clicking individual words
+    // Handle word click - improved with direct element targeting for better mobile support
     const handleWordClick = (event: MouseEvent) => {
-      // Only handle clicks on text nodes and non-mark elements
       const target = event.target as HTMLElement;
-      if (target.tagName === 'MARK') return;
       
-      // Get the closest text node
-      let node = event.target as Node;
-      let text = '';
-      
-      // If we clicked on a text node directly
-      if (node.nodeType === Node.TEXT_NODE && node.textContent) {
-        text = node.textContent;
-      } 
-      // If we clicked on an element that contains text
-      else if (node.nodeType === Node.ELEMENT_NODE && node.childNodes.length > 0) {
-        // Find the text node where the click occurred
-        const range = document.caretRangeFromPoint(event.clientX, event.clientY);
-        if (range && range.startContainer.nodeType === Node.TEXT_NODE) {
-          node = range.startContainer;
-          text = node.textContent || '';
-        }
+      // Handle click on highlighted word (mark)
+      if (target.tagName === 'MARK') {
+        // Marked words are already selected, so we don't need to add them again
+        return;
       }
       
-      if (!text) return;
-      
-      // Find the word that was clicked
-      const words = text.split(/\s+/);
-      if (words.length === 0) return;
-      
-      // If we have a single word, use it directly
-      if (words.length === 1 && words[0].trim()) {
-        const clickedWord = words[0].trim();
-        if (!selectedWords.includes(clickedWord)) {
+      // Handle click on word span (our new clickable words)
+      if (target.tagName === 'SPAN' && target.classList.contains('word')) {
+        const clickedWord = target.textContent?.trim().replace(/[.,;:!?"'()[\]{}]/g, '') || '';
+        
+        if (clickedWord && !selectedWords.includes(clickedWord)) {
           setSelectedWords((prev) => [...prev, clickedWord]);
+          
+          // Highlight the word immediately for better feedback
+          target.style.borderBottomColor = 'currentColor';
+          target.style.color = 'var(--primary)';
+          
+          // Reset styles after a short delay (the highlight effect will be updated by useEffect)
+          setTimeout(() => {
+            if (target) {
+              target.style.borderBottomColor = '';
+              target.style.color = '';
+            }
+          }, 300);
         }
         return;
       }
       
-      // For multiple words, try to find which one was clicked
-      // This is a simple approach, might need refinement for more complex cases
-      const range = document.caretRangeFromPoint(event.clientX, event.clientY);
-      if (!range) return;
-      
-      const clickPosition = range.startOffset;
-      let currentPos = 0;
-      
-      for (const word of words) {
-        const wordEnd = currentPos + word.length;
-        if (clickPosition >= currentPos && clickPosition <= wordEnd) {
-          const clickedWord = word.trim().replace(/[.,;:!?"'()[\]{}]/g, ''); // Remove punctuation
+      // Fallback for any other elements that might contain text
+      if (target.nodeType === Node.ELEMENT_NODE) {
+        // Try to find the closest .word span
+        const closestWord = target.closest('.word');
+        if (closestWord && closestWord instanceof HTMLElement) {
+          const clickedWord = closestWord.textContent?.trim().replace(/[.,;:!?"'()[\]{}]/g, '') || '';
+          
           if (clickedWord && !selectedWords.includes(clickedWord)) {
             setSelectedWords((prev) => [...prev, clickedWord]);
           }
-          break;
+          return;
         }
-        // Move past this word and the following space
-        currentPos = wordEnd + 1;
+        
+        // If we didn't find a .word span, try to use the text content
+        const text = target.textContent || '';
+        if (!text) return;
+        
+        // For a single word, use it directly
+        if (!text.includes(' ')) {
+          const clickedWord = text.trim().replace(/[.,;:!?"'()[\]{}]/g, '');
+          if (clickedWord && !selectedWords.includes(clickedWord)) {
+            setSelectedWords((prev) => [...prev, clickedWord]);
+          }
+          return;
+        }
       }
     };
 
