@@ -788,6 +788,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error fetching classes" });
     }
   });
+  
+  // Get student performance data for a class
+  app.get("/api/educator/classes/:classId/student-performance", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "educator") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const classId = parseInt(req.params.classId);
+      if (isNaN(classId)) {
+        return res.status(400).json({ message: "Invalid class ID" });
+      }
+      
+      // Verify the educator owns this class
+      const classData = await db.query.classes.findFirst({
+        where: and(
+          eq(classes.id, classId),
+          eq(classes.educatorId, req.user.id)
+        ),
+      });
+      
+      if (!classData) {
+        return res.status(403).json({ message: "Access denied - you do not own this class" });
+      }
+      
+      const studentPerformance = await storage.getStudentPerformanceByClass(classId);
+      res.json(studentPerformance);
+    } catch (error) {
+      console.error("Error fetching student performance:", error);
+      res.status(500).json({ message: "Error fetching student performance" });
+    }
+  });
 
   // Get pending join requests for educator's classes
   app.get("/api/educator/join-requests", async (req, res) => {

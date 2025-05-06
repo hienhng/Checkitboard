@@ -19,7 +19,7 @@ import {
   InsertClass,
   InsertStudentClass,
 } from "@shared/schema";
-import { eq, and, desc, isNull, asc, count, sql, or } from "drizzle-orm";
+import { eq, and, desc, isNull, asc, count, sql, or, inArray } from "drizzle-orm";
 export class DatabaseStorage {
 
   // User methods
@@ -499,6 +499,110 @@ export class DatabaseStorage {
         },
       },
     });
+  }
+  
+  // Get student performance data for a class
+  async getStudentPerformanceByClass(classId: number) {
+    // First, get all students in the class
+    const classData = await db.query.classes.findFirst({
+      where: eq(classes.id, classId),
+      with: {
+        students: {
+          where: eq(studentClass.status, 'approved'),
+          with: {
+            student: {
+              columns: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
+        vocabularyLists: {
+          columns: {
+            id: true,
+          },
+        },
+      },
+    });
+
+    if (!classData) {
+      return [];
+    }
+
+    // Get all list IDs for this class
+    const listIds = classData.vocabularyLists.map(list => list.id);
+    
+    // Get all student IDs in this class
+    const studentIds = classData.students.map(student => student.student.id);
+    
+    // For each student, get their submissions and calculate stats
+    const studentPerformance = await Promise.all(
+      studentIds.map(async (studentId) => {
+        // Get student info
+        const student = classData.students.find(s => s.student.id === studentId)?.student;
+        
+        // Get all submissions by this student for lists in this class
+        const studentSubmissions = await db.query.submissions.findMany({
+          where: and(
+            eq(submissions.studentId, studentId),
+            eq(submissions.completed, true),
+            inArray(submissions.listId, listIds)
+          ),
+          with: {
+            list: {
+              columns: {
+                id: true,
+                title: true,
+              },
+            },
+            wordDefinitions: {
+              columns: {
+                id: true,
+                isCorrect: true,
+              },
+            },
+          },
+        });
+
+        // Calculate overall stats
+        const completedLists = studentSubmissions.length;
+        const totalDefinitions = studentSubmissions.reduce((sum: number, sub: any) => sum + sub.wordDefinitions.length, 0);
+        const correctDefinitions = studentSubmissions.reduce(
+          (sum: number, sub: any) => sum + sub.wordDefinitions.filter((def: any) => def.isCorrect).length, 
+          0
+        );
+        
+        const averageAccuracy = totalDefinitions > 0 
+          ? Math.round((correctDefinitions / totalDefinitions) * 100) 
+          : 0;
+
+        return {
+          student,
+          stats: {
+            completedLists,
+            totalLists: listIds.length,
+            averageAccuracy,
+            totalWords: totalDefinitions,
+            correctWords: correctDefinitions,
+          },
+          // Include the most recent submissions for additional details
+          recentSubmissions: studentSubmissions
+            .sort((a: any, b: any) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
+            .slice(0, 3)
+            .map((sub: any) => ({
+              id: sub.id,
+              listTitle: sub.list.title,
+              score: sub.score,
+              submittedAt: sub.submittedAt,
+              gradedAt: sub.gradedAt,
+            })),
+        };
+      })
+    );
+
+    return studentPerformance;
   }
 
   async getClassByCode(classCode: string) {
