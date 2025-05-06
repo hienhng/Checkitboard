@@ -18,7 +18,9 @@ export const classes = pgTable("classes", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
+  classCode: text("class_code").notNull().unique(),
   educatorId: integer("educator_id").references(() => users.id).notNull(),
+  active: boolean("active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -27,6 +29,7 @@ export const studentClass = pgTable("student_class", {
   id: serial("id").primaryKey(),
   studentId: integer("student_id").references(() => users.id).notNull(),
   classId: integer("class_id").references(() => classes.id).notNull(),
+  status: text("status", { enum: ["pending", "approved", "rejected"] }).default("pending").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -44,6 +47,7 @@ export const vocabularyLists = pgTable("vocabulary_lists", {
   title: text("title").notNull(),
   passage: text("passage").notNull(),
   educatorId: integer("educator_id").references(() => users.id).notNull(),
+  classId: integer("class_id").references(() => classes.id),
   published: boolean("published").default(false).notNull(),
   dueDate: timestamp("due_date"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -230,9 +234,21 @@ export const insertFlashcardSchema = createInsertSchema(flashcards).omit({ id: t
 
 export const insertClassSchema = createInsertSchema(classes, {
   name: (schema) => schema.min(2, "Class name must be at least 2 characters"),
-}).omit({ id: true, createdAt: true });
+  classCode: (schema) => schema.min(6, "Class code must be at least 6 characters"),
+}).omit({ id: true, createdAt: true, active: true });
 
-export const insertStudentClassSchema = createInsertSchema(studentClass).omit({ id: true, createdAt: true });
+export const insertStudentClassSchema = createInsertSchema(studentClass).omit({ id: true, createdAt: true, status: true });
+
+// Schema for join class request
+export const joinClassSchema = z.object({
+  classCode: z.string().min(6, "Class code must be at least 6 characters"),
+});
+
+// Schema for class join request response
+export const classRequestResponseSchema = z.object({
+  studentClassId: z.number(),
+  status: z.enum(["approved", "rejected"]),
+});
 
 // Export types
 export type User = typeof users.$inferSelect;
@@ -254,6 +270,8 @@ export type Class = typeof classes.$inferSelect;
 export type InsertClass = z.infer<typeof insertClassSchema>;
 export type StudentClass = typeof studentClass.$inferSelect;
 export type InsertStudentClass = z.infer<typeof insertStudentClassSchema>;
+export type JoinClassRequest = z.infer<typeof joinClassSchema>;
+export type ClassRequestResponse = z.infer<typeof classRequestResponseSchema>;
 
 // Export select schemas
 export const selectUserSchema = createSelectSchema(users);
