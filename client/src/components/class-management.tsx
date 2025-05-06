@@ -53,8 +53,23 @@ import {
   CheckCircle, 
   XCircle,
   Copy,
-  School
+  School,
+  BarChart,
+  BookCheck,
+  Star,
+  PieChart,
+  Expand,
+  ClipboardCheck
 } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -103,9 +118,26 @@ export function ClassManagement() {
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/educator/join-requests");
       const data = await response.json();
-      console.log("Join requests data:", data); // Debug log
       return data;
     },
+  });
+  
+  // State for selected class
+  const [selectedClass, setSelectedClass] = useState<number | null>(null);
+  
+  // Query for student performance data
+  const {
+    data: studentPerformance = [],
+    isLoading: performanceLoading,
+    isError: performanceError,
+  } = useQuery<any[]>({
+    queryKey: ["/api/educator/classes", selectedClass, "student-performance"],
+    queryFn: async () => {
+      if (!selectedClass) return [];
+      const response = await apiRequest("GET", `/api/educator/classes/${selectedClass}/student-performance`);
+      return response.json();
+    },
+    enabled: !!selectedClass // Only run the query if a class is selected
   });
 
   // Mutation for creating a new class
@@ -265,8 +297,15 @@ export function ClassManagement() {
                     </div>
                   </CardContent>
                   <CardFooter className="border-t bg-muted/50 flex justify-between">
-                    <Button variant="outline" size="sm">
-                      View Details
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setSelectedClass(cls.id);
+                      }}
+                    >
+                      <ClipboardCheck className="mr-2 h-4 w-4" />
+                      View Performance
                     </Button>
                   </CardFooter>
                 </Card>
@@ -394,6 +433,119 @@ export function ClassManagement() {
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Student Performance Dialog */}
+      <Dialog 
+        open={!!selectedClass} 
+        onOpenChange={(open) => !open && setSelectedClass(null)}
+      >
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Class Performance</DialogTitle>
+            <DialogDescription>
+              View student performance for this class
+            </DialogDescription>
+          </DialogHeader>
+          
+          {performanceLoading ? (
+            <div className="py-8 text-center">Loading student performance data...</div>
+          ) : performanceError ? (
+            <div className="py-8 text-center text-destructive">
+              Error loading student performance data. Please try again.
+            </div>
+          ) : studentPerformance.length === 0 ? (
+            <div className="py-8 text-center">
+              <p className="text-muted-foreground">No student performance data available yet.</p>
+              <p className="text-sm mt-2">Students need to complete vocabulary lists to see their performance.</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Student</TableHead>
+                      <TableHead className="text-center">
+                        <BookCheck className="h-4 w-4 inline mr-1" />
+                        Lists Completed
+                      </TableHead>
+                      <TableHead className="text-center">
+                        <Star className="h-4 w-4 inline mr-1" />
+                        Accuracy
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {studentPerformance.map((student: any) => (
+                      <TableRow key={student.student.id}>
+                        <TableCell className="font-medium">
+                          {student.student.name}
+                          <div className="text-xs text-muted-foreground">
+                            {student.student.email}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="font-semibold">
+                            {student.stats.completedLists} / {student.stats.totalLists}
+                          </div>
+                          <Progress 
+                            value={(student.stats.completedLists / Math.max(1, student.stats.totalLists)) * 100} 
+                            className="h-2 mt-1" 
+                          />
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div
+                            className={`font-semibold inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs ${
+                              getScoreBgColor(student.stats.averageAccuracy)
+                            }`}
+                          >
+                            {student.stats.averageAccuracy}%
+                          </div>
+                          <div className="text-xs mt-1">
+                            {student.stats.correctWords} / {student.stats.totalWords} words
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium">Recent Submissions</h3>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {studentPerformance.flatMap((student: any) => 
+                    student.recentSubmissions.map((submission: any) => (
+                      <Card key={`${student.student.id}-${submission.id}`} className="overflow-hidden">
+                        <CardHeader className="p-4 pb-2">
+                          <CardTitle className="text-base">{student.student.name}</CardTitle>
+                          <CardDescription className="text-xs">
+                            {new Date(submission.submittedAt).toLocaleDateString()}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0">
+                          <div className="text-sm">{submission.listTitle}</div>
+                          <div
+                            className={`mt-2 inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs ${
+                              getScoreBgColor(submission.score)
+                            }`}
+                          >
+                            Score: {submission.score}%
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  ).slice(0, 6)}
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedClass(null)}>Close</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
