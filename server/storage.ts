@@ -563,15 +563,13 @@ export class DatabaseStorage {
     });
 
     const classIds = educatorClasses.map(c => c.id);
-    console.log("Class IDs for educator", educatorId, ":", classIds);
 
     if (classIds.length === 0) {
-      console.log("No classes found for educator", educatorId);
       return [];
     }
 
     // Find pending join requests for those classes
-    const pendingRequests = await db.query.studentClass.findMany({
+    return await db.query.studentClass.findMany({
       where: and(
         sql`${studentClass.classId} in (${sql.join(classIds, sql`, `)})`,
         eq(studentClass.status, 'pending')
@@ -594,9 +592,6 @@ export class DatabaseStorage {
       },
       orderBy: [desc(studentClass.createdAt)],
     });
-    
-    console.log("Pending requests found:", pendingRequests.length);
-    return pendingRequests;
   }
 
   async createClass(classData: InsertClass) {
@@ -614,8 +609,6 @@ export class DatabaseStorage {
   }
 
   async joinClass(studentClassData: InsertStudentClass) {
-    console.log("Join class request received:", studentClassData);
-    
     // Check if the student is already in the class
     const existingJoin = await db.query.studentClass.findFirst({
       where: and(
@@ -625,7 +618,6 @@ export class DatabaseStorage {
     });
 
     if (existingJoin) {
-      console.log("Student already has a join request for this class:", existingJoin);
       return existingJoin;
     }
 
@@ -637,7 +629,6 @@ export class DatabaseStorage {
       })
       .returning();
     
-    console.log("New join request created:", joinRequest);
     return joinRequest;
   }
 

@@ -23,29 +23,88 @@ import { Badge } from "@/components/ui/badge";
 import { Flashcard } from "@/components/flashcard";
 import { JoinClass } from "@/components/join-class";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose, DialogDescription } from "@/components/ui/dialog";
+import { ReactNode } from "react";
+
+// Define interfaces for the data structures
+interface VocabularyList {
+  id: number;
+  title: string;
+  passage?: string;
+  dueDate?: string | Date;
+  words?: { id: number; word: string }[];
+  submission?: {
+    id: number;
+    completed: boolean;
+  };
+  educator?: {
+    id: number;
+    name: string;
+  };
+}
+
+interface FlashcardType {
+  id: number;
+  word: {
+    word: string;
+  };
+  definition: {
+    studentDefinition: string;
+    correctDefinition?: string;
+    showCorrectDefinition?: boolean;
+    isCorrect?: boolean;
+    submission: {
+      list: {
+        title: string;
+      };
+    };
+  };
+  learned: boolean;
+}
+
+interface SubmissionResult {
+  id: number;
+  score: number;
+  submittedAt: string | Date;
+  list: {
+    id: number;
+    title: string;
+    passage?: string;
+  };
+  wordDefinitions?: {
+    id: number;
+    studentDefinition: string;
+    correctDefinition?: string;
+    isCorrect: boolean;
+    showCorrectDefinition?: boolean;
+    word?: {
+      id: number;
+      word: string;
+    };
+  }[];
+}
 
 export default function LearnerDashboard() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   
   // State for the result details dialog
-  const [selectedResult, setSelectedResult] = useState<any>(null);
+  const [selectedResult, setSelectedResult] = useState<SubmissionResult | null>(null);
   const [activeTab, setActiveTab] = useState("dashboard");
 
   // Fetch published vocabulary lists
-  const { data: vocabularyLists, isLoading: listsLoading } = useQuery({
+  const { data: vocabularyLists, isLoading: listsLoading } = useQuery<VocabularyList[]>({
     queryKey: ["/api/learner/vocabulary-lists"],
     queryFn: getQueryFn({ on401: "throw" }),
   });
 
   // Fetch learner's completed and graded submissions
-  const { data: results, isLoading: resultsLoading } = useQuery({
+  const { data: results, isLoading: resultsLoading } = useQuery<SubmissionResult[]>({
     queryKey: ["/api/learner/results"],
     queryFn: getQueryFn({ on401: "throw" }),
   });
 
   // Fetch learner's flashcards
-  const { data: flashcards, isLoading: flashcardsLoading } = useQuery({
+  const { data: flashcards, isLoading: flashcardsLoading } = useQuery<FlashcardType[]>({
     queryKey: ["/api/learner/flashcards"],
     queryFn: getQueryFn({ on401: "throw" }),
   });
@@ -131,14 +190,18 @@ export default function LearnerDashboard() {
                             Complete these vocabulary check-ups assigned by your teacher.
                           </CardDescription>
                         </div>
-                        {vocabularyLists && Array.isArray(vocabularyLists) && vocabularyLists.filter((list: any) => 
-                          !list.submission || !list.submission.completed
-                        ).length > 0 && (
-                          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
-                            {vocabularyLists.filter((list: any) => 
+                        {vocabularyLists && Array.isArray(vocabularyLists) && (
+                          (() => {
+                            const pendingCount = vocabularyLists.filter((list: any) => 
                               !list.submission || !list.submission.completed
-                            ).length} Pending
-                          </Badge>
+                            ).length;
+                            
+                            return pendingCount > 0 ? (
+                              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
+                                {pendingCount} Pending
+                              </Badge>
+                            ) : null;
+                          })()
                         )}
                       </CardHeader>
                       <CardContent>
@@ -250,10 +313,16 @@ export default function LearnerDashboard() {
                             Review vocabulary words you're still learning.
                           </CardDescription>
                         </div>
-                        {flashcards && Array.isArray(flashcards) && flashcards.filter((card: any) => !card.learned).length > 0 && (
-                          <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-100">
-                            {flashcards.filter((card: any) => !card.learned).length} Cards
-                          </Badge>
+                        {flashcards && Array.isArray(flashcards) && (
+                          (() => {
+                            const cardCount = flashcards.filter((card: any) => !card.learned).length;
+                            
+                            return cardCount > 0 ? (
+                              <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+                                {cardCount} Cards
+                              </Badge>
+                            ) : null;
+                          })()
                         )}
                       </CardHeader>
                       <CardContent>
