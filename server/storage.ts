@@ -19,7 +19,7 @@ import {
   InsertClass,
   InsertStudentClass,
 } from "@shared/schema";
-import { eq, and, desc, isNull, asc, count, sql, or, inArray } from "drizzle-orm";
+import { eq, and, desc, isNull, asc, count, sql, or } from "drizzle-orm";
 export class DatabaseStorage {
 
   // User methods
@@ -548,7 +548,7 @@ export class DatabaseStorage {
           where: and(
             eq(submissions.studentId, studentId),
             eq(submissions.completed, true),
-            inArray(submissions.listId, listIds)
+            sql`${submissions.listId} IN (${sql.join(listIds, sql`, `)})`
           ),
           with: {
             list: {
