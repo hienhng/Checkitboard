@@ -102,7 +102,9 @@ export function ClassManagement() {
     queryKey: ["/api/educator/join-requests"],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/educator/join-requests");
-      return response.json();
+      const data = await response.json();
+      console.log("Join requests data:", data); // Debug log
+      return data;
     },
   });
 
