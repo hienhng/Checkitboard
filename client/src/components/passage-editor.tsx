@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, ChangeEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,6 +12,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { extractHighlightedWords, formatPassageWithHighlights } from "@/lib/utils";
+import { ClassSelect } from "@/components/ui/class-select";
+import { z } from "zod";
 
 interface PassageEditorProps {
   onSuccess: () => void;
