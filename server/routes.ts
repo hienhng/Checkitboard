@@ -11,12 +11,18 @@ import {
   insertSubmissionSchema,
   insertWordDefinitionSchema,
   insertFlashcardSchema,
+  insertClassSchema,
+  insertStudentClassSchema,
+  joinClassSchema,
+  classRequestResponseSchema,
   vocabularyLists,
   vocabularyWords,
   submissions,
   wordDefinitions,
   flashcards,
   users,
+  classes,
+  studentClass,
 } from "@shared/schema";
 import { z } from "zod";
 

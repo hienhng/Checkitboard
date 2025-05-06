@@ -114,6 +114,7 @@ export const classesRelations = relations(classes, ({ one, many }) => ({
     relationName: 'educator'
   }),
   students: many(studentClass),
+  vocabularyLists: many(vocabularyLists),
 }));
 
 export const studentClassRelations = relations(studentClass, ({ one }) => ({
@@ -132,6 +133,10 @@ export const vocabularyListsRelations = relations(vocabularyLists, ({ one, many 
   educator: one(users, {
     fields: [vocabularyLists.educatorId],
     references: [users.id],
+  }),
+  class: one(classes, {
+    fields: [vocabularyLists.classId],
+    references: [classes.id],
   }),
   words: many(vocabularyWords),
   submissions: many(submissions),

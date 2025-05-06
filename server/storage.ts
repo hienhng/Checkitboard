@@ -7,6 +7,8 @@ import {
   wordDefinitions,
   flashcards,
   parentStudent,
+  classes,
+  studentClass,
   InsertUser,
   InsertVocabularyList,
   InsertVocabularyWord,
@@ -14,6 +16,8 @@ import {
   InsertWordDefinition,
   InsertFlashcard,
   InsertParentStudent,
+  InsertClass,
+  InsertStudentClass,
 } from "@shared/schema";
 import { eq, and, desc, isNull, asc, count, sql, or } from "drizzle-orm";
 export class DatabaseStorage {
@@ -401,6 +405,201 @@ export class DatabaseStorage {
     return await db.query.parentStudent.findMany({
       where: eq(parentStudent.studentId, studentId),
     });
+  }
+
+  // Class management methods
+  async getClassById(id: number) {
+    return await db.query.classes.findFirst({
+      where: eq(classes.id, id),
+      with: {
+        educator: {
+          columns: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        students: {
+          with: {
+            student: {
+              columns: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
+        vocabularyLists: {
+          columns: {
+            id: true,
+            title: true,
+            published: true,
+            dueDate: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+  }
+
+  async getClassByCode(classCode: string) {
+    return await db.query.classes.findFirst({
+      where: eq(classes.classCode, classCode),
+      with: {
+        educator: {
+          columns: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+  }
+
+  async getClassesByEducator(educatorId: number) {
+    return await db.query.classes.findMany({
+      where: and(
+        eq(classes.educatorId, educatorId),
+        eq(classes.active, true)
+      ),
+      orderBy: [desc(classes.createdAt)],
+      with: {
+        students: {
+          where: eq(studentClass.status, 'approved'),
+          with: {
+            student: {
+              columns: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
+        vocabularyLists: {
+          columns: {
+            id: true,
+            title: true,
+            published: true,
+            dueDate: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+  }
+
+  async getClassesForStudent(studentId: number) {
+    return await db.query.studentClass.findMany({
+      where: and(
+        eq(studentClass.studentId, studentId),
+        eq(studentClass.status, 'approved')
+      ),
+      with: {
+        class: {
+          with: {
+            educator: {
+              columns: {
+                id: true,
+                name: true,
+              },
+            },
+            vocabularyLists: {
+              where: eq(vocabularyLists.published, true),
+              columns: {
+                id: true,
+                title: true,
+                dueDate: true,
+                createdAt: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async getPendingJoinRequests(educatorId: number) {
+    // Find classes created by this educator
+    const educatorClasses = await db.query.classes.findMany({
+      where: eq(classes.educatorId, educatorId),
+      columns: {
+        id: true,
+      },
+    });
+
+    const classIds = educatorClasses.map(c => c.id);
+
+    if (classIds.length === 0) {
+      return [];
+    }
+
+    // Find pending join requests for those classes
+    return await db.query.studentClass.findMany({
+      where: and(
+        sql`${studentClass.classId} in (${sql.join(classIds, sql`, `)})`,
+        eq(studentClass.status, 'pending')
+      ),
+      with: {
+        student: {
+          columns: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        class: {
+          columns: {
+            id: true,
+            name: true,
+            classCode: true,
+          },
+        },
+      },
+      orderBy: [desc(studentClass.createdAt)],
+    });
+  }
+
+  async createClass(classData: InsertClass) {
+    const [newClass] = await db.insert(classes).values(classData).returning();
+    return newClass;
+  }
+
+  async updateClass(id: number, data: Partial<InsertClass> & { active?: boolean }) {
+    const [updatedClass] = await db
+      .update(classes)
+      .set(data)
+      .where(eq(classes.id, id))
+      .returning();
+    return updatedClass;
+  }
+
+  async joinClass(studentClassData: InsertStudentClass) {
+    // Check if the student is already in the class
+    const existingJoin = await db.query.studentClass.findFirst({
+      where: and(
+        eq(studentClass.studentId, studentClassData.studentId),
+        eq(studentClass.classId, studentClassData.classId)
+      ),
+    });
+
+    if (existingJoin) {
+      return existingJoin;
+    }
+
+    // Create the new join request
+    const [joinRequest] = await db.insert(studentClass).values(studentClassData).returning();
+    return joinRequest;
+  }
+
+  async updateJoinRequest(id: number, status: 'approved' | 'rejected') {
+    const [updatedJoinRequest] = await db
+      .update(studentClass)
+      .set({ status })
+      .where(eq(studentClass.id, id))
+      .returning();
+    return updatedJoinRequest;
   }
 }
 
