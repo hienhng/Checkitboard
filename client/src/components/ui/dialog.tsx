@@ -42,8 +42,8 @@ const DialogContent = React.forwardRef<
       {...props}
     >
       {/* Add a visually hidden DialogTitle for accessibility */}
-      <div className="sr-only">
-        <DialogPrimitive.Title>Dialog</DialogPrimitive.Title>
+      <div className="sr-only" aria-hidden="false">
+        <DialogPrimitive.Title>Dialog Content</DialogPrimitive.Title>
       </div>
       
       {children}
