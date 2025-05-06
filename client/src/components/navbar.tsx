@@ -62,7 +62,7 @@ export function Navbar() {
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
               <Link href="/">
-                <h1 className="text-xl font-bold text-primary cursor-pointer">VocabCheckUp</h1>
+                <h1 className="text-xl font-bold text-primary cursor-pointer">Checkit</h1>
               </Link>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
@@ -136,7 +136,7 @@ export function Navbar() {
                           className="text-xl font-bold text-primary"
                           onClick={() => setOpen(false)}
                         >
-                          VocabCheckUp
+                          Checkit
                         </Link>
                       </div>
                       {navLinks.map((link) => (

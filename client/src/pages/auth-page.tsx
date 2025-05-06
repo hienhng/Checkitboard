@@ -50,7 +50,7 @@ export default function AuthPage() {
             Vocabulary Learning Made Simple
           </h2>
           <p className="text-lg mb-8">
-            VocabCheckUp is a powerful platform that helps educators create, assess, and reinforce vocabulary learning through reading passages.
+            Checkit is a powerful platform that helps educators create, assess, and reinforce vocabulary learning through reading passages.
           </p>
           <div className="space-y-6">
             <div className="flex items-start space-x-4">

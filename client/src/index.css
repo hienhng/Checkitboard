@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
+    --background: 214 80% 98%;  /* #e8f0fc */
     --foreground: 222.2 47.4% 11.2%;
 
     --card: 0 0% 100%;
@@ -22,7 +22,7 @@
     --sidebar-border: 214.3 31.8% 91.4%;
     --sidebar-ring: 221.2 83.2% 53.3%;
 
-    --primary: 221.2 83.2% 53.3%;
+    --primary: 217 89% 61%;  /* #4287f5 */
     --primary-foreground: 210 40% 98%;
 
     --secondary: 160 84% 39%;
@@ -41,7 +41,7 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
     --chart-1: 221.2 83.2% 53.3%;
     --chart-2: 160 84% 39%;
@@ -163,4 +163,46 @@
 
 .rotate-y-180 {
   transform: rotateY(180deg);
+}
+
+/* Modern and minimalistic styles */
+.card-shadow {
+  box-shadow: 0 8px 16px rgba(66, 135, 245, 0.1);
+  transition: all 0.3s ease;
+}
+
+.card-shadow:hover {
+  box-shadow: 0 12px 24px rgba(66, 135, 245, 0.15);
+  transform: translateY(-2px);
+}
+
+.btn-primary {
+  @apply bg-primary text-primary-foreground py-2 px-4 rounded-lg font-medium transition duration-300 ease-in-out shadow-sm hover:shadow-md hover:translate-y-[-1px];
+}
+
+.btn-secondary {
+  @apply bg-white border border-primary/30 text-primary py-2 px-4 rounded-lg font-medium transition duration-300 ease-in-out shadow-sm hover:shadow-md hover:border-primary hover:translate-y-[-1px];
+}
+
+.nav-link {
+  @apply relative transition-all duration-300 ease-in-out;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: hsl(var(--primary));
+  transition: width 0.3s ease;
+}
+
+.nav-link:hover::after {
+  width: 100%;
+}
+
+.nav-link.active::after {
+  width: 100%;
 }
