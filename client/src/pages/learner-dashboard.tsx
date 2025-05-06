@@ -190,9 +190,9 @@ export default function LearnerDashboard() {
                             Complete these vocabulary check-ups assigned by your teacher.
                           </CardDescription>
                         </div>
-                        {vocabularyLists && Array.isArray(vocabularyLists) && (
-                          (() => {
-                            const pendingCount = vocabularyLists.filter((list: any) => 
+                        {(() => {
+                          if (vocabularyLists && vocabularyLists.length > 0) {
+                            const pendingCount = vocabularyLists.filter(list => 
                               !list.submission || !list.submission.completed
                             ).length;
                             
@@ -201,19 +201,20 @@ export default function LearnerDashboard() {
                                 {pendingCount} Pending
                               </Badge>
                             ) : null;
-                          })()
-                        )}
+                          }
+                          return null;
+                        })()}
                       </CardHeader>
                       <CardContent>
                         {listsLoading ? (
                           <div className="py-4 text-center text-sm text-gray-500">Loading check-ups...</div>
-                        ) : vocabularyLists && Array.isArray(vocabularyLists) && vocabularyLists.filter((list: any) => 
+                        ) : vocabularyLists && vocabularyLists.length > 0 && vocabularyLists.filter(list => 
                           !list.submission || !list.submission.completed
                         ).length > 0 ? (
                           <div className="divide-y divide-gray-200">
                             {vocabularyLists
-                              .filter((list: any) => !list.submission || !list.submission.completed)
-                              .map((list: any) => (
+                              .filter(list => !list.submission || !list.submission.completed)
+                              .map(list => (
                                 <div key={list.id} className="py-4 flex items-center">
                                   <div className="h-10 w-10 flex-shrink-0 rounded-full bg-primary text-white flex items-center justify-center">
                                     <FileText className="h-5 w-5" />
@@ -265,9 +266,9 @@ export default function LearnerDashboard() {
                       <CardContent>
                         {resultsLoading ? (
                           <div className="py-4 text-center text-sm text-gray-500">Loading results...</div>
-                        ) : results && Array.isArray(results) && results.length > 0 ? (
+                        ) : results && results.length > 0 ? (
                           <div className="divide-y divide-gray-200">
-                            {results.map((result: any) => (
+                            {results.map(result => (
                               <div key={result.id} className="py-4 flex items-center cursor-pointer hover:bg-gray-50 px-2 rounded-md transition-colors" onClick={() => setSelectedResult(result)}>
                                 <div className="h-10 w-10 flex-shrink-0 rounded-full bg-green-500 text-white flex items-center justify-center">
                                   <CheckCircle className="h-5 w-5" />
@@ -282,7 +283,7 @@ export default function LearnerDashboard() {
                                   <div className="mt-1 flex items-center justify-between">
                                     <p className="text-sm text-gray-500">
                                       Completed on {formatDate(result.submittedAt)} - 
-                                      {result.wordDefinitions?.filter((d: any) => d.isCorrect).length || 0}/
+                                      {result.wordDefinitions?.filter(d => d.isCorrect).length || 0}/
                                       {result.wordDefinitions?.length || 0} correct
                                     </p>
                                     <Button variant="ghost" size="sm" className="gap-1 text-xs text-blue-600 h-6">
@@ -313,32 +314,33 @@ export default function LearnerDashboard() {
                             Review vocabulary words you're still learning.
                           </CardDescription>
                         </div>
-                        {flashcards && Array.isArray(flashcards) && (
-                          (() => {
-                            const cardCount = flashcards.filter((card: any) => !card.learned).length;
+                        {(() => {
+                          if (flashcards && flashcards.length > 0) {
+                            const cardCount = flashcards.filter(card => !card.learned).length;
                             
                             return cardCount > 0 ? (
                               <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-100">
                                 {cardCount} Cards
                               </Badge>
                             ) : null;
-                          })()
-                        )}
+                          }
+                          return null;
+                        })()}
                       </CardHeader>
                       <CardContent>
                         {flashcardsLoading ? (
                           <div className="py-4 text-center text-sm text-gray-500">Loading flashcards...</div>
-                        ) : flashcards && Array.isArray(flashcards) && flashcards.filter((card: any) => !card.learned).length > 0 ? (
+                        ) : flashcards && flashcards.length > 0 && flashcards.filter(card => !card.learned).length > 0 ? (
                           <div>
                             <div className="flex overflow-x-auto hide-scrollbar pb-4 space-x-4">
                               {flashcards
-                                .filter((card: any) => !card.learned)
-                                .map((card: any) => (
+                                .filter(card => !card.learned)
+                                .map(card => (
                                   <Flashcard key={card.id} flashcard={card} />
                                 ))}
                             </div>
                             
-                            {flashcards.filter((card: any) => !card.learned).length > 0 && (
+                            {flashcards.filter(card => !card.learned).length > 0 && (
                               <div className="mt-4 text-center">
                                 <Button 
                                   className="inline-flex items-center"
@@ -383,7 +385,7 @@ export default function LearnerDashboard() {
               </DialogTitle>
               <DialogDescription>
                 Completed on {formatDate(selectedResult?.submittedAt)} - 
-                {selectedResult?.wordDefinitions?.filter((d: any) => d.isCorrect).length || 0}/
+                {selectedResult?.wordDefinitions?.filter(d => d.isCorrect).length || 0}/
                 {selectedResult?.wordDefinitions?.length || 0} correct
               </DialogDescription>
             </DialogHeader>
@@ -402,7 +404,7 @@ export default function LearnerDashboard() {
               {/* Word Definitions */}
               <div className="space-y-3">
                 <h3 className="text-lg font-medium">Your Answers</h3>
-                {selectedResult?.wordDefinitions?.map((def: any) => (
+                {selectedResult?.wordDefinitions?.map(def => (
                   <div key={def.id} className="p-4 border rounded-md">
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="font-medium text-neutral-dark">{def.word?.word || 'Unknown word'}</h4>
