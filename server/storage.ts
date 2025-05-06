@@ -88,8 +88,8 @@ export class DatabaseStorage {
     });
   }
 
-  async getPublishedVocabularyLists() {
-    return await db.query.vocabularyLists.findMany({
+  async getPublishedVocabularyLists(studentId?: number) {
+    let query = db.query.vocabularyLists.findMany({
       where: eq(vocabularyLists.published, true),
       orderBy: [
         desc(vocabularyLists.createdAt),
@@ -100,6 +100,7 @@ export class DatabaseStorage {
         dueDate: true,
         published: true,
         educatorId: true,
+        classId: true,
         createdAt: true,
         passage: true, // Include the passage text
       },
@@ -116,8 +117,40 @@ export class DatabaseStorage {
             name: true,
           },
         },
+        class: {
+          columns: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
+
+    // If studentId is provided, filter lists based on class access
+    if (studentId) {
+      // Get all classes the student is approved for
+      const studentClasses = await db.query.studentClass.findMany({
+        where: and(
+          eq(studentClass.studentId, studentId),
+          eq(studentClass.status, 'approved')
+        ),
+        columns: {
+          classId: true,
+        },
+      });
+      
+      const classIds = studentClasses.map(sc => sc.classId);
+      
+      // Get vocabulary lists:
+      // 1. Lists with no class restriction (classId is null)
+      // 2. Lists assigned to classes the student is enrolled in
+      return (await query).filter(list => 
+        !list.classId || // No class restriction
+        (list.classId && classIds.includes(list.classId)) // Or student is in the assigned class
+      );
+    }
+    
+    return await query;
   }
 
   async createVocabularyList(listData: InsertVocabularyList) {

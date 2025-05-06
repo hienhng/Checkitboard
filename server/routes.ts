@@ -121,7 +121,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update a vocabulary list (publish/unpublish)
+  // Update a vocabulary list (publish/unpublish or assign to class)
   app.patch("/api/vocabulary-lists/:id", async (req, res) => {
     try {
       if (!req.isAuthenticated()) {
@@ -145,6 +145,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (list.educatorId !== req.user.id) {
         return res.status(403).json({ message: "You don't have permission to update this list" });
+      }
+
+      // If assigning to a class, verify the class exists and belongs to the educator
+      if (req.body.classId) {
+        const classId = parseInt(req.body.classId);
+        if (!isNaN(classId) && classId > 0) {
+          const classObj = await storage.getClassById(classId);
+          if (!classObj) {
+            return res.status(404).json({ message: "Class not found" });
+          }
+          if (classObj.educatorId !== req.user.id) {
+            return res.status(403).json({ message: "You don't have permission to assign to this class" });
+          }
+        }
       }
 
       const updatedList = await storage.updateVocabularyList(listId, req.body);
@@ -472,7 +486,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied" });
       }
 
-      const lists = await storage.getPublishedVocabularyLists();
+      // Get lists filtered by the student's class enrollments
+      const lists = await storage.getPublishedVocabularyLists(req.user.id);
       
       // Also get the submission status for each list
       const listsWithStatus = await Promise.all(
@@ -481,6 +496,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return {
             ...list,
             submission: submission || null,
+            class: list.class ? {
+              id: list.class.id,
+              name: list.class.name
+            } : null
           };
         })
       );
@@ -715,6 +734,187 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating flashcard:", error);
       res.status(500).json({ message: "Error updating flashcard" });
+    }
+  });
+  // #endregion
+
+  // #region Class Management Routes
+  // Create a new class (educator only)
+  app.post("/api/classes", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "educator") {
+        return res.status(403).json({ message: "Only educators can create classes" });
+      }
+
+      // Generate a unique class code
+      const classCode = `CL${Math.floor(100000 + Math.random() * 900000)}`; // 6-digit code with CL prefix
+
+      const validatedData = insertClassSchema.parse({
+        ...req.body,
+        educatorId: req.user.id,
+        classCode,
+      });
+
+      const newClass = await storage.createClass(validatedData);
+      res.status(201).json(newClass);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+      console.error("Error creating class:", error);
+      res.status(500).json({ message: "Error creating class" });
+    }
+  });
+
+  // Get classes for educator
+  app.get("/api/educator/classes", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "educator") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const classes = await storage.getClassesByEducator(req.user.id);
+      res.json(classes);
+    } catch (error) {
+      console.error("Error fetching classes:", error);
+      res.status(500).json({ message: "Error fetching classes" });
+    }
+  });
+
+  // Get pending join requests for educator's classes
+  app.get("/api/educator/join-requests", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "educator") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const joinRequests = await storage.getPendingJoinRequests(req.user.id);
+      res.json(joinRequests);
+    } catch (error) {
+      console.error("Error fetching join requests:", error);
+      res.status(500).json({ message: "Error fetching join requests" });
+    }
+  });
+
+  // Respond to a join request (approve/reject)
+  app.patch("/api/join-requests/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "educator") {
+        return res.status(403).json({ message: "Only educators can manage join requests" });
+      }
+
+      const requestId = parseInt(req.params.id);
+      if (isNaN(requestId)) {
+        return res.status(400).json({ message: "Invalid request ID" });
+      }
+
+      const validatedData = classRequestResponseSchema.parse({
+        ...req.body,
+        studentClassId: requestId,
+      });
+
+      // Verify the educator owns the class before allowing the response
+      const joinRequest = await db.query.studentClass.findFirst({
+        where: eq(studentClass.id, requestId),
+        with: {
+          class: {
+            columns: {
+              id: true,
+              educatorId: true,
+            },
+          },
+        },
+      });
+
+      if (!joinRequest || joinRequest.class.educatorId !== req.user.id) {
+        return res.status(403).json({ message: "You don't have permission to respond to this request" });
+      }
+
+      const updatedRequest = await storage.updateJoinRequest(requestId, validatedData.status);
+      res.json(updatedRequest);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+      console.error("Error responding to join request:", error);
+      res.status(500).json({ message: "Error responding to join request" });
+    }
+  });
+
+  // Join a class (learner only)
+  app.post("/api/join-class", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "learner") {
+        return res.status(403).json({ message: "Only learners can join classes" });
+      }
+
+      const validatedData = joinClassSchema.parse(req.body);
+
+      // Find the class by class code
+      const classToJoin = await storage.getClassByCode(validatedData.classCode);
+      if (!classToJoin) {
+        return res.status(404).json({ message: "Class not found. Please check the class code and try again." });
+      }
+
+      if (!classToJoin.active) {
+        return res.status(403).json({ message: "This class is no longer active" });
+      }
+
+      // Create a join request
+      const joinRequest = await storage.joinClass({
+        studentId: req.user.id,
+        classId: classToJoin.id,
+      });
+
+      res.status(201).json({
+        message: "Join request submitted successfully. Waiting for educator approval.",
+        joinRequest,
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+      console.error("Error joining class:", error);
+      res.status(500).json({ message: "Error joining class" });
+    }
+  });
+
+  // Get classes for a student (learner only)
+  app.get("/api/learner/classes", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "learner") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const enrolledClasses = await storage.getClassesForStudent(req.user.id);
+      res.json(enrolledClasses);
+    } catch (error) {
+      console.error("Error fetching enrolled classes:", error);
+      res.status(500).json({ message: "Error fetching enrolled classes" });
     }
   });
   // #endregion
