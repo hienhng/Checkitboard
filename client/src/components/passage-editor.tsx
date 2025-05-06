@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Form } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
@@ -238,7 +239,8 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
 
   return (
     <div className="px-4 py-5 sm:p-6">
-      <form className="space-y-6">
+      <Form {...form}>
+        <form className="space-y-6" onSubmit={form.handleSubmit(handleSaveDraft)}>
         <div>
           <Label htmlFor="list-name">List Name</Label>
           <Input
@@ -340,6 +342,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
           </Button>
         </div>
       </form>
+      </Form>
     </div>
   );
 }
