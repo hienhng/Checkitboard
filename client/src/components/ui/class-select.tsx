@@ -47,11 +47,11 @@ export function ClassSelect({
   required = false,
 }: ClassSelectProps) {
   // Fetch the educator's classes
-  const { data: classes, isLoading } = useQuery({
+  const { data: classes = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/educator/classes"],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/educator/classes");
-      return response;
+      return response.json();
     },
   });
 

@@ -69,13 +69,13 @@ export function JoinClass() {
 
   // Query for fetching student's enrolled classes
   const { 
-    data: enrolledClasses, 
+    data: enrolledClasses = [], 
     isLoading 
-  } = useQuery({
+  } = useQuery<any[]>({
     queryKey: ["/api/learner/classes"],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/learner/classes");
-      return response;
+      return response.json();
     },
   });
 

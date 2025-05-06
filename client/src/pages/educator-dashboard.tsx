@@ -37,13 +37,13 @@ export default function EducatorDashboard() {
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<number | null>(null);
 
   // Fetch educator's vocabulary lists
-  const { data: vocabularyLists, isLoading: listsLoading } = useQuery<VocabularyList[]>({
+  const { data: vocabularyLists = [], isLoading: listsLoading } = useQuery<any[]>({
     queryKey: ["/api/educator/vocabulary-lists"],
     queryFn: getQueryFn({ on401: "throw" }),
   });
 
   // Fetch pending submissions for grading
-  const { data: pendingSubmissions, isLoading: submissionsLoading } = useQuery({
+  const { data: pendingSubmissions = [], isLoading: submissionsLoading } = useQuery<any[]>({
     queryKey: ["/api/educator/submissions"],
     queryFn: getQueryFn({ on401: "throw" }),
   });
