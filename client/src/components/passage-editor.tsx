@@ -24,14 +24,18 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
   const passageRef = useRef<HTMLDivElement>(null);
   const [dueDate, setDueDate] = useState("");
 
+  // Define the type for vocabulary list data
+  type VocabularyListData = {
+    title: string;
+    passage: string;
+    words: string[];
+    dueDate?: Date;
+    published?: boolean;
+  };
+
   // Mutation to create a new vocabulary list
   const createListMutation = useMutation({
-    mutationFn: async (data: {
-      title: string;
-      passage: string;
-      words: string[];
-      dueDate?: Date;
-    }) => {
+    mutationFn: async (data: VocabularyListData) => {
       const res = await apiRequest("POST", "/api/vocabulary-lists", data);
       return res.json();
     },
@@ -49,6 +53,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
 
   // Handle highlighting words in the passage
   useEffect(() => {
+    // Handle text selection via mouse/touch
     const handleSelection = () => {
       const selection = window.getSelection();
       if (!selection || selection.isCollapsed) return;
@@ -63,11 +68,74 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
       }
     };
 
+    // Handle word click - split text into words and allow clicking individual words
+    const handleWordClick = (event: MouseEvent) => {
+      // Only handle clicks on text nodes and non-mark elements
+      const target = event.target as HTMLElement;
+      if (target.tagName === 'MARK') return;
+      
+      // Get the closest text node
+      let node = event.target as Node;
+      let text = '';
+      
+      // If we clicked on a text node directly
+      if (node.nodeType === Node.TEXT_NODE && node.textContent) {
+        text = node.textContent;
+      } 
+      // If we clicked on an element that contains text
+      else if (node.nodeType === Node.ELEMENT_NODE && node.childNodes.length > 0) {
+        // Find the text node where the click occurred
+        const range = document.caretRangeFromPoint(event.clientX, event.clientY);
+        if (range && range.startContainer.nodeType === Node.TEXT_NODE) {
+          node = range.startContainer;
+          text = node.textContent || '';
+        }
+      }
+      
+      if (!text) return;
+      
+      // Find the word that was clicked
+      const words = text.split(/\s+/);
+      if (words.length === 0) return;
+      
+      // If we have a single word, use it directly
+      if (words.length === 1 && words[0].trim()) {
+        const clickedWord = words[0].trim();
+        if (!selectedWords.includes(clickedWord)) {
+          setSelectedWords((prev) => [...prev, clickedWord]);
+        }
+        return;
+      }
+      
+      // For multiple words, try to find which one was clicked
+      // This is a simple approach, might need refinement for more complex cases
+      const range = document.caretRangeFromPoint(event.clientX, event.clientY);
+      if (!range) return;
+      
+      const clickPosition = range.startOffset;
+      let currentPos = 0;
+      
+      for (const word of words) {
+        const wordEnd = currentPos + word.length;
+        if (clickPosition >= currentPos && clickPosition <= wordEnd) {
+          const clickedWord = word.trim().replace(/[.,;:!?"'()[\]{}]/g, ''); // Remove punctuation
+          if (clickedWord && !selectedWords.includes(clickedWord)) {
+            setSelectedWords((prev) => [...prev, clickedWord]);
+          }
+          break;
+        }
+        // Move past this word and the following space
+        currentPos = wordEnd + 1;
+      }
+    };
+
     const passageElement = passageRef.current;
     if (passageElement) {
       passageElement.addEventListener("mouseup", handleSelection);
+      passageElement.addEventListener("click", handleWordClick as EventListener);
       return () => {
         passageElement.removeEventListener("mouseup", handleSelection);
+        passageElement.removeEventListener("click", handleWordClick as EventListener);
       };
     }
   }, [selectedWords]);
@@ -180,13 +248,13 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
             className="mt-1"
           />
           <p className="mt-2 text-xs text-gray-500">
-            Select text with your mouse to add vocabulary words.
+            Simply click on words or highlight text to add vocabulary words.
           </p>
         </div>
 
         <div>
           <Label className="block text-sm font-medium text-gray-700">
-            Passage Preview (Select text to highlight words)
+            Passage Preview (Click on words or select text to add them)
           </Label>
           <div
             ref={passageRef}
@@ -216,7 +284,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
             ))}
             {selectedWords.length === 0 && (
               <p className="text-sm text-gray-500">
-                No words selected yet. Highlight words in the passage above.
+                No words selected yet. Click on words or highlight text in the passage above.
               </p>
             )}
           </div>
