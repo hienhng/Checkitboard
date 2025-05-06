@@ -300,7 +300,8 @@ export class DatabaseStorage {
   }
 
   async getGradedSubmissionsByStudent(studentId: number) {
-    return await db.query.submissions.findMany({
+    // First get all completed submissions for this student
+    const allSubmissions = await db.query.submissions.findMany({
       where: and(
         eq(submissions.studentId, studentId),
         eq(submissions.completed, true)
@@ -348,6 +349,9 @@ export class DatabaseStorage {
       },
       orderBy: [desc(submissions.gradedAt), desc(submissions.submittedAt)],
     });
+    
+    // Filter after query to only include submissions that have been graded
+    return allSubmissions.filter(submission => submission.gradedAt !== null);
   }
 
   async createSubmission(submissionData: InsertSubmission) {

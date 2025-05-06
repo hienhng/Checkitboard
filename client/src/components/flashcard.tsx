@@ -72,7 +72,7 @@ export function Flashcard({ flashcard }: FlashcardProps) {
             <div className="flex justify-between items-center">
               <div>
                 <Badge variant="outline" className="mb-1 bg-white text-blue-700 border-blue-200">
-                  {flashcard.definition.submission.list.title}
+                  {flashcard.definition?.submission?.list?.title || "Vocabulary List"}
                 </Badge>
                 <h3 className="text-xl font-bold text-blue-900">{flashcard.word.word}</h3>
               </div>
@@ -134,18 +134,18 @@ export function Flashcard({ flashcard }: FlashcardProps) {
           </CardHeader>
           <CardContent className="p-6 flex flex-col justify-between h-[calc(100%-90px)]">
             <div>
-              <p className="text-gray-700 italic">"{flashcard.definition.studentDefinition}"</p>
+              <p className="text-gray-700 italic">"{flashcard.definition?.studentDefinition || ''}"</p>
               
               {/* Show correct definition if available and showCorrectDefinition is true */}
-              {flashcard.definition.correctDefinition && flashcard.definition.showCorrectDefinition && (
+              {flashcard.definition?.correctDefinition && flashcard.definition?.showCorrectDefinition && (
                 <div className="mt-3 pt-3 border-t border-gray-100">
                   <Badge 
                     variant="outline" 
-                    className={`mb-1 ${flashcard.definition.isCorrect ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}
+                    className={`mb-1 ${flashcard.definition?.isCorrect ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}
                   >
-                    {flashcard.definition.isCorrect ? 'Correct' : 'Correct Definition'}
+                    {flashcard.definition?.isCorrect ? 'Correct' : 'Correct Definition'}
                   </Badge>
-                  <p className="text-gray-700 text-sm">{flashcard.definition.correctDefinition}</p>
+                  <p className="text-gray-700 text-sm">{flashcard.definition?.correctDefinition}</p>
                 </div>
               )}
             </div>
