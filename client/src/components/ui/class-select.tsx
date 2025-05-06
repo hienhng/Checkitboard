@@ -83,10 +83,10 @@ export function ClassSelect({
           </FormLabel>
           <FormControl>
             <Select
-              value={field.value ? field.value.toString() : ""}
+              value={field.value ? field.value.toString() : "null"}
               onValueChange={(value) => {
                 // Convert to number or null
-                field.onChange(value === "" ? null : parseInt(value));
+                field.onChange(value === "null" ? null : parseInt(value));
               }}
               disabled={isLoading}
             >
@@ -94,7 +94,7 @@ export function ClassSelect({
                 <SelectValue placeholder={placeholder} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No class restriction</SelectItem>
+                <SelectItem value="null">No class restriction</SelectItem>
                 {classes?.map((cls: any) => (
                   <SelectItem key={cls.id} value={cls.id.toString()}>
                     {cls.name}
