@@ -1061,6 +1061,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error fetching enrolled classes" });
     }
   });
+
+  // Get a specific class by ID (for student)
+  app.get("/api/classes/:classId", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const classId = parseInt(req.params.classId);
+      if (isNaN(classId)) {
+        return res.status(400).json({ message: "Invalid class ID" });
+      }
+
+      // Students should only be able to access classes they're enrolled in
+      if (req.user.role === "learner") {
+        const studentClasses = await storage.getClassesForStudent(req.user.id);
+        const classFound = studentClasses.find((cls: any) => cls.id === classId);
+        
+        if (!classFound) {
+          return res.status(403).json({ message: "You are not enrolled in this class" });
+        }
+      } else if (req.user.role === "educator") {
+        // For educators, verify they own this class
+        const classData = await db.query.classes.findFirst({
+          where: and(
+            eq(classes.id, classId),
+            eq(classes.educatorId, req.user.id)
+          ),
+        });
+        
+        if (!classData) {
+          return res.status(403).json({ message: "Access denied - you do not own this class" });
+        }
+      }
+
+      const classData = await storage.getClassById(classId);
+      if (!classData) {
+        return res.status(404).json({ message: "Class not found" });
+      }
+
+      res.json(classData);
+    } catch (error) {
+      console.error("Error fetching class:", error);
+      res.status(500).json({ message: "Error fetching class" });
+    }
+  });
+  
+  // Get vocabulary lists for a specific class (for students)
+  app.get("/api/classes/:classId/lists", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const classId = parseInt(req.params.classId);
+      if (isNaN(classId)) {
+        return res.status(400).json({ message: "Invalid class ID" });
+      }
+
+      // Students should only be able to access classes they're enrolled in
+      if (req.user.role === "learner") {
+        const studentClasses = await storage.getClassesForStudent(req.user.id);
+        const classFound = studentClasses.find((cls: any) => cls.id === classId);
+        
+        if (!classFound) {
+          return res.status(403).json({ message: "You are not enrolled in this class" });
+        }
+      } else if (req.user.role === "educator") {
+        // For educators, verify they own this class
+        const classData = await db.query.classes.findFirst({
+          where: and(
+            eq(classes.id, classId),
+            eq(classes.educatorId, req.user.id)
+          ),
+        });
+        
+        if (!classData) {
+          return res.status(403).json({ message: "Access denied - you do not own this class" });
+        }
+      }
+
+      // Get all published vocabulary lists for this class
+      const lists = await db.query.vocabularyLists.findMany({
+        where: and(
+          eq(vocabularyLists.classId, classId),
+          eq(vocabularyLists.published, true)
+        ),
+        with: {
+          words: true,
+          educator: {
+            columns: {
+              id: true,
+              name: true
+            }
+          }
+        }
+      });
+
+      // For learners, include their submission status
+      if (req.user.role === "learner") {
+        const enrichedLists = await Promise.all(lists.map(async (list) => {
+          const submission = await storage.getSubmissionByStudentAndList(req.user.id, list.id, true);
+          return {
+            ...list,
+            submission: submission ? {
+              id: submission.id,
+              completed: submission.completed,
+              score: submission.score
+            } : null
+          };
+        }));
+        
+        return res.json(enrichedLists);
+      }
+
+      res.json(lists);
+    } catch (error) {
+      console.error("Error fetching class lists:", error);
+      res.status(500).json({ message: "Error fetching class lists" });
+    }
+  });
   // #endregion
 
   const httpServer = createServer(app);

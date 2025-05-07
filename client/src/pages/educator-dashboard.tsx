@@ -206,6 +206,7 @@ export default function EducatorDashboard() {
                                     <Button 
                                       variant={list.published ? "outline" : "default"} 
                                       size="sm"
+                                      className={list.published ? "hover:bg-red-50 hover:text-red-600 hover:border-red-200" : ""}
                                       onClick={() => handlePublishToggle(list.id, list.published)}
                                     >
                                       {list.published ? "Unpublish" : "Publish"}
