@@ -68,7 +68,7 @@ export function Flashcard({ flashcard }: FlashcardProps) {
   };
 
   return (
-    <div className="flex-shrink-0 w-80 h-56 perspective-1000 relative mx-auto">
+    <div className="flex-shrink-0 w-80 h-56 perspective-1000 relative mx-auto sm:px-0 px-0">
       <div 
         className={`w-full h-full relative transition-all duration-500 transform-style-3d cursor-pointer ${
           isFlipped ? "rotate-y-180" : ""
