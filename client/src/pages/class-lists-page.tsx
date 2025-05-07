@@ -88,17 +88,17 @@ export default function ClassListsPage() {
             Back to Dashboard
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold tracking-tight mt-2">
+        <h1 className="text-3xl font-bold tracking-tight mt-4 text-center">
           {classData?.name} Vocabulary Lists
         </h1>
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground text-center mt-2">
           Explore all vocabulary lists available in this class
         </p>
       </div>
 
       {/* Search and filter */}
-      <div className="mb-6">
-        <div className="relative">
+      <div className="mb-8">
+        <div className="relative max-w-md mx-auto">
           <input
             type="text"
             placeholder="Search vocabulary lists..."

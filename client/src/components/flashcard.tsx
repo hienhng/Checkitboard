@@ -68,7 +68,7 @@ export function Flashcard({ flashcard }: FlashcardProps) {
   };
 
   return (
-    <div className="flex-shrink-0 w-80 h-56 perspective-1000 relative">
+    <div className="flex-shrink-0 w-80 h-56 perspective-1000 relative mx-auto">
       <div 
         className={`w-full h-full relative transition-all duration-500 transform-style-3d cursor-pointer ${
           isFlipped ? "rotate-y-180" : ""
@@ -76,14 +76,14 @@ export function Flashcard({ flashcard }: FlashcardProps) {
         onClick={() => setIsFlipped(!isFlipped)}
       >
         {/* Front of card (Word) */}
-        <Card className="absolute w-full h-full backface-hidden">
+        <Card className="absolute w-full h-full backface-hidden shadow-md">
           <CardHeader className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
             <div className="flex justify-between items-center">
               <div>
                 <Badge variant="outline" className="mb-1 bg-white text-blue-700 border-blue-200">
                   {flashcard.definition?.submission?.list?.title || "Vocabulary List"}
                 </Badge>
-                <h3 className="text-xl font-bold text-blue-900">{flashcard.word.word}</h3>
+                <h3 className="text-xl font-bold text-blue-900 text-center">{flashcard.word.word}</h3>
               </div>
               <Button 
                 size="sm" 
@@ -100,7 +100,7 @@ export function Flashcard({ flashcard }: FlashcardProps) {
             </div>
           </CardHeader>
           <CardContent className="p-6 flex flex-col items-center justify-center h-[calc(100%-90px)]">
-            <p className="text-center text-gray-700 font-medium">
+            <p className="text-center text-gray-700 font-medium px-2">
               Do you remember your definition?
             </p>
             <Button 
@@ -118,14 +118,14 @@ export function Flashcard({ flashcard }: FlashcardProps) {
         </Card>
         
         {/* Back of card (Definition) */}
-        <Card className="absolute w-full h-full backface-hidden rotate-y-180">
+        <Card className="absolute w-full h-full backface-hidden rotate-y-180 shadow-md">
           <CardHeader className="p-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-indigo-100">
             <div className="flex justify-between items-center">
-              <div>
+              <div className="flex-1">
                 <Badge variant="outline" className="mb-1 bg-white text-indigo-700 border-indigo-200">
                   Your Definition
                 </Badge>
-                <h3 className="text-xl font-bold text-indigo-900">{flashcard.word.word}</h3>
+                <h3 className="text-xl font-bold text-indigo-900 text-center">{flashcard.word.word}</h3>
               </div>
               <Button 
                 size="sm" 
@@ -143,7 +143,7 @@ export function Flashcard({ flashcard }: FlashcardProps) {
           </CardHeader>
           <CardContent className="p-6 flex flex-col justify-between h-[calc(100%-90px)]">
             <div>
-              <p className="text-gray-700 italic">"{flashcard.definition?.studentDefinition || ''}"</p>
+              <p className="text-gray-700 italic text-center px-2">"{flashcard.definition?.studentDefinition || ''}"</p>
               
               {/* Show correct definition if available and showCorrectDefinition is true */}
               {flashcard.definition?.correctDefinition && flashcard.definition?.showCorrectDefinition && (
@@ -154,11 +154,11 @@ export function Flashcard({ flashcard }: FlashcardProps) {
                   >
                     {flashcard.definition?.isCorrect ? 'Correct' : 'Correct Definition'}
                   </Badge>
-                  <p className="text-gray-700 text-sm">{flashcard.definition?.correctDefinition}</p>
+                  <p className="text-gray-700 text-sm px-2">{flashcard.definition?.correctDefinition}</p>
                 </div>
               )}
             </div>
-            <div className="flex justify-between items-center mt-4">
+            <div className="flex justify-center items-center mt-4">
               {flashcard.learned ? (
                 <Button
                   size="sm"
