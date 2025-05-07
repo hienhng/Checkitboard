@@ -106,21 +106,21 @@ export function Flashcard({
     [0.5, 0.8, 1, 0.8, 0.5]
   );
   
-  // Text indicators for swipe actions - fixed to match visual direction with physical swipe
+  // Text indicators for swipe actions
   const upSwipeOpacity = useTransform(
     y,
     [0, -50, -100],
     [0, 0.5, 1]
   );
   
-  // These are swapped to fix the direction issue - right swipe shows left indicator and vice versa
-  const rightSwipeOpacity = useTransform(
+  // Completely reversed to match the actual physical motion with the visual feedback
+  const leftSwipeOpacity = useTransform(
     x,
     [0, -50, -100],
     [0, 0.5, 1]
   );
   
-  const leftSwipeOpacity = useTransform(
+  const rightSwipeOpacity = useTransform(
     x,
     [0, 50, 100],
     [0, 0.5, 1]
@@ -264,31 +264,32 @@ export function Flashcard({
               <div className="absolute inset-0 pointer-events-none">
                 {/* Up swipe indicator */}
                 <motion.div 
-                  className="absolute top-4 left-0 right-0 flex justify-center items-center text-green-600"
+                  className="absolute top-0 left-1/2 transform -translate-x-1/2 flex justify-center items-center text-green-600"
                   style={{ opacity: upSwipeOpacity }}
                 >
-                  <div className="bg-white bg-opacity-80 p-2 rounded-full flex items-center shadow-md">
+                  <div className="bg-white bg-opacity-90 p-2 rounded-b-full flex items-center shadow-md">
                     <ArrowUp className="h-6 w-6 mr-2" />
                     <span className="font-medium">Learned</span>
                   </div>
                 </motion.div>
                 
-                {/* Left/Right swipe indicator */}
+                {/* Right swipe indicator - shows at the right edge */}
                 <motion.div 
-                  className="absolute bottom-4 left-0 right-0 flex justify-center items-center text-blue-600"
+                  className="absolute top-1/2 right-0 transform -translate-y-1/2 flex justify-center items-center text-blue-600"
                   style={{ opacity: rightSwipeOpacity }}
                 >
-                  <div className="bg-white bg-opacity-80 p-2 rounded-full flex items-center shadow-md">
+                  <div className="bg-white bg-opacity-90 p-2 rounded-l-full flex items-center shadow-md">
                     <ArrowRight className="h-6 w-6 mr-2" />
                     <span className="font-medium">Not Remembered</span>
                   </div>
                 </motion.div>
                 
+                {/* Left swipe indicator - shows at the left edge */}
                 <motion.div 
-                  className="absolute bottom-4 left-0 right-0 flex justify-center items-center text-blue-600"
+                  className="absolute top-1/2 left-0 transform -translate-y-1/2 flex justify-center items-center text-blue-600"
                   style={{ opacity: leftSwipeOpacity }}
                 >
-                  <div className="bg-white bg-opacity-80 p-2 rounded-full flex items-center shadow-md">
+                  <div className="bg-white bg-opacity-90 p-2 rounded-r-full flex items-center shadow-md">
                     <ArrowRight className="h-6 w-6 mr-2 transform rotate-180" />
                     <span className="font-medium">Not Remembered</span>
                   </div>
