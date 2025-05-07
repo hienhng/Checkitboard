@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { Navbar } from "@/components/navbar";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
   BookOpen, 
@@ -110,7 +110,7 @@ export default function LearnerDashboard() {
   });
 
   // Fetch the student's classes
-  const { data: classes, isLoading: classesLoading } = useQuery({
+  const { data: classes = [], isLoading: classesLoading } = useQuery<any[]>({
     queryKey: ["/api/learner/classes"],
     queryFn: getQueryFn({ on401: "throw" }),
   });
@@ -363,7 +363,68 @@ export default function LearnerDashboard() {
                 </TabsContent>
                 
                 <TabsContent value="classes">
-                  <JoinClass />
+                  <div className="space-y-6">
+                    <JoinClass />
+
+                    {/* Enrolled Classes */}
+                    <div className="mt-6">
+                      <h3 className="text-lg font-medium mb-4">Your Classes</h3>
+                      
+                      {classesLoading ? (
+                        <div className="text-center py-8">Loading classes...</div>
+                      ) : classes?.length === 0 ? (
+                        <Card>
+                          <CardContent className="text-center py-8">
+                            <School className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                            <h3 className="text-lg font-medium mb-2">No Classes Found</h3>
+                            <p className="text-muted-foreground mb-4">
+                              You're not enrolled in any classes yet. Use a class code above to join a class.
+                            </p>
+                          </CardContent>
+                        </Card>
+                      ) : (
+                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                          {classes?.map((cls: any) => (
+                            <Card key={cls.id} className="overflow-hidden">
+                              <CardHeader className="bg-primary/5">
+                                <CardTitle>{cls.name}</CardTitle>
+                                <CardDescription>
+                                  Educator: {cls.educator?.name}
+                                </CardDescription>
+                              </CardHeader>
+                              <CardContent className="pt-4">
+                                {cls.description && (
+                                  <p className="text-sm text-muted-foreground mb-4">{cls.description}</p>
+                                )}
+                                <div className="space-y-2">
+                                  <div className="flex justify-between text-sm">
+                                    <span className="text-muted-foreground">Joined:</span>
+                                    <span>{formatDate(cls.joinedAt || cls.createdAt)}</span>
+                                  </div>
+                                  <div className="flex justify-between text-sm">
+                                    <span className="text-muted-foreground">Vocabulary Lists:</span>
+                                    <span>{cls.vocabularyLists?.length || 0}</span>
+                                  </div>
+                                </div>
+                              </CardContent>
+                              <CardFooter className="border-t bg-muted/20">
+                                <Button 
+                                  variant="secondary" 
+                                  className="w-full"
+                                  asChild
+                                >
+                                  <Link href={`/learner/class/${cls.id}`}>
+                                    View All Lists
+                                    <ChevronRight className="ml-2 h-4 w-4" />
+                                  </Link>
+                                </Button>
+                              </CardFooter>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </TabsContent>
               </Tabs>
             </div>
