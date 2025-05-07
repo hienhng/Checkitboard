@@ -493,6 +493,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const listsWithStatus = await Promise.all(
         lists.map(async (list) => {
           const submission = await storage.getSubmissionByStudentAndList(req.user.id, list.id);
+          
+          // Get existing completed and graded submissions for this list
+          const existingCompleted = await db.query.submissions.findFirst({
+            where: and(
+              eq(submissions.studentId, req.user.id),
+              eq(submissions.listId, list.id),
+              eq(submissions.completed, true),
+              not(isNull(submissions.gradedAt))
+            )
+          });
+          
+          // If there's a completed and graded submission, skip this list
+          if (existingCompleted) {
+            return null;
+          }
+          
           return {
             ...list,
             submission: submission || null,
@@ -504,7 +520,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       );
 
-      res.json(listsWithStatus);
+      // Filter out null entries (completed and graded lists)
+      const filteredLists = listsWithStatus.filter(list => list !== null);
+
+      res.json(filteredLists);
     } catch (error) {
       console.error("Error fetching vocabulary lists:", error);
       res.status(500).json({ message: "Error fetching vocabulary lists" });
