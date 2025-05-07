@@ -26,9 +26,17 @@ interface FlashcardProps {
     };
     learned: boolean;
   };
+  onLearnedChange?: (learned: boolean) => void;
+  externalFlipped?: boolean;
+  onFlippedChange?: (flipped: boolean) => void;
 }
 
-export function Flashcard({ flashcard }: FlashcardProps) {
+export function Flashcard({ 
+  flashcard, 
+  onLearnedChange,
+  externalFlipped,
+  onFlippedChange
+}: FlashcardProps) {
   // Guard against undefined flashcard
   if (!flashcard || !flashcard.word) {
     return (
@@ -39,7 +47,22 @@ export function Flashcard({ flashcard }: FlashcardProps) {
   }
 
   const { toast } = useToast();
-  const [isFlipped, setIsFlipped] = useState(false);
+  // Use external flipped state if provided, otherwise use internal state
+  const [internalFlipped, setInternalFlipped] = useState(false);
+  
+  // Determine which flipped state to use
+  const isFlipped = externalFlipped !== undefined ? externalFlipped : internalFlipped;
+  
+  // Handler for changing the flipped state
+  const setIsFlipped = (flipped: boolean) => {
+    if (onFlippedChange) {
+      // If parent is controlling flipped state, call the handler
+      onFlippedChange(flipped);
+    } else {
+      // Otherwise use internal state
+      setInternalFlipped(flipped);
+    }
+  };
 
   // Mutation to mark flashcard as learned
   const learnedMutation = useMutation({
@@ -53,6 +76,11 @@ export function Flashcard({ flashcard }: FlashcardProps) {
         title: "Flashcard updated",
         description: data.learned ? "This word has been marked as learned." : "This word has been marked as still learning.",
       });
+      
+      // If parent provided a callback, call it
+      if (onLearnedChange) {
+        onLearnedChange(data.learned);
+      }
     },
     onError: (error: Error) => {
       toast({

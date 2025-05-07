@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -16,6 +16,7 @@ export default function FlashcardsPage() {
   const [activeTab, setActiveTab] = useState("learning");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [shuffled, setShuffled] = useState(false);
+  const [isFlipped, setIsFlipped] = useState(false);
 
   // Fetch learner's flashcards
   const { data: flashcards, isLoading: flashcardsLoading } = useQuery({
@@ -59,6 +60,9 @@ export default function FlashcardsPage() {
     if (!currentCards || currentCards.length === 0) {
       return;
     }
+    
+    // Reset the flipped state when navigating to a new card
+    setIsFlipped(false);
     
     if (direction === "next") {
       setCurrentIndex(prev => (prev + 1) % currentCards.length);
@@ -158,7 +162,17 @@ export default function FlashcardsPage() {
                           
                           <div className="w-full md:max-w-md mx-auto px-0 flex justify-center">
                             <div className="flex-shrink-0">
-                              <Flashcard flashcard={learningCards[currentIndex]} />
+                              <Flashcard 
+                                flashcard={learningCards[currentIndex]} 
+                                externalFlipped={isFlipped}
+                                onFlippedChange={setIsFlipped}
+                                onLearnedChange={(learned) => {
+                                  if (learned) {
+                                    // Move to the next card when a word is marked as learned
+                                    navigateCard("next");
+                                  }
+                                }}
+                              />
                             </div>
                           </div>
                           
@@ -212,7 +226,17 @@ export default function FlashcardsPage() {
                           
                           <div className="w-full md:max-w-md mx-auto px-0 flex justify-center">
                             <div className="flex-shrink-0">
-                              <Flashcard flashcard={learnedCards[currentIndex]} />
+                              <Flashcard 
+                                flashcard={learnedCards[currentIndex]} 
+                                externalFlipped={isFlipped}
+                                onFlippedChange={setIsFlipped}
+                                onLearnedChange={(learned) => {
+                                  if (!learned) {
+                                    // Move to the next card when a word is marked as still learning
+                                    navigateCard("next");
+                                  }
+                                }}
+                              />
                             </div>
                           </div>
                           
