@@ -96,7 +96,7 @@ export function Flashcard({
   };
 
   return (
-    <div className="flex-shrink-0 w-80 h-56 perspective-1000 relative mx-auto sm:px-0 px-0 flex justify-center">
+    <div className="flex-shrink-0 w-80 h-56 perspective-1000 relative mx-auto sm:px-0 px-0 flex justify-center overflow-visible">
       <div 
         className={`w-full h-full relative transition-all duration-500 transform-style-3d cursor-pointer ${
           isFlipped ? "rotate-y-180" : ""

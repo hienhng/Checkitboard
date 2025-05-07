@@ -331,7 +331,7 @@ export default function LearnerDashboard() {
                           <div className="py-4 text-center text-sm text-gray-500">Loading flashcards...</div>
                         ) : flashcards && flashcards.length > 0 && flashcards.filter(card => !card.learned).length > 0 ? (
                           <div>
-                            <div className="flex overflow-x-auto hide-scrollbar pb-6 pt-2 px-0 sm:px-4 space-x-6 sm:justify-center justify-start">
+                            <div className="flex overflow-x-auto overflow-y-hidden hide-scrollbar pb-6 pt-2 px-0 sm:px-4 space-x-6 sm:justify-center justify-start h-[280px]">
                               {flashcards
                                 .filter(card => !card.learned)
                                 .map(card => (
