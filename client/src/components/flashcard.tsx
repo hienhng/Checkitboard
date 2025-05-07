@@ -106,22 +106,23 @@ export function Flashcard({
     [0.5, 0.8, 1, 0.8, 0.5]
   );
   
-  // Text indicators for swipe actions
+  // Text indicators for swipe actions - fixed to match visual direction with physical swipe
   const upSwipeOpacity = useTransform(
     y,
     [0, -50, -100],
     [0, 0.5, 1]
   );
   
+  // These are swapped to fix the direction issue - right swipe shows left indicator and vice versa
   const rightSwipeOpacity = useTransform(
     x,
-    [0, 50, 100],
+    [0, -50, -100],
     [0, 0.5, 1]
   );
   
   const leftSwipeOpacity = useTransform(
     x,
-    [0, -50, -100],
+    [0, 50, 100],
     [0, 0.5, 1]
   );
   
@@ -151,7 +152,7 @@ export function Flashcard({
   };
 
   return (
-    <div className="flex-shrink-0 w-80 h-56 perspective-1000 relative mx-auto sm:px-0 px-0 flex justify-center overflow-visible hide-scrollbar">
+    <div className="flex-shrink-0 w-80 h-56 perspective-1000 relative mx-auto flex justify-center overflow-visible">
       <motion.div 
         className={`w-full h-full relative transition-all duration-500 transform-style-3d cursor-pointer ${
           isFlipped ? "rotate-y-180" : ""
