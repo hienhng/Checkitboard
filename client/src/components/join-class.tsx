@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -57,6 +58,7 @@ type JoinClassData = z.infer<typeof joinClassSchema>;
 export function JoinClass() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
 
   // Form for joining a class
@@ -171,7 +173,11 @@ export function JoinClass() {
                 </div>
               </CardContent>
               <CardFooter className="bg-muted/50 border-t">
-                <Button variant="link" className="p-0">
+                <Button 
+                  variant="link" 
+                  className="p-0" 
+                  onClick={() => navigate(`/learner/class/${enrollment.class.id}`)}
+                >
                   View All Lists
                 </Button>
               </CardFooter>
