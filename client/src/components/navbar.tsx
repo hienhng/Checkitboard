@@ -61,7 +61,7 @@ export function Navbar() {
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <Link href="/">
+              <Link to="/">
                 <h1 className="text-2xl font-bold text-primary cursor-pointer">Checkit</h1>
               </Link>
             </div>
@@ -69,7 +69,7 @@ export function Navbar() {
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
-                  href={link.href}
+                  to={link.href}
                   className={cn(
                     "inline-flex items-center px-3 py-2 text-sm font-medium nav-link",
                     location === link.href
@@ -104,12 +104,7 @@ export function Navbar() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href={isEducator ? "/educator/dashboard" : "/learner/dashboard"} className="cursor-pointer flex w-full items-center rounded-md hover:bg-primary/5 transition-colors duration-200">
-                      <User className="mr-2 h-4 w-4" />
-                      <span>Profile</span>
-                    </Link>
-                  </DropdownMenuItem>
+
                   <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors duration-200">
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Sign out</span>
@@ -132,7 +127,7 @@ export function Navbar() {
                     <div className="px-2 pb-3 pt-2 flex flex-col space-y-1">
                       <div className="mb-4">
                         <Link 
-                          href="/"
+                          to="/"
                           className="text-2xl font-bold text-primary"
                           onClick={() => setOpen(false)}
                         >
@@ -142,7 +137,7 @@ export function Navbar() {
                       {navLinks.map((link) => (
                         <Link
                           key={link.href}
-                          href={link.href}
+                          to={link.href}
                           className={cn(
                             "flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200",
                             location === link.href

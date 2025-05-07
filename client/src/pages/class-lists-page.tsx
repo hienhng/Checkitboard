@@ -1,0 +1,194 @@
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useParams, Link } from "wouter";
+import { 
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  Skeleton,
+  Badge
+} from "@/components/ui";
+import { formatDate } from "@/lib/utils";
+import { ChevronLeft, BookOpen, Calendar, ClipboardList } from "lucide-react";
+
+export default function ClassListsPage() {
+  const { classId } = useParams();
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Query for fetching class details
+  const { 
+    data: classData, 
+    isLoading: classLoading
+  } = useQuery({
+    queryKey: ["/api/classes", classId],
+    queryFn: async () => {
+      if (!classId) return null;
+      const response = await apiRequest("GET", `/api/classes/${classId}`);
+      return response.json();
+    },
+    enabled: !!classId
+  });
+
+  // Query for fetching vocabulary lists for this class
+  const { 
+    data: lists = [], 
+    isLoading: listsLoading 
+  } = useQuery({
+    queryKey: ["/api/classes", classId, "lists"],
+    queryFn: async () => {
+      if (!classId) return [];
+      const response = await apiRequest("GET", `/api/classes/${classId}/lists`);
+      return response.json();
+    },
+    enabled: !!classId
+  });
+
+  // Filter lists based on search term
+  const filteredLists = lists.filter((list: any) => 
+    list.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (classLoading || listsLoading) {
+    return (
+      <div className="container py-8 max-w-5xl mx-auto">
+        <div className="mb-8">
+          <Button variant="ghost" asChild>
+            <Link to="/learner/dashboard">
+              <ChevronLeft className="mr-2 h-4 w-4" />
+              Back to Dashboard
+            </Link>
+          </Button>
+          <Skeleton className="h-10 w-1/3 mt-2" />
+          <Skeleton className="h-6 w-1/4 mt-2" />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Card key={i} className="overflow-hidden">
+              <CardHeader>
+                <Skeleton className="h-6 w-3/4" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-20 w-full mb-4" />
+                <Skeleton className="h-4 w-1/2 mb-2" />
+              </CardContent>
+              <CardFooter>
+                <Skeleton className="h-9 w-full" />
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container py-8 max-w-5xl mx-auto">
+      <div className="mb-8">
+        <Button variant="ghost" asChild>
+          <Link to="/learner/dashboard">
+            <ChevronLeft className="mr-2 h-4 w-4" />
+            Back to Dashboard
+          </Link>
+        </Button>
+        <h1 className="text-3xl font-bold tracking-tight mt-2">
+          {classData?.name} Vocabulary Lists
+        </h1>
+        <p className="text-muted-foreground">
+          Explore all vocabulary lists available in this class
+        </p>
+      </div>
+
+      {/* Search and filter */}
+      <div className="mb-6">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search vocabulary lists..."
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+        </div>
+      </div>
+
+      {filteredLists.length === 0 ? (
+        <div className="text-center py-12 bg-muted/30 rounded-lg">
+          <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-xl font-medium mb-2">No vocabulary lists found</h3>
+          <p className="text-muted-foreground mb-4">
+            There are no vocabulary lists available in this class{searchTerm ? " matching your search" : ""}.
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {filteredLists.map((list: any) => (
+            <Card key={list.id} className="overflow-hidden">
+              <CardHeader className="bg-primary/5">
+                <div className="flex justify-between items-center">
+                  <CardTitle>{list.title}</CardTitle>
+                  {list.submission ? (
+                    list.submission.completed ? (
+                      <Badge className="bg-green-100 text-green-800">Completed</Badge>
+                    ) : (
+                      <Badge variant="outline">In Progress</Badge>
+                    )
+                  ) : (
+                    <Badge variant="outline" className="bg-blue-100 text-blue-800">New</Badge>
+                  )}
+                </div>
+                <CardDescription className="flex items-center mt-1">
+                  {list.educator && (
+                    <span className="flex items-center text-sm text-muted-foreground">
+                      By {list.educator.name}
+                    </span>
+                  )}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-4">
+                {list.passage && (
+                  <div className="mb-4">
+                    <p className="text-sm font-medium mb-1">Reading Passage</p>
+                    <p className="text-sm text-muted-foreground line-clamp-3">
+                      {list.passage}
+                    </p>
+                  </div>
+                )}
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center text-muted-foreground">
+                    <Calendar className="h-4 w-4 mr-1" />
+                    <span>Due: {list.dueDate ? formatDate(list.dueDate) : "No due date"}</span>
+                  </div>
+                  <div className="flex items-center text-muted-foreground">
+                    <ClipboardList className="h-4 w-4 mr-1" />
+                    <span>{list.words?.length || 0} Words</span>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="border-t bg-muted/20">
+                <Button 
+                  asChild 
+                  className="w-full"
+                  variant={list.submission?.completed ? "outline" : "default"}
+                >
+                  <Link to={`/learner/vocabulary/${list.id}`}>
+                    {list.submission?.completed 
+                      ? "View Completed" 
+                      : list.submission 
+                        ? "Continue" 
+                        : "Start"
+                    }
+                  </Link>
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
