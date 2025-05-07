@@ -147,18 +147,18 @@ export function Flashcard({
         
         {/* Back of card (Definition) */}
         <Card className="absolute w-full h-full backface-hidden rotate-y-180 shadow-md">
-          <CardHeader className="p-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-indigo-100">
+          <CardHeader className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
             <div className="flex justify-between items-center">
               <div className="flex-1">
-                <Badge variant="outline" className="mb-1 bg-white text-indigo-700 border-indigo-200">
+                <Badge variant="outline" className="mb-1 bg-white text-blue-700 border-blue-200">
                   Your Definition
                 </Badge>
-                <h3 className="text-xl font-bold text-indigo-900 text-center">{flashcard.word.word}</h3>
+                <h3 className="text-xl font-bold text-blue-900 text-center">{flashcard.word.word}</h3>
               </div>
               <Button 
                 size="sm" 
                 variant="ghost" 
-                className="text-indigo-700 hover:text-indigo-900 h-8 w-8 p-0"
+                className="text-blue-700 hover:text-blue-900 h-8 w-8 p-0"
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsFlipped(!isFlipped);
