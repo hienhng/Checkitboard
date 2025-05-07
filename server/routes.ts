@@ -789,6 +789,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get a class by ID
+  app.get("/api/classes/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const classId = parseInt(req.params.id);
+      if (isNaN(classId)) {
+        return res.status(400).json({ message: "Invalid class ID" });
+      }
+      
+      const classData = await storage.getClassById(classId);
+      
+      if (!classData) {
+        return res.status(404).json({ message: "Class not found" });
+      }
+      
+      // Check if the user is the educator or a student in the class
+      const isEducator = classData.educatorId === req.user.id;
+      const isStudent = classData.students?.some(
+        student => student.studentId === req.user?.id && student.status === 'approved'
+      );
+      
+      if (!isEducator && !isStudent) {
+        return res.status(403).json({ message: "You don't have access to this class" });
+      }
+      
+      return res.json(classData);
+    } catch (error) {
+      console.error("Error fetching class:", error);
+      return res.status(500).json({ message: "An error occurred while fetching the class" });
+    }
+  });
+  
+  // Get vocabulary lists for a specific class
+  app.get("/api/classes/:id/lists", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const classId = parseInt(req.params.id);
+      if (isNaN(classId)) {
+        return res.status(400).json({ message: "Invalid class ID" });
+      }
+      
+      const classData = await storage.getClassById(classId);
+      
+      if (!classData) {
+        return res.status(404).json({ message: "Class not found" });
+      }
+      
+      // Check if the user is the educator or a student in the class
+      const isEducator = classData.educatorId === req.user.id;
+      const isStudent = classData.students?.some(
+        student => student.studentId === req.user?.id && student.status === 'approved'
+      );
+      
+      if (!isEducator && !isStudent) {
+        return res.status(403).json({ message: "You don't have access to this class" });
+      }
+      
+      // Get all lists for this class
+      const lists = await db.query.vocabularyLists.findMany({
+        where: eq(vocabularyLists.classId, classId),
+        with: {
+          educator: {
+            columns: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          words: true,
+        },
+        orderBy: [desc(vocabularyLists.createdAt)]
+      });
+      
+      // For students, only return published lists and include their submission status
+      if (req.user.role === 'learner') {
+        const publishedLists = lists.filter(list => list.published);
+        
+        // Get the student's submissions for these lists
+        const studentSubmissions = await Promise.all(
+          publishedLists.map(async (list) => {
+            const submission = await storage.getSubmissionByStudentAndList(req.user!.id, list.id);
+            return {
+              ...list,
+              submission: submission ? {
+                id: submission.id,
+                completed: submission.completed
+              } : null
+            };
+          })
+        );
+        
+        return res.json(studentSubmissions);
+      }
+      
+      // For educators, return all lists
+      return res.json(lists);
+    } catch (error) {
+      console.error("Error fetching class lists:", error);
+      return res.status(500).json({ message: "An error occurred while fetching the class lists" });
+    }
+  });
+  
   // Get student performance data for a class
   app.get("/api/educator/classes/:classId/student-performance", async (req, res) => {
     try {

@@ -11,6 +11,7 @@ import EducatorDashboard from "@/pages/educator-dashboard";
 import LearnerDashboard from "@/pages/learner-dashboard";
 import VocabularyCheckup from "@/pages/vocabulary-checkup";
 import FlashcardsPage from "@/pages/flashcards-page";
+import ClassListsPage from "@/pages/class-lists-page";
 
 function Router() {
   return (
@@ -21,6 +22,7 @@ function Router() {
       <ProtectedRoute path="/learner/dashboard" component={LearnerDashboard} />
       <ProtectedRoute path="/learner/checkup/:id" component={VocabularyCheckup} />
       <ProtectedRoute path="/learner/flashcards" component={FlashcardsPage} />
+      <ProtectedRoute path="/learner/class/:classId" component={ClassListsPage} />
       <Route component={NotFound} />
     </Switch>
   );
