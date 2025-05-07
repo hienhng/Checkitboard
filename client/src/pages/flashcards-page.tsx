@@ -75,11 +75,11 @@ export default function FlashcardsPage() {
   const cardsToDisplay = activeTab === "learning" ? learningCards : learnedCards;
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen bg-background overflow-x-hidden mobile-overflow-hidden">
       <Navbar />
       
       {/* Main Content */}
-      <div className="flex-1">
+      <div className="flex-1 overflow-x-hidden">
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           {/* Header */}
           <div className="px-4 py-5 sm:px-6">
@@ -108,7 +108,7 @@ export default function FlashcardsPage() {
           </div>
           
           {/* Content */}
-          <div className="px-4 sm:px-6 lg:px-8">
+          <div className="px-4 sm:px-6 lg:px-8 overflow-x-hidden">
             <Tabs 
               defaultValue="learning" 
               value={activeTab} 
@@ -155,12 +155,12 @@ export default function FlashcardsPage() {
                     ) : learningCards.length > 0 ? (
                       <div>
                         {/* Flashcard viewer with navigation */}
-                        <div className="flex flex-col items-center justify-center py-6">
+                        <div className="flex flex-col items-center justify-center py-6 overflow-x-hidden">
                           <div className="text-sm text-gray-500 mb-4">
                             Card {currentIndex + 1} of {learningCards.length} {shuffled && "(Shuffled)"}
                           </div>
                           
-                          <div className="w-full md:max-w-md mx-auto px-0 flex justify-center overflow-y-hidden hide-scrollbar">
+                          <div className="w-full md:max-w-md mx-auto px-0 flex justify-center overflow-y-hidden hide-scrollbar mobile-overflow-hidden">
                             <div className="flex-shrink-0">
                               <Flashcard 
                                 flashcard={learningCards[currentIndex]} 
@@ -219,12 +219,12 @@ export default function FlashcardsPage() {
                     ) : learnedCards.length > 0 ? (
                       <div>
                         {/* Flashcard viewer with navigation */}
-                        <div className="flex flex-col items-center justify-center py-6">
+                        <div className="flex flex-col items-center justify-center py-6 overflow-x-hidden">
                           <div className="text-sm text-gray-500 mb-4">
                             Card {currentIndex + 1} of {learnedCards.length}
                           </div>
                           
-                          <div className="w-full md:max-w-md mx-auto px-0 flex justify-center overflow-y-hidden hide-scrollbar">
+                          <div className="w-full md:max-w-md mx-auto px-0 flex justify-center overflow-y-hidden hide-scrollbar mobile-overflow-hidden">
                             <div className="flex-shrink-0">
                               <Flashcard 
                                 flashcard={learnedCards[currentIndex]} 
