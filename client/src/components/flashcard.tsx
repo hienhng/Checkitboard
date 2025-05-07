@@ -96,7 +96,7 @@ export function Flashcard({
   };
 
   return (
-    <div className="flex-shrink-0 w-80 h-56 perspective-1000 relative mx-auto sm:px-0 px-0 flex justify-center overflow-visible">
+    <div className="flex-shrink-0 w-80 h-56 perspective-1000 relative mx-auto sm:px-0 px-0 flex justify-center overflow-visible hide-scrollbar">
       <div 
         className={`w-full h-full relative transition-all duration-500 transform-style-3d cursor-pointer ${
           isFlipped ? "rotate-y-180" : ""
@@ -104,7 +104,7 @@ export function Flashcard({
         onClick={() => setIsFlipped(!isFlipped)}
       >
         {/* Front of card (Word) */}
-        <Card className="absolute w-full h-full backface-hidden shadow-md">
+        <Card className="absolute w-full h-full backface-hidden shadow-md rounded-xl overflow-hidden">
           <CardHeader className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
             <div className="flex justify-between items-center">
               <div>
@@ -146,7 +146,7 @@ export function Flashcard({
         </Card>
         
         {/* Back of card (Definition) */}
-        <Card className="absolute w-full h-full backface-hidden rotate-y-180 shadow-md">
+        <Card className="absolute w-full h-full backface-hidden rotate-y-180 shadow-md rounded-xl overflow-hidden">
           <CardHeader className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
             <div className="flex justify-between items-center">
               <div className="flex-1">

@@ -160,7 +160,7 @@ export default function FlashcardsPage() {
                             Card {currentIndex + 1} of {learningCards.length} {shuffled && "(Shuffled)"}
                           </div>
                           
-                          <div className="w-full md:max-w-md mx-auto px-0 flex justify-center overflow-y-hidden">
+                          <div className="w-full md:max-w-md mx-auto px-0 flex justify-center overflow-y-hidden hide-scrollbar">
                             <div className="flex-shrink-0">
                               <Flashcard 
                                 flashcard={learningCards[currentIndex]} 
@@ -224,7 +224,7 @@ export default function FlashcardsPage() {
                             Card {currentIndex + 1} of {learnedCards.length}
                           </div>
                           
-                          <div className="w-full md:max-w-md mx-auto px-0 flex justify-center overflow-y-hidden">
+                          <div className="w-full md:max-w-md mx-auto px-0 flex justify-center overflow-y-hidden hide-scrollbar">
                             <div className="flex-shrink-0">
                               <Flashcard 
                                 flashcard={learnedCards[currentIndex]} 
