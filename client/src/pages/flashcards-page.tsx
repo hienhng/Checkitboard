@@ -188,16 +188,31 @@ export default function FlashcardsPage() {
                                 onFlippedChange={setIsFlipped}
                                 onLearnedChange={(learned) => {
                                   if (learned) {
+                                    // Get the updated list of learning cards after the state update
+                                    const updatedLearningCards = learningCards.filter(card => 
+                                      card.id !== learningCards[currentIndex].id
+                                    );
+                                    
                                     // After the API call completes and the list is updated
                                     // we need to wait a moment before navigating to avoid the "card not available" issue
                                     setTimeout(() => {
                                       // If there are more cards to show, navigate to next
-                                      if (learningCards.length > 1) {
-                                        navigateCard("next");
+                                      if (updatedLearningCards.length > 0) {
+                                        // Check if we need to adjust the index
+                                        if (currentIndex >= updatedLearningCards.length) {
+                                          // If the current index would be out of bounds, go to the start
+                                          setCurrentIndex(0);
+                                        } else {
+                                          // Otherwise, stay at the same index (which will show the next card)
+                                          navigateCard("next");
+                                        }
                                       } else {
                                         // If no more cards, reset the index to 0
                                         setCurrentIndex(0);
                                       }
+                                      
+                                      // Force a refetch to ensure we have the latest data
+                                      refetchFlashcards();
                                     }, 300);
                                   }
                                 }}
@@ -261,16 +276,35 @@ export default function FlashcardsPage() {
                                 onFlippedChange={setIsFlipped}
                                 onLearnedChange={(learned) => {
                                   if (!learned) {
+                                    // Get the updated list of learned cards after the state update
+                                    const updatedLearnedCards = learnedCards.filter(card => 
+                                      card.id !== learnedCards[currentIndex].id
+                                    );
+                                    
                                     // After the API call completes and the list is updated
                                     // we need to wait a moment before navigating to avoid the "card not available" issue
                                     setTimeout(() => {
                                       // If there are more cards to show, navigate to next
-                                      if (learnedCards.length > 1) {
-                                        navigateCard("next");
+                                      if (updatedLearnedCards.length > 0) {
+                                        // Check if we need to adjust the index
+                                        if (currentIndex >= updatedLearnedCards.length) {
+                                          // If the current index would be out of bounds, go to the start
+                                          setCurrentIndex(0);
+                                        } else {
+                                          // Otherwise, stay at the same index (which will show the next card)
+                                          navigateCard("next");
+                                        }
                                       } else {
                                         // If no more cards, reset the index to 0
                                         setCurrentIndex(0);
+                                        // If there are no more learned cards, switch to learning tab
+                                        if (updatedLearnedCards.length === 0) {
+                                          setActiveTab("learning");
+                                        }
                                       }
+                                      
+                                      // Force a refetch to ensure we have the latest data
+                                      refetchFlashcards();
                                     }, 300);
                                   }
                                 }}

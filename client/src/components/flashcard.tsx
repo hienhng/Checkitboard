@@ -71,20 +71,27 @@ export function Flashcard({
       const res = await apiRequest("PATCH", `/api/flashcards/${flashcard.id}`, { learned });
       return res.json();
     },
-    onSuccess: (data) => {
-      // First invalidate the query to refresh the data
-      queryClient.invalidateQueries({ queryKey: ["/api/learner/flashcards"] })
-        .then(() => {
-          // After data is refreshed, call the parent callback
-          if (onLearnedChange) {
+    onSuccess: async (data) => {
+      toast({
+        title: "Flashcard updated",
+        description: data.learned ? "This word has been marked as learned." : "This word has been marked as still learning.",
+      });
+      
+      try {
+        // Force a refresh of the flashcards data before calling the callback
+        await queryClient.invalidateQueries({ queryKey: ["/api/learner/flashcards"] });
+        await queryClient.refetchQueries({ queryKey: ["/api/learner/flashcards"] });
+        
+        // After data is refreshed, call the parent callback
+        if (onLearnedChange) {
+          // Use setTimeout to give React time to process the updated data
+          setTimeout(() => {
             onLearnedChange(data.learned);
-          }
-          
-          toast({
-            title: "Flashcard updated",
-            description: data.learned ? "This word has been marked as learned." : "This word has been marked as still learning.",
-          });
-        });
+          }, 200);
+        }
+      } catch (err) {
+        console.error("Error refreshing flashcards data:", err);
+      }
     },
     onError: (error: Error) => {
       toast({
