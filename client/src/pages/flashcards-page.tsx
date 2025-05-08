@@ -19,7 +19,11 @@ export default function FlashcardsPage() {
   const [isFlipped, setIsFlipped] = useState(false);
 
   // Fetch learner's flashcards
-  const { data: flashcards, isLoading: flashcardsLoading } = useQuery({
+  const { 
+    data: flashcards, 
+    isLoading: flashcardsLoading,
+    refetch: refetchFlashcards
+  } = useQuery({
     queryKey: ["/api/learner/flashcards"],
     queryFn: getQueryFn({ on401: "throw" }),
   });
@@ -36,10 +40,16 @@ export default function FlashcardsPage() {
   };
 
   // Get learning cards (not yet learned)
-  const learningCards = (flashcards as Flashcard[] || []).filter(card => !card.learned);
+  const learningCards = React.useMemo(() => 
+    (flashcards as Flashcard[] || []).filter(card => !card.learned),
+    [flashcards]
+  );
   
   // Get learned cards
-  const learnedCards = (flashcards as Flashcard[] || []).filter(card => card.learned);
+  const learnedCards = React.useMemo(() => 
+    (flashcards as Flashcard[] || []).filter(card => card.learned),
+    [flashcards]
+  );
   
   // Ensure current index is valid whenever card lists change
   useEffect(() => {
@@ -124,6 +134,8 @@ export default function FlashcardsPage() {
                 setActiveTab(value);
                 // Reset to first card when switching tabs to avoid index out of bounds
                 setCurrentIndex(0);
+                // Refresh the flashcards data to ensure we're showing the latest state
+                refetchFlashcards();
               }}
             >
               <div className="flex justify-between items-center">

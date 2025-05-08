@@ -72,16 +72,19 @@ export function Flashcard({
       return res.json();
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/learner/flashcards"] });
-      toast({
-        title: "Flashcard updated",
-        description: data.learned ? "This word has been marked as learned." : "This word has been marked as still learning.",
-      });
-      
-      // If parent provided a callback, call it
-      if (onLearnedChange) {
-        onLearnedChange(data.learned);
-      }
+      // First invalidate the query to refresh the data
+      queryClient.invalidateQueries({ queryKey: ["/api/learner/flashcards"] })
+        .then(() => {
+          // After data is refreshed, call the parent callback
+          if (onLearnedChange) {
+            onLearnedChange(data.learned);
+          }
+          
+          toast({
+            title: "Flashcard updated",
+            description: data.learned ? "This word has been marked as learned." : "This word has been marked as still learning.",
+          });
+        });
     },
     onError: (error: Error) => {
       toast({
