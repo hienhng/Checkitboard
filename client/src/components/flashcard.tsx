@@ -132,16 +132,22 @@ export function Flashcard({
       const swipeThreshold = 100; // Threshold to consider a swipe complete
       
       if (info.offset.y < -swipeThreshold) {
-        // Swiped up - mark as learned
+        // Swiped up - mark as learned and move to next card
+        // This will update the database and move the card to the learned list
         handleMarkLearned(true);
+        
+        // Notify parent to move to next card
+        if (onLearnedChange) {
+          onLearnedChange(true);
+        }
       } else if (Math.abs(info.offset.x) > swipeThreshold) {
-        // Swiped horizontally - mark as not remembered and move to next card
-        if (onLearnedChange && !flashcard.learned) {
-          // If already in "learning" state, just move to next card
-          onLearnedChange(false);
-        } else if (flashcard.learned) {
-          // If currently marked as learned, change to "still learning"
-          handleMarkLearned(false);
+        // Swiped horizontally - just move to next card without changing learned status
+        // The card stays in the same list (learning or learned)
+        
+        // Notify parent to move to next card without changing the learned status
+        if (onLearnedChange) {
+          // Pass same learn status so that card stays in current list but still moves to next
+          onLearnedChange(flashcard.learned);
         }
       }
     }
@@ -280,7 +286,7 @@ export function Flashcard({
                 >
                   <div className="bg-white bg-opacity-90 p-2 rounded-l-full flex items-center shadow-md">
                     <ArrowRight className="h-6 w-6 mr-2" />
-                    <span className="font-medium">Not Remembered</span>
+                    <span className="font-medium">Next Card</span>
                   </div>
                 </motion.div>
                 
@@ -291,7 +297,7 @@ export function Flashcard({
                 >
                   <div className="bg-white bg-opacity-90 p-2 rounded-r-full flex items-center shadow-md">
                     <ArrowRight className="h-6 w-6 mr-2 transform rotate-180" />
-                    <span className="font-medium">Not Remembered</span>
+                    <span className="font-medium">Next Card</span>
                   </div>
                 </motion.div>
               </div>
@@ -336,7 +342,7 @@ export function Flashcard({
       {/* Instructions for swipe gestures - only shown when card is flipped */}
       {isFlipped && (
         <div className="absolute -bottom-12 left-0 right-0 text-center text-xs text-gray-500">
-          <p>Swipe up to mark as learned, swipe left/right if not remembered</p>
+          <p>Swipe up to mark as learned, swipe left/right to go to next card</p>
         </div>
       )}
     </div>
