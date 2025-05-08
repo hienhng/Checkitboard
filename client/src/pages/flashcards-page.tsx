@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -42,7 +42,7 @@ export default function FlashcardsPage() {
   const learnedCards = (flashcards as Flashcard[] || []).filter(card => card.learned);
   
   // Ensure current index is valid whenever card lists change
-  React.useEffect(() => {
+  useEffect(() => {
     const currentCards = activeTab === "learning" ? learningCards : learnedCards;
     if (currentIndex >= currentCards.length && currentCards.length > 0) {
       setCurrentIndex(0);

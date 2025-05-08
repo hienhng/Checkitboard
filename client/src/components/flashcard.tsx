@@ -106,23 +106,27 @@ export function Flashcard({
     [0.5, 0.8, 1, 0.8, 0.5]
   );
   
-  // Text indicators for swipe actions
+  // Text indicators for swipe actions - when you swipe in a direction, the card moves opposite
+  // For example, when you swipe right, the card moves to the left (negative x)
+  
+  // Up swipe indicator - appears when you swipe DOWN (positive y means card moving down)
   const upSwipeOpacity = useTransform(
     y,
-    [0, -50, -100],
+    [0, 50, 100],
     [0, 0.5, 1]
   );
   
-  // Completely reversed to match the actual physical motion with the visual feedback
+  // Left swipe indicator - appears when you swipe RIGHT (positive x means card moving right)
   const leftSwipeOpacity = useTransform(
     x,
-    [0, -50, -100],
+    [0, 50, 100],
     [0, 0.5, 1]
   );
   
+  // Right swipe indicator - appears when you swipe LEFT (negative x means card moving left)
   const rightSwipeOpacity = useTransform(
     x,
-    [0, 50, 100],
+    [0, -50, -100],
     [0, 0.5, 1]
   );
   
@@ -131,8 +135,10 @@ export function Flashcard({
     if (isFlipped) { // Only process swipes when card is flipped (definition is showing)
       const swipeThreshold = 100; // Threshold to consider a swipe complete
       
-      if (info.offset.y < -swipeThreshold) {
-        // Swiped up - mark as learned
+      // Note: When we drag the card UP, the y-offset is POSITIVE
+      // When we drag the card DOWN, the y-offset is NEGATIVE
+      if (info.offset.y > swipeThreshold) {
+        // Card dragged down (user swiped up) - mark as learned
         handleMarkLearned(true);
       } else if (Math.abs(info.offset.x) > swipeThreshold) {
         // Swiped horizontally - mark as not remembered and move to next card
