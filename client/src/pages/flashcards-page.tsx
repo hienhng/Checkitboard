@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -13,10 +13,10 @@ import { Badge } from "@/components/ui/badge";
 
 export default function FlashcardsPage() {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("learning");
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [shuffled, setShuffled] = useState(false);
-  const [isFlipped, setIsFlipped] = useState(false);
+  const [activeTab, setActiveTab] = React.useState("learning");
+  const [currentIndex, setCurrentIndex] = React.useState(0);
+  const [shuffled, setShuffled] = React.useState(false);
+  const [isFlipped, setIsFlipped] = React.useState(false);
 
   // Fetch learner's flashcards
   const { data: flashcards, isLoading: flashcardsLoading } = useQuery({
@@ -73,6 +73,14 @@ export default function FlashcardsPage() {
 
   // Get the cards to display based on current tab
   const cardsToDisplay = activeTab === "learning" ? learningCards : learnedCards;
+  
+  // Make sure currentIndex is always valid for the current set of cards
+  useEffect(() => {
+    if (cardsToDisplay.length > 0 && currentIndex >= cardsToDisplay.length) {
+      // If the current index is out of bounds, reset to the last valid index
+      setCurrentIndex(cardsToDisplay.length - 1);
+    }
+  }, [cardsToDisplay, currentIndex]);
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -167,9 +175,15 @@ export default function FlashcardsPage() {
                                 externalFlipped={isFlipped}
                                 onFlippedChange={setIsFlipped}
                                 onLearnedChange={(learned) => {
+                                  // When a card is marked as learned and it's the last card in the learning tab
                                   if (learned) {
-                                    // Move to the next card when a word is marked as learned
-                                    navigateCard("next");
+                                    if (currentIndex === learningCards.length - 1) {
+                                      // If it's the last card, stay at the current index
+                                      // The useEffect will adjust the index if needed
+                                    } else {
+                                      // Otherwise move to the next card
+                                      navigateCard("next");
+                                    }
                                   }
                                 }}
                               />
@@ -231,9 +245,15 @@ export default function FlashcardsPage() {
                                 externalFlipped={isFlipped}
                                 onFlippedChange={setIsFlipped}
                                 onLearnedChange={(learned) => {
+                                  // When a card is marked as "still learning" (not learned)
                                   if (!learned) {
-                                    // Move to the next card when a word is marked as still learning
-                                    navigateCard("next");
+                                    if (currentIndex === learnedCards.length - 1) {
+                                      // If it's the last card, stay at the current index
+                                      // The useEffect will adjust the index if needed
+                                    } else {
+                                      // Otherwise move to the next card
+                                      navigateCard("next");
+                                    }
                                   }
                                 }}
                               />
