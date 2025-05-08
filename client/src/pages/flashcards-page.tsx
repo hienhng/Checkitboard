@@ -75,7 +75,7 @@ export default function FlashcardsPage() {
   const cardsToDisplay = activeTab === "learning" ? learningCards : learnedCards;
   
   // Make sure currentIndex is always valid for the current set of cards
-  useEffect(() => {
+  React.useEffect(() => {
     if (cardsToDisplay.length > 0 && currentIndex >= cardsToDisplay.length) {
       // If the current index is out of bounds, reset to the last valid index
       setCurrentIndex(cardsToDisplay.length - 1);
