@@ -71,26 +71,16 @@ export function Flashcard({
       const res = await apiRequest("PATCH", `/api/flashcards/${flashcard.id}`, { learned });
       return res.json();
     },
-    onSuccess: async (data) => {
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/learner/flashcards"] });
       toast({
         title: "Flashcard updated",
         description: data.learned ? "This word has been marked as learned." : "This word has been marked as still learning.",
       });
       
-      try {
-        // Force a refresh of the flashcards data before calling the callback
-        await queryClient.invalidateQueries({ queryKey: ["/api/learner/flashcards"] });
-        await queryClient.refetchQueries({ queryKey: ["/api/learner/flashcards"] });
-        
-        // After data is refreshed, call the parent callback
-        if (onLearnedChange) {
-          // Use setTimeout to give React time to process the updated data
-          setTimeout(() => {
-            onLearnedChange(data.learned);
-          }, 200);
-        }
-      } catch (err) {
-        console.error("Error refreshing flashcards data:", err);
+      // If parent provided a callback, call it
+      if (onLearnedChange) {
+        onLearnedChange(data.learned);
       }
     },
     onError: (error: Error) => {
@@ -116,27 +106,23 @@ export function Flashcard({
     [0.5, 0.8, 1, 0.8, 0.5]
   );
   
-  // Text indicators for swipe actions - when you swipe in a direction, the card moves opposite
-  // For example, when you swipe right, the card moves to the left (negative x)
-  
-  // Up swipe indicator - appears when you swipe DOWN (positive y means card moving down)
+  // Text indicators for swipe actions
   const upSwipeOpacity = useTransform(
     y,
-    [0, 50, 100],
+    [0, -50, -100],
     [0, 0.5, 1]
   );
   
-  // Left swipe indicator - appears when you swipe RIGHT (positive x means card moving right)
+  // Completely reversed to match the actual physical motion with the visual feedback
   const leftSwipeOpacity = useTransform(
     x,
-    [0, 50, 100],
+    [0, -50, -100],
     [0, 0.5, 1]
   );
   
-  // Right swipe indicator - appears when you swipe LEFT (negative x means card moving left)
   const rightSwipeOpacity = useTransform(
     x,
-    [0, -50, -100],
+    [0, 50, 100],
     [0, 0.5, 1]
   );
   
@@ -145,42 +131,22 @@ export function Flashcard({
     if (isFlipped) { // Only process swipes when card is flipped (definition is showing)
       const swipeThreshold = 100; // Threshold to consider a swipe complete
       
-      // Note: When we drag the card UP, the y-offset is POSITIVE
-      // When we drag the card DOWN, the y-offset is NEGATIVE
-      if (info.offset.y > swipeThreshold) {
-        // Card dragged down (user swiped up) - mark as learned
+      if (info.offset.y < -swipeThreshold) {
+        // Swiped up - mark as learned
         handleMarkLearned(true);
-        
-        // Wait briefly then tell parent we need to move to next card
-        setTimeout(() => {
-          if (onLearnedChange) {
-            onLearnedChange(true);
-          }
-        }, 100);
       } else if (Math.abs(info.offset.x) > swipeThreshold) {
         // Swiped horizontally - mark as not remembered and move to next card
-        if (!flashcard.learned) {
-          // If in "learning" state, just move to next card
-          setTimeout(() => {
-            if (onLearnedChange) {
-              onLearnedChange(false);
-            }
-          }, 100);
+        if (onLearnedChange && !flashcard.learned) {
+          // If already in "learning" state, just move to next card
+          onLearnedChange(false);
         } else if (flashcard.learned) {
           // If currently marked as learned, change to "still learning"
           handleMarkLearned(false);
-          
-          // Wait briefly then tell parent we need to move to next card
-          setTimeout(() => {
-            if (onLearnedChange) {
-              onLearnedChange(false);
-            }
-          }, 100);
         }
       }
     }
     
-    // Always reset position, even if we didn't handle the swipe
+    // Reset position
     x.set(0);
     y.set(0);
   };
@@ -340,13 +306,6 @@ export function Flashcard({
                     onClick={(e) => {
                       e.stopPropagation();
                       handleMarkLearned(false);
-                      
-                      // Also tell parent to navigate
-                      setTimeout(() => {
-                        if (onLearnedChange) {
-                          onLearnedChange(false);
-                        }
-                      }, 100);
                     }}
                     disabled={learnedMutation.isPending}
                   >
@@ -361,13 +320,6 @@ export function Flashcard({
                     onClick={(e) => {
                       e.stopPropagation();
                       handleMarkLearned(true);
-                      
-                      // Also tell parent to navigate
-                      setTimeout(() => {
-                        if (onLearnedChange) {
-                          onLearnedChange(true);
-                        }
-                      }, 100);
                     }}
                     disabled={learnedMutation.isPending}
                   >

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -19,11 +19,7 @@ export default function FlashcardsPage() {
   const [isFlipped, setIsFlipped] = useState(false);
 
   // Fetch learner's flashcards
-  const { 
-    data: flashcards, 
-    isLoading: flashcardsLoading,
-    refetch: refetchFlashcards
-  } = useQuery({
+  const { data: flashcards, isLoading: flashcardsLoading } = useQuery({
     queryKey: ["/api/learner/flashcards"],
     queryFn: getQueryFn({ on401: "throw" }),
   });
@@ -40,24 +36,10 @@ export default function FlashcardsPage() {
   };
 
   // Get learning cards (not yet learned)
-  const learningCards = React.useMemo(() => 
-    (flashcards as Flashcard[] || []).filter(card => !card.learned),
-    [flashcards]
-  );
+  const learningCards = (flashcards as Flashcard[] || []).filter(card => !card.learned);
   
   // Get learned cards
-  const learnedCards = React.useMemo(() => 
-    (flashcards as Flashcard[] || []).filter(card => card.learned),
-    [flashcards]
-  );
-  
-  // Ensure current index is valid whenever card lists change
-  useEffect(() => {
-    const currentCards = activeTab === "learning" ? learningCards : learnedCards;
-    if (currentIndex >= currentCards.length && currentCards.length > 0) {
-      setCurrentIndex(0);
-    }
-  }, [learningCards, learnedCards, activeTab, currentIndex]);
+  const learnedCards = (flashcards as Flashcard[] || []).filter(card => card.learned);
 
   // Shuffle cards
   const shuffleCards = () => {
@@ -134,8 +116,6 @@ export default function FlashcardsPage() {
                 setActiveTab(value);
                 // Reset to first card when switching tabs to avoid index out of bounds
                 setCurrentIndex(0);
-                // Refresh the flashcards data to ensure we're showing the latest state
-                refetchFlashcards();
               }}
             >
               <div className="flex justify-between items-center">
@@ -186,25 +166,11 @@ export default function FlashcardsPage() {
                                 flashcard={learningCards[currentIndex]} 
                                 externalFlipped={isFlipped}
                                 onFlippedChange={setIsFlipped}
-                                onLearnedChange={() => {
-                                  // Refetch data and navigate to next card
-                                  refetchFlashcards().then(() => {
-                                    if (learningCards.length > 1) {
-                                      // Stay at same index (shows next card after the current one was removed)
-                                      if (currentIndex >= learningCards.length - 1) {
-                                        // Go to first card if we're at the end
-                                        setCurrentIndex(0);
-                                      }
-                                      // No need to call navigateCard since the index stays the same
-                                      // but the card at that index is now different
-                                    } else {
-                                      // If this was the last card, reset index
-                                      setCurrentIndex(0);
-                                    }
-                                    
-                                    // Reset the flipped state for the next card
-                                    setIsFlipped(false);
-                                  });
+                                onLearnedChange={(learned) => {
+                                  if (learned) {
+                                    // Move to the next card when a word is marked as learned
+                                    navigateCard("next");
+                                  }
                                 }}
                               />
                             </div>
@@ -264,26 +230,11 @@ export default function FlashcardsPage() {
                                 flashcard={learnedCards[currentIndex]} 
                                 externalFlipped={isFlipped}
                                 onFlippedChange={setIsFlipped}
-                                onLearnedChange={() => {
-                                  // Refetch data and navigate to next card
-                                  refetchFlashcards().then(() => {
-                                    if (learnedCards.length > 1) {
-                                      // Stay at same index (shows next card after the current one was removed)
-                                      if (currentIndex >= learnedCards.length - 1) {
-                                        // Go to first card if we're at the end
-                                        setCurrentIndex(0);
-                                      }
-                                      // No need to call navigateCard since the index stays the same
-                                      // but the card at that index is now different
-                                    } else {
-                                      // If this was the last card, reset index and switch to learning tab
-                                      setCurrentIndex(0);
-                                      setActiveTab("learning");
-                                    }
-                                    
-                                    // Reset the flipped state for the next card
-                                    setIsFlipped(false);
-                                  });
+                                onLearnedChange={(learned) => {
+                                  if (!learned) {
+                                    // Move to the next card when a word is marked as still learning
+                                    navigateCard("next");
+                                  }
                                 }}
                               />
                             </div>
