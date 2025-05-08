@@ -99,7 +99,8 @@ export function Flashcard({
   // Motion values for swipe gestures
   const x = useMotionValue(0);
   const y = useMotionValue(0);
-  const rotate = useTransform(x, [-200, 0, 200], [-10, 0, 10]); // Rotation on x-axis swipe
+  // Reversed rotation for natural feel when swiping horizontally
+  const rotate = useTransform(x, [-200, 0, 200], [10, 0, -10]); // Rotation direction reversed
   const opacity = useTransform(
     x, 
     [-200, -100, 0, 100, 200], 
@@ -113,16 +114,17 @@ export function Flashcard({
     [0, 0.5, 1]
   );
   
-  // Completely reversed to match the actual physical motion with the visual feedback
+  // Swapped left and right indicators to reverse physical direction
+  // Now swiping right shows left indicator and vice versa
   const leftSwipeOpacity = useTransform(
     x,
-    [0, -50, -100],
+    [0, 50, 100],
     [0, 0.5, 1]
   );
   
   const rightSwipeOpacity = useTransform(
     x,
-    [0, 50, 100],
+    [0, -50, -100],
     [0, 0.5, 1]
   );
   
