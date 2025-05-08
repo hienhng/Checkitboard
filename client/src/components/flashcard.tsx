@@ -146,7 +146,7 @@ export function Flashcard({
       }
     }
     
-    // Reset position
+    // Always reset position, even if we didn't handle the swipe
     x.set(0);
     y.set(0);
   };

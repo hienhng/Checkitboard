@@ -40,6 +40,14 @@ export default function FlashcardsPage() {
   
   // Get learned cards
   const learnedCards = (flashcards as Flashcard[] || []).filter(card => card.learned);
+  
+  // Ensure current index is valid whenever card lists change
+  React.useEffect(() => {
+    const currentCards = activeTab === "learning" ? learningCards : learnedCards;
+    if (currentIndex >= currentCards.length && currentCards.length > 0) {
+      setCurrentIndex(0);
+    }
+  }, [learningCards, learnedCards, activeTab, currentIndex]);
 
   // Shuffle cards
   const shuffleCards = () => {
@@ -168,8 +176,17 @@ export default function FlashcardsPage() {
                                 onFlippedChange={setIsFlipped}
                                 onLearnedChange={(learned) => {
                                   if (learned) {
-                                    // Move to the next card when a word is marked as learned
-                                    navigateCard("next");
+                                    // After the API call completes and the list is updated
+                                    // we need to wait a moment before navigating to avoid the "card not available" issue
+                                    setTimeout(() => {
+                                      // If there are more cards to show, navigate to next
+                                      if (learningCards.length > 1) {
+                                        navigateCard("next");
+                                      } else {
+                                        // If no more cards, reset the index to 0
+                                        setCurrentIndex(0);
+                                      }
+                                    }, 300);
                                   }
                                 }}
                               />
@@ -232,8 +249,17 @@ export default function FlashcardsPage() {
                                 onFlippedChange={setIsFlipped}
                                 onLearnedChange={(learned) => {
                                   if (!learned) {
-                                    // Move to the next card when a word is marked as still learning
-                                    navigateCard("next");
+                                    // After the API call completes and the list is updated
+                                    // we need to wait a moment before navigating to avoid the "card not available" issue
+                                    setTimeout(() => {
+                                      // If there are more cards to show, navigate to next
+                                      if (learnedCards.length > 1) {
+                                        navigateCard("next");
+                                      } else {
+                                        // If no more cards, reset the index to 0
+                                        setCurrentIndex(0);
+                                      }
+                                    }, 300);
                                   }
                                 }}
                               />
