@@ -137,6 +137,9 @@ export function Flashcard({
         // Swiped up - mark as learned
         handleMarkLearned(true);
       } else if (Math.abs(info.offset.x) > swipeThreshold) {
+        // Note: We don't need to modify this condition since we're keeping the same logic,
+        // just changing the physical direction of the swipe via the onDrag handler
+        
         // Swiped horizontally - mark as not remembered and move to next card
         if (onLearnedChange && !flashcard.learned) {
           // If already in "learning" state, just move to next card
@@ -211,15 +214,21 @@ export function Flashcard({
           className="absolute w-full h-full backface-hidden shadow-md rounded-xl overflow-hidden"
           style={{ 
             rotateY: 180,
-            x, 
+            x,
             y,
             rotate,
-            opacity,
+            opacity
           }}
           drag={isFlipped} // Only enable drag when card is flipped
           dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
           dragElastic={0.7}
           onDragEnd={handleDragEnd}
+          // Custom drag override to reverse horizontal direction
+          onDrag={(event, info) => {
+            // Simply reverse the drag direction for x-axis movement
+            x.set(-info.offset.x);
+            y.set(info.offset.y); // Keep vertical movement the same
+          }}
         >
           <Card className="w-full h-full shadow-none border-0">
             <CardHeader className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
