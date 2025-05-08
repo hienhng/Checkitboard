@@ -186,35 +186,25 @@ export default function FlashcardsPage() {
                                 flashcard={learningCards[currentIndex]} 
                                 externalFlipped={isFlipped}
                                 onFlippedChange={setIsFlipped}
-                                onLearnedChange={(learned) => {
-                                  if (learned) {
-                                    // Get the updated list of learning cards after the state update
-                                    const updatedLearningCards = learningCards.filter(card => 
-                                      card.id !== learningCards[currentIndex].id
-                                    );
-                                    
-                                    // After the API call completes and the list is updated
-                                    // we need to wait a moment before navigating to avoid the "card not available" issue
-                                    setTimeout(() => {
-                                      // If there are more cards to show, navigate to next
-                                      if (updatedLearningCards.length > 0) {
-                                        // Check if we need to adjust the index
-                                        if (currentIndex >= updatedLearningCards.length) {
-                                          // If the current index would be out of bounds, go to the start
-                                          setCurrentIndex(0);
-                                        } else {
-                                          // Otherwise, stay at the same index (which will show the next card)
-                                          navigateCard("next");
-                                        }
-                                      } else {
-                                        // If no more cards, reset the index to 0
+                                onLearnedChange={() => {
+                                  // Refetch data and navigate to next card
+                                  refetchFlashcards().then(() => {
+                                    if (learningCards.length > 1) {
+                                      // Stay at same index (shows next card after the current one was removed)
+                                      if (currentIndex >= learningCards.length - 1) {
+                                        // Go to first card if we're at the end
                                         setCurrentIndex(0);
                                       }
-                                      
-                                      // Force a refetch to ensure we have the latest data
-                                      refetchFlashcards();
-                                    }, 300);
-                                  }
+                                      // No need to call navigateCard since the index stays the same
+                                      // but the card at that index is now different
+                                    } else {
+                                      // If this was the last card, reset index
+                                      setCurrentIndex(0);
+                                    }
+                                    
+                                    // Reset the flipped state for the next card
+                                    setIsFlipped(false);
+                                  });
                                 }}
                               />
                             </div>
@@ -274,39 +264,26 @@ export default function FlashcardsPage() {
                                 flashcard={learnedCards[currentIndex]} 
                                 externalFlipped={isFlipped}
                                 onFlippedChange={setIsFlipped}
-                                onLearnedChange={(learned) => {
-                                  if (!learned) {
-                                    // Get the updated list of learned cards after the state update
-                                    const updatedLearnedCards = learnedCards.filter(card => 
-                                      card.id !== learnedCards[currentIndex].id
-                                    );
-                                    
-                                    // After the API call completes and the list is updated
-                                    // we need to wait a moment before navigating to avoid the "card not available" issue
-                                    setTimeout(() => {
-                                      // If there are more cards to show, navigate to next
-                                      if (updatedLearnedCards.length > 0) {
-                                        // Check if we need to adjust the index
-                                        if (currentIndex >= updatedLearnedCards.length) {
-                                          // If the current index would be out of bounds, go to the start
-                                          setCurrentIndex(0);
-                                        } else {
-                                          // Otherwise, stay at the same index (which will show the next card)
-                                          navigateCard("next");
-                                        }
-                                      } else {
-                                        // If no more cards, reset the index to 0
+                                onLearnedChange={() => {
+                                  // Refetch data and navigate to next card
+                                  refetchFlashcards().then(() => {
+                                    if (learnedCards.length > 1) {
+                                      // Stay at same index (shows next card after the current one was removed)
+                                      if (currentIndex >= learnedCards.length - 1) {
+                                        // Go to first card if we're at the end
                                         setCurrentIndex(0);
-                                        // If there are no more learned cards, switch to learning tab
-                                        if (updatedLearnedCards.length === 0) {
-                                          setActiveTab("learning");
-                                        }
                                       }
-                                      
-                                      // Force a refetch to ensure we have the latest data
-                                      refetchFlashcards();
-                                    }, 300);
-                                  }
+                                      // No need to call navigateCard since the index stays the same
+                                      // but the card at that index is now different
+                                    } else {
+                                      // If this was the last card, reset index and switch to learning tab
+                                      setCurrentIndex(0);
+                                      setActiveTab("learning");
+                                    }
+                                    
+                                    // Reset the flipped state for the next card
+                                    setIsFlipped(false);
+                                  });
                                 }}
                               />
                             </div>

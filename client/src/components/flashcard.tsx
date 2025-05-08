@@ -150,14 +150,32 @@ export function Flashcard({
       if (info.offset.y > swipeThreshold) {
         // Card dragged down (user swiped up) - mark as learned
         handleMarkLearned(true);
+        
+        // Wait briefly then tell parent we need to move to next card
+        setTimeout(() => {
+          if (onLearnedChange) {
+            onLearnedChange(true);
+          }
+        }, 100);
       } else if (Math.abs(info.offset.x) > swipeThreshold) {
         // Swiped horizontally - mark as not remembered and move to next card
-        if (onLearnedChange && !flashcard.learned) {
-          // If already in "learning" state, just move to next card
-          onLearnedChange(false);
+        if (!flashcard.learned) {
+          // If in "learning" state, just move to next card
+          setTimeout(() => {
+            if (onLearnedChange) {
+              onLearnedChange(false);
+            }
+          }, 100);
         } else if (flashcard.learned) {
           // If currently marked as learned, change to "still learning"
           handleMarkLearned(false);
+          
+          // Wait briefly then tell parent we need to move to next card
+          setTimeout(() => {
+            if (onLearnedChange) {
+              onLearnedChange(false);
+            }
+          }, 100);
         }
       }
     }
@@ -322,6 +340,13 @@ export function Flashcard({
                     onClick={(e) => {
                       e.stopPropagation();
                       handleMarkLearned(false);
+                      
+                      // Also tell parent to navigate
+                      setTimeout(() => {
+                        if (onLearnedChange) {
+                          onLearnedChange(false);
+                        }
+                      }, 100);
                     }}
                     disabled={learnedMutation.isPending}
                   >
@@ -336,6 +361,13 @@ export function Flashcard({
                     onClick={(e) => {
                       e.stopPropagation();
                       handleMarkLearned(true);
+                      
+                      // Also tell parent to navigate
+                      setTimeout(() => {
+                        if (onLearnedChange) {
+                          onLearnedChange(true);
+                        }
+                      }, 100);
                     }}
                     disabled={learnedMutation.isPending}
                   >
