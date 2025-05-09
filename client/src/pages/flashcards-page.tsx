@@ -188,7 +188,7 @@ export default function FlashcardsPage() {
                             </div>
                           </div>
                           
-                          <div className="flex space-x-4 mt-14">
+                          <div className="flex space-x-4 mt-20">
                             <Button 
                               onClick={() => navigateCard("prev")}
                               disabled={learningCards.length <= 1}
@@ -256,7 +256,7 @@ export default function FlashcardsPage() {
                             </div>
                           </div>
                           
-                          <div className="flex space-x-4 mt-14">
+                          <div className="flex space-x-4 mt-20">
                             <Button 
                               onClick={() => navigateCard("prev")}
                               disabled={learnedCards.length <= 1}
