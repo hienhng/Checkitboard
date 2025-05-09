@@ -28,6 +28,23 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
   const [selectedWords, setSelectedWords] = useState<string[]>([]);
   const passageRef = useRef<HTMLDivElement>(null);
   const [dueDate, setDueDate] = useState("");
+  
+  // Helper function to parse a date string safely
+  const parseDateSafely = (dateStr: string): Date | undefined => {
+    if (!dateStr || dateStr.trim() === '') return undefined;
+    
+    try {
+      // Parse the date string (format: YYYY-MM-DD) and create a date at noon
+      const [year, month, day] = dateStr.split('-').map(num => parseInt(num, 10));
+      if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+        return new Date(year, month - 1, day, 12, 0, 0);
+      }
+    } catch (e) {
+      console.error("Error parsing date:", e);
+    }
+    
+    return undefined;
+  };
 
   // Schema for form validation
   const formSchema = z.object({
@@ -188,10 +205,8 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
       return;
     }
 
-    let dueDateObj: Date | undefined;
-    if (dueDate) {
-      dueDateObj = new Date(dueDate);
-    }
+    // Parse the due date using our helper function
+    const dueDateObj = parseDateSafely(dueDate);
 
     // Get the class ID from the form
     const { classId } = form.getValues();
@@ -215,10 +230,8 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
       return;
     }
 
-    let dueDateObj: Date | undefined;
-    if (dueDate) {
-      dueDateObj = new Date(dueDate);
-    }
+    // Parse the due date using our helper function
+    const dueDateObj = parseDateSafely(dueDate);
 
     // Get the class ID from the form
     const { classId } = form.getValues();
