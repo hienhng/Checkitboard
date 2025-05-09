@@ -164,9 +164,7 @@ export default function FlashcardsPage() {
                       <div>
                         {/* Flashcard viewer with navigation */}
                         <div className="flex flex-col items-center justify-center py-6">
-                          <div className="text-sm text-gray-500 mb-4">
-                            Card {currentIndex + 1} of {learningCards.length} {shuffled && "(Shuffled)"}
-                          </div>
+                          {/* Card counter removed to avoid user confusion with swipe direction */}
                           
                           <div className="w-full md:max-w-md mx-auto flex justify-center overflow-visible">
                             <div className="flex-shrink-0">
@@ -234,9 +232,7 @@ export default function FlashcardsPage() {
                       <div>
                         {/* Flashcard viewer with navigation */}
                         <div className="flex flex-col items-center justify-center py-6">
-                          <div className="text-sm text-gray-500 mb-4">
-                            Card {currentIndex + 1} of {learnedCards.length}
-                          </div>
+                          {/* Card counter removed to avoid user confusion with swipe direction */}
                           
                           <div className="w-full md:max-w-md mx-auto flex justify-center overflow-visible">
                             <div className="flex-shrink-0">
