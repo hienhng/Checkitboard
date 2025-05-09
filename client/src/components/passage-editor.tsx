@@ -37,7 +37,18 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
       // Parse the date string (format: YYYY-MM-DD) and create a date at noon
       const [year, month, day] = dateStr.split('-').map(num => parseInt(num, 10));
       if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
-        return new Date(year, month - 1, day, 12, 0, 0);
+        // Create the date object
+        const date = new Date(year, month - 1, day, 12, 0, 0);
+        
+        // Verify it's a valid date by checking if the components match what we set
+        // This guards against invalid dates like February 31
+        if (
+          date.getFullYear() === year &&
+          date.getMonth() === month - 1 &&
+          date.getDate() === day
+        ) {
+          return date;
+        }
       }
     } catch (e) {
       console.error("Error parsing date:", e);
@@ -72,7 +83,13 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
   // Mutation to create a new vocabulary list
   const createListMutation = useMutation({
     mutationFn: async (data: VocabularyListData) => {
-      const res = await apiRequest("POST", "/api/vocabulary-lists", data);
+      // Convert date object to ISO string if it exists
+      const payload = {
+        ...data,
+        dueDate: data.dueDate ? data.dueDate.toISOString() : undefined
+      };
+      
+      const res = await apiRequest("POST", "/api/vocabulary-lists", payload);
       return res.json();
     },
     onSuccess: () => {
