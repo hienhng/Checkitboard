@@ -41,11 +41,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.user.role !== "educator") {
         return res.status(403).json({ message: "Only educators can create vocabulary lists" });
       }
-
-      const validatedData = insertVocabularyListSchema.parse({
+      
+      // Pre-process the request data to ensure dueDate is properly formatted
+      const requestData = {
         ...req.body,
         educatorId: req.user.id,
-      });
+        // If dueDate is provided, ensure it's a valid date object
+        dueDate: req.body.dueDate ? new Date(req.body.dueDate) : undefined
+      };
+
+      const validatedData = insertVocabularyListSchema.parse(requestData);
 
       const list = await storage.createVocabularyList(validatedData);
       
@@ -160,8 +165,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
       }
+      
+      // Pre-process request data to handle date format
+      const requestData = {
+        ...req.body,
+        // If dueDate is provided, ensure it's a valid Date object
+        dueDate: req.body.dueDate ? new Date(req.body.dueDate) : undefined
+      };
 
-      const updatedList = await storage.updateVocabularyList(listId, req.body);
+      const updatedList = await storage.updateVocabularyList(listId, requestData);
       res.json(updatedList);
     } catch (error) {
       console.error("Error updating vocabulary list:", error);

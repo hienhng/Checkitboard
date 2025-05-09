@@ -34,21 +34,15 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
     if (!dateStr || dateStr.trim() === '') return undefined;
     
     try {
-      // Parse the date string (format: YYYY-MM-DD) and create a date at noon
-      const [year, month, day] = dateStr.split('-').map(num => parseInt(num, 10));
-      if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
-        // Create the date object
-        const date = new Date(year, month - 1, day, 12, 0, 0);
-        
-        // Verify it's a valid date by checking if the components match what we set
-        // This guards against invalid dates like February 31
-        if (
-          date.getFullYear() === year &&
-          date.getMonth() === month - 1 &&
-          date.getDate() === day
-        ) {
-          return date;
-        }
+      // Parse the date string (format: YYYY-MM-DD) and create a date at noon UTC
+      // Using the Date constructor directly with the ISO string format (YYYY-MM-DD)
+      // ensures proper handling by the database
+      const formattedDateStr = `${dateStr}T12:00:00.000Z`;
+      const date = new Date(formattedDateStr);
+      
+      // Verify it's a valid date by checking if it's not "Invalid Date"
+      if (!isNaN(date.getTime())) {
+        return date;
       }
     } catch (e) {
       console.error("Error parsing date:", e);
