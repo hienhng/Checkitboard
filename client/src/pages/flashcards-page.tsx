@@ -46,6 +46,8 @@ export default function FlashcardsPage() {
     setShuffled(true);
     // Reset to first card
     setCurrentIndex(0);
+    // Reset flipped state when shuffling
+    setIsFlipped(false);
     toast({
       title: "Cards shuffled",
       description: "The cards have been randomly rearranged for better learning.",
@@ -61,7 +63,8 @@ export default function FlashcardsPage() {
       return;
     }
     
-    // Reset the flipped state when navigating to a new card
+    // Always reset the flipped state when navigating to a new card
+    // This ensures the meaning is hidden when going to next/prev card
     setIsFlipped(false);
     
     if (direction === "next") {
@@ -124,6 +127,8 @@ export default function FlashcardsPage() {
                 setActiveTab(value);
                 // Reset to first card when switching tabs to avoid index out of bounds
                 setCurrentIndex(0);
+                // Reset flipped state when changing tabs
+                setIsFlipped(false);
               }}
             >
               <div className="flex justify-between items-center">
