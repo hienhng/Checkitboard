@@ -346,7 +346,7 @@ export function Flashcard({
       
       {/* Instructions for swipe gestures - only shown when card is flipped */}
       {isFlipped && (
-        <div className="absolute -bottom-12 left-0 right-0 text-center text-xs text-gray-500">
+        <div className="absolute -bottom-6 left-0 right-0 text-center text-xs text-gray-500">
           <p>Swipe up to mark as learned, swipe left/right if not remembered</p>
         </div>
       )}
