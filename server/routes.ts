@@ -505,18 +505,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const listsWithStatus = await Promise.all(
         lists.map(async (list) => {
           // Check for ANY existing submission for this list, completed or not
-          // This will prevent duplicate submissions for the same list
-          const existingSubmission = await storage.getSubmissionByStudentAndList(req.user.id, list.id, true);
+          const existingSubmission = await storage.getSubmissionByStudentAndList(req.user.id, Number(list.id), true);
           
-          // If there's ANY existing submission, skip this list entirely to prevent 400 errors
-          if (existingSubmission) {
-            return null;
-          }
-          
-          // Only include lists with no existing submissions
+          // Always include the list, but attach submission status if it exists
           return {
             ...list,
-            submission: null,
+            submission: existingSubmission ? {
+              id: existingSubmission.id,
+              completed: existingSubmission.completed || false
+            } : null,
             class: list.class ? {
               id: list.class.id,
               name: list.class.name
@@ -525,10 +522,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       );
 
-      // Filter out null entries (lists with existing submissions)
-      const filteredLists = listsWithStatus.filter(list => list !== null);
-
-      res.json(filteredLists);
+      res.json(listsWithStatus);
     } catch (error) {
       console.error("Error fetching vocabulary lists:", error);
       res.status(500).json({ message: "Error fetching vocabulary lists" });
@@ -962,13 +956,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orderBy: [desc(vocabularyLists.createdAt)]
       });
       
-      // For students, only return published lists and include their submission status
+      // For students, return all lists in the class and include their submission status
       if (req.user.role === 'learner') {
-        const publishedLists = lists.filter(list => list.published);
+        // No longer filtering by published status for class lists
         
         // Get the student's submissions for these lists
         const studentSubmissions = await Promise.all(
-          publishedLists.map(async (list) => {
+          lists.map(async (list) => {
             const submission = await storage.getSubmissionByStudentAndList(req.user!.id, list.id);
             return {
               ...list,

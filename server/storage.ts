@@ -161,7 +161,8 @@ export class DatabaseStorage {
           ORDER BY vl.created_at DESC
         `;
         
-        const { rows: classListRows } = await db.execute(sql.raw(classQuery, [classIds]));
+        const result = await pool.query(classQuery, [classIds]);
+        const classListRows = result.rows;
         
         // Get words for each list
         const wordQuery = `
@@ -171,7 +172,8 @@ export class DatabaseStorage {
         `;
         
         const listIds = classListRows.map(list => list.id);
-        const { rows: wordRows } = await db.execute(sql.raw(wordQuery, [listIds]));
+        const wordResult = await pool.query(wordQuery, [listIds]);
+        const wordRows = wordResult.rows;
         
         // Format class lists to match the structure from the ORM query
         const classLists = classListRows.map(row => ({
