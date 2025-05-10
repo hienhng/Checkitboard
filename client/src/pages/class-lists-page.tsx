@@ -1,17 +1,51 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { useParams, Link } from "wouter";
+import { useParams, Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 import { ChevronLeft, BookOpen, Calendar, ClipboardList } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ClassListsPage() {
   const { classId } = useParams();
   const [searchTerm, setSearchTerm] = useState("");
+  const { toast } = useToast();
+  const [, navigate] = useLocation();
+  
+  // Start a new vocabulary check-up
+  const startCheckUp = async (listId: number) => {
+    try {
+      // First create a submission
+      const res = await apiRequest("POST", "/api/submissions", { listId });
+      const data = await res.json();
+      
+      // Navigate to the check-up page with the submission ID
+      navigate(`/learner/checkup/${data.id}`);
+    } catch (error: any) {
+      // If a submission already exists, we might get back the existing submission ID
+      if (error.message?.includes("already have a submission")) {
+        try {
+          const data = JSON.parse(error.message);
+          if (data.submissionId) {
+            navigate(`/learner/checkup/${data.submissionId}`);
+            return;
+          }
+        } catch {
+          // If we can't parse the error message, just show the error
+        }
+      }
+      
+      toast({
+        title: "Error starting check-up",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
 
   // Query for fetching class details
   const { 
@@ -163,20 +197,35 @@ export default function ClassListsPage() {
                 </div>
               </CardContent>
               <CardFooter className="border-t bg-muted/20">
-                <Button 
-                  asChild 
-                  className="w-full"
-                  variant={list.submission?.completed ? "outline" : "default"}
-                >
-                  <Link to={`/learner/vocabulary/${list.id}`}>
-                    {list.submission?.completed 
-                      ? "View Completed" 
-                      : list.submission 
-                        ? "Continue" 
-                        : "Start"
-                    }
-                  </Link>
-                </Button>
+                {list.submission?.completed ? (
+                  <Button 
+                    asChild 
+                    className="w-full"
+                    variant="outline"
+                  >
+                    <Link to={`/learner/vocabulary/${list.id}`}>
+                      View Completed
+                    </Link>
+                  </Button>
+                ) : (
+                  <div className="w-full flex flex-col sm:flex-row gap-2">
+                    <Button 
+                      asChild 
+                      className="w-full sm:w-1/2"
+                      variant="outline"
+                    >
+                      <Link to={`/learner/vocabulary/${list.id}`}>
+                        View Words
+                      </Link>
+                    </Button>
+                    <Button 
+                      className="w-full sm:w-1/2"
+                      onClick={() => startCheckUp(list.id)}
+                    >
+                      Start Check-Up
+                    </Button>
+                  </div>
+                )}
               </CardFooter>
             </Card>
           ))}
