@@ -504,26 +504,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Also get the submission status for each list
       const listsWithStatus = await Promise.all(
         lists.map(async (list) => {
-          const submission = await storage.getSubmissionByStudentAndList(req.user.id, list.id);
+          // Check for ANY existing submission for this list, completed or not
+          // This will prevent duplicate submissions for the same list
+          const existingSubmission = await storage.getSubmissionByStudentAndList(req.user.id, list.id, true);
           
-          // Get existing completed and graded submissions for this list
-          const existingCompleted = await db.query.submissions.findFirst({
-            where: and(
-              eq(submissions.studentId, req.user.id),
-              eq(submissions.listId, list.id),
-              eq(submissions.completed, true),
-              not(isNull(submissions.gradedAt))
-            )
-          });
-          
-          // If there's a completed and graded submission, skip this list
-          if (existingCompleted) {
+          // If there's ANY existing submission, skip this list entirely to prevent 400 errors
+          if (existingSubmission) {
             return null;
           }
           
+          // Only include lists with no existing submissions
           return {
             ...list,
-            submission: submission || null,
+            submission: null,
             class: list.class ? {
               id: list.class.id,
               name: list.class.name
@@ -532,7 +525,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       );
 
-      // Filter out null entries (completed and graded lists)
+      // Filter out null entries (lists with existing submissions)
       const filteredLists = listsWithStatus.filter(list => list !== null);
 
       res.json(filteredLists);
