@@ -19,7 +19,7 @@ import {
   InsertClass,
   InsertStudentClass,
 } from "@shared/schema";
-import { eq, and, desc, isNull, asc, count, sql, or } from "drizzle-orm";
+import { eq, and, desc, isNull, asc, count, sql, or, inArray } from "drizzle-orm";
 export class DatabaseStorage {
 
   // User methods
@@ -89,8 +89,12 @@ export class DatabaseStorage {
   }
 
   async getPublishedVocabularyLists(studentId?: number) {
-    let query = db.query.vocabularyLists.findMany({
-      where: eq(vocabularyLists.published, true),
+    // First get all global lists that are published (no class association)
+    const publishedLists = await db.query.vocabularyLists.findMany({
+      where: and(
+        eq(vocabularyLists.published, true),
+        isNull(vocabularyLists.classId)
+      ),
       orderBy: [
         desc(vocabularyLists.createdAt),
       ],
@@ -102,7 +106,7 @@ export class DatabaseStorage {
         educatorId: true,
         classId: true,
         createdAt: true,
-        passage: true, // Include the passage text
+        passage: true,
       },
       with: {
         words: {
@@ -126,7 +130,7 @@ export class DatabaseStorage {
       },
     });
 
-    // If studentId is provided, filter lists based on class access
+    // If studentId is provided, also get lists assigned to their classes
     if (studentId) {
       // Get all classes the student is approved for
       const studentClasses = await db.query.studentClass.findMany({
@@ -141,16 +145,66 @@ export class DatabaseStorage {
       
       const classIds = studentClasses.map(sc => sc.classId);
       
-      // Get vocabulary lists:
-      // 1. Lists with no class restriction (classId is null)
-      // 2. Lists assigned to classes the student is enrolled in
-      return (await query).filter(list => 
-        !list.classId || // No class restriction
-        (list.classId && classIds.includes(list.classId)) // Or student is in the assigned class
-      );
+      // If student is in any classes, get the class-specific lists
+      if (classIds.length > 0) {
+        // Run a separate query to get lists assigned to these classes
+        const classQuery = `
+          SELECT 
+            vl.id, vl.title, vl.due_date, vl.published, 
+            vl.educator_id, vl.class_id, vl.created_at, vl.passage,
+            e.id as educator_id, e.name as educator_name,
+            c.id as class_id, c.name as class_name
+          FROM vocabulary_lists vl
+          LEFT JOIN users e ON vl.educator_id = e.id
+          LEFT JOIN classes c ON vl.class_id = c.id
+          WHERE vl.class_id = ANY($1)
+          ORDER BY vl.created_at DESC
+        `;
+        
+        const { rows: classListRows } = await db.execute(sql.raw(classQuery, [classIds]));
+        
+        // Get words for each list
+        const wordQuery = `
+          SELECT vw.id, vw.word, vw.list_id
+          FROM vocabulary_words vw
+          WHERE vw.list_id = ANY($1)
+        `;
+        
+        const listIds = classListRows.map(list => list.id);
+        const { rows: wordRows } = await db.execute(sql.raw(wordQuery, [listIds]));
+        
+        // Format class lists to match the structure from the ORM query
+        const classLists = classListRows.map(row => ({
+          id: row.id,
+          title: row.title,
+          dueDate: row.due_date,
+          published: row.published,
+          educatorId: row.educator_id,
+          classId: row.class_id,
+          createdAt: row.created_at,
+          passage: row.passage,
+          words: wordRows
+            .filter(word => word.list_id === row.id)
+            .map(word => ({
+              id: word.id,
+              word: word.word
+            })),
+          educator: row.educator_id ? {
+            id: row.educator_id,
+            name: row.educator_name
+          } : null,
+          class: row.class_id ? {
+            id: row.class_id,
+            name: row.class_name
+          } : null
+        }));
+        
+        // Combine published global lists and class-specific lists
+        return [...publishedLists, ...classLists];
+      }
     }
     
-    return await query;
+    return publishedLists;
   }
 
   async createVocabularyList(listData: InsertVocabularyList) {
