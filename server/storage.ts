@@ -363,7 +363,8 @@ export class DatabaseStorage {
     completed?: boolean, 
     submittedAt?: Date, 
     score?: number, 
-    gradedAt?: Date 
+    gradedAt?: Date,
+    notes?: string
   }) {
     const [updatedSubmission] = await db
       .update(submissions)

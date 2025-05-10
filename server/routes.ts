@@ -685,6 +685,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error completing submission" });
     }
   });
+  
+  // Discard a submission with reason and auto-grade with 0%
+  app.post("/api/submissions/:id/discard", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "learner") {
+        return res.status(403).json({ message: "Only learners can discard submissions" });
+      }
+
+      const submissionId = parseInt(req.params.id);
+      if (isNaN(submissionId)) {
+        return res.status(400).json({ message: "Invalid submission ID" });
+      }
+
+      const { discardReason } = req.body;
+      if (!discardReason || typeof discardReason !== 'string' || discardReason.trim() === '') {
+        return res.status(400).json({ message: "Please provide a reason for discarding the test" });
+      }
+
+      const submission = await storage.getSubmission(submissionId);
+      
+      if (!submission) {
+        return res.status(404).json({ message: "Submission not found" });
+      }
+
+      if (submission.studentId !== req.user.id) {
+        return res.status(403).json({ message: "You don't have permission to discard this submission" });
+      }
+
+      if (submission.completed) {
+        return res.status(400).json({ message: "This submission is already completed" });
+      }
+
+      // Update submission as completed, submitted, graded with 0% score, and set notes
+      const currentDate = new Date();
+      const updatedSubmission = await storage.updateSubmission(submissionId, {
+        completed: true,
+        submittedAt: currentDate,
+        gradedAt: currentDate,
+        score: 0,
+        notes: `Test discarded by student. Reason: ${discardReason}`,
+      });
+
+      res.json(updatedSubmission);
+    } catch (error) {
+      console.error("Error discarding submission:", error);
+      res.status(500).json({ message: "Error discarding submission" });
+    }
+  });
 
   // Get learner's recent results (completed and graded submissions)
   app.get("/api/learner/results", async (req, res) => {
