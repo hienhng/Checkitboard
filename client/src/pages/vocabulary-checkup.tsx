@@ -8,8 +8,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { createMarkup } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, Save } from "lucide-react";
+import { ChevronLeft, ChevronRight, AlertTriangle, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle,
+  DialogFooter, 
+  DialogTrigger
+} from "@/components/ui/dialog";
 
 export default function VocabularyCheckup() {
   const { id } = useParams();
@@ -20,6 +29,8 @@ export default function VocabularyCheckup() {
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [definition, setDefinition] = useState("");
   const [savedDefinitions, setSavedDefinitions] = useState<Record<number, string>>({});
+  const [discardReason, setDiscardReason] = useState("");
+  const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
   
   // Get submission details with vocabulary list and words
   const { data: submission, isLoading } = useQuery({
@@ -79,6 +90,33 @@ export default function VocabularyCheckup() {
       });
     },
   });
+  
+  // Mutation to discard the submission
+  const discardMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest(
+        "POST", 
+        `/api/submissions/${submissionId}/discard`, 
+        { discardReason }
+      );
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Check-up discarded",
+        description: "Your vocabulary check-up has been discarded with a 0% score.",
+        variant: "destructive"
+      });
+      navigate("/learner/dashboard");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error discarding check-up",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   // Load any existing definitions when the submission data is loaded
   useEffect(() => {
@@ -124,20 +162,22 @@ export default function VocabularyCheckup() {
     }
   };
 
-  const handleSaveAndExit = async () => {
-    if (!submission?.list?.words) return;
-    
-    const currentWord = submission.list.words[currentWordIndex];
-    
-    // Save the current definition if it's not empty
-    if (definition && definition !== savedDefinitions[currentWord.id]) {
-      await definitionMutation.mutateAsync({ 
-        wordId: currentWord.id, 
-        studentDefinition: definition 
+  const handleDiscardSubmission = async () => {
+    if (!discardReason.trim()) {
+      toast({
+        title: "Discard reason required",
+        description: "Please provide a reason for discarding the test.",
+        variant: "destructive",
       });
+      return;
     }
     
-    navigate("/learner/dashboard");
+    try {
+      await discardMutation.mutateAsync();
+      setDiscardDialogOpen(false);
+    } catch (error) {
+      // Error is handled in the mutation
+    }
   };
 
   const handleComplete = async () => {
@@ -320,15 +360,59 @@ export default function VocabularyCheckup() {
                             ))}
                           </div>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-sm text-gray-500 hover:text-gray-700"
-                          onClick={handleSaveAndExit}
-                        >
-                          <Save className="mr-1 h-4 w-4" />
-                          Save & Exit
-                        </Button>
+                        <Dialog open={discardDialogOpen} onOpenChange={setDiscardDialogOpen}>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-sm text-red-500 hover:text-red-700"
+                            >
+                              <X className="mr-1 h-4 w-4" />
+                              Discard Test
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle className="flex items-center gap-2 text-red-600">
+                                <AlertTriangle size={18} />
+                                Discard Test?
+                              </DialogTitle>
+                              <DialogDescription>
+                                This will discard your current test and you will receive a 0% score.
+                                This action cannot be undone.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="mt-4">
+                              <label htmlFor="discard-reason" className="block text-sm font-medium text-neutral-dark mb-1">
+                                Please explain why you are discarding this test:
+                              </label>
+                              <Textarea
+                                id="discard-reason"
+                                rows={3}
+                                placeholder="I'm discarding this test because..."
+                                value={discardReason}
+                                onChange={(e) => setDiscardReason(e.target.value)}
+                                className="w-full"
+                              />
+                            </div>
+                            <DialogFooter className="mt-4">
+                              <Button 
+                                variant="outline" 
+                                onClick={() => setDiscardDialogOpen(false)}
+                              >
+                                Cancel
+                              </Button>
+                              <Button 
+                                variant="destructive" 
+                                className="bg-red-600 hover:bg-red-700"
+                                onClick={handleDiscardSubmission}
+                                disabled={discardMutation.isPending}
+                              >
+                                {discardMutation.isPending ? "Discarding..." : "Discard Test"}
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
                       </div>
                     </div>
                   </div>

@@ -72,6 +72,7 @@ export const submissions = pgTable("submissions", {
   submittedAt: timestamp("submitted_at"),
   gradedAt: timestamp("graded_at"),
   isRedo: boolean("is_redo").default(false).notNull(),
+  notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
