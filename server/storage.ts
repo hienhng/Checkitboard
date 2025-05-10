@@ -388,7 +388,14 @@ export class DatabaseStorage {
   }
 
   async createSubmission(submissionData: InsertSubmission) {
-    const [submission] = await db.insert(submissions).values(submissionData).returning();
+    // Explicitly create an object with only the fields we know exist in the database
+    const validSubmissionData = {
+      studentId: submissionData.studentId,
+      listId: submissionData.listId,
+      isRedo: submissionData.isRedo ?? false
+    };
+    
+    const [submission] = await db.insert(submissions).values(validSubmissionData).returning();
     return submission;
   }
 
