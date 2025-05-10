@@ -226,7 +226,7 @@ export const insertSubmissionSchema = createInsertSchema(submissions, {
   studentId: (schema) => schema,
   listId: (schema) => schema,
   isRedo: (schema) => schema,
-}).omit({ id: true, createdAt: true, completed: true, score: true, submittedAt: true, gradedAt: true });
+}).omit({ id: true, createdAt: true, completed: true, score: true, submittedAt: true, gradedAt: true, notes: true });
 
 export const insertWordDefinitionSchema = createInsertSchema(wordDefinitions, {
   studentDefinition: (schema) => schema.min(1, "Definition cannot be empty"),
