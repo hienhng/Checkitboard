@@ -1,4 +1,4 @@
-import { db } from "@db";
+import { db, pool } from "@db";
 import {
   users,
   vocabularyLists,
@@ -171,12 +171,12 @@ export class DatabaseStorage {
           WHERE vw.list_id = ANY($1)
         `;
         
-        const listIds = classListRows.map(list => list.id);
+        const listIds = classListRows.map((list: any) => list.id);
         const wordResult = await pool.query(wordQuery, [listIds]);
         const wordRows = wordResult.rows;
         
         // Format class lists to match the structure from the ORM query
-        const classLists = classListRows.map(row => ({
+        const classLists = classListRows.map((row: any) => ({
           id: row.id,
           title: row.title,
           dueDate: row.due_date,
@@ -186,8 +186,8 @@ export class DatabaseStorage {
           createdAt: row.created_at,
           passage: row.passage,
           words: wordRows
-            .filter(word => word.list_id === row.id)
-            .map(word => ({
+            .filter((word: any) => word.list_id === row.id)
+            .map((word: any) => ({
               id: word.id,
               word: word.word
             })),
