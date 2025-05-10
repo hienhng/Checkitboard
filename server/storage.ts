@@ -227,6 +227,17 @@ export class DatabaseStorage {
           eq(submissions.listId, listId),
           eq(submissions.completed, false) // Return only incomplete ones
         ),
+        columns: {
+          id: true,
+          studentId: true,
+          listId: true,
+          completed: true,
+          score: true,
+          submittedAt: true,
+          gradedAt: true,
+          isRedo: true,
+          createdAt: true
+        }
       });
     } else {
       // Return only non-redo submissions or incomplete redo submissions
@@ -239,6 +250,17 @@ export class DatabaseStorage {
             eq(submissions.completed, false)
           )
         ),
+        columns: {
+          id: true,
+          studentId: true,
+          listId: true,
+          completed: true,
+          score: true,
+          submittedAt: true,
+          gradedAt: true,
+          isRedo: true,
+          createdAt: true
+        }
       });
     }
   }
@@ -711,11 +733,12 @@ export class DatabaseStorage {
               },
             },
             vocabularyLists: {
-              where: eq(vocabularyLists.published, true),
+              // Don't filter by published status, so students can see all lists
               columns: {
                 id: true,
                 title: true,
                 dueDate: true,
+                published: true,
                 createdAt: true,
               },
             },
