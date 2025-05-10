@@ -683,6 +683,18 @@ export class DatabaseStorage {
         
         // Get all submissions by this student for lists in this class
         const studentSubmissions = await db.query.submissions.findMany({
+          columns: {
+            id: true,
+            studentId: true,
+            listId: true,
+            completed: true,
+            score: true,
+            submittedAt: true,
+            gradedAt: true,
+            isRedo: true,
+            createdAt: true,
+            // notes column is explicitly not selected
+          },
           where: and(
             eq(submissions.studentId, studentId),
             eq(submissions.completed, true),
