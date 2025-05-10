@@ -306,6 +306,17 @@ export class DatabaseStorage {
         eq(submissions.studentId, studentId),
         eq(submissions.completed, true)
       ),
+      columns: {
+        id: true,
+        studentId: true,
+        listId: true,
+        completed: true,
+        score: true,
+        submittedAt: true,
+        gradedAt: true,
+        isRedo: true,
+        createdAt: true
+      },
       with: {
         list: {
           columns: {
@@ -419,11 +430,42 @@ export class DatabaseStorage {
   async getFlashcardsByStudent(studentId: number) {
     return await db.query.flashcards.findMany({
       where: eq(flashcards.studentId, studentId),
+      columns: {
+        id: true,
+        studentId: true,
+        wordId: true,
+        definitionId: true,
+        learned: true,
+        createdAt: true
+      },
       with: {
-        word: true,
+        word: {
+          columns: {
+            id: true,
+            word: true,
+            listId: true
+          }
+        },
         definition: {
+          columns: {
+            id: true,
+            submissionId: true,
+            wordId: true,
+            studentDefinition: true,
+            correctDefinition: true,
+            showCorrectDefinition: true,
+            isCorrect: true,
+            addedToFlashcards: true
+          },
           with: {
             submission: {
+              columns: {
+                id: true,
+                studentId: true,
+                listId: true,
+                completed: true,
+                score: true
+              },
               with: {
                 list: {
                   columns: {
