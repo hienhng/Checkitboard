@@ -546,35 +546,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Only learners can submit vocabulary check-ups" });
       }
 
-      const validatedData = insertSubmissionSchema.parse({
+      // Directly create the submission data without going through schema validation
+      const submissionData = {
         studentId: req.user.id,
         listId: req.body.listId,
-      });
+        isRedo: req.body.isRedo === true
+      };
 
       // Check if list exists and is published
-      const list = await storage.getVocabularyList(validatedData.listId);
+      const list = await storage.getVocabularyList(submissionData.listId);
       if (!list) {
         return res.status(404).json({ message: "Vocabulary list not found" });
       }
 
-      if (!list.published) {
+      // For class lists, we don't require them to be published
+      // Only enforce published=true for non-class lists
+      if (!list.classId && !list.published) {
         return res.status(403).json({ message: "This vocabulary list is not published yet" });
       }
 
       // Check if student already has a submission for this list
       const existingSubmission = await storage.getSubmissionByStudentAndList(
-        validatedData.studentId,
-        validatedData.listId
+        submissionData.studentId,
+        submissionData.listId
       );
 
-      if (existingSubmission && !validatedData.isRedo) {
+      if (existingSubmission && !submissionData.isRedo) {
         return res.status(400).json({ 
           message: "You already have a submission for this list",
           submissionId: existingSubmission.id
         });
       }
 
-      const submission = await storage.createSubmission(validatedData);
+      // Use direct SQL insertion to avoid issues with schema
+      const result = await pool.query(`
+        INSERT INTO submissions (student_id, list_id, is_redo, created_at)
+        VALUES ($1, $2, $3, NOW())
+        RETURNING id, student_id, list_id, is_redo, created_at
+      `, [submissionData.studentId, submissionData.listId, submissionData.isRedo]);
+      
+      // Format the response to match what the client expects
+      const submission = {
+        id: result.rows[0].id,
+        studentId: result.rows[0].student_id,
+        listId: result.rows[0].list_id,
+        isRedo: result.rows[0].is_redo,
+        createdAt: result.rows[0].created_at,
+        completed: false
+      };
       res.status(201).json(submission);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -721,14 +740,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "This submission is already completed" });
       }
 
-      // Update submission as completed, submitted, graded with 0% score, and set notes
+      // Update submission as completed, submitted, graded with 0% score
       const currentDate = new Date();
       const updatedSubmission = await storage.updateSubmission(submissionId, {
         completed: true,
         submittedAt: currentDate,
         gradedAt: currentDate,
-        score: 0,
-        notes: `Test discarded by student. Reason: ${discardReason}`,
+        score: 0
       });
 
       res.json(updatedSubmission);
