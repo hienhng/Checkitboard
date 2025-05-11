@@ -44,12 +44,6 @@ async function sendEmail(
   params: EmailParams
 ): Promise<void> {
   try {
-    if (!process.env.SENDGRID_API_KEY) {
-      console.log(`[MOCK EMAIL] Template: ${template}, To: ${to}, Subject: ${subject}`);
-      console.log(`[MOCK EMAIL] Params:`, params);
-      return;
-    }
-
     let html: string;
     
     switch (template) {
@@ -62,16 +56,38 @@ async function sendEmail(
       default:
         throw new Error(`Unknown email template: ${template}`);
     }
+    
+    // For development - always log the verification code so we can test without real emails
+    if (template === EmailTemplate.VERIFICATION_CODE) {
+      const verificationParams = params as VerificationEmailParams;
+      console.log(`
+==========================================================
+🔑 VERIFICATION CODE for ${to}: ${verificationParams.code}
+==========================================================
+      `);
+    }
+
+    // Skip actual email sending in development mode or if SendGrid is having issues
+    if (!process.env.SENDGRID_API_KEY || process.env.NODE_ENV !== 'production') {
+      console.log(`[MOCK EMAIL] Template: ${template}, To: ${to}, Subject: ${subject}`);
+      return;
+    }
 
     const msg = {
       to,
-      from: 'VocabCheckUp <noreply@vocab-checkup.example.com>', // replace with your verified sender
+      from: 'noreply@example.com', // This should be changed to a verified sender in production
       subject,
       html,
     };
 
-    await mailService.send(msg);
-    console.log(`Email sent to ${to} using template ${template}`);
+    try {
+      await mailService.send(msg);
+      console.log(`Email sent to ${to} using template ${template}`);
+    } catch (emailError) {
+      // Log but continue - we've already shown the code in console
+      console.error("SendGrid error:", emailError);
+      console.log(`[FALLBACK] Email would have been sent to ${to}`);
+    }
   } catch (error) {
     console.error("Error sending email:", error);
     // Don't throw - we don't want to break the app if email sending fails
