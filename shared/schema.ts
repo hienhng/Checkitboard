@@ -99,6 +99,16 @@ export const flashcards = pgTable("flashcards", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Email verification codes
+export const verificationCodes = pgTable("verification_codes", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull(),
+  code: text("code").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  isVerified: boolean("is_verified").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Relationships definitions
 export const usersRelations = relations(users, ({ many }) => ({
   vocabularyLists: many(vocabularyLists),
