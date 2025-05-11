@@ -154,6 +154,8 @@ export async function generateVerificationCode(email: string): Promise<string> {
  */
 export async function verifyCode(email: string, code: string): Promise<boolean> {
   try {
+    console.log(`Attempting to verify code for ${email}: "${code}"`);
+    
     const now = new Date();
     
     // Find the verification code
@@ -164,16 +166,26 @@ export async function verifyCode(email: string, code: string): Promise<boolean> 
       );
     
     if (!storedCode) {
+      console.log(`No verification code found for ${email}`);
       return false;
     }
+    
+    console.log(`Found stored code: "${storedCode.code}", expires: ${storedCode.expiresAt}`);
     
     // Check if code is expired
     if (storedCode.expiresAt < now) {
+      console.log(`Code expired. Expiry: ${storedCode.expiresAt}, Now: ${now}`);
       return false;
     }
     
-    // Check if code matches
-    if (storedCode.code !== code) {
+    // Check if code matches - trim any whitespace to handle potential copy-paste issues
+    const trimmedCode = code.trim();
+    const trimmedStoredCode = storedCode.code.trim();
+    
+    console.log(`Comparing: "${trimmedCode}" with "${trimmedStoredCode}"`);
+    
+    if (trimmedStoredCode !== trimmedCode) {
+      console.log(`Code mismatch: "${trimmedCode}" != "${trimmedStoredCode}"`);
       return false;
     }
     
@@ -182,6 +194,7 @@ export async function verifyCode(email: string, code: string): Promise<boolean> 
       .set({ isVerified: true })
       .where(eq(verificationCodes.id, storedCode.id));
     
+    console.log(`Code verified successfully for ${email}`);
     return true;
   } catch (error) {
     console.error("Error verifying code:", error);

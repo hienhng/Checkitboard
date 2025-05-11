@@ -319,6 +319,9 @@ export function RegisterForm() {
                 <FormControl>
                   <Input 
                     placeholder="123456" 
+                    type="text"
+                    maxLength={6}
+                    inputMode="text"
                     {...field}
                   />
                 </FormControl>
