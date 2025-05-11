@@ -5,7 +5,8 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
-import { User } from "@shared/schema";
+import { User, verifyEmailSchema } from "@shared/schema";
+import { generateVerificationCode, sendVerificationEmail, verifyCode } from "./email";
 
 declare global {
   namespace Express {
@@ -90,12 +91,22 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res, next) => {
     try {
-      const { email, password, name, role } = req.body;
+      const { email, password, name, role, verificationCode } = req.body;
       
       // Check if email already exists
       const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {
         return res.status(400).json({ message: "Email already in use" });
+      }
+      
+      // Verify email with verification code
+      if (!verificationCode) {
+        return res.status(400).json({ message: "Verification code is required" });
+      }
+      
+      const isVerified = await verifyCode(email, verificationCode);
+      if (!isVerified) {
+        return res.status(400).json({ message: "Invalid or expired verification code" });
       }
 
       // Create new user with hashed password
@@ -172,6 +183,62 @@ export function setupAuth(app: Express) {
     } catch (error: any) {
       console.error("Error linking parent:", error);
       res.status(500).json({ message: error.message || "Error linking parent to student" });
+    }
+  });
+
+  // Request a verification code for email verification during registration
+  app.post("/api/send-verification-code", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      // Check if email already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "Email already in use" });
+      }
+      
+      // Generate and store a verification code
+      const code = await generateVerificationCode(email);
+      
+      // Send the verification code via email
+      await sendVerificationEmail({
+        email,
+        code
+      });
+      
+      return res.status(200).json({ message: "Verification code sent successfully" });
+    } catch (error: any) {
+      console.error("Error sending verification code:", error);
+      res.status(500).json({ message: error.message || "Error sending verification code" });
+    }
+  });
+  
+  // Verify email with code before registration
+  app.post("/api/verify-email", async (req, res) => {
+    try {
+      const validationResult = verifyEmailSchema.safeParse(req.body);
+      
+      if (!validationResult.success) {
+        return res.status(400).json({ message: "Invalid verification data", errors: validationResult.error.errors });
+      }
+      
+      const { email, code } = validationResult.data;
+      
+      // Verify the code
+      const isVerified = await verifyCode(email, code);
+      
+      if (!isVerified) {
+        return res.status(400).json({ message: "Invalid or expired verification code" });
+      }
+      
+      return res.status(200).json({ message: "Email verified successfully" });
+    } catch (error: any) {
+      console.error("Error verifying email:", error);
+      res.status(500).json({ message: error.message || "Error verifying email" });
     }
   });
 }
