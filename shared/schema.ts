@@ -99,16 +99,6 @@ export const flashcards = pgTable("flashcards", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Email verification codes
-export const verificationCodes = pgTable("verification_codes", {
-  id: serial("id").primaryKey(),
-  email: text("email").notNull(),
-  code: text("code").notNull(),
-  expiresAt: timestamp("expires_at").notNull(),
-  isVerified: boolean("is_verified").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
 // Relationships definitions
 export const usersRelations = relations(users, ({ many }) => ({
   vocabularyLists: many(vocabularyLists),
@@ -266,15 +256,6 @@ export const classRequestResponseSchema = z.object({
   status: z.enum(["approved", "rejected"]),
 });
 
-// Schema for inserting verification codes
-export const insertVerificationCodeSchema = createInsertSchema(verificationCodes).omit({ id: true, isVerified: true, createdAt: true });
-
-// Schema for verifying email with code
-export const verifyEmailSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  code: z.string().min(6, "Verification code must be at least 6 characters"),
-});
-
 // Export types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -297,9 +278,6 @@ export type StudentClass = typeof studentClass.$inferSelect;
 export type InsertStudentClass = z.infer<typeof insertStudentClassSchema>;
 export type JoinClassRequest = z.infer<typeof joinClassSchema>;
 export type ClassRequestResponse = z.infer<typeof classRequestResponseSchema>;
-export type VerificationCode = typeof verificationCodes.$inferSelect;
-export type InsertVerificationCode = z.infer<typeof insertVerificationCodeSchema>;
-export type VerifyEmailRequest = z.infer<typeof verifyEmailSchema>;
 
 // Export select schemas
 export const selectUserSchema = createSelectSchema(users);

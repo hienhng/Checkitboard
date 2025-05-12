@@ -1,23 +1,4 @@
-import { MailService } from '@sendgrid/mail';
-import { db } from '@db';
-import { verificationCodes, InsertVerificationCode } from '@shared/schema';
-import { eq } from 'drizzle-orm';
-
-// Initialize SendGrid
-if (!process.env.SENDGRID_API_KEY) {
-  console.warn("SENDGRID_API_KEY not set. Email functionality will not work.");
-}
-
-const mailService = new MailService();
-if (process.env.SENDGRID_API_KEY) {
-  mailService.setApiKey(process.env.SENDGRID_API_KEY);
-}
-
-// Email templates
-export enum EmailTemplate {
-  PARENT_RESULTS = 'parent_results',
-  VERIFICATION_CODE = 'verification_code'
-}
+import { createTransport } from "nodemailer";
 
 interface ParentEmailParams {
   parentEmail: string;
@@ -27,222 +8,56 @@ interface ParentEmailParams {
   listTitle: string;
 }
 
-interface VerificationEmailParams {
-  email: string;
-  code: string;
-}
-
-type EmailParams = ParentEmailParams | VerificationEmailParams;
-
 /**
- * Core function to send emails using SendGrid
+ * Sends an email to a parent with their child's vocabulary check-up results
  */
-async function sendEmail(
-  template: EmailTemplate,
-  to: string,
-  subject: string,
-  params: EmailParams
-): Promise<void> {
+export async function sendParentEmail({
+  parentEmail,
+  studentName,
+  score,
+  incorrectWords,
+  listTitle,
+}: ParentEmailParams): Promise<void> {
   try {
-    let html: string;
+    // In a production environment, we would use environment variables for this
+    // For demo purposes, we're simulating the email sending
+    console.log(`Sending email to ${parentEmail} about ${studentName}'s vocabulary check-up results`);
+    console.log(`Score: ${score}%`);
+    console.log(`Incorrect words: ${incorrectWords.join(', ')}`);
     
-    switch (template) {
-      case EmailTemplate.PARENT_RESULTS:
-        html = generateParentEmailTemplate(params as ParentEmailParams);
-        break;
-      case EmailTemplate.VERIFICATION_CODE:
-        html = generateVerificationEmailTemplate(params as VerificationEmailParams);
-        break;
-      default:
-        throw new Error(`Unknown email template: ${template}`);
-    }
-    
-    // For development - always log the verification code so we can test without real emails
-    if (template === EmailTemplate.VERIFICATION_CODE) {
-      const verificationParams = params as VerificationEmailParams;
-      console.log(`
-==========================================================
-🔑 VERIFICATION CODE for ${to}: ${verificationParams.code}
-==========================================================
-      `);
-    }
+    // For actual implementation, uncomment this code and set up environment variables:
+    /*
+    const transporter = createTransport({
+      host: process.env.EMAIL_HOST,
+      port: parseInt(process.env.EMAIL_PORT || '587'),
+      secure: process.env.EMAIL_SECURE === 'true',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASSWORD,
+      },
+    });
 
-    // Skip actual email sending in development mode or if SendGrid is having issues
-    if (!process.env.SENDGRID_API_KEY || process.env.NODE_ENV !== 'production') {
-      console.log(`[MOCK EMAIL] Template: ${template}, To: ${to}, Subject: ${subject}`);
-      return;
-    }
-
-    const msg = {
-      to,
-      from: 'noreply@example.com', // This should be changed to a verified sender in production
-      subject,
-      html,
+    const mailOptions = {
+      from: process.env.EMAIL_FROM,
+      to: parentEmail,
+      subject: `Vocabulary Check-Up Results for ${studentName}`,
+      html: generateEmailTemplate({
+        studentName,
+        score,
+        incorrectWords,
+        listTitle,
+      }),
     };
 
-    try {
-      await mailService.send(msg);
-      console.log(`Email sent to ${to} using template ${template}`);
-    } catch (emailError) {
-      // Log but continue - we've already shown the code in console
-      console.error("SendGrid error:", emailError);
-      console.log(`[FALLBACK] Email would have been sent to ${to}`);
-    }
+    await transporter.sendMail(mailOptions);
+    */
   } catch (error) {
-    console.error("Error sending email:", error);
+    console.error("Error sending parent email:", error);
     // Don't throw - we don't want to break the app if email sending fails
   }
 }
 
-/**
- * Sends an email to a parent with their child's vocabulary check-up results
- */
-export async function sendParentEmail(params: ParentEmailParams): Promise<void> {
-  await sendEmail(
-    EmailTemplate.PARENT_RESULTS, 
-    params.parentEmail, 
-    `Vocabulary Check-Up Results for ${params.studentName}`, 
-    params
-  );
-}
-
-/**
- * Sends a verification code email for account registration
- */
-export async function sendVerificationEmail(params: VerificationEmailParams): Promise<void> {
-  await sendEmail(
-    EmailTemplate.VERIFICATION_CODE,
-    params.email,
-    "Your Verification Code",
-    params
-  );
-}
-
-/**
- * Generates and stores a verification code for email verification
- */
-export async function generateVerificationCode(email: string): Promise<string> {
-  try {
-    // Generate a 6-digit verification code
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    
-    // Set expiration to 10 minutes from now
-    const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 10);
-    
-    // Delete any existing verification codes for this email
-    await db.delete(verificationCodes).where(eq(verificationCodes.email, email));
-    
-    // Create new verification code
-    const data: InsertVerificationCode = {
-      email,
-      code,
-      expiresAt,
-    };
-    
-    await db.insert(verificationCodes).values(data);
-    
-    return code;
-  } catch (error) {
-    console.error("Error generating verification code:", error);
-    throw new Error("Failed to generate verification code");
-  }
-}
-
-/**
- * Verifies a code sent to an email
- */
-export async function verifyCode(email: string, code: string): Promise<boolean> {
-  try {
-    console.log(`Attempting to verify code for ${email}: "${code}"`);
-    
-    const now = new Date();
-    
-    // Find the verification code
-    const [storedCode] = await db.select()
-      .from(verificationCodes)
-      .where(
-        eq(verificationCodes.email, email)
-      );
-    
-    if (!storedCode) {
-      console.log(`No verification code found for ${email}`);
-      return false;
-    }
-    
-    console.log(`Found stored code: "${storedCode.code}", expires: ${storedCode.expiresAt}`);
-    
-    // Check if code is expired
-    if (storedCode.expiresAt < now) {
-      console.log(`Code expired. Expiry: ${storedCode.expiresAt}, Now: ${now}`);
-      return false;
-    }
-    
-    // Check if code matches - trim any whitespace to handle potential copy-paste issues
-    const trimmedCode = code.trim();
-    const trimmedStoredCode = storedCode.code.trim();
-    
-    console.log(`Comparing: "${trimmedCode}" with "${trimmedStoredCode}"`);
-    
-    if (trimmedStoredCode !== trimmedCode) {
-      console.log(`Code mismatch: "${trimmedCode}" != "${trimmedStoredCode}"`);
-      return false;
-    }
-    
-    // Mark as verified
-    await db.update(verificationCodes)
-      .set({ isVerified: true })
-      .where(eq(verificationCodes.id, storedCode.id));
-    
-    console.log(`Code verified successfully for ${email}`);
-    return true;
-  } catch (error) {
-    console.error("Error verifying code:", error);
-    return false;
-  }
-}
-
-/**
- * Generates the HTML template for verification codes
- */
-function generateVerificationEmailTemplate(params: VerificationEmailParams): string {
-  return `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
-      <div style="text-align: center; margin-bottom: 20px;">
-        <h1 style="color: #3B82F6; margin-bottom: 5px;">VocabCheckUp</h1>
-        <p style="color: #6B7280; font-size: 16px;">Email Verification</p>
-      </div>
-      
-      <div style="margin-bottom: 20px;">
-        <h2 style="color: #1F2937; font-size: 18px;">Verify Your Email Address</h2>
-        <p style="color: #4B5563;">To complete your registration, please enter the verification code below:</p>
-        
-        <div style="background-color: #F3F4F6; padding: 15px; border-radius: 8px; text-align: center; margin: 15px 0;">
-          <span style="font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #3B82F6;">${params.code}</span>
-        </div>
-        
-        <p style="color: #4B5563;">This code will expire in 10 minutes.</p>
-      </div>
-      
-      <div style="background-color: #EFF6FF; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-        <p style="margin: 0; color: #1E40AF; font-weight: bold;">Security Notice</p>
-        <p style="margin: 8px 0 0; color: #1E40AF;">
-          If you did not request this verification code, please ignore this email.
-        </p>
-      </div>
-      
-      <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6B7280; font-size: 14px;">
-        <p>This is an automated email from VocabCheckUp.</p>
-        <p>Please do not reply to this message.</p>
-      </div>
-    </div>
-  `;
-}
-
-/**
- * Generates the HTML template for parent emails
- */
-function generateParentEmailTemplate({
+function generateEmailTemplate({
   studentName,
   score,
   incorrectWords,
