@@ -466,8 +466,8 @@ export class DatabaseStorage {
   }
 
   async createSubmission(submissionData: InsertSubmission) {
-    // Explicitly create an object with only the fields we know exist in the database
-    const validSubmissionData = {
+    // Create a properly typed object with only the fields we know exist in the database
+    const validSubmissionData: typeof submissionData = {
       studentId: submissionData.studentId,
       listId: submissionData.listId,
       isRedo: submissionData.isRedo ?? false
