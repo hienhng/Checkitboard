@@ -239,6 +239,17 @@ export class DatabaseStorage {
   async getSubmission(id: number) {
     return await db.query.submissions.findFirst({
       where: eq(submissions.id, id),
+      columns: {
+        id: true,
+        studentId: true,
+        listId: true,
+        completed: true,
+        score: true,
+        submittedAt: true,
+        gradedAt: true,
+        isRedo: true,
+        createdAt: true
+      }
     });
   }
 

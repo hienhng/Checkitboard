@@ -72,7 +72,6 @@ export const submissions = pgTable("submissions", {
   submittedAt: timestamp("submitted_at"),
   gradedAt: timestamp("graded_at"),
   isRedo: boolean("is_redo").default(false).notNull(),
-  notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -226,7 +225,7 @@ export const insertSubmissionSchema = createInsertSchema(submissions, {
   studentId: (schema) => schema,
   listId: (schema) => schema,
   isRedo: (schema) => schema,
-}).omit({ id: true, createdAt: true, completed: true, score: true, submittedAt: true, gradedAt: true, notes: true });
+}).omit({ id: true, createdAt: true, completed: true, score: true, submittedAt: true, gradedAt: true });
 
 export const insertWordDefinitionSchema = createInsertSchema(wordDefinitions, {
   studentDefinition: (schema) => schema.min(1, "Definition cannot be empty"),
