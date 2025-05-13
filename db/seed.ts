@@ -69,65 +69,11 @@ async function seed() {
     }
     console.log(`Added ${words.length} vocabulary words`);
 
-    // Create another vocabulary list (completed)
-    const [historyList] = await db.insert(schema.vocabularyLists).values({
-      title: "History Terms - Civil War",
-      passage: "The American Civil War was a civil war in the United States fought between northern and southern states. The Civil War began primarily as a result of the long-standing controversy over the enslavement of black people. War broke out in April 1861 when secessionist forces attacked Fort Sumter in South Carolina. The Emancipation Proclamation made abolition a central goal of the war. The Confederacy surrendered, ending the war, in 1865.",
-      educatorId: educator.id,
-      published: true,
-      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // One week from now
-    }).returning();
-    console.log("Created vocabulary list:", historyList.title);
+    
 
-    // Create vocabulary words for history list
-    const historyWords = ["emancipation", "proclamation", "confederacy", "secession", "abolition", "enslavement"];
-    for (const word of historyWords) {
-      await db.insert(schema.vocabularyWords).values({
-        word,
-        listId: historyList.id,
-      });
-    }
-    console.log(`Added ${historyWords.length} vocabulary words to history list`);
+    
 
-    // Create a third vocabulary list
-    const [literaryList] = await db.insert(schema.vocabularyLists).values({
-      title: "Literary Terms - Shakespeare",
-      passage: "William Shakespeare employed numerous literary devices in his works. His masterful use of soliloquy reveals characters' inner thoughts. His plays are filled with alliteration and metaphors that create vivid imagery. Shakespeare's protagonists often display tragic flaws leading to their downfall. The bard's works continue to influence literature with their eloquent prose and complex themes.",
-      educatorId: educator.id,
-      published: true,
-      dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days from now
-    }).returning();
-    console.log("Created vocabulary list:", literaryList.title);
-
-    // Create vocabulary words for literary list
-    const literaryWords = ["soliloquy", "alliteration", "metaphor", "protagonist", "tragic flaw", "eloquent"];
-    for (const word of literaryWords) {
-      await db.insert(schema.vocabularyWords).values({
-        word,
-        listId: literaryList.id,
-      });
-    }
-    console.log(`Added ${literaryWords.length} vocabulary words to literary list`);
-
-    // Create a fourth vocabulary list (Math)
-    const [mathList] = await db.insert(schema.vocabularyLists).values({
-      title: "Math Terminology - Geometry",
-      passage: "Geometry is the branch of mathematics concerned with questions of shape, size, relative position of figures, and the properties of space. A geometric shape can be described as the geometric information which remains when location, scale, orientation, and reflection are removed from the description of a geometric object. The area of a circle is calculated using the formula πr², where r represents the radius. Triangles can be categorized as equilateral, isosceles, or scalene based on their sides.",
-      educatorId: educator.id,
-      published: true,
-      dueDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago (past due)
-    }).returning();
-    console.log("Created vocabulary list:", mathList.title);
-
-    // Create vocabulary words for math list
-    const mathWords = ["geometry", "radius", "equilateral", "isosceles", "scalene", "circumference", "perimeter", "polygon", "quadrilateral", "theorem"];
-    for (const word of mathWords) {
-      await db.insert(schema.vocabularyWords).values({
-        word,
-        listId: mathList.id,
-      });
-    }
-    console.log(`Added ${mathWords.length} vocabulary words to math list`);
+    );
 
     // Create a completed submission for the math list
     const [mathSubmission] = await db.insert(schema.submissions).values({
