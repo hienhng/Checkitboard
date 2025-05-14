@@ -269,3 +269,57 @@ export async function generateLearningStrategies(words: string[], studentPerform
     throw new Error("Failed to generate learning strategies");
   }
 }
+
+/**
+ * Generate a passage that includes all the provided vocabulary words
+ */
+export async function generatePassageFromWords(
+  words: string[], 
+  options: { 
+    topic?: string; 
+    gradeLevel?: string;
+    paragraphCount?: number;
+    style?: string;
+  } = {}
+): Promise<string> {
+  try {
+    if (!openai) {
+      throw new Error("OpenAI API key is not configured");
+    }
+
+    // Set defaults for options
+    const topic = options.topic || "general knowledge";
+    const gradeLevel = options.gradeLevel || "middle school";
+    const paragraphCount = options.paragraphCount || 1;
+    const style = options.style || "educational";
+
+    const prompt = `
+      Create an engaging and coherent ${style} passage (${paragraphCount} paragraph(s)) about ${topic} at a ${gradeLevel} reading level
+      that naturally incorporates ALL of the following vocabulary words. The passage should flow naturally and not feel forced.
+      
+      Vocabulary words to include: ${words.join(", ")}
+      
+      Important:
+      1. Use ALL the listed words in their exact form
+      2. Make the passage coherent and educational
+      3. Ensure the passage is appropriate for ${gradeLevel} students
+      4. The passage should be between 100-300 words, depending on the number of vocabulary words
+      5. Return ONLY the passage, with no explanations, titles, or metadata
+    `;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error("No content returned from OpenAI");
+    }
+
+    return content.trim();
+  } catch (error) {
+    console.error("Error generating passage:", error);
+    throw new Error("Failed to generate passage from vocabulary words");
+  }
+}

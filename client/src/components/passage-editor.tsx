@@ -7,14 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Form } from "@/components/ui/form";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
-import { X } from "lucide-react";
+import { X, BookOpen, Wand2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { extractHighlightedWords, formatPassageWithHighlights } from "@/lib/utils";
 import { ClassSelect } from "@/components/ui/class-select";
 import { AIPassageAssist } from "@/components/ai-assist";
+import { WordToPassage } from "@/components/word-to-passage";
 import { z } from "zod";
 
 interface PassageEditorProps {
@@ -267,121 +269,159 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
       {/* Use FormProvider from react-hook-form */}
       <Form {...form}>
         <form className="space-y-6">
-        <div>
-          <Label htmlFor="list-name">List Name</Label>
-          <Input
-            id="list-name"
-            type="text"
-            placeholder="Week 5 - Science Reading"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="mt-1"
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="due-date">Due Date (Optional)</Label>
-          <Input
-            id="due-date"
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-            className="mt-1"
-          />
-        </div>
-
-        <ClassSelect
-          formControl={form.control}
-          name="classId"
-          label="Assign to Class"
-          description="Assign this vocabulary list to a specific class, or leave empty to make it available to all students."
-        />
-
-        <div>
-          <Label htmlFor="reading-passage">Reading Passage</Label>
-          <Textarea
-            id="reading-passage"
-            placeholder="Paste or type your reading passage here..."
-            value={passage}
-            onChange={handlePassageChange}
-            rows={8}
-            className="mt-1"
-          />
-          <p className="mt-2 text-xs text-gray-500">
-            Simply click on words or highlight text to add vocabulary words.
-          </p>
-        </div>
-
-        <div>
-          <Label className="block text-sm font-medium text-gray-700">
-            Passage Preview (Click on words or select text to add them)
-          </Label>
-          <div
-            ref={passageRef}
-            className="mt-1 p-4 border border-gray-300 rounded-md bg-white passage-container min-h-[100px]"
-          >
-            {passage}
-          </div>
-        </div>
-
-        <div>
-          <Label className="block text-sm font-medium text-gray-700">
-            Selected Vocabulary Words ({selectedWords.length})
-          </Label>
-          <div className="mt-1 flex flex-wrap gap-2">
-            {selectedWords.map((word) => (
-              <Badge key={word} className="highlighted-word">
-                {word}
-                <button
-                  type="button"
-                  className="flex-shrink-0 ml-1 h-4 w-4 rounded-full inline-flex items-center justify-center text-blue-400 hover:bg-blue-200 hover:text-blue-500 focus:outline-none focus:bg-blue-500 focus:text-white"
-                  onClick={() => handleRemoveWord(word)}
-                  aria-label={`Remove ${word}`}
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </Badge>
-            ))}
-            {selectedWords.length === 0 && (
-              <p className="text-sm text-gray-500">
-                No words selected yet. Click on words or highlight text in the passage above.
-              </p>
-            )}
-          </div>
-        </div>
-        
-        {/* AI Passage Analysis */}
-        {passage.length >= 50 && (
-          <div className="mt-4">
-            <AIPassageAssist 
-              passage={passage} 
-              onSelectWords={(words) => {
-                // Add new words while avoiding duplicates
-                const uniqueWords = words.filter(word => !selectedWords.includes(word));
-                setSelectedWords(prev => [...prev, ...uniqueWords]);
-              }} 
+          <div>
+            <Label htmlFor="list-name">List Name</Label>
+            <Input
+              id="list-name"
+              type="text"
+              placeholder="Week 5 - Science Reading"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="mt-1"
             />
           </div>
-        )}
 
-        <div className="flex justify-end space-x-3">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleSaveDraft}
-            disabled={createListMutation.isPending}
-          >
-            Save Draft
-          </Button>
-          <Button
-            type="button"
-            onClick={handlePublish}
-            disabled={createListMutation.isPending}
-          >
-            {createListMutation.isPending ? "Saving..." : "Publish"}
-          </Button>
-        </div>
-      </form>
+          <div>
+            <Label htmlFor="due-date">Due Date (Optional)</Label>
+            <Input
+              id="due-date"
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="mt-1"
+            />
+          </div>
+
+          <ClassSelect
+            formControl={form.control}
+            name="classId"
+            label="Assign to Class"
+            description="Assign this vocabulary list to a specific class, or leave empty to make it available to all students."
+          />
+
+          <Tabs defaultValue="passage-to-words" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="passage-to-words" className="flex items-center">
+                <BookOpen className="mr-2 h-4 w-4" /> 
+                Passage → Words
+              </TabsTrigger>
+              <TabsTrigger value="words-to-passage" className="flex items-center">
+                <Wand2 className="mr-2 h-4 w-4" /> 
+                Words → Passage
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="passage-to-words" className="space-y-6">
+              <div>
+                <Label htmlFor="reading-passage">Reading Passage</Label>
+                <Textarea
+                  id="reading-passage"
+                  placeholder="Paste or type your reading passage here..."
+                  value={passage}
+                  onChange={handlePassageChange}
+                  rows={8}
+                  className="mt-1"
+                />
+                <p className="mt-2 text-xs text-gray-500">
+                  Simply click on words or highlight text to add vocabulary words.
+                </p>
+              </div>
+
+              <div>
+                <Label className="block text-sm font-medium text-gray-700">
+                  Passage Preview (Click on words or select text to add them)
+                </Label>
+                <div
+                  ref={passageRef}
+                  className="mt-1 p-4 border border-gray-300 rounded-md bg-white passage-container min-h-[100px]"
+                >
+                  {passage}
+                </div>
+              </div>
+
+              <div>
+                <Label className="block text-sm font-medium text-gray-700">
+                  Selected Vocabulary Words ({selectedWords.length})
+                </Label>
+                <div className="mt-1 flex flex-wrap gap-2">
+                  {selectedWords.map((word) => (
+                    <Badge key={word} className="highlighted-word">
+                      {word}
+                      <button
+                        type="button"
+                        className="flex-shrink-0 ml-1 h-4 w-4 rounded-full inline-flex items-center justify-center text-blue-400 hover:bg-blue-200 hover:text-blue-500 focus:outline-none focus:bg-blue-500 focus:text-white"
+                        onClick={() => handleRemoveWord(word)}
+                        aria-label={`Remove ${word}`}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                  {selectedWords.length === 0 && (
+                    <p className="text-sm text-gray-500">
+                      No words selected yet. Click on words or highlight text in the passage above.
+                    </p>
+                  )}
+                </div>
+              </div>
+              
+              {/* AI Passage Analysis */}
+              {passage.length >= 50 && (
+                <div className="mt-4">
+                  <AIPassageAssist 
+                    passage={passage} 
+                    onSelectWords={(words) => {
+                      // Add new words while avoiding duplicates
+                      const uniqueWords = words.filter(word => !selectedWords.includes(word));
+                      setSelectedWords(prev => [...prev, ...uniqueWords]);
+                    }} 
+                  />
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="words-to-passage" className="space-y-6">
+              <WordToPassage 
+                onPassageGenerated={(generatedPassage, wordList) => {
+                  setPassage(generatedPassage);
+                  setSelectedWords(wordList);
+                  
+                  // Switch back to the passage tab after generation
+                  const tabsElement = document.querySelector('[role="tablist"]') as HTMLElement;
+                  if (tabsElement) {
+                    const passageTab = tabsElement.querySelector('[value="passage-to-words"]') as HTMLElement;
+                    if (passageTab) {
+                      passageTab.click();
+                    }
+                  }
+                  
+                  toast({
+                    title: "Passage and words added",
+                    description: `Generated a passage with ${wordList.length} vocabulary words.`
+                  });
+                }}
+              />
+            </TabsContent>
+          </Tabs>
+
+          <div className="flex justify-end space-x-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleSaveDraft}
+              disabled={createListMutation.isPending}
+            >
+              Save Draft
+            </Button>
+            <Button
+              type="button"
+              onClick={handlePublish}
+              disabled={createListMutation.isPending}
+            >
+              {createListMutation.isPending ? "Saving..." : "Publish"}
+            </Button>
+          </div>
+        </form>
       </Form>
     </div>
   );

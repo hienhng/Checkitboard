@@ -9,7 +9,8 @@ import {
   analyzePassage,
   gradeDefinition,
   generateExampleSentences,
-  generateLearningStrategies 
+  generateLearningStrategies,
+  generatePassageFromWords
 } from "./ai";
 import { eq, and, desc, isNull, asc, not } from "drizzle-orm";
 import { db, pool } from "../db";
@@ -1289,6 +1290,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error checking AI status:", error);
       res.status(500).json({ message: "Error checking AI status" });
+    }
+  });
+  
+  // Generate passage from vocabulary words
+  app.post("/api/ai/generate-passage", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "educator") {
+        return res.status(403).json({ message: "Only educators can use this feature" });
+      }
+
+      const schema = z.object({
+        words: z.array(z.string()).nonempty("At least one word is required"),
+        topic: z.string().optional(),
+        gradeLevel: z.string().optional(),
+        paragraphCount: z.number().min(1).max(5).optional(),
+        style: z.string().optional()
+      });
+
+      const validatedData = schema.parse(req.body);
+      const passage = await generatePassageFromWords(
+        validatedData.words, 
+        {
+          topic: validatedData.topic,
+          gradeLevel: validatedData.gradeLevel,
+          paragraphCount: validatedData.paragraphCount,
+          style: validatedData.style
+        }
+      );
+      
+      res.json({ passage });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+      console.error("Error generating passage:", error);
+      res.status(500).json({ message: "Error generating passage" });
     }
   });
 

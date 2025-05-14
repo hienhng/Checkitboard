@@ -89,3 +89,23 @@ export async function generateLearningStrategies(
   );
   return response.json();
 }
+
+/**
+ * Generate a passage that incorporates a list of vocabulary words
+ */
+export async function generatePassageFromWords(
+  words: string[],
+  options?: {
+    topic?: string;
+    gradeLevel?: string;
+    paragraphCount?: number;
+    style?: string;
+  }
+): Promise<{ passage: string }> {
+  const response = await apiRequest(
+    "POST",
+    "/api/ai/generate-passage",
+    { words, ...options }
+  );
+  return response.json();
+}
