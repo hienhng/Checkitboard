@@ -14,6 +14,7 @@ import { X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { extractHighlightedWords, formatPassageWithHighlights } from "@/lib/utils";
 import { ClassSelect } from "@/components/ui/class-select";
+import { AIPassageAssist } from "@/components/ai-assist";
 import { z } from "zod";
 
 interface PassageEditorProps {
@@ -348,6 +349,20 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
             )}
           </div>
         </div>
+        
+        {/* AI Passage Analysis */}
+        {passage.length >= 50 && (
+          <div className="mt-4">
+            <AIPassageAssist 
+              passage={passage} 
+              onSelectWords={(words) => {
+                // Add new words while avoiding duplicates
+                const uniqueWords = words.filter(word => !selectedWords.includes(word));
+                setSelectedWords(prev => [...prev, ...uniqueWords]);
+              }} 
+            />
+          </div>
+        )}
 
         <div className="flex justify-end space-x-3">
           <Button

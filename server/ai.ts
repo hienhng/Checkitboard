@@ -1,15 +1,29 @@
 import OpenAI from "openai";
 import { z } from "zod";
 
-// Initialize the OpenAI client
+// Check if API key is available
+const apiKey = process.env.OPENAI_API_KEY;
+
+// Initialize the OpenAI client only if API key is available
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+let openai: OpenAI | null = null;
+
+try {
+  if (apiKey) {
+    openai = new OpenAI({ apiKey });
+    console.log("OpenAI client initialized successfully");
+  } else {
+    console.warn("OPENAI_API_KEY is not set. AI features will be unavailable.");
+  }
+} catch (error) {
+  console.error("Error initializing OpenAI client:", error);
+}
 
 /**
  * Check if the OpenAI API key is configured
  */
 export function isOpenAIConfigured(): boolean {
-  return !!process.env.OPENAI_API_KEY;
+  return !!openai;
 }
 
 /**
@@ -17,7 +31,7 @@ export function isOpenAIConfigured(): boolean {
  */
 export async function generateDefinitions(words: string[]): Promise<Record<string, string>> {
   try {
-    if (!isOpenAIConfigured()) {
+    if (!openai) {
       throw new Error("OpenAI API key is not configured");
     }
 
@@ -54,7 +68,7 @@ export async function generateDefinitions(words: string[]): Promise<Record<strin
  */
 export async function analyzePassage(passage: string, count: number = 10): Promise<string[]> {
   try {
-    if (!isOpenAIConfigured()) {
+    if (!openai) {
       throw new Error("OpenAI API key is not configured");
     }
 
@@ -105,7 +119,7 @@ export async function gradeDefinition(
   suggestedCorrectDefinition?: string;
 }> {
   try {
-    if (!isOpenAIConfigured()) {
+    if (!openai) {
       throw new Error("OpenAI API key is not configured");
     }
 
@@ -163,7 +177,7 @@ export async function gradeDefinition(
  */
 export async function generateExampleSentences(words: string[], count: number = 1): Promise<Record<string, string[]>> {
   try {
-    if (!isOpenAIConfigured()) {
+    if (!openai) {
       throw new Error("OpenAI API key is not configured");
     }
 
@@ -204,7 +218,7 @@ export async function generateLearningStrategies(words: string[], studentPerform
   strategies: string[];
 }> {
   try {
-    if (!isOpenAIConfigured()) {
+    if (!openai) {
       throw new Error("OpenAI API key is not configured");
     }
 

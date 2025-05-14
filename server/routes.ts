@@ -1280,6 +1280,163 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   // #endregion
 
+  // #region AI Routes
+  // Check if OpenAI API is configured
+  app.get("/api/ai/status", (req, res) => {
+    try {
+      const configured = isOpenAIConfigured();
+      res.json({ configured });
+    } catch (error) {
+      console.error("Error checking AI status:", error);
+      res.status(500).json({ message: "Error checking AI status" });
+    }
+  });
+
+  // Generate definitions for vocabulary words
+  app.post("/api/ai/definitions", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const schema = z.object({
+        words: z.array(z.string()).nonempty("At least one word is required")
+      });
+
+      const validatedData = schema.parse(req.body);
+      const definitions = await generateDefinitions(validatedData.words);
+      
+      res.json({ definitions });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+      console.error("Error generating definitions:", error);
+      res.status(500).json({ message: "Error generating definitions" });
+    }
+  });
+
+  // Analyze passage to extract potential vocabulary words
+  app.post("/api/ai/analyze-passage", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "educator") {
+        return res.status(403).json({ message: "Only educators can use this feature" });
+      }
+
+      const schema = z.object({
+        passage: z.string().min(50, "Passage must be at least 50 characters long"),
+        count: z.number().min(1).max(20).optional()
+      });
+
+      const validatedData = schema.parse(req.body);
+      const words = await analyzePassage(validatedData.passage, validatedData.count);
+      
+      res.json({ words });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+      console.error("Error analyzing passage:", error);
+      res.status(500).json({ message: "Error analyzing passage" });
+    }
+  });
+
+  // Grade a student's definition
+  app.post("/api/ai/grade-definition", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "educator") {
+        return res.status(403).json({ message: "Only educators can use this feature" });
+      }
+
+      const schema = z.object({
+        word: z.string().min(1, "Word is required"),
+        studentDefinition: z.string().min(1, "Student definition is required"),
+        correctDefinition: z.string().optional()
+      });
+
+      const validatedData = schema.parse(req.body);
+      const grading = await gradeDefinition(
+        validatedData.word,
+        validatedData.studentDefinition,
+        validatedData.correctDefinition
+      );
+      
+      res.json(grading);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+      console.error("Error grading definition:", error);
+      res.status(500).json({ message: "Error grading definition" });
+    }
+  });
+
+  // Generate example sentences
+  app.post("/api/ai/example-sentences", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const schema = z.object({
+        words: z.array(z.string()).nonempty("At least one word is required"),
+        count: z.number().min(1).max(5).optional()
+      });
+
+      const validatedData = schema.parse(req.body);
+      const sentences = await generateExampleSentences(validatedData.words, validatedData.count);
+      
+      res.json({ sentences });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+      console.error("Error generating example sentences:", error);
+      res.status(500).json({ message: "Error generating example sentences" });
+    }
+  });
+
+  // Generate personalized learning strategies
+  app.post("/api/ai/learning-strategies", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "educator") {
+        return res.status(403).json({ message: "Only educators can use this feature" });
+      }
+
+      const schema = z.object({
+        words: z.array(z.string()).nonempty("At least one word is required"),
+        studentPerformance: z.record(z.boolean())
+      });
+
+      const validatedData = schema.parse(req.body);
+      const strategies = await generateLearningStrategies(
+        validatedData.words,
+        validatedData.studentPerformance
+      );
+      
+      res.json(strategies);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+      console.error("Error generating learning strategies:", error);
+      res.status(500).json({ message: "Error generating learning strategies" });
+    }
+  });
+  // #endregion
+
   const httpServer = createServer(app);
 
   return httpServer;
