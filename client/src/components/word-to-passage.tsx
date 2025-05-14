@@ -287,8 +287,56 @@ export function WordToPassage({ onPassageGenerated }: WordToPassageProps) {
       {error && (
         <Alert variant="destructive">
           <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            {error instanceof Error ? error.message : "Failed to generate passage"}
+          <AlertDescription className="space-y-2">
+            <p>{error instanceof Error ? error.message : "Failed to generate passage"}</p>
+            {(error instanceof Error && error.message.includes("API quota exceeded")) && (
+              <>
+                <p className="text-sm">
+                  The OpenAI API has reached its quota limit. This is common with free tier accounts.
+                  You can still use the vocabulary words you've entered to create a list manually.
+                </p>
+                <div className="mt-2">
+                  <Button 
+                    size="sm" 
+                    onClick={() => {
+                      // Create a fallback passage with the words in a simple format
+                      const fallbackPassage = `Vocabulary study list containing the words: ${words.join(", ")}.`;
+                      onPassageGenerated(fallbackPassage, words);
+                      toast({
+                        title: "Words added to list",
+                        description: "Your vocabulary words have been added to a new list."
+                      });
+                    }}
+                  >
+                    Continue with these words
+                  </Button>
+                </div>
+              </>
+            )}
+            {(error instanceof Error && error.message.includes("Failed to generate passage")) && (
+              <>
+                <p className="text-sm">
+                  Try using fewer words or simpler terms. You can still use the vocabulary words 
+                  you've entered to create a list.
+                </p>
+                <div className="mt-2">
+                  <Button 
+                    size="sm" 
+                    onClick={() => {
+                      // Create a fallback passage with the words in a simple format
+                      const fallbackPassage = `Vocabulary study list containing the words: ${words.join(", ")}.`;
+                      onPassageGenerated(fallbackPassage, words);
+                      toast({
+                        title: "Words added to list",
+                        description: "Your vocabulary words have been added to a new list."
+                      });
+                    }}
+                  >
+                    Continue with these words
+                  </Button>
+                </div>
+              </>
+            )}
           </AlertDescription>
         </Alert>
       )}

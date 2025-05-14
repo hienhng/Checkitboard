@@ -1,0 +1,33 @@
+Error generating passage: RateLimitError: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.
+    at Function.generate (/home/runner/workspace/node_modules/openai/src/error.ts:96:14)
+    at OpenAI.makeStatusError (/home/runner/workspace/node_modules/openai/src/core.ts:462:21)
+    at OpenAI.makeRequest (/home/runner/workspace/node_modules/openai/src/core.ts:526:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async generatePassageFromWords (/home/runner/workspace/server/ai.ts:310:22)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:1316:23) {
+  status: 429,
+  headers: {
+    'alt-svc': 'h3=":443"; ma=86400',
+    'cf-cache-status': 'DYNAMIC',
+    'cf-ray': '93faac495ee131e2-BOM',
+    connection: 'keep-alive',
+    'content-length': '337',
+    'content-type': 'application/json; charset=utf-8',
+    date: 'Wed, 14 May 2025 13:16:57 GMT',
+    server: 'cloudflare',
+    'set-cookie': '__cf_bm=k7pnUxZxctKS29N.EkQeo4NzNFKH3vQO0TXLP_nl3a4-1747228617-1.0.1.1-ZK8.fiQFS5DA.uRbUyqeT77FLZg5NqeyumFCuwNFSOjK1Dp1_pciHic1cUrgXu0kDpnGRbtfDvhF6W7EGS7btLvVk9U77HOJwcN_DZa24eM; path=/; expires=Wed, 14-May-25 13:46:57 GMT; domain=.api.openai.com; HttpOnly; Secure; SameSite=None, _cfuvid=yZN_IwoI8rK7w1s03NTWOU4_94_yw0WdJdhDm3xLBuQ-1747228617463-0.0.1.1-604800000; path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    vary: 'Origin',
+    'x-content-type-options': 'nosniff',
+    'x-request-id': 'req_3db4333f562222b5ae0ef149670b8042'
+  },
+  request_id: 'req_3db4333f562222b5ae0ef149670b8042',
+  error: {
+    message: 'You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.',
+    type: 'insufficient_quota',
+    param: null,
+    code: 'insufficient_quota'
+  },
+  code: 'insufficient_quota',
+  param: null,
+  type: 'insufficient_quota'

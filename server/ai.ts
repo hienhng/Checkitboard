@@ -57,9 +57,17 @@ export async function generateDefinitions(words: string[]): Promise<Record<strin
     // Parse the JSON response
     const definitions = JSON.parse(content);
     return definitions;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error generating definitions:", error);
-    throw new Error("Failed to generate definitions");
+    
+    // Check for rate limit or quota errors
+    if (error.status === 429 || (error.error && error.error.code === 'insufficient_quota')) {
+      throw new Error("API quota exceeded. Please try again later or contact your administrator to update the API key.");
+    } else if (error.status === 401 || error.status === 403) {
+      throw new Error("API key authentication failed. Please check your API key.");
+    } else {
+      throw new Error("Failed to generate definitions. Please try again later.");
+    }
   }
 }
 
@@ -318,8 +326,16 @@ export async function generatePassageFromWords(
     }
 
     return content.trim();
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error generating passage:", error);
-    throw new Error("Failed to generate passage from vocabulary words");
+    
+    // Check for rate limit or quota errors
+    if (error.status === 429 || (error.error && error.error.code === 'insufficient_quota')) {
+      throw new Error("API quota exceeded. Please try again later or contact your administrator to update the API key.");
+    } else if (error.status === 401 || error.status === 403) {
+      throw new Error("API key authentication failed. Please check your API key.");
+    } else {
+      throw new Error("Failed to generate passage from vocabulary words. Please try again later.");
+    }
   }
 }
