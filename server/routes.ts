@@ -4,14 +4,14 @@ import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { sendParentEmail } from "./email";
 import { 
-  isOpenAIConfigured, 
+  isHuggingFaceConfigured as isAIConfigured, 
   generateDefinitions,
   analyzePassage,
   gradeDefinition,
   generateExampleSentences,
   generateLearningStrategies,
   generatePassageFromWords
-} from "./ai";
+} from "./huggingface";
 import { eq, and, desc, isNull, asc, not } from "drizzle-orm";
 import { db, pool } from "../db";
 import {
@@ -1285,7 +1285,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Check if OpenAI API is configured
   app.get("/api/ai/status", (req, res) => {
     try {
-      const configured = isOpenAIConfigured();
+      const configured = isAIConfigured();
       res.json({ configured });
     } catch (error) {
       console.error("Error checking AI status:", error);
