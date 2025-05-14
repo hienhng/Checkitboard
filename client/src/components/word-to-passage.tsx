@@ -292,7 +292,7 @@ export function WordToPassage({ onPassageGenerated }: WordToPassageProps) {
             {(error instanceof Error && error.message.includes("API quota exceeded")) && (
               <>
                 <p className="text-sm">
-                  The OpenAI API has reached its quota limit. This is common with free tier accounts.
+                  The Hugging Face API has reached its quota limit. This is common with free tier accounts.
                   You can still use the vocabulary words you've entered to create a list manually.
                 </p>
                 <div className="mt-2">

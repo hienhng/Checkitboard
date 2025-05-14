@@ -87,7 +87,7 @@ export function AIPassageAssist({ passage, onSelectWords }: AIPassageAssistProps
       <Alert variant="destructive">
         <AlertTitle>AI features unavailable</AlertTitle>
         <AlertDescription>
-          OpenAI API key is not configured. Contact your administrator to enable AI features.
+          Hugging Face API key is not configured. Contact your administrator to enable AI features.
         </AlertDescription>
       </Alert>
     );

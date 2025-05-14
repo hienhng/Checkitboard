@@ -1282,7 +1282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // #endregion
 
   // #region AI Routes
-  // Check if OpenAI API is configured
+  // Check if Hugging Face API is configured
   app.get("/api/ai/status", (req, res) => {
     try {
       const configured = isAIConfigured();

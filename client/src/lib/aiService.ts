@@ -1,7 +1,7 @@
 import { apiRequest } from "./queryClient";
 
 /**
- * Check if the OpenAI API is configured on the server
+ * Check if the Hugging Face API is configured on the server
  */
 export async function checkAIStatus(): Promise<{ configured: boolean }> {
   const response = await apiRequest(

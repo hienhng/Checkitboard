@@ -435,10 +435,10 @@ STRATEGIES:
     // Extract the analysis sections
     const responseText = text.replace(prompt, "").trim();
     
-    // Parse the sections using simpler regex patterns
-    const strengthsPattern = /STRENGTHS:[\s\S]*?-\s*(.*?)[\r\n]+\s*-\s*(.*?)[\r\n]+\s*-\s*(.*?)[\r\n]+/;
-    const weaknessesPattern = /WEAKNESSES:[\s\S]*?-\s*(.*?)[\r\n]+\s*-\s*(.*?)[\r\n]+\s*-\s*(.*?)[\r\n]+/;
-    const strategiesPattern = /STRATEGIES:[\s\S]*?-\s*(.*?)[\r\n]+\s*-\s*(.*?)[\r\n]+\s*-\s*(.*?)(?:[\r\n]|$)/;
+    // Parse the sections using simpler regex patterns without lookbehind
+    const strengthsPattern = new RegExp("STRENGTHS:[\\s\\S]*?-\\s*(.*?)[\\r\\n]+\\s*-\\s*(.*?)[\\r\\n]+\\s*-\\s*(.*?)[\\r\\n]+");
+    const weaknessesPattern = new RegExp("WEAKNESSES:[\\s\\S]*?-\\s*(.*?)[\\r\\n]+\\s*-\\s*(.*?)[\\r\\n]+\\s*-\\s*(.*?)[\\r\\n]+");
+    const strategiesPattern = new RegExp("STRATEGIES:[\\s\\S]*?-\\s*(.*?)[\\r\\n]+\\s*-\\s*(.*?)[\\r\\n]+\\s*-\\s*(.*?)(?:[\\r\\n]|$)");
     
     const strengthsMatch = responseText.match(strengthsPattern);
     const weaknessesMatch = responseText.match(weaknessesPattern);
