@@ -3,6 +3,14 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { sendParentEmail } from "./email";
+import { 
+  isOpenAIConfigured, 
+  generateDefinitions,
+  analyzePassage,
+  gradeDefinition,
+  generateExampleSentences,
+  generateLearningStrategies 
+} from "./ai";
 import { eq, and, desc, isNull, asc, not } from "drizzle-orm";
 import { db, pool } from "../db";
 import {
