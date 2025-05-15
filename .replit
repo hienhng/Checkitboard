@@ -71,3 +71,12 @@ args = "  exit 1"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "fi"
+
+[[workflows.workflow]]
+name = "Start Ollama"
+author = 42686221
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "$HOME/bin/ollama serve -p 5001"

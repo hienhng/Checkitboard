@@ -13,9 +13,12 @@ async function waitForOllama() {
   for (let i = 0; i < MAX_RETRIES; i++) {
     try {
       const response = await fetch(`${OLLAMA_API_URL}/tags`);
-      if (response.ok) return true;
+      if (response.ok) {
+        console.log('Successfully connected to Ollama server');
+        return true;
+      }
     } catch (e) {
-      console.log(`Attempt ${i + 1}/${MAX_RETRIES} to connect to Ollama failed, retrying...`);
+      console.log(`Attempt ${i + 1}/${MAX_RETRIES} to connect to Ollama failed, retrying in ${RETRY_DELAY}ms...`);
     }
     await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
   }
@@ -23,15 +26,10 @@ async function waitForOllama() {
 }
 
 // Initialize Ollama
-async function initOllama() {
-  try {
-    const response = await fetch(`${OLLAMA_API_URL}/tags`);
-    if (!response.ok) {
-      throw new Error(`Ollama server error: ${response.status}`);
-    }
-    console.log('Ollama server connected successfully');
-  } catch (error) {
-    console.error('Failed to connect to Ollama:', error);
+export async function initOllama() {
+  const isAvailable = await waitForOllama();
+  if (!isAvailable) {
+    console.error('Failed to connect to Ollama after multiple retries');
     throw new Error('Ollama server not available. Please ensure it is running.');
   }
 }
