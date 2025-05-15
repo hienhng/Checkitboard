@@ -1,10 +1,26 @@
 import fetch from 'node-fetch';
 
-// Default Ollama endpoint - typically this runs locally
+// Default Ollama endpoint with fallback and retry logic
 const OLLAMA_API_URL = process.env.OLLAMA_API_URL || 'http://0.0.0.0:11434/api';
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 2000; // 2 seconds
 
 // Model name for Phi-2
 const PHI2_MODEL = 'phi';
+
+// Add retry logic for Ollama connection
+async function waitForOllama() {
+  for (let i = 0; i < MAX_RETRIES; i++) {
+    try {
+      const response = await fetch(`${OLLAMA_API_URL}/tags`);
+      if (response.ok) return true;
+    } catch (e) {
+      console.log(`Attempt ${i + 1}/${MAX_RETRIES} to connect to Ollama failed, retrying...`);
+    }
+    await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+  }
+  return false;
+}
 
 // Initialize Ollama
 async function initOllama() {
