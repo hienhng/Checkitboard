@@ -152,6 +152,10 @@ export async function generatePassageFromWords(
     style?: string;
   } = {}
 ): Promise<string> {
+  if (!words || words.length === 0) {
+    throw new Error("No words provided for passage generation");
+  }
+
   try {
     // Set defaults for options
     const topic = options.topic || "general knowledge";
@@ -183,16 +187,24 @@ The passage should:
     });
     
     if (!response.ok) {
-      throw new Error(`Ollama API returned status: ${response.status}`);
+      console.error(`Ollama API error: ${response.status}`);
+      throw new Error(`Failed to generate passage (Status: ${response.status}). Please try again later.`);
     }
     
     const data = await response.json() as any;
-    const passage = data.response || "";
+    const passage = data.response;
     
-    return passage;
+    if (!passage || typeof passage !== 'string' || passage.trim().length === 0) {
+      throw new Error("Generated passage was empty or invalid");
+    }
+    
+    return passage.trim();
   } catch (error: any) {
     console.error("Error generating passage:", error);
-    throw new Error("Failed to generate passage. Please try again later.");
+    if (error.message.includes('not authenticated')) {
+      throw new Error("Please log in to generate passages");
+    }
+    throw new Error(error.message || "Failed to generate passage. Please try again later.");
   }
 }
 
