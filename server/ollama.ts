@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 
-// Default Ollama endpoint with fallback and retry logic
-const OLLAMA_API_URL = process.env.OLLAMA_API_URL || 'http://0.0.0.0:11434/api';
+// Default Ollama endpoint - typically this runs locally
+const OLLAMA_API_URL = process.env.OLLAMA_API_URL || 'http://0.0.0.0:5001/api';
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000; // 2 seconds
 

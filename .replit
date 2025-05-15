@@ -46,4 +46,4 @@ args = "nix-env -iA nixpkgs.ollama"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "ollama serve"
+args = "ollama serve -p 5001"
