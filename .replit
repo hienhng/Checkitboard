@@ -42,8 +42,12 @@ mode = "parallel"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "curl -fsSL https://ollama.com/install.sh | sh"
+args = "mkdir -p $HOME/bin"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "ollama serve -p 5001"
+args = "curl -fsSL https://ollama.com/install.sh | OLLAMA_PATH=$HOME/bin sh"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "$HOME/bin/ollama serve -p 5001"
