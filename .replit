@@ -38,11 +38,11 @@ waitForPort = 5000
 [[workflows.workflow]]
 name = "Install Ollama"
 author = 42686221
-mode = "sequential"
+mode = "parallel"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "nix-env -iA nixpkgs.ollama"
+args = "curl -fsSL https://ollama.com/install.sh | sh"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
