@@ -49,14 +49,31 @@ export function WordToPassage({ onPassageGenerated }: WordToPassageProps) {
       }
     ),
     onSuccess: (data) => {
+      // Check if the passage contains a fallback message indicating it's using the simple format
+      const isFallbackPassage = data.passage.includes("This educational passage about") && 
+                               data.passage.includes("is an important vocabulary word to understand");
+      
+      if (isFallbackPassage) {
+        toast({
+          title: "Basic passage generated",
+          description: "Using a simplified format with your vocabulary words.",
+        });
+      } else {
+        toast({
+          title: "Passage generated successfully",
+          description: "The passage contains all your vocabulary words."
+        });
+      }
+      
       setGeneratedPassage(data.passage);
       setIsPassageReady(true);
-      toast({
-        title: "Passage generated successfully",
-        description: "The passage contains all your vocabulary words."
-      });
     },
     onError: (error: Error) => {
+      // Create a fallback passage if there's an error
+      const fallbackPassage = `Vocabulary study list containing the words: ${words.join(", ")}.`;
+      setGeneratedPassage(fallbackPassage);
+      setIsPassageReady(true);
+      
       toast({
         title: "Error generating passage",
         description: error.message,
@@ -110,10 +127,29 @@ export function WordToPassage({ onPassageGenerated }: WordToPassageProps) {
   // Handle using the generated passage
   const handleUsePassage = () => {
     if (generatedPassage) {
-      onPassageGenerated(generatedPassage, words);
-      setGeneratedPassage("");
-      setWords([]);
-      setIsPassageReady(false);
+      try {
+        // Safely pass the generated passage to the parent component
+        onPassageGenerated(generatedPassage, words);
+        
+        // Reset the state after successful passage generation
+        setGeneratedPassage("");
+        setWords([]);
+        setCurrentWord("");
+        setIsPassageReady(false);
+        
+        // Provide feedback to the user
+        toast({
+          title: "Passage added to list",
+          description: "You can now edit the list details and save it."
+        });
+      } catch (error) {
+        console.error("Error using generated passage:", error);
+        toast({
+          title: "Error adding passage",
+          description: "There was a problem adding the passage to your list. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -289,54 +325,50 @@ export function WordToPassage({ onPassageGenerated }: WordToPassageProps) {
           <AlertTitle>Error</AlertTitle>
           <AlertDescription className="space-y-2">
             <p>{error instanceof Error ? error.message : "Failed to generate passage"}</p>
-            {(error instanceof Error && error.message.includes("API quota exceeded")) && (
-              <>
-                <p className="text-sm">
-                  The Hugging Face API has reached its quota limit. This is common with free tier accounts.
-                  You can still use the vocabulary words you've entered to create a list manually.
-                </p>
-                <div className="mt-2">
-                  <Button 
-                    size="sm" 
-                    onClick={() => {
-                      // Create a fallback passage with the words in a simple format
+            <p className="text-sm">
+              {error instanceof Error && error.message.includes("API quota exceeded") ? (
+                "The AI service has reached its quota limit. This is common with free tier accounts. You can still use the vocabulary words you've entered to create a list."
+              ) : (
+                "Try using fewer words or simpler terms. You can still use the vocabulary words you've entered to create a list."
+              )}
+            </p>
+            <div className="mt-2">
+              <Button 
+                size="sm" 
+                onClick={() => {
+                  try {
+                    // Use the already created fallback passage from the onError handler
+                    if (generatedPassage) {
+                      onPassageGenerated(generatedPassage, words);
+                    } else {
+                      // Create a fallback passage as a backup
                       const fallbackPassage = `Vocabulary study list containing the words: ${words.join(", ")}.`;
                       onPassageGenerated(fallbackPassage, words);
-                      toast({
-                        title: "Words added to list",
-                        description: "Your vocabulary words have been added to a new list."
-                      });
-                    }}
-                  >
-                    Continue with these words
-                  </Button>
-                </div>
-              </>
-            )}
-            {(error instanceof Error && error.message.includes("Failed to generate passage")) && (
-              <>
-                <p className="text-sm">
-                  Try using fewer words or simpler terms. You can still use the vocabulary words 
-                  you've entered to create a list.
-                </p>
-                <div className="mt-2">
-                  <Button 
-                    size="sm" 
-                    onClick={() => {
-                      // Create a fallback passage with the words in a simple format
-                      const fallbackPassage = `Vocabulary study list containing the words: ${words.join(", ")}.`;
-                      onPassageGenerated(fallbackPassage, words);
-                      toast({
-                        title: "Words added to list",
-                        description: "Your vocabulary words have been added to a new list."
-                      });
-                    }}
-                  >
-                    Continue with these words
-                  </Button>
-                </div>
-              </>
-            )}
+                    }
+                    
+                    // Reset state
+                    setWords([]);
+                    setCurrentWord("");
+                    setGeneratedPassage("");
+                    setIsPassageReady(false);
+                    
+                    toast({
+                      title: "Words added to list",
+                      description: "Your vocabulary words have been added to a new list."
+                    });
+                  } catch (err) {
+                    console.error("Error continuing with words:", err);
+                    toast({
+                      title: "Error adding words",
+                      description: "There was a problem adding your words. Please try again.",
+                      variant: "destructive"
+                    });
+                  }
+                }}
+              >
+                Continue with these words
+              </Button>
+            </div>
           </AlertDescription>
         </Alert>
       )}
