@@ -1,10 +1,27 @@
 import fetch from 'node-fetch';
 
 // Default Ollama endpoint - typically this runs locally
-const OLLAMA_API_URL = process.env.OLLAMA_API_URL || 'http://0.0.0.0:5001/api';
+const OLLAMA_API_URL = process.env.OLLAMA_API_URL || 'http://0.0.0.0:11434/api';
 
 // Model name for Phi-2
 const PHI2_MODEL = 'phi';
+
+// Initialize Ollama
+async function initOllama() {
+  try {
+    const response = await fetch(`${OLLAMA_API_URL}/tags`);
+    if (!response.ok) {
+      throw new Error(`Ollama server error: ${response.status}`);
+    }
+    console.log('Ollama server connected successfully');
+  } catch (error) {
+    console.error('Failed to connect to Ollama:', error);
+    throw new Error('Ollama server not available. Please ensure it is running.');
+  }
+}
+
+// Call this when server starts
+initOllama().catch(console.error);
 
 /**
  * Check if Ollama is configured and reachable
@@ -16,18 +33,18 @@ export async function isOllamaConfigured(): Promise<boolean> {
       console.warn(`Ollama API returned status: ${response.status}`);
       return false;
     }
-    
+
     const data = await response.json() as any;
-    
+
     // Check if the phi model is available
     const hasPhiModel = data.models && data.models.some((model: any) => 
       model.name === PHI2_MODEL || model.name.startsWith(`${PHI2_MODEL}:`)
     );
-    
+
     if (!hasPhiModel) {
       console.warn(`Phi-2 model not found in Ollama. Available models: ${data.models ? data.models.map((m: any) => m.name).join(', ') : 'none'}`);
     }
-    
+
     return hasPhiModel;
   } catch (error) {
     console.error("Error checking Ollama configuration:", error);
@@ -41,11 +58,11 @@ export async function isOllamaConfigured(): Promise<boolean> {
 export async function generateDefinitions(words: string[]): Promise<Record<string, string>> {
   try {
     const definitions: Record<string, string> = {};
-    
+
     // Process each word individually to be more reliable
     for (const word of words) {
       const prompt = `Define the word "${word}" in a clear, concise way suitable for students.`;
-      
+
       const response = await fetch(`${OLLAMA_API_URL}/generate`, {
         method: 'POST',
         headers: {
@@ -58,26 +75,26 @@ export async function generateDefinitions(words: string[]): Promise<Record<strin
           max_tokens: 100,
         }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`Ollama API returned status: ${response.status}`);
       }
-      
+
       const data = await response.json() as any;
       const text = data.response || "";
-      
+
       // Clean up the response to get just the definition
       let definition = text.replace(prompt, "").trim();
-      
+
       // Sometimes models repeat the word in the definition, clean that up
       definition = definition.replace(new RegExp(`^"?${word}"?\\s*:?\\s*`, "i"), "");
       definition = definition.replace(/^-\s*/, ""); // Remove leading dash
       definition = definition.replace(/^definition:?\s*/i, ""); // Remove the word "definition"
-      
+
       // Store the definition
       definitions[word] = definition;
     }
-    
+
     return definitions;
   } catch (error: any) {
     console.error("Error generating definitions:", error);
@@ -114,14 +131,14 @@ ${count}. word${count}
         max_tokens: 200,
       }),
     });
-    
+
     if (!response.ok) {
       throw new Error(`Ollama API returned status: ${response.status}`);
     }
-    
+
     const data = await response.json() as any;
     const text = data.response || "";
-    
+
     // Extract just the words from the response
     const wordPattern = /\d+\.\s*([a-zA-Z]+)/g;
     const words: string[] = [];
@@ -131,7 +148,7 @@ ${count}. word${count}
         words.push(match[1].trim());
       }
     }
-    
+
     // Limit to requested count
     return words.slice(0, count);
   } catch (error: any) {
@@ -185,19 +202,19 @@ The passage should:
         max_tokens: 500, // Larger token limit for longer passages
       }),
     });
-    
+
     if (!response.ok) {
       console.error(`Ollama API error: ${response.status}`);
       throw new Error(`Failed to generate passage (Status: ${response.status}). Please try again later.`);
     }
-    
+
     const data = await response.json() as any;
     const passage = data.response;
-    
+
     if (!passage || typeof passage !== 'string' || passage.trim().length === 0) {
       throw new Error("Generated passage was empty or invalid");
     }
-    
+
     return passage.trim();
   } catch (error: any) {
     console.error("Error generating passage:", error);
@@ -252,36 +269,36 @@ Format: YES/NO;CONFIDENCE_SCORE;FEEDBACK
         max_tokens: 200,
       }),
     });
-    
+
     if (!response.ok) {
       throw new Error(`Ollama API returned status: ${response.status}`);
     }
-    
+
     const data = await response.json() as any;
     const text = data.response || "";
-    
+
     // Parse the response to extract grading components
     const parts = text.split(';');
-    
+
     let isCorrect = false;
     let confidence = 0.5; // Default confidence
     let feedback = "No feedback available.";
-    
+
     if (parts.length >= 1) {
       isCorrect = parts[0].trim().toUpperCase().startsWith('YES');
     }
-    
+
     if (parts.length >= 2) {
       const confValue = parseFloat(parts[1]);
       if (!isNaN(confValue)) {
         confidence = Math.max(0, Math.min(1, confValue)); // Clamp between 0 and 1
       }
     }
-    
+
     if (parts.length >= 3) {
       feedback = parts[2].trim();
     }
-    
+
     return {
       isCorrect,
       confidence,
@@ -300,11 +317,11 @@ Format: YES/NO;CONFIDENCE_SCORE;FEEDBACK
 export async function generateExampleSentences(words: string[], count: number = 1): Promise<Record<string, string[]>> {
   try {
     const sentences: Record<string, string[]> = {};
-    
+
     // Process each word individually
     for (const word of words) {
       const prompt = `Write ${count} example sentence(s) using the word "${word}". Each sentence should clearly demonstrate the meaning of the word.`;
-      
+
       const response = await fetch(`${OLLAMA_API_URL}/generate`, {
         method: 'POST',
         headers: {
@@ -317,17 +334,17 @@ export async function generateExampleSentences(words: string[], count: number = 
           max_tokens: 200,
         }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`Ollama API returned status: ${response.status}`);
       }
-      
+
       const data = await response.json() as any;
       const text = data.response || "";
-      
+
       // Extract sentences
       let sentenceList: string[] = [];
-      
+
       if (text.includes('\n')) {
         // Split by lines
         sentenceList = text.split('\n')
@@ -340,12 +357,12 @@ export async function generateExampleSentences(words: string[], count: number = 
           .map((s: string) => s.trim())
           .filter((s: string) => s.length > 0);
       }
-      
+
       // Limit to requested count and ensure the word is actually in each sentence
       const filteredSentences = sentenceList
         .filter((s: string) => s.toLowerCase().includes(word.toLowerCase()))
         .slice(0, count);
-      
+
       // If we don't have enough sentences, pad with a generic one
       if (filteredSentences.length < count) {
         const remaining = count - filteredSentences.length;
@@ -353,10 +370,10 @@ export async function generateExampleSentences(words: string[], count: number = 
           filteredSentences.push(`The word "${word}" can be used in various contexts.`);
         }
       }
-      
+
       sentences[word] = filteredSentences;
     }
-    
+
     return sentences;
   } catch (error: any) {
     console.error("Error generating example sentences:", error);
@@ -379,7 +396,7 @@ export async function generateLearningStrategies(
     const wordsCorrect = Object.entries(studentPerformance)
       .filter(([_, isCorrect]) => isCorrect)
       .map(([word]) => word);
-    
+
     const wordsIncorrect = Object.entries(studentPerformance)
       .filter(([_, isCorrect]) => !isCorrect)
       .map(([word]) => word);
@@ -424,28 +441,28 @@ STRATEGIES:
         max_tokens: 400,
       }),
     });
-    
+
     if (!response.ok) {
       throw new Error(`Ollama API returned status: ${response.status}`);
     }
-    
+
     const data = await response.json() as any;
     const text = data.response || "";
-    
+
     // Parse the sections using simple string extraction
     const strengthsPattern = new RegExp("STRENGTHS:[\\s\\S]*?-\\s*(.*?)[\\r\\n]+\\s*-\\s*(.*?)[\\r\\n]+\\s*-\\s*(.*?)[\\r\\n]+");
     const weaknessesPattern = new RegExp("WEAKNESSES:[\\s\\S]*?-\\s*(.*?)[\\r\\n]+\\s*-\\s*(.*?)[\\r\\n]+\\s*-\\s*(.*?)[\\r\\n]+");
     const strategiesPattern = new RegExp("STRATEGIES:[\\s\\S]*?-\\s*(.*?)[\\r\\n]+\\s*-\\s*(.*?)[\\r\\n]+\\s*-\\s*(.*?)(?:[\\r\\n]|$)");
-    
+
     const strengthsMatch = text.match(strengthsPattern);
     const weaknessesMatch = text.match(weaknessesPattern);
     const strategiesMatch = text.match(strategiesPattern);
-    
+
     // Default values
     const strengths: string[] = [];
     const weaknesses: string[] = [];
     const strategies: string[] = [];
-    
+
     // Extract strengths
     if (strengthsMatch && strengthsMatch.length > 3) {
       for (let i = 1; i <= 3; i++) {
@@ -454,7 +471,7 @@ STRATEGIES:
         }
       }
     }
-    
+
     // Extract weaknesses
     if (weaknessesMatch && weaknessesMatch.length > 3) {
       for (let i = 1; i <= 3; i++) {
@@ -463,7 +480,7 @@ STRATEGIES:
         }
       }
     }
-    
+
     // Extract strategies
     if (strategiesMatch && strategiesMatch.length > 3) {
       for (let i = 1; i <= 3; i++) {
@@ -472,7 +489,7 @@ STRATEGIES:
         }
       }
     }
-    
+
     // If any section is empty, provide default entries
     if (strengths.length === 0) {
       strengths.push(
@@ -481,7 +498,7 @@ STRATEGIES:
         "Has strong foundation in basic vocabulary"
       );
     }
-    
+
     if (weaknesses.length === 0) {
       weaknesses.push(
         "Needs improvement in certain vocabulary areas",
@@ -489,7 +506,7 @@ STRATEGIES:
         "Could use additional context for word usage"
       );
     }
-    
+
     if (strategies.length === 0) {
       strategies.push(
         "Practice using new vocabulary in sentences",
@@ -497,7 +514,7 @@ STRATEGIES:
         "Read materials containing vocabulary from difficult categories"
       );
     }
-    
+
     return { strengths, weaknesses, strategies };
   } catch (error: any) {
     console.error("Error generating learning strategies:", error);
