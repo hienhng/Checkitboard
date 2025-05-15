@@ -50,27 +50,7 @@ args = "curl -fsSL https://ollama.com/install.sh | OLLAMA_PATH=$HOME/bin sh"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "if [ -f \"$HOME/bin/ollama\" ]; then"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "  $HOME/bin/ollama serve -p 5001"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "else"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "  echo \"Ollama installation failed\""
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "  exit 1"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "fi"
+args = "$HOME/bin/ollama serve -p 5001"
 
 [[workflows.workflow]]
 name = "Start Ollama"
