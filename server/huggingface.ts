@@ -20,7 +20,6 @@ try {
 
 // Model name for Phi-2
 const PHI2_MODEL = "microsoft/phi-2";
-const MODEL_NAME = "google/flan-t5-base" // Example model, replace if needed
 
 /**
  * Check if the Hugging Face API key is configured
@@ -39,13 +38,13 @@ export async function generateDefinitions(words: string[]): Promise<Record<strin
     }
 
     const definitions: Record<string, string> = {};
-
+    
     // Process each word individually to be more reliable
     for (const word of words) {
       const prompt = `Define the word "${word}" in a clear, concise way suitable for students.`;
-
+      
       const response = await hf.textGeneration({
-        model: MODEL_NAME,
+        model: PHI2_MODEL,
         inputs: prompt,
         parameters: {
           max_new_tokens: 100,
@@ -53,25 +52,25 @@ export async function generateDefinitions(words: string[]): Promise<Record<strin
           top_p: 0.95,
         },
       });
-
+      
       // Extract just the definition from the response
       const text = response.generated_text || "";
       // Clean up the response to get just the definition
       let definition = text.replace(prompt, "").trim();
-
+      
       // Sometimes models repeat the word in the definition, clean that up
       definition = definition.replace(new RegExp(`^"?${word}"?\\s*:?\\s*`, "i"), "");
       definition = definition.replace(/^-\s*/, ""); // Remove leading dash
       definition = definition.replace(/^definition:?\s*/i, ""); // Remove the word "definition"
-
+      
       // Store the definition
       definitions[word] = definition;
     }
-
+    
     return definitions;
   } catch (error: any) {
     console.error("Error generating definitions:", error);
-
+    
     // Error handling
     if (error.status === 429) {
       throw new Error("API rate limit exceeded. Please try again later.");
@@ -105,7 +104,7 @@ ${count}. word${count}
 `;
 
     const response = await hf.textGeneration({
-      model: MODEL_NAME,
+      model: PHI2_MODEL,
       inputs: prompt,
       parameters: {
         max_new_tokens: 200,
@@ -115,7 +114,7 @@ ${count}. word${count}
     });
 
     const text = response.generated_text || "";
-
+    
     // Extract just the words from the response 
     const wordPattern = /\d+\.\s*([a-zA-Z]+)/g;
     const words: string[] = [];
@@ -125,12 +124,12 @@ ${count}. word${count}
         words.push(match[1].trim());
       }
     }
-
+    
     // Limit to requested count
     return words.slice(0, count);
   } catch (error: any) {
     console.error("Error analyzing passage:", error);
-
+    
     // Error handling
     if (error.status === 429) {
       throw new Error("API rate limit exceeded. Please try again later.");
@@ -176,7 +175,7 @@ The passage should:
 `;
 
     const response = await hf.textGeneration({
-      model: MODEL_NAME,
+      model: PHI2_MODEL,
       inputs: prompt,
       parameters: {
         max_new_tokens: 500, // Larger token limit for longer passages
@@ -188,11 +187,11 @@ The passage should:
     const generatedPassage = response.generated_text || "";
     // Remove the prompt from the response to get just the passage
     const passage = generatedPassage.replace(prompt, "").trim();
-
+    
     return passage;
   } catch (error: any) {
     console.error("Error generating passage:", error);
-
+    
     // Error handling
     if (error.status === 429) {
       throw new Error("API rate limit exceeded. Please try again later.");
@@ -241,7 +240,7 @@ Format: YES/NO;CONFIDENCE_SCORE;FEEDBACK
 `;
 
     const response = await hf.textGeneration({
-      model: MODEL_NAME,
+      model: PHI2_MODEL,
       inputs: prompt,
       parameters: {
         max_new_tokens: 200,
@@ -250,30 +249,30 @@ Format: YES/NO;CONFIDENCE_SCORE;FEEDBACK
     });
 
     const text = response.generated_text || "";
-
+    
     // Parse the response to extract grading components
     const responseText = text.replace(prompt, "").trim();
     const parts = responseText.split(';');
-
+    
     let isCorrect = false;
     let confidence = 0.5; // Default confidence
     let feedback = "No feedback available.";
-
+    
     if (parts.length >= 1) {
       isCorrect = parts[0].trim().toUpperCase().startsWith('YES');
     }
-
+    
     if (parts.length >= 2) {
       const confValue = parseFloat(parts[1]);
       if (!isNaN(confValue)) {
         confidence = Math.max(0, Math.min(1, confValue)); // Clamp between 0 and 1
       }
     }
-
+    
     if (parts.length >= 3) {
       feedback = parts[2].trim();
     }
-
+    
     return {
       isCorrect,
       confidence,
@@ -282,7 +281,7 @@ Format: YES/NO;CONFIDENCE_SCORE;FEEDBACK
     };
   } catch (error: any) {
     console.error("Error grading definition:", error);
-
+    
     // Error handling
     if (error.status === 429) {
       throw new Error("API rate limit exceeded. Please try again later.");
@@ -304,28 +303,28 @@ export async function generateExampleSentences(words: string[], count: number = 
     }
 
     const sentences: Record<string, string[]> = {};
-
+    
     // Process each word individually
     for (const word of words) {
       const prompt = `Write ${count} example sentence(s) using the word "${word}". Each sentence should clearly demonstrate the meaning of the word.`;
-
+      
       const response = await hf.textGeneration({
-        model: MODEL_NAME,
+        model: PHI2_MODEL,
         inputs: prompt,
         parameters: {
           max_new_tokens: 200,
           temperature: 0.7,
         },
       });
-
+      
       const text = response.generated_text || "";
-
+      
       // Extract sentences
       let extractedText = text.replace(prompt, "").trim();
-
+      
       // Split by line or number
       let sentenceList: string[] = [];
-
+      
       if (extractedText.includes('\n')) {
         // Split by lines
         sentenceList = extractedText.split('\n')
@@ -338,12 +337,12 @@ export async function generateExampleSentences(words: string[], count: number = 
           .map(s => s.trim())
           .filter(s => s.length > 0);
       }
-
+      
       // Limit to requested count and ensure the word is actually in each sentence
       const filteredSentences = sentenceList
         .filter(s => s.toLowerCase().includes(word.toLowerCase()))
         .slice(0, count);
-
+      
       // If we don't have enough sentences, pad with a generic one
       if (filteredSentences.length < count) {
         const remaining = count - filteredSentences.length;
@@ -351,14 +350,14 @@ export async function generateExampleSentences(words: string[], count: number = 
           filteredSentences.push(`The word "${word}" can be used in various contexts.`);
         }
       }
-
+      
       sentences[word] = filteredSentences;
     }
-
+    
     return sentences;
   } catch (error: any) {
     console.error("Error generating example sentences:", error);
-
+    
     // Error handling
     if (error.status === 429) {
       throw new Error("API rate limit exceeded. Please try again later.");
@@ -389,7 +388,7 @@ export async function generateLearningStrategies(
     const wordsCorrect = Object.entries(studentPerformance)
       .filter(([_, isCorrect]) => isCorrect)
       .map(([word]) => word);
-
+    
     const wordsIncorrect = Object.entries(studentPerformance)
       .filter(([_, isCorrect]) => !isCorrect)
       .map(([word]) => word);
@@ -423,7 +422,7 @@ STRATEGIES:
 `;
 
     const response = await hf.textGeneration({
-      model: MODEL_NAME,
+      model: PHI2_MODEL,
       inputs: prompt,
       parameters: {
         max_new_tokens: 400,
@@ -432,24 +431,24 @@ STRATEGIES:
     });
 
     const text = response.generated_text || "";
-
+    
     // Extract the analysis sections
     const responseText = text.replace(prompt, "").trim();
-
+    
     // Parse the sections using simpler regex patterns without lookbehind
     const strengthsPattern = new RegExp("STRENGTHS:[\\s\\S]*?-\\s*(.*?)[\\r\\n]+\\s*-\\s*(.*?)[\\r\\n]+\\s*-\\s*(.*?)[\\r\\n]+");
     const weaknessesPattern = new RegExp("WEAKNESSES:[\\s\\S]*?-\\s*(.*?)[\\r\\n]+\\s*-\\s*(.*?)[\\r\\n]+\\s*-\\s*(.*?)[\\r\\n]+");
     const strategiesPattern = new RegExp("STRATEGIES:[\\s\\S]*?-\\s*(.*?)[\\r\\n]+\\s*-\\s*(.*?)[\\r\\n]+\\s*-\\s*(.*?)(?:[\\r\\n]|$)");
-
+    
     const strengthsMatch = responseText.match(strengthsPattern);
     const weaknessesMatch = responseText.match(weaknessesPattern);
     const strategiesMatch = responseText.match(strategiesPattern);
-
+    
     // Default values
     const strengths: string[] = [];
     const weaknesses: string[] = [];
     const strategies: string[] = [];
-
+    
     // Extract strengths
     if (strengthsMatch && strengthsMatch.length > 3) {
       for (let i = 1; i <= 3; i++) {
@@ -458,7 +457,7 @@ STRATEGIES:
         }
       }
     }
-
+    
     // Extract weaknesses
     if (weaknessesMatch && weaknessesMatch.length > 3) {
       for (let i = 1; i <= 3; i++) {
@@ -467,7 +466,7 @@ STRATEGIES:
         }
       }
     }
-
+    
     // Extract strategies
     if (strategiesMatch && strategiesMatch.length > 3) {
       for (let i = 1; i <= 3; i++) {
@@ -476,7 +475,7 @@ STRATEGIES:
         }
       }
     }
-
+    
     // If any section is empty, provide default entries
     if (strengths.length === 0) {
       strengths.push(
@@ -485,7 +484,7 @@ STRATEGIES:
         "Has strong foundation in basic vocabulary"
       );
     }
-
+    
     if (weaknesses.length === 0) {
       weaknesses.push(
         "Needs improvement in certain vocabulary areas",
@@ -493,7 +492,7 @@ STRATEGIES:
         "Could use additional context for word usage"
       );
     }
-
+    
     if (strategies.length === 0) {
       strategies.push(
         "Practice using new vocabulary in sentences",
@@ -501,11 +500,11 @@ STRATEGIES:
         "Read materials containing vocabulary from difficult categories"
       );
     }
-
+    
     return { strengths, weaknesses, strategies };
   } catch (error: any) {
     console.error("Error generating learning strategies:", error);
-
+    
     // Error handling
     if (error.status === 429) {
       throw new Error("API rate limit exceeded. Please try again later.");
