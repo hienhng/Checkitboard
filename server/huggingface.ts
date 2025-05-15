@@ -18,8 +18,9 @@ try {
   console.error("Error initializing Hugging Face client:", error);
 }
 
-// Model name for Phi-2
-const PHI2_MODEL = "microsoft/phi-2";
+// Model name for text generation
+// Note: We're using a model that's widely available on Hugging Face
+const TEXT_GENERATION_MODEL = "gpt2";
 
 /**
  * Check if the Hugging Face API key is configured
@@ -44,7 +45,7 @@ export async function generateDefinitions(words: string[]): Promise<Record<strin
       const prompt = `Define the word "${word}" in a clear, concise way suitable for students.`;
       
       const response = await hf.textGeneration({
-        model: PHI2_MODEL,
+        model: TEXT_GENERATION_MODEL,
         inputs: prompt,
         parameters: {
           max_new_tokens: 100,
@@ -104,7 +105,7 @@ ${count}. word${count}
 `;
 
     const response = await hf.textGeneration({
-      model: PHI2_MODEL,
+      model: TEXT_GENERATION_MODEL,
       inputs: prompt,
       parameters: {
         max_new_tokens: 200,
@@ -175,7 +176,7 @@ The passage should:
 `;
 
     const response = await hf.textGeneration({
-      model: PHI2_MODEL,
+      model: TEXT_GENERATION_MODEL,
       inputs: prompt,
       parameters: {
         max_new_tokens: 500, // Larger token limit for longer passages
@@ -240,7 +241,7 @@ Format: YES/NO;CONFIDENCE_SCORE;FEEDBACK
 `;
 
     const response = await hf.textGeneration({
-      model: PHI2_MODEL,
+      model: TEXT_GENERATION_MODEL,
       inputs: prompt,
       parameters: {
         max_new_tokens: 200,
@@ -309,7 +310,7 @@ export async function generateExampleSentences(words: string[], count: number = 
       const prompt = `Write ${count} example sentence(s) using the word "${word}". Each sentence should clearly demonstrate the meaning of the word.`;
       
       const response = await hf.textGeneration({
-        model: PHI2_MODEL,
+        model: TEXT_GENERATION_MODEL,
         inputs: prompt,
         parameters: {
           max_new_tokens: 200,
@@ -422,7 +423,7 @@ STRATEGIES:
 `;
 
     const response = await hf.textGeneration({
-      model: PHI2_MODEL,
+      model: TEXT_GENERATION_MODEL,
       inputs: prompt,
       parameters: {
         max_new_tokens: 400,
