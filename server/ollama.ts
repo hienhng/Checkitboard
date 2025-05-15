@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 
 // Default Ollama endpoint - typically this runs locally
-const OLLAMA_API_URL = process.env.OLLAMA_API_URL || 'http://localhost:11434/api';
+const OLLAMA_API_URL = process.env.OLLAMA_API_URL || 'http://0.0.0.0:11434/api';
 
 // Model name for Phi-2
 const PHI2_MODEL = 'phi';
