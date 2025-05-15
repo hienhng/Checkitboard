@@ -34,25 +34,3 @@ author = "agent"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
-
-[[workflows.workflow]]
-name = "Install Ollama"
-author = 42686221
-mode = "parallel"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "mkdir -p $HOME/bin"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "curl -fsSL https://ollama.com/install.sh | OLLAMA_PATH=$HOME/bin sh"
-
-[[workflows.workflow]]
-name = "Start Ollama"
-author = 42686221
-mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "$HOME/bin/ollama serve -p 5001"

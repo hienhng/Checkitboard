@@ -4,14 +4,14 @@ import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { sendParentEmail } from "./email";
 import { 
-  isOllamaConfigured as isAIConfigured, 
+  isHuggingFaceConfigured as isAIConfigured, 
   generateDefinitions,
   analyzePassage,
   gradeDefinition,
   generateExampleSentences,
   generateLearningStrategies,
   generatePassageFromWords
-} from "./ollama";
+} from "./huggingface";
 import { eq, and, desc, isNull, asc, not } from "drizzle-orm";
 import { db, pool } from "../db";
 import {

@@ -1,7 +1,7 @@
 import { apiRequest } from "./queryClient";
 
 /**
- * Check if the Ollama service is running and accessible
+ * Check if the Hugging Face API is configured on the server
  */
 export async function checkAIStatus(): Promise<{ configured: boolean }> {
   const response = await apiRequest(
