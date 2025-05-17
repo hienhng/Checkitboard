@@ -210,7 +210,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
   };
 
   const handleSaveDraft = () => {
-    if (!title || !passage || selectedWords.length === 0) {
+    if (!title || !passage ||  selectedWords.length === 0) {
       toast({
         title: "Incomplete list",
         description: "Please provide a title, passage, and select at least one vocabulary word.",
@@ -235,7 +235,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
   };
 
   const handlePublish = () => {
-    if (!title || !passage || selectedWords.length === 0) {
+    if (!title || !passage ||selectedWords.length === 0) {
       toast({
         title: "Incomplete list",
         description: "Please provide a title, passage, and select at least one vocabulary word.",
@@ -270,11 +270,11 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
       <Form {...form}>
         <form className="space-y-6">
           <div>
-            <Label htmlFor="list-name">List Name</Label>
+            <Label htmlFor="list-name">Passage Name</Label>
             <Input
               id="list-name"
               type="text"
-              placeholder="Week 5 - Science Reading"
+              placeholder="e.g., Science Vocabulary - Rainforest Ecosystems"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="mt-1"
@@ -282,7 +282,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
           </div>
 
           <div>
-            <Label htmlFor="due-date">Due Date (Optional)</Label>
+            <Label htmlFor="due-date">Due Date</Label>
             <Input
               id="due-date"
               type="date"
@@ -295,8 +295,8 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
           <ClassSelect
             formControl={form.control}
             name="classId"
-            label="Assign to Class"
-            description="Assign this vocabulary list to a specific class, or leave empty to make it available to all students."
+            label="Assign to ..."
+            description="Assign this vocabulary list to a specific class."
           />
 
           <Tabs defaultValue="passage-to-words" className="w-full">
@@ -307,7 +307,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
               </TabsTrigger>
               <TabsTrigger value="words-to-passage" className="flex items-center">
                 <Wand2 className="mr-2 h-4 w-4" /> 
-                Words → Passage
+                Words → Passage (AI)
               </TabsTrigger>
             </TabsList>
             
@@ -316,7 +316,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
                 <Label htmlFor="reading-passage">Reading Passage</Label>
                 <Textarea
                   id="reading-passage"
-                  placeholder="Paste or type your reading passage here..."
+                  placeholder="Paste (Ctrl + V) or type your reading passage here..."
                   value={passage}
                   onChange={handlePassageChange}
                   rows={8}
@@ -328,7 +328,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
               </div>
 
               <div>
-                <Label className="block text-sm font-medium text-gray-700">
+                <Label className="block text-sm font-small text-gray-700">
                   Passage Preview (Click on words or select text to add them)
                 </Label>
                 <div
@@ -349,7 +349,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
                       {word}
                       <button
                         type="button"
-                        className="flex-shrink-0 ml-1 h-4 w-4 rounded-full inline-flex items-center justify-center text-blue-400 hover:bg-blue-200 hover:text-blue-500 focus:outline-none focus:bg-blue-500 focus:text-white"
+                        className="flex-shrink-0 ml-1 h-4 w-4 rounded-full inline-flex items-center justify-center text-blue-400 hover:bg-blue-200 hover:text-white-500 focus:outline-none focus:bg-blue-500 focus:text-white"
                         onClick={() => handleRemoveWord(word)}
                         aria-label={`Remove ${word}`}
                       >
@@ -405,20 +405,13 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
           </Tabs>
 
           <div className="flex justify-end space-x-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleSaveDraft}
-              disabled={createListMutation.isPending}
-            >
-              Save Draft
-            </Button>
+            
             <Button
               type="button"
               onClick={handlePublish}
               disabled={createListMutation.isPending}
             >
-              {createListMutation.isPending ? "Saving..." : "Publish"}
+              {createListMutation.isPending ? "Saving as a draft... (Remember to publish so student can see them!)" : "Save draft"}
             </Button>
           </div>
         </form>

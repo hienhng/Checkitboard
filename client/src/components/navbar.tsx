@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Menu, LogOut, User, BookOpen, PenTool, FileText, Brain } from "lucide-react";
+import { Menu, LogOut, User, BookOpen, PenTool, FileText, Brain, Search, School } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function Navbar() {
@@ -48,7 +48,7 @@ export function Navbar() {
   const navLinks = isEducator
     ? [
         { href: "/educator/dashboard", label: "Dashboard", icon: <BookOpen className="h-4 w-4 mr-2" /> },
-        { href: "/educator/create", label: "Create List", icon: <PenTool className="h-4 w-4 mr-2" /> },
+        { href: "/educator/create", label: "Classes", icon: <School className="h-4 w-4 mr-2" /> },
       ]
     : [
         { href: "/learner/dashboard", label: "Dashboard", icon: <BookOpen className="h-4 w-4 mr-2" /> },

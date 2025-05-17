@@ -121,7 +121,7 @@ export default function EducatorDashboard() {
                       Paste a reading passage and highlight words for your vocabulary list.
                     </p>
                   </div>
-                  <Button variant="ghost" onClick={() => setShowCreateList(false)}>Cancel</Button>
+                  <Button variant="ghost" onClick={() => setShowCreateList(false)}>Return</Button>
                 </div>
                 <PassageEditor onSuccess={handleCreateSuccess} />
               </div>
@@ -137,7 +137,7 @@ export default function EducatorDashboard() {
                   <Button variant="ghost" onClick={() => {
                     setShowGrading(false);
                     setSelectedSubmissionId(null);
-                  }}>Cancel</Button>
+                  }}>Return</Button>
                 </div>
                 <GradingPanel submissionId={selectedSubmissionId} onComplete={handleGradingComplete} />
               </div>
@@ -217,7 +217,7 @@ export default function EducatorDashboard() {
                             </div>
                           ) : (
                             <div className="py-4 text-center text-sm text-gray-500">
-                              You haven't created any vocabulary lists yet.
+                              You haven't created any vocabulary lists yet. Try create one by clicking:
                             </div>
                           )}
                         </CardContent>
@@ -271,7 +271,7 @@ export default function EducatorDashboard() {
                             </div>
                           ) : (
                             <div className="py-4 text-center text-sm text-gray-500">
-                              No pending submissions to grade.
+                              No pending submissions to grade. Reload the page if needed.
                             </div>
                           )}
                         </CardContent>
