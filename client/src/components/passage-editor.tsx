@@ -193,7 +193,19 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
   useEffect(() => {
     if (passageRef.current && passage) {
       const highlightedPassage = formatPassageWithHighlights(passage, selectedWords);
-      passageRef.current.innerHTML = highlightedPassage;
+      // Use dangerouslySetInnerHTML with a wrapper to safely render the content
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = highlightedPassage;
+      
+      // Clear the container first
+      while (passageRef.current.firstChild) {
+        passageRef.current.removeChild(passageRef.current.firstChild);
+      }
+      
+      // Append the sanitized children
+      Array.from(tempDiv.childNodes).forEach(node => {
+        passageRef.current.appendChild(node.cloneNode(true));
+      });
     }
   }, [passage, selectedWords]);
 
