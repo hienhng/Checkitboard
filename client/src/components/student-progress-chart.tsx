@@ -60,14 +60,32 @@ export function StudentProgressChart({
       return response.json();
     },
     onSuccess: (data) => {
-      // The API already returns formatted data in the expected structure
-      // Just ensure it's sorted correctly by date
-      const formattedData = Array.isArray(data) ? data : [];
+      // Process the data returned from the API
+      let formattedData = [];
+      
+      if (Array.isArray(data)) {
+        // Handle the case where the API returns an array directly
+        formattedData = data;
+      } else if (data && data.submissions && Array.isArray(data.submissions)) {
+        // Handle the case where the API returns an object with a submissions array
+        formattedData = data.submissions;
+      } else {
+        console.error("Unexpected data format from API:", data);
+        setError("Received unexpected data format from server");
+      }
+      
+      // Make sure dates are properly handled 
+      formattedData = formattedData.map(item => ({
+        ...item,
+        date: item.date || (item.submittedAt ? new Date(item.submittedAt).toLocaleDateString() : 'Unknown date')
+      }));
       
       // Sort by date ascending
-      formattedData.sort((a: SubmissionData, b: SubmissionData) => 
-        new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime()
-      );
+      formattedData.sort((a: SubmissionData, b: SubmissionData) => {
+        const dateA = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
+        const dateB = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
+        return dateA - dateB;
+      });
       
       setSubmissionData(formattedData);
       setIsLoading(false);
