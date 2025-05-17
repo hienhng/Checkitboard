@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { StudentProgressChart } from "@/components/student-progress-chart";
 import {
   Dialog,
   DialogClose,
@@ -59,7 +60,8 @@ import {
   Star,
   PieChart,
   Expand,
-  ClipboardCheck
+  ClipboardCheck,
+  LineChart
 } from "lucide-react";
 import {
   Table,
@@ -123,8 +125,9 @@ export function ClassManagement() {
     },
   });
   
-  // State for selected class
+  // State for selected class and student
   const [selectedClass, setSelectedClass] = useState<number | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<{id: number, name: string} | null>(null);
   
   // Query for student performance data
   const {
