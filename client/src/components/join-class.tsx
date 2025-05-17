@@ -92,7 +92,7 @@ export function JoinClass() {
       setIsJoinDialogOpen(false);
       form.reset();
       toast({
-        title: "Requested",
+        title: "Request submitted",
         description: "Your request to join the class has been submitted. Waiting for educator approval.",
       });
     },
@@ -126,7 +126,7 @@ export function JoinClass() {
           <School className="mx-auto h-12 w-12 text-muted-foreground" />
           <h3 className="text-xl font-semibold tracking-tight">No Classes Yet</h3>
           <p className="text-muted-foreground max-w-md mx-auto">
-            You haven't joined any classes yet. Enter a class code to join a class and access learning materials (try reloading if needed).
+            You haven't joined any classes yet. Enter a class code to join a class and access learning materials.
           </p>
           <Button onClick={() => setIsJoinDialogOpen(true)}>
             <UserPlus className="mr-2 h-4 w-4" /> Join a Class
@@ -147,7 +147,7 @@ export function JoinClass() {
                 <div className="space-y-2">
                   <h4 className="text-sm font-medium flex items-center">
                     <BookOpen className="mr-2 h-4 w-4" />
-                    Passage Lists
+                    Vocabulary Lists
                   </h4>
                   {enrollment.class.vocabularyLists?.length > 0 ? (
                     <div className="space-y-2">

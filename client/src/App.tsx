@@ -8,7 +8,7 @@ import HomePage from "@/pages/home-page";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { AuthProvider } from "@/hooks/use-auth";
 import EducatorDashboard from "@/pages/educator-dashboard";
-import LearnerDashboard from "@/pages/learner-dashboard-new";
+import LearnerDashboard from "@/pages/learner-dashboard";
 import VocabularyCheckup from "@/pages/vocabulary-checkup";
 import VocabularyView from "@/pages/vocabulary-view";
 import FlashcardsPage from "@/pages/flashcards-page";
