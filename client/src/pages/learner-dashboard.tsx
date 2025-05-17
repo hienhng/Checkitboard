@@ -210,35 +210,21 @@ export default function LearnerDashboard() {
                         ) : vocabularyLists && vocabularyLists.length > 0 && vocabularyLists.filter(list => 
                           !list.submission || !list.submission.completed
                         ).length > 0 ? (
-                          <div className="divide-y divide-gray-200">
+                          <div className="space-y-2">
                             {vocabularyLists
                               .filter(list => !list.submission || !list.submission.completed)
                               .map(list => (
-                                <div key={list.id} className="py-4 flex items-center">
-                                  <div className="h-10 w-10 flex-shrink-0 rounded-full bg-primary text-white flex items-center justify-center">
-                                    <FileText className="h-5 w-5" />
+                                <div 
+                                  key={list.id} 
+                                  className="flex justify-between items-center p-4 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors group"
+                                  onClick={() => startCheckUp(list.id)}
+                                >
+                                  <div className="flex-1">
+                                    <h4 className="font-medium text-neutral-dark">{list.title}</h4>
+                                    <p className="text-sm text-gray-500">Due date: {formatDueDate(list.dueDate)}</p>
                                   </div>
-                                  <div className="ml-3 flex-1">
-                                    <div className="flex items-center justify-between">
-                                      <h4 className="text-sm font-medium text-neutral-dark">{list.title}</h4>
-                                      <p className="text-sm text-gray-500">{formatDueDate(list.dueDate)}</p>
-                                    </div>
-                                    <div className="mt-1 flex items-center">
-                                      <p className="text-sm text-gray-500">
-                                        {list.words?.length || 0} vocabulary words - {list.educator?.name}
-                                      </p>
-                                    </div>
-                                    <div className="mt-2">
-                                      <Button 
-                                        size="sm"
-                                        variant="outline"
-                                        className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-primary hover:bg-blue-50"
-                                        onClick={() => startCheckUp(list.id)}
-                                      >
-                                        Start Check-Up
-                                        <ChevronRight className="ml-1 h-3.5 w-3.5" />
-                                      </Button>
-                                    </div>
+                                  <div className="text-gray-400 group-hover:text-primary transition-colors">
+                                    <ChevronRight className="h-5 w-5" />
                                   </div>
                                 </div>
                               ))}
