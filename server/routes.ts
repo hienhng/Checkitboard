@@ -1029,6 +1029,131 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error fetching student performance" });
     }
   });
+  
+  // Get individual student progress data for visualization
+  app.get("/api/educator/students/:studentId/progress", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "educator") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const studentId = parseInt(req.params.studentId);
+      if (isNaN(studentId)) {
+        return res.status(400).json({ message: "Invalid student ID" });
+      }
+      
+      // Optional class filter
+      const classId = req.query.classId ? parseInt(req.query.classId as string) : null;
+      
+      // Verify the educator can access this student's data
+      // If classId is provided, verify the educator owns this class and the student is in it
+      if (classId) {
+        const classData = await db.query.classes.findFirst({
+          where: and(
+            eq(classes.id, classId),
+            eq(classes.educatorId, req.user.id)
+          ),
+          with: {
+            students: {
+              where: eq(studentClass.studentId, studentId)
+            }
+          }
+        });
+        
+        if (!classData || classData.students.length === 0) {
+          return res.status(403).json({ 
+            message: "Access denied - either you don't own this class or the student is not in this class" 
+          });
+        }
+      }
+      
+      // Get all submissions by this student, focusing on vocabulary checkups
+      const submissions = await db.query.submissions.findMany({
+        where: and(
+          eq(submissions.studentId, studentId),
+          eq(submissions.completed, true),
+          // If classId is provided, filter by lists in that class
+          ...(classId ? [
+            sql`EXISTS (
+              SELECT 1 FROM vocabulary_lists
+              WHERE vocabulary_lists.id = submissions.list_id
+              AND vocabulary_lists.class_id = ${classId}
+            )`
+          ] : [])
+        ),
+        with: {
+          list: {
+            columns: {
+              id: true,
+              title: true,
+            },
+          },
+          wordDefinitions: {
+            columns: {
+              id: true,
+              isCorrect: true,
+            },
+          },
+        },
+        orderBy: [asc(submissions.submittedAt)]
+      });
+      
+      // Format the response for the chart
+      const formattedSubmissions = submissions.map(submission => {
+        // Calculate score
+        const totalDefinitions = submission.wordDefinitions.length;
+        const correctDefinitions = submission.wordDefinitions.filter(def => def.isCorrect).length;
+        const score = totalDefinitions > 0 
+          ? Math.round((correctDefinitions / totalDefinitions) * 100) 
+          : 0;
+        
+        return {
+          id: submission.id,
+          listId: submission.listId,
+          listTitle: submission.list.title,
+          submittedAt: submission.submittedAt,
+          score: score,
+          totalWords: totalDefinitions,
+          correctWords: correctDefinitions
+        };
+      });
+      
+      // Get student info
+      const student = await db.query.users.findFirst({
+        where: eq(users.id, studentId),
+        columns: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      });
+      
+      res.json({
+        student,
+        submissions: formattedSubmissions,
+        // Add some summary statistics
+        stats: {
+          totalSubmissions: formattedSubmissions.length,
+          averageScore: formattedSubmissions.length > 0 
+            ? Math.round(formattedSubmissions.reduce((sum, sub) => sum + sub.score, 0) / formattedSubmissions.length) 
+            : 0,
+          bestScore: formattedSubmissions.length > 0 
+            ? Math.max(...formattedSubmissions.map(sub => sub.score)) 
+            : 0,
+          worstScore: formattedSubmissions.length > 0 
+            ? Math.min(...formattedSubmissions.map(sub => sub.score)) 
+            : 0,
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching student progress:", error);
+      res.status(500).json({ message: "Error fetching student progress" });
+    }
+  });
 
   // Get pending join requests for educator's classes
   app.get("/api/educator/join-requests", async (req, res) => {
