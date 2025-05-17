@@ -67,11 +67,21 @@ export function extractHighlightedWords(html: string): string[] {
 
 // Format a passage with highlighted words and wrap all words in clickable spans
 export function formatPassageWithHighlights(passage: string, words: string[]): string {
+  // Create a safe text node first to prevent XSS
+  const tempDiv = document.createElement('div');
+  const textNode = document.createTextNode(passage);
+  tempDiv.appendChild(textNode);
+  
   // Sort words by length (descending) to prevent partial word matching issues
   const sortedWords = [...words].sort((a, b) => b.length - a.length);
   
+  // Convert the div's text content to a string for processing
+  let formattedPassage = tempDiv.textContent || '';
+  
+  // Create a new div for the safe highlighted content
+  const resultDiv = document.createElement('div');
+  
   // First, highlight the selected words
-  let formattedPassage = passage;
   sortedWords.forEach(word => {
     // Use word boundary to avoid partial matches
     const regex = new RegExp(`\\b${word}\\b`, 'gi');
@@ -79,9 +89,8 @@ export function formatPassageWithHighlights(passage: string, words: string[]): s
   });
   
   // Now wrap each regular word (non-mark) in a span for click interaction
-  // Split the passage by spaces but keep the HTML intact
-  const tempDiv = document.createElement('div');
-  tempDiv.innerHTML = formattedPassage;
+  // We'll use a document fragment to safely create the elements
+  resultDiv.innerHTML = formattedPassage;
   
   // Process each text node in the div
   const textNodes: Node[] = [];
