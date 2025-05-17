@@ -12,7 +12,7 @@ import {
   generateLearningStrategies,
   generatePassageFromWords
 } from "./huggingface";
-import { eq, and, desc, isNull, asc, not } from "drizzle-orm";
+import { eq, and, desc, isNull, asc, not, inArray, sql } from "drizzle-orm";
 import { db, pool } from "../db";
 import {
   insertVocabularyListSchema,
@@ -1072,18 +1072,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get all submissions by this student, focusing on vocabulary checkups
-      const submissions = await db.query.submissions.findMany({
+      const studentSubmissions = await db.query.submissions.findMany({
         where: and(
           eq(submissions.studentId, studentId),
           eq(submissions.completed, true),
-          // If classId is provided, filter by lists in that class
-          ...(classId ? [
-            sql`EXISTS (
-              SELECT 1 FROM vocabulary_lists
-              WHERE vocabulary_lists.id = submissions.list_id
-              AND vocabulary_lists.class_id = ${classId}
-            )`
-          ] : [])
+          // If classId is provided, we'll filter later
         ),
         with: {
           list: {
@@ -1103,7 +1096,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Format the response for the chart
-      const formattedSubmissions = submissions.map(submission => {
+      const formattedSubmissions = studentSubmissions.map(submission => {
         // Calculate score
         const totalDefinitions = submission.wordDefinitions.length;
         const correctDefinitions = submission.wordDefinitions.filter(def => def.isCorrect).length;
