@@ -12,7 +12,11 @@ import {
   ChevronRight,
   School,
   Eye,
-  Brain
+  Brain,
+  Calendar,
+  BarChart3,
+  Clock,
+  MessageSquare
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getQueryFn, apiRequest } from "@/lib/queryClient";
@@ -147,37 +151,148 @@ export default function LearnerDashboard() {
 
   return (
     <>
-      <div className="flex flex-col min-h-screen bg-neutral-light">
+      <div className="flex min-h-screen bg-gray-50">
         <Navbar />
         
         {/* Main Content */}
-        <div className="flex-1">
-          <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-            {/* Header */}
-            <div className="px-4 py-5 sm:px-6">
-              <h2 className="text-2xl font-bold text-neutral-dark">Student Dashboard</h2>
-              <p className="mt-1 max-w-2xl text-sm text-gray-500">
-                Complete vocabulary check-ups, join classes, and review your flashcards.
-              </p>
+        <div className="flex-1 md:ml-64 p-8">
+          <div className="max-w-7xl mx-auto">
+            {/* Header with profile */}
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-800">Let's Start Your New Course 😍</h1>
+              </div>
+              
+              {/* Profile Section */}
+              <div className="mt-4 md:mt-0 flex flex-col items-center">
+                <div className="w-24 h-24 rounded-full overflow-hidden bg-blue-500 mb-2">
+                  <img 
+                    src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=b6e3f4,c0aede,d1d4f9"
+                    alt="Profile" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-800">Lucy Turner</h3>
+                <p className="text-sm text-gray-500">Student / Grade 3</p>
+                
+                {/* Language Proficiency */}
+                <div className="grid grid-cols-3 gap-4 mt-3">
+                  <div className="flex flex-col items-center">
+                    <div className="relative w-10 h-10">
+                      <svg className="w-10 h-10 transform -rotate-90" viewBox="0 0 36 36">
+                        <circle cx="18" cy="18" r="16" fill="none" stroke="#e0e0e0" strokeWidth="3"></circle>
+                        <circle cx="18" cy="18" r="16" fill="none" stroke="#3b82f6" strokeWidth="3" strokeDasharray="100" strokeDashoffset="30"></circle>
+                      </svg>
+                      <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center text-xs font-medium">70%</div>
+                    </div>
+                    <p className="text-xs font-medium mt-1 text-center">French</p>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="relative w-10 h-10">
+                      <svg className="w-10 h-10 transform -rotate-90" viewBox="0 0 36 36">
+                        <circle cx="18" cy="18" r="16" fill="none" stroke="#e0e0e0" strokeWidth="3"></circle>
+                        <circle cx="18" cy="18" r="16" fill="none" stroke="#3b82f6" strokeWidth="3" strokeDasharray="100" strokeDashoffset="20"></circle>
+                      </svg>
+                      <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center text-xs font-medium">80%</div>
+                    </div>
+                    <p className="text-xs font-medium mt-1 text-center">Spanish</p>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="relative w-10 h-10">
+                      <svg className="w-10 h-10 transform -rotate-90" viewBox="0 0 36 36">
+                        <circle cx="18" cy="18" r="16" fill="none" stroke="#e0e0e0" strokeWidth="3"></circle>
+                        <circle cx="18" cy="18" r="16" fill="none" stroke="#f59e0b" strokeWidth="3" strokeDasharray="100" strokeDashoffset="40"></circle>
+                      </svg>
+                      <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center text-xs font-medium">60%</div>
+                    </div>
+                    <p className="text-xs font-medium mt-1 text-center">Italian</p>
+                  </div>
+                </div>
+              </div>
             </div>
             
-            {/* Content */}
-            <div className="px-4 sm:px-6 lg:px-8">
-              <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab}>
-                <TabsList>
-                  <TabsTrigger value="dashboard" className="flex items-center">
-                    <BookOpen className="mr-2 h-4 w-4" />
-                    Dashboard
-                  </TabsTrigger>
-                  <TabsTrigger value="classes" className="flex items-center">
-                    <School className="mr-2 h-4 w-4" />
-                    My Classes
-                  </TabsTrigger>
+            {/* Main Dashboard Content */}
+            <div>
+              <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+                <TabsList className="hidden">
+                  <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+                  <TabsTrigger value="classes">My Classes</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="dashboard">
-                  <div className="space-y-6">
-                    {/* Pending Vocabulary Check-Ups */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Performance Chart */}
+                    <div className="bg-white p-6 rounded-3xl shadow-sm">
+                      <div className="flex justify-between items-center mb-6">
+                        <div>
+                          <h3 className="text-lg font-semibold">Performance</h3>
+                          <p className="text-sm text-gray-500">6 courses completed</p>
+                        </div>
+                        <div className="relative w-10 h-10">
+                          <svg className="w-10 h-10 transform -rotate-90" viewBox="0 0 36 36">
+                            <circle cx="18" cy="18" r="16" fill="none" stroke="#e0e0e0" strokeWidth="3"></circle>
+                            <circle cx="18" cy="18" r="16" fill="none" stroke="#3b82f6" strokeWidth="3" strokeDasharray="100" strokeDashoffset="18"></circle>
+                          </svg>
+                          <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center text-xs font-medium">82%</div>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-end h-48">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <div key={i} className="flex flex-col items-center">
+                            <div 
+                              className={`w-12 ${i === 2 ? 'h-40 bg-blue-500' : 'h-28 bg-blue-300'} rounded-full`}
+                            ></div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Time Spent Chart */}
+                    <div className="bg-white p-6 rounded-3xl shadow-sm">
+                      <div className="flex justify-between items-center mb-6">
+                        <div>
+                          <h3 className="text-lg font-semibold">Time spent on learning</h3>
+                          <p className="text-sm text-gray-500">8 courses completed</p>
+                        </div>
+                        <div className="flex items-center space-x-4">
+                          <div className="flex items-center">
+                            <div className="w-3 h-3 rounded-full bg-green-400 mr-1"></div>
+                            <span className="text-xs text-gray-500">Listening</span>
+                          </div>
+                          <div className="flex items-center">
+                            <div className="w-3 h-3 rounded-full bg-red-400 mr-1"></div>
+                            <span className="text-xs text-gray-500">Reading</span>
+                          </div>
+                          <div className="flex items-center">
+                            <div className="w-3 h-3 rounded-full bg-blue-400 mr-1"></div>
+                            <span className="text-xs text-gray-500">Writing</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-between h-48 items-end">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <div key={i} className="flex flex-col items-center">
+                            <div className="flex flex-col space-y-1">
+                              <div className="w-1 h-12 bg-green-400 mx-auto"></div>
+                              <div className="w-1 h-8 bg-red-400 mx-auto"></div>
+                              <div className="w-1 h-20 bg-blue-400 mx-auto"></div>
+                            </div>
+                            <div className="mt-1 text-xs text-gray-500">Dec {17 + i}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Your Courses */}
+                  <div className="mt-8">
+                    <div className="flex justify-between items-center mb-4">
+                      <h2 className="text-xl font-bold">Your Courses</h2>
+                      <button className="text-sm text-blue-600 hover:underline">View all</button>
+                    </div>
+                    
+                    <div className="space-y-4">
                     <Card>
                       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
                         <div>
