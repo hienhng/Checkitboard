@@ -60,17 +60,9 @@ export function StudentProgressChart({
       return response.json();
     },
     onSuccess: (data) => {
-      // Format the data for the chart
-      const formattedData = data.submissions.map((submission: any) => {
-        const submissionDate = new Date(submission.submittedAt);
-        return {
-          id: submission.id,
-          listTitle: submission.listTitle,
-          score: submission.score,
-          submittedAt: submission.submittedAt,
-          date: submissionDate.toLocaleDateString(),
-        };
-      });
+      // The API already returns formatted data in the expected structure
+      // Just ensure it's sorted correctly by date
+      const formattedData = Array.isArray(data) ? data : [];
       
       // Sort by date ascending
       formattedData.sort((a: SubmissionData, b: SubmissionData) => 
