@@ -1083,6 +1083,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             columns: {
               id: true,
               title: true,
+              classId: true,
             },
           },
           wordDefinitions: {
@@ -1095,23 +1096,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orderBy: [asc(submissions.submittedAt)]
       });
       
+      // For class filtering, we'll need to get vocabulary lists for this class
+      let filteredSubmissions = studentSubmissions;
+      
+      if (classId) {
+        // Get list IDs in this class
+        const classLists = await db.query.vocabularyLists.findMany({
+          where: eq(vocabularyLists.classId, classId),
+          columns: {
+            id: true
+          }
+        });
+        
+        const classListIds = classLists.map(list => list.id);
+        
+        // Filter submissions to only those with lists in this class
+        filteredSubmissions = studentSubmissions.filter(
+          sub => classListIds.includes(sub.listId)
+        );
+      }
+      
       // Format the response for the chart
-      const formattedSubmissions = studentSubmissions.map(submission => {
+      const formattedSubmissions = filteredSubmissions.map(submission => {
         // Calculate score
         const totalDefinitions = submission.wordDefinitions.length;
-        const correctDefinitions = submission.wordDefinitions.filter(def => def.isCorrect).length;
+        const correctDefinitions = submission.wordDefinitions.filter(def => !!def.isCorrect).length;
         const score = totalDefinitions > 0 
           ? Math.round((correctDefinitions / totalDefinitions) * 100) 
           : 0;
         
         return {
           id: submission.id,
-          listId: submission.listId,
           listTitle: submission.list.title,
-          submittedAt: submission.submittedAt,
           score: score,
-          totalWords: totalDefinitions,
-          correctWords: correctDefinitions
+          submittedAt: submission.submittedAt,
+          date: submission.submittedAt ? new Date(submission.submittedAt).toLocaleDateString() : '' // Formatted date for display
         };
       });
       
@@ -1125,23 +1144,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
       });
       
-      res.json({
-        student,
-        submissions: formattedSubmissions,
-        // Add some summary statistics
-        stats: {
-          totalSubmissions: formattedSubmissions.length,
-          averageScore: formattedSubmissions.length > 0 
-            ? Math.round(formattedSubmissions.reduce((sum, sub) => sum + sub.score, 0) / formattedSubmissions.length) 
-            : 0,
-          bestScore: formattedSubmissions.length > 0 
-            ? Math.max(...formattedSubmissions.map(sub => sub.score)) 
-            : 0,
-          worstScore: formattedSubmissions.length > 0 
-            ? Math.min(...formattedSubmissions.map(sub => sub.score)) 
-            : 0,
-        }
+      // Sort the submissions by date for the chart
+      formattedSubmissions.sort((a, b) => {
+        const dateA = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
+        const dateB = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
+        return dateA - dateB;
       });
+      
+      // Return just the formatted submissions array
+      // This matches what the student-progress-chart.tsx component expects
+      res.json(formattedSubmissions);
     } catch (error) {
       console.error("Error fetching student progress:", error);
       res.status(500).json({ message: "Error fetching student progress" });
