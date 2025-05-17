@@ -479,6 +479,10 @@ export function ClassManagement() {
                         <Star className="h-4 w-4 inline mr-1" />
                         Accuracy
                       </TableHead>
+                      <TableHead className="text-center">
+                        <LineChart className="h-4 w-4 inline mr-1" />
+                        Progress
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -510,6 +514,21 @@ export function ClassManagement() {
                           <div className="text-xs mt-1">
                             {student.stats.correctWords} / {student.stats.totalWords} words
                           </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="text-xs"
+                            onClick={() => setSelectedStudent({
+                              id: student.student.id,
+                              name: student.student.name
+                            })}
+                            disabled={student.stats.completedLists === 0}
+                          >
+                            <LineChart className="h-3 w-3 mr-1" />
+                            View Progress
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -547,6 +566,17 @@ export function ClassManagement() {
             </div>
           )}
           
+          {/* Student Progress Chart */}
+          {selectedStudent && selectedClass && (
+            <StudentProgressChart
+              studentId={selectedStudent.id}
+              studentName={selectedStudent.name}
+              classId={selectedClass}
+              isOpen={!!selectedStudent}
+              onClose={() => setSelectedStudent(null)}
+            />
+          )}
+        
           <DialogFooter>
             <Button variant="outline" onClick={() => setSelectedClass(null)}>Close</Button>
           </DialogFooter>
