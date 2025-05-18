@@ -208,23 +208,15 @@ export default function ClassListsPage() {
                     </Link>
                   </Button>
                 ) : (
-                  <div className="w-full flex flex-col sm:flex-row gap-2">
-                    <Button 
-                      asChild 
-                      className="w-full sm:w-1/2"
-                      variant="outline"
-                    >
-                      <Link to={`/learner/vocabulary/${list.id}`}>
-                        View Words
-                      </Link>
-                    </Button>
-                    <Button 
-                      className="w-full sm:w-1/2"
-                      onClick={() => startCheckUp(list.id)}
-                    >
-                      Start Check-Up
-                    </Button>
-                  </div>
+                  <Button 
+                    asChild 
+                    className="w-full"
+                    variant="outline"
+                  >
+                    <Link to={`/learner/vocabulary/${list.id}`}>
+                      View Words
+                    </Link>
+                  </Button>
                 )}
               </CardFooter>
             </Card>

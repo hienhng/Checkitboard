@@ -175,20 +175,13 @@ export default function VocabularyView() {
               )}
             </CardContent>
             
-            <CardFooter className="border-t bg-muted/20 flex justify-between gap-4">
+            <CardFooter className="border-t bg-muted/20">
               <Button 
                 variant="outline" 
                 className="w-full" 
                 onClick={() => window.history.back()}
               >
                 Go Back
-              </Button>
-              <Button 
-                className="w-full flex items-center justify-center" 
-                onClick={startCheckUp}
-              >
-                Start Check-Up
-                <ChevronRight className="ml-1 h-4 w-4" />
               </Button>
             </CardFooter>
           </Card>
