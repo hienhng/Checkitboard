@@ -1,6 +1,12 @@
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,14 +24,17 @@ import {
   User, 
   Home,
   GraduationCap,
-  Library,
-  FileText
+  Menu,
+  X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useMobile } from "@/hooks/use-mobile";
 
 export function Sidebar() {
   const { user, logoutMutation } = useAuth();
   const [location] = useLocation();
+  const [open, setOpen] = useState(false);
+  const isMobile = useMobile();
 
   if (!user) {
     return null;
@@ -60,8 +69,9 @@ export function Sidebar() {
         { href: "/learner/flashcards", label: "Flashcards", icon: <Brain className="h-5 w-5" /> },
       ];
 
-  return (
-    <div className="fixed left-0 top-0 bottom-0 w-64 bg-white shadow-md flex flex-col border-r border-gray-200 z-30">
+  // Sidebar content - shared between mobile and desktop
+  const SidebarContent = () => (
+    <>
       {/* Logo */}
       <div className="p-6">
         <Link to="/" className="flex items-center justify-center">
@@ -88,6 +98,7 @@ export function Sidebar() {
                   ? "bg-primary/10 text-primary"
                   : "text-gray-700 hover:bg-primary/5 hover:text-primary"
               )}
+              onClick={() => isMobile && setOpen(false)}
             >
               <div className={cn(
                 "flex items-center justify-center h-8 w-8 rounded-md mr-3",
@@ -138,6 +149,36 @@ export function Sidebar() {
           </DropdownMenu>
         </div>
       </div>
+    </>
+  );
+
+  // Mobile sidebar with Sheet component
+  if (isMobile) {
+    return (
+      <>
+        {/* Mobile menu button */}
+        <div className="fixed top-4 left-4 z-40">
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" className="h-10 w-10 rounded-full bg-white shadow-md">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="p-0 w-72">
+              <div className="h-full flex flex-col">
+                <SidebarContent />
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </>
+    );
+  }
+
+  // Desktop sidebar (permanently visible)
+  return (
+    <div className="fixed left-0 top-0 bottom-0 w-64 bg-white shadow-md flex flex-col border-r border-gray-200 z-30">
+      <SidebarContent />
     </div>
   );
 }
