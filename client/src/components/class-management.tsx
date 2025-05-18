@@ -40,6 +40,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Tabs, 
   TabsContent, 
@@ -61,7 +62,9 @@ import {
   PieChart,
   Expand,
   ClipboardCheck,
-  LineChart
+  LineChart,
+  UserMinus,
+  AlertTriangle
 } from "lucide-react";
 import {
   Table,
@@ -90,6 +93,20 @@ export function ClassManagement() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("classes");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [studentToRemove, setStudentToRemove] = useState<{id: number, name: string, classId: number} | null>(null);
+  const [confirmRemoval, setConfirmRemoval] = useState(false);
+  const [dontAskAgain, setDontAskAgain] = useState(false);
+  
+  // Local storage key for "don't ask again" preference
+  const dontAskAgainKey = "dontAskAgainForStudentRemoval";
+  
+  // Load don't ask again preference from local storage
+  useEffect(() => {
+    const savedPreference = localStorage.getItem(dontAskAgainKey);
+    if (savedPreference === "true") {
+      setDontAskAgain(true);
+    }
+  }, []);
 
   // Form for creating a new class
   const form = useForm<CreateClassData>({
@@ -197,6 +214,45 @@ export function ClassManagement() {
     },
   });
 
+  // Mutation for removing a student from a class
+  const removeStudentMutation = useMutation({
+    mutationFn: async ({ 
+      studentId, 
+      classId 
+    }: { 
+      studentId: number; 
+      classId: number; 
+    }) => {
+      const response = await apiRequest("DELETE", `/api/classes/${classId}/students/${studentId}`);
+      return response;
+    },
+    onSuccess: () => {
+      // Reset state
+      setStudentToRemove(null);
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/educator/classes"] });
+      if (selectedClass) {
+        queryClient.invalidateQueries({ 
+          queryKey: ["/api/educator/classes", selectedClass, "student-performance"] 
+        });
+      }
+      
+      toast({
+        title: "Student removed",
+        description: "The student has been removed from the class.",
+      });
+    },
+    onError: (error: Error) => {
+      setStudentToRemove(null);
+      toast({
+        title: "Error",
+        description: error.message || "An error occurred while removing the student.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Handle form submission
   const onSubmit = (data: CreateClassData) => {
     createClassMutation.mutate(data);
@@ -209,6 +265,44 @@ export function ClassManagement() {
       title: "Copied",
       description: "Class code copied to clipboard.",
     });
+  };
+  
+  // Handle initiating student removal
+  const handleRemoveStudent = (student: {id: number, name: string}, classId: number) => {
+    setStudentToRemove({
+      id: student.id,
+      name: student.name,
+      classId: classId
+    });
+    
+    // If the user has chosen to not be asked again, proceed directly
+    if (dontAskAgain) {
+      removeStudentMutation.mutate({
+        studentId: student.id,
+        classId: classId
+      });
+    } else {
+      setConfirmRemoval(true);
+    }
+  };
+  
+  // Handle confirmation of student removal
+  const confirmRemoveStudent = () => {
+    if (!studentToRemove) return;
+    
+    // Save preference if "don't ask again" is checked
+    if (dontAskAgain) {
+      localStorage.setItem(dontAskAgainKey, "true");
+    }
+    
+    // Process the removal
+    removeStudentMutation.mutate({
+      studentId: studentToRemove.id,
+      classId: studentToRemove.classId
+    });
+    
+    // Close the dialog
+    setConfirmRemoval(false);
   };
 
   return (
@@ -515,20 +609,34 @@ export function ClassManagement() {
                             {student.stats.correctWords} / {student.stats.totalWords} words
                           </div>
                         </TableCell>
-                        <TableCell className="text-center">
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            className="text-xs"
-                            onClick={() => setSelectedStudent({
-                              id: student.student.id,
-                              name: student.student.name
-                            })}
-                            disabled={student.stats.completedLists === 0}
-                          >
-                            <LineChart className="h-3 w-3 mr-1" />
-                            View Progress
-                          </Button>
+                        <TableCell className="text-center space-y-2">
+                          <div className="flex gap-2 justify-center">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="text-xs"
+                              onClick={() => setSelectedStudent({
+                                id: student.student.id,
+                                name: student.student.name
+                              })}
+                              disabled={student.stats.completedLists === 0}
+                            >
+                              <LineChart className="h-3 w-3 mr-1" />
+                              View Progress
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="destructive"
+                              className="text-xs"
+                              onClick={() => handleRemoveStudent({
+                                id: student.student.id,
+                                name: student.student.name
+                              }, selectedClass || 0)}
+                            >
+                              <UserMinus className="h-3 w-3 mr-1" />
+                              Remove
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
