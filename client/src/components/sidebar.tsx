@@ -25,7 +25,8 @@ import {
   Home,
   GraduationCap,
   Menu,
-  X
+  X,
+  LineChart as LineChartIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMobile } from "@/hooks/use-mobile";
@@ -65,7 +66,7 @@ export function Sidebar() {
     : [
         { href: "/learner/dashboard", label: "Dashboard", icon: <BookOpen className="h-5 w-5" /> },
         { href: "/learner/flashcards", label: "Flashcards", icon: <Brain className="h-5 w-5" /> },
-        { href: "/learner/analysis", label: "Analysis", icon: <BarChart className="h-5 w-5" /> },
+        { href: "/learner/analysis", label: "Analysis", icon: <Home className="h-5 w-5" /> },
       ];
 
   // Sidebar content - shared between mobile and desktop
