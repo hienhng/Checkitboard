@@ -1239,6 +1239,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error responding to join request" });
     }
   });
+  
+  // Remove a student from a class (educator only)
+  app.delete("/api/classes/:classId/students/:studentId", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "educator") {
+        return res.status(403).json({ message: "Only educators can remove students from classes" });
+      }
+
+      const classId = parseInt(req.params.classId);
+      const studentId = parseInt(req.params.studentId);
+      
+      if (isNaN(classId) || isNaN(studentId)) {
+        return res.status(400).json({ message: "Invalid class or student ID" });
+      }
+
+      // Verify the educator owns the class
+      const classInfo = await db.query.classes.findFirst({
+        where: eq(classes.id, classId),
+        columns: {
+          educatorId: true,
+        },
+      });
+
+      if (!classInfo || classInfo.educatorId !== req.user.id) {
+        return res.status(403).json({ message: "You don't have permission to manage this class" });
+      }
+
+      // Remove the student from the class
+      const result = await storage.removeStudentFromClass(studentId, classId);
+      
+      if (!result) {
+        return res.status(404).json({ message: "Student not found in this class" });
+      }
+      
+      res.json({ message: "Student removed from class successfully" });
+    } catch (error) {
+      console.error("Error removing student from class:", error);
+      res.status(500).json({ message: "Error removing student from class" });
+    }
+  });
 
   // Join a class (learner only)
   app.post("/api/join-class", async (req, res) => {
