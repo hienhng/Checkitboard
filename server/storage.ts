@@ -931,6 +931,21 @@ export class DatabaseStorage {
       .returning();
     return updatedJoinRequest;
   }
+  
+  async removeStudentFromClass(studentId: number, classId: number) {
+    // Delete the student from the class
+    const [removedRecord] = await db
+      .delete(studentClass)
+      .where(
+        and(
+          eq(studentClass.studentId, studentId),
+          eq(studentClass.classId, classId),
+          eq(studentClass.status, 'approved') // Only remove approved students
+        )
+      )
+      .returning();
+    return removedRecord;
+  }
 }
 
 export const storage = new DatabaseStorage();

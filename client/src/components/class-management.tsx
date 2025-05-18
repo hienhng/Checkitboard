@@ -690,6 +690,59 @@ export function ClassManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Student Removal Confirmation Dialog */}
+      <Dialog open={confirmRemoval} onOpenChange={setConfirmRemoval}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Remove Student
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to remove {studentToRemove?.name} from this class?
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex items-center space-x-2 pt-2">
+            <Checkbox 
+              id="dontAskAgain" 
+              checked={dontAskAgain} 
+              onCheckedChange={(checked) => {
+                setDontAskAgain(checked === true);
+              }} 
+            />
+            <label
+              htmlFor="dontAskAgain"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Don't ask me again
+            </label>
+          </div>
+          
+          <DialogFooter className="flex space-x-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setConfirmRemoval(false);
+                setStudentToRemove(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={confirmRemoveStudent}
+              disabled={removeStudentMutation.isPending}
+            >
+              {removeStudentMutation.isPending ? "Removing..." : "Remove Student"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
