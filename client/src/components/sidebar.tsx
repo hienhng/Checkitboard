@@ -59,14 +59,13 @@ export function Sidebar() {
 
   const navLinks = isEducator
     ? [
-        
         { href: "/educator/dashboard", label: "Dashboard", icon: <BookOpen className="h-5 w-5" /> },
         { href: "/educator/create", label: "Classes", icon: <School className="h-5 w-5" /> },
       ]
     : [
-        
         { href: "/learner/dashboard", label: "Dashboard", icon: <BookOpen className="h-5 w-5" /> },
         { href: "/learner/flashcards", label: "Flashcards", icon: <Brain className="h-5 w-5" /> },
+        { href: "/learner/analysis", label: "Analysis", icon: <BarChart className="h-5 w-5" /> },
       ];
 
   // Sidebar content - shared between mobile and desktop
