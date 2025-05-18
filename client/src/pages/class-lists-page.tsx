@@ -128,6 +128,14 @@ export default function ClassListsPage() {
         <p className="text-muted-foreground text-center mt-2">
           Explore all vocabulary lists available in this class
         </p>
+        
+        {!listsLoading && lists.length > 0 && (
+          <div className="flex justify-center mt-4">
+            <div className="bg-primary/10 px-4 py-2 rounded-full text-sm text-primary font-medium">
+              {lists.filter((list: any) => list.submission?.completed).length} / {lists.length} Lists Completed
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Search and filter */}
