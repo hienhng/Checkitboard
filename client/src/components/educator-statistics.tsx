@@ -109,47 +109,76 @@ export function EducatorStatistics() {
   // Reference to the passage preview element
   const passageRef = useRef<HTMLDivElement | null>(null);
   
-  // Effect to update the passage display with highlighted words and attach event listeners
+  // Effect to format the passage when the dialog opens or when editedPassage changes
   useEffect(() => {
-    if (passageRef.current && editedPassage && isEditDialogOpen) {
+    // Only process when dialog is open and we have content
+    if (!isEditDialogOpen || !editedPassage || !passageRef.current) return;
+    
+    try {
+      // Format the passage with highlighted words
       const highlightedPassage = formatPassageWithHighlights(editedPassage, selectedWords);
       
-      // Use dangerouslySetInnerHTML with a wrapper to safely render the content
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = highlightedPassage;
-      
-      // Clear the container first
-      while (passageRef.current.firstChild) {
-        passageRef.current.removeChild(passageRef.current.firstChild);
-      }
-      
-      // Append the sanitized children
-      Array.from(tempDiv.childNodes).forEach(node => {
-        passageRef.current.appendChild(node.cloneNode(true));
-      });
-      
-      // Add click handler directly to words after rendering
-      const wordElements = passageRef.current.querySelectorAll('.word');
-      wordElements.forEach(wordElement => {
-        wordElement.addEventListener('click', () => {
-          const word = wordElement.textContent?.trim().replace(/[.,;:!?"'()[\]{}]/g, '') || '';
-          if (word && !selectedWords.includes(word)) {
-            setSelectedWords(prev => [...prev, word]);
-            
-            // Add visual feedback
-            const element = wordElement as HTMLElement;
-            element.style.color = 'var(--primary)';
-            element.style.fontWeight = 'bold';
-            
-            setTimeout(() => {
-              element.style.color = '';
-              element.style.fontWeight = '';
-            }, 300);
-          }
-        });
-      });
+      // Set the HTML content
+      passageRef.current.innerHTML = highlightedPassage;
+    } catch (error) {
+      console.error("Error formatting passage:", error);
     }
-  }, [editedPassage, selectedWords, isEditDialogOpen]);
+  }, [isEditDialogOpen, editedPassage, selectedWords]);
+  
+  // Separate effect to handle click events in the passage
+  useEffect(() => {
+    if (!isEditDialogOpen || !passageRef.current) return;
+    
+    // Function to handle clicking on words
+    const handleWordClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      
+      // Skip if clicking on already selected word (mark)
+      if (target.tagName === 'MARK') return;
+      
+      // Handle clicking on word spans
+      if (target.classList.contains('word')) {
+        const word = target.textContent?.trim().replace(/[.,;:!?"'()[\]{}]/g, '') || '';
+        
+        if (word && word.length > 0 && !selectedWords.includes(word)) {
+          // Add word to selection
+          setSelectedWords(prev => [...prev, word]);
+          
+          // Visual feedback
+          target.style.color = 'var(--primary)';
+          target.style.fontWeight = 'bold';
+          setTimeout(() => {
+            target.style.color = '';
+            target.style.fontWeight = '';
+          }, 300);
+        }
+      }
+    };
+    
+    // Function to handle text selection
+    const handleTextSelection = () => {
+      const selection = window.getSelection();
+      if (!selection || selection.isCollapsed) return;
+      
+      const selectedText = selection.toString().trim();
+      if (selectedText && !selectedWords.includes(selectedText)) {
+        setSelectedWords(prev => [...prev, selectedText]);
+        selection.removeAllRanges();
+      }
+    };
+    
+    // Add event listeners
+    passageRef.current.addEventListener('click', handleWordClick as EventListener);
+    passageRef.current.addEventListener('mouseup', handleTextSelection);
+    
+    // Clean up
+    return () => {
+      if (passageRef.current) {
+        passageRef.current.removeEventListener('click', handleWordClick as EventListener);
+        passageRef.current.removeEventListener('mouseup', handleTextSelection);
+      }
+    };
+  }, [isEditDialogOpen, selectedWords]);
 
   // Handle removing a word from the selected list
   const handleRemoveWord = (wordToRemove: string) => {
