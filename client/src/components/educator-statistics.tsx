@@ -415,43 +415,34 @@ export function EducatorStatistics() {
               <div className="bg-muted/50 p-3 rounded-md">
                 <p className="text-sm text-primary mb-2 flex items-center">
                   <PlusCircle className="h-4 w-4 mr-1" />
-                  <strong>How to add words:</strong> Highlight a word or phrase in the passage.
+                  <strong>How to add words:</strong> Click on words or highlight text in the passage.
                 </p>
                 <p className="text-xs text-muted-foreground mb-4">
-                  • Select text in the passage to see a preview<br />
-                  • Click the "Add Word" button to add it to your vocabulary list<br />
-                  • For multiple words: Select a phrase to add all words at once<br />
+                  • Click on any word in the preview below to add it<br />
+                  • Highlight text to select multiple words at once<br />
                   • To remove: Click on any badge in the selected words area above
                 </p>
               </div>
               
-              {/* Word Selection Preview Box */}
-              {previewWord && (
-                <div className="border-2 border-primary rounded-md p-3 bg-primary/5 flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">Add to vocabulary list:</p>
-                    <p className="text-lg font-bold text-primary">{previewWord}</p>
-                  </div>
-                  <Button 
-                    variant="default" 
-                    size="sm" 
-                    onClick={handleAddWord}
-                    className="flex items-center gap-1"
+              <div className="space-y-4">
+                <Textarea
+                  value={editedPassage}
+                  onChange={(e) => setEditedPassage(e.target.value)}
+                  rows={8}
+                  className="font-medium"
+                  placeholder="Enter or paste your passage here. Then select words to add them to your vocabulary list."
+                />
+                
+                <div className="border rounded-md p-4 bg-white">
+                  <h4 className="text-sm font-medium mb-2">Passage Preview (Click words to select them)</h4>
+                  <div 
+                    ref={passageRef}
+                    className="prose prose-sm max-w-none passage-container"
                   >
-                    <PlusCircle className="h-4 w-4" />
-                    Add {previewWord.includes(' ') ? 'Words' : 'Word'}
-                  </Button>
+                    {editedPassage}
+                  </div>
                 </div>
-              )}
-              
-              <Textarea
-                value={editedPassage}
-                onChange={(e) => setEditedPassage(e.target.value)}
-                rows={10}
-                onMouseUp={handleMouseUp}
-                className="font-medium"
-                placeholder="Enter or paste your passage here. Then select words to add them to your vocabulary list."
-              />
+              </div>
             </div>
           </div>
           
