@@ -109,7 +109,7 @@ export function EducatorStatistics() {
   // Reference to the passage preview element
   const passageRef = useRef<HTMLDivElement | null>(null);
   
-  // Effect to update the passage display with highlighted words
+  // Effect to update the passage display with highlighted words and attach event listeners
   useEffect(() => {
     if (passageRef.current && editedPassage && isEditDialogOpen) {
       const highlightedPassage = formatPassageWithHighlights(editedPassage, selectedWords);
@@ -126,6 +126,27 @@ export function EducatorStatistics() {
       // Append the sanitized children
       Array.from(tempDiv.childNodes).forEach(node => {
         passageRef.current.appendChild(node.cloneNode(true));
+      });
+      
+      // Add click handler directly to words after rendering
+      const wordElements = passageRef.current.querySelectorAll('.word');
+      wordElements.forEach(wordElement => {
+        wordElement.addEventListener('click', () => {
+          const word = wordElement.textContent?.trim().replace(/[.,;:!?"'()[\]{}]/g, '') || '';
+          if (word && !selectedWords.includes(word)) {
+            setSelectedWords(prev => [...prev, word]);
+            
+            // Add visual feedback
+            const element = wordElement as HTMLElement;
+            element.style.color = 'var(--primary)';
+            element.style.fontWeight = 'bold';
+            
+            setTimeout(() => {
+              element.style.color = '';
+              element.style.fontWeight = '';
+            }, 300);
+          }
+        });
       });
     }
   }, [editedPassage, selectedWords, isEditDialogOpen]);
