@@ -105,39 +105,66 @@ export function EducatorStatistics() {
     setIsEditDialogOpen(true);
   };
   
-  // Handle word selection in the passage editor
-  const handleWordSelection = () => {
+  // Preview state for word selection
+  const [previewWord, setPreviewWord] = useState<string | null>(null);
+  
+  // Handle mouse up event in the passage editor to detect word selections
+  const handleMouseUp = () => {
     const selection = window.getSelection();
-    if (!selection || selection.isCollapsed) return;
+    if (!selection || selection.isCollapsed) {
+      setPreviewWord(null);
+      return;
+    }
     
     const selectedText = selection.toString().trim();
-    if (!selectedText) return;
+    if (!selectedText) {
+      setPreviewWord(null);
+      return;
+    }
+    
+    // Set the preview word
+    setPreviewWord(selectedText);
+  };
+  
+  // Handle actually adding the word when the preview is clicked
+  const handleAddWord = () => {
+    if (!previewWord) return;
     
     // Add word to the selected words (check for spaces to handle multi-word selections)
-    if (selectedText.includes(' ')) {
+    if (previewWord.includes(' ')) {
       // For multi-word selections, split by space and add each word
-      const words = selectedText.split(/\s+/).filter(word => word.length > 0);
+      const words = previewWord.split(/\s+/)
+        .filter(word => word.length > 0)
+        // Clean up punctuation from words
+        .map(word => word.replace(/[.,!?;:'"()]/g, ''));
+      
       setSelectedWords(prevWords => {
         // Create a new set with all previous words plus new ones (to avoid duplicates)
         const uniqueWords = new Set([...prevWords, ...words]);
         return Array.from(uniqueWords);
       });
     } else {
-      // For single words, add or remove as before
+      // For single words, add it (clean up punctuation)
+      const cleanWord = previewWord.replace(/[.,!?;:'"()]/g, '');
       setSelectedWords(prevWords => {
-        const wordExists = prevWords.includes(selectedText);
-        if (wordExists) {
-          return prevWords.filter(word => word !== selectedText);
-        } else {
-          return [...prevWords, selectedText];
-        }
+        // Don't add if it's already there
+        if (prevWords.includes(cleanWord)) return prevWords;
+        return [...prevWords, cleanWord];
       });
     }
     
-    // Clear the selection after processing
-    if (selection.removeAllRanges) {
-      selection.removeAllRanges();
+    // Clear the preview and selection
+    setPreviewWord(null);
+    if (window.getSelection()?.removeAllRanges) {
+      window.getSelection()?.removeAllRanges();
     }
+  };
+  
+  // Remove a word from the selected words
+  const handleRemoveWord = (wordToRemove: string) => {
+    setSelectedWords(prevWords => 
+      prevWords.filter(word => word !== wordToRemove)
+    );
   };
   
   // Save updated passage and words
@@ -313,9 +340,7 @@ export function EducatorStatistics() {
                     key={index} 
                     variant="secondary" 
                     className="cursor-pointer hover:bg-destructive/10 transition-colors" 
-                    onClick={() => {
-                      setSelectedWords(selectedWords.filter((w) => w !== word));
-                    }}
+                    onClick={() => handleRemoveWord(word)}
                   >
                     {word} <span className="ml-1">×</span>
                   </Badge>
@@ -333,19 +358,40 @@ export function EducatorStatistics() {
               <div className="bg-muted/50 p-3 rounded-md">
                 <p className="text-sm text-primary mb-2 flex items-center">
                   <PlusCircle className="h-4 w-4 mr-1" />
-                  <strong>How to add words:</strong> Highlight a single word or multiple words in the passage.
+                  <strong>How to add words:</strong> Highlight a word or phrase in the passage.
                 </p>
                 <p className="text-xs text-muted-foreground mb-4">
-                  • For a single word: Select it to add/remove from your vocabulary list<br />
+                  • Select text in the passage to see a preview<br />
+                  • Click the "Add Word" button to add it to your vocabulary list<br />
                   • For multiple words: Select a phrase to add all words at once<br />
                   • To remove: Click on any badge in the selected words area above
                 </p>
               </div>
+              
+              {/* Word Selection Preview Box */}
+              {previewWord && (
+                <div className="border-2 border-primary rounded-md p-3 bg-primary/5 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">Add to vocabulary list:</p>
+                    <p className="text-lg font-bold text-primary">{previewWord}</p>
+                  </div>
+                  <Button 
+                    variant="default" 
+                    size="sm" 
+                    onClick={handleAddWord}
+                    className="flex items-center gap-1"
+                  >
+                    <PlusCircle className="h-4 w-4" />
+                    Add {previewWord.includes(' ') ? 'Words' : 'Word'}
+                  </Button>
+                </div>
+              )}
+              
               <Textarea
                 value={editedPassage}
                 onChange={(e) => setEditedPassage(e.target.value)}
                 rows={10}
-                onMouseUp={handleWordSelection}
+                onMouseUp={handleMouseUp}
                 className="font-medium"
                 placeholder="Enter or paste your passage here. Then select words to add them to your vocabulary list."
               />
