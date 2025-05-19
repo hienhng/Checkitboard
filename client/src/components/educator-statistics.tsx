@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { formatPassageWithHighlights, createMarkup } from "@/lib/utils";
 import {
   Card,
   CardContent,
@@ -105,67 +106,123 @@ export function EducatorStatistics() {
     setIsEditDialogOpen(true);
   };
   
-  // Preview state for word selection
-  const [previewWord, setPreviewWord] = useState<string | null>(null);
+  // Reference to the passage preview element
+  const passageRef = useRef<HTMLDivElement | null>(null);
   
-  // Handle mouse up event in the passage editor to detect word selections
-  const handleMouseUp = () => {
-    const selection = window.getSelection();
-    if (!selection || selection.isCollapsed) {
-      setPreviewWord(null);
-      return;
-    }
-    
-    const selectedText = selection.toString().trim();
-    if (!selectedText) {
-      setPreviewWord(null);
-      return;
-    }
-    
-    // Set the preview word
-    setPreviewWord(selectedText);
-  };
-  
-  // Handle actually adding the word when the preview is clicked
-  const handleAddWord = () => {
-    if (!previewWord) return;
-    
-    // Add word to the selected words (check for spaces to handle multi-word selections)
-    if (previewWord.includes(' ')) {
-      // For multi-word selections, split by space and add each word
-      const words = previewWord.split(/\s+/)
-        .filter(word => word.length > 0)
-        // Clean up punctuation from words
-        .map(word => word.replace(/[.,!?;:'"()]/g, ''));
+  // Effect to update the passage display with highlighted words
+  useEffect(() => {
+    if (passageRef.current && editedPassage && isEditDialogOpen) {
+      const highlightedPassage = formatPassageWithHighlights(editedPassage, selectedWords);
       
-      setSelectedWords(prevWords => {
-        // Create a new set with all previous words plus new ones (to avoid duplicates)
-        const uniqueWords = new Set([...prevWords, ...words]);
-        return Array.from(uniqueWords);
-      });
-    } else {
-      // For single words, add it (clean up punctuation)
-      const cleanWord = previewWord.replace(/[.,!?;:'"()]/g, '');
-      setSelectedWords(prevWords => {
-        // Don't add if it's already there
-        if (prevWords.includes(cleanWord)) return prevWords;
-        return [...prevWords, cleanWord];
+      // Use dangerouslySetInnerHTML with a wrapper to safely render the content
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = highlightedPassage;
+      
+      // Clear the container first
+      while (passageRef.current.firstChild) {
+        passageRef.current.removeChild(passageRef.current.firstChild);
+      }
+      
+      // Append the sanitized children
+      Array.from(tempDiv.childNodes).forEach(node => {
+        passageRef.current.appendChild(node.cloneNode(true));
       });
     }
-    
-    // Clear the preview and selection
-    setPreviewWord(null);
-    if (window.getSelection()?.removeAllRanges) {
-      window.getSelection()?.removeAllRanges();
-    }
-  };
-  
-  // Remove a word from the selected words
+  }, [editedPassage, selectedWords, isEditDialogOpen]);
+
+  // Handle removing a word from the selected list
   const handleRemoveWord = (wordToRemove: string) => {
     setSelectedWords(prevWords => 
       prevWords.filter(word => word !== wordToRemove)
     );
   };
+
+  // Handle text selection via mouse/touch in the passage
+  useEffect(() => {
+    const handleSelection = () => {
+      const selection = window.getSelection();
+      if (!selection || selection.isCollapsed) return;
+      
+      const selectedText = selection.toString().trim();
+      if (selectedText.length > 0 && !selectedWords.includes(selectedText)) {
+        // Add the selected word to the list
+        setSelectedWords((prev) => [...prev, selectedText]);
+        
+        // Clear the selection
+        window.getSelection()?.removeAllRanges();
+      }
+    };
+
+    // Handle word click for individual words
+    const handleWordClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      
+      // Handle click on highlighted word (mark)
+      if (target.tagName === 'MARK') {
+        // Marked words are already selected, so we don't need to add them again
+        return;
+      }
+      
+      // Handle click on word span (clickable words)
+      if (target.tagName === 'SPAN' && target.classList.contains('word')) {
+        const clickedWord = target.textContent?.trim().replace(/[.,;:!?"'()[\]{}]/g, '') || '';
+        
+        if (clickedWord && !selectedWords.includes(clickedWord)) {
+          setSelectedWords((prev) => [...prev, clickedWord]);
+          
+          // Highlight the word immediately for better feedback
+          target.style.borderBottomColor = 'currentColor';
+          target.style.color = 'var(--primary)';
+          
+          // Reset styles after a short delay (the highlight effect will be updated by useEffect)
+          setTimeout(() => {
+            if (target) {
+              target.style.borderBottomColor = '';
+              target.style.color = '';
+            }
+          }, 300);
+        }
+        return;
+      }
+      
+      // Fallback for any other elements that might contain text
+      if (target.nodeType === Node.ELEMENT_NODE) {
+        // Try to find the closest .word span
+        const closestWord = target.closest('.word');
+        if (closestWord && closestWord instanceof HTMLElement) {
+          const clickedWord = closestWord.textContent?.trim().replace(/[.,;:!?"'()[\]{}]/g, '') || '';
+          
+          if (clickedWord && !selectedWords.includes(clickedWord)) {
+            setSelectedWords((prev) => [...prev, clickedWord]);
+          }
+          return;
+        }
+        
+        // If we didn't find a .word span, try to use the text content
+        const text = target.textContent || '';
+        if (!text) return;
+        
+        // For a single word, use it directly
+        if (!text.includes(' ')) {
+          const clickedWord = text.trim().replace(/[.,;:!?"'()[\]{}]/g, '');
+          if (clickedWord && !selectedWords.includes(clickedWord)) {
+            setSelectedWords((prev) => [...prev, clickedWord]);
+          }
+          return;
+        }
+      }
+    };
+    
+    const passageElement = passageRef.current;
+    if (passageElement) {
+      passageElement.addEventListener("mouseup", handleSelection);
+      passageElement.addEventListener("click", handleWordClick as EventListener);
+      return () => {
+        passageElement.removeEventListener("mouseup", handleSelection);
+        passageElement.removeEventListener("click", handleWordClick as EventListener);
+      };
+    }
+  }, [selectedWords]);
   
   // Save updated passage and words
   const handleSavePassage = () => {
