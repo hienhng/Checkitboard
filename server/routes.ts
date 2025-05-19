@@ -534,6 +534,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         score: validatedData.score,
         gradedAt: new Date(),
       });
+      
+      // Create notification for the student about their graded submission
+      await createSystemNotification(
+        submission.studentId,
+        'submission_result',
+        'Submission Graded',
+        `Your submission for "${list.title}" has been graded. Score: ${validatedData.score}%`,
+        'submission',
+        submissionId
+      );
 
       // Send email to parent if student has a linked parent
       const student = await storage.getUser(submission.studentId);
@@ -1440,6 +1450,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         studentId: req.user.id,
         classId: classToJoin.id,
       });
+
+      // Create notification for the educator about the join request
+      await createSystemNotification(
+        classToJoin.educatorId,
+        'join_request',
+        'New Class Join Request',
+        `${req.user.name} has requested to join your class "${classToJoin.name}".`,
+        'class',
+        joinRequest.id
+      );
 
       res.status(201).json({
         message: "Join request submitted successfully. Waiting for educator approval.",
