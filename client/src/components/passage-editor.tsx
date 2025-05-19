@@ -31,22 +31,26 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
   const [selectedWords, setSelectedWords] = useState<string[]>([]);
   const passageRef = useRef<HTMLDivElement>(null);
   const [dueDate, setDueDate] = useState("");
-
+  
   // Helper function to parse a date string safely
   const parseDateSafely = (dateStr: string): Date | undefined => {
     if (!dateStr || dateStr.trim() === '') return undefined;
-
+    
     try {
+      // Parse the date string (format: YYYY-MM-DD) and create a date at noon UTC
+      // Using the Date constructor directly with the ISO string format (YYYY-MM-DD)
+      // ensures proper handling by the database
       const formattedDateStr = `${dateStr}T12:00:00.000Z`;
       const date = new Date(formattedDateStr);
-
+      
+      // Verify it's a valid date by checking if it's not "Invalid Date"
       if (!isNaN(date.getTime())) {
         return date;
       }
     } catch (e) {
       console.error("Error parsing date:", e);
     }
-
+    
     return undefined;
   };
 
@@ -76,11 +80,12 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
   // Mutation to create a new vocabulary list
   const createListMutation = useMutation({
     mutationFn: async (data: VocabularyListData) => {
+      // Convert date object to ISO string if it exists
       const payload = {
         ...data,
         dueDate: data.dueDate ? data.dueDate.toISOString() : undefined
       };
-
+      
       const res = await apiRequest("POST", "/api/vocabulary-lists", payload);
       return res.json();
     },
@@ -98,31 +103,43 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
 
   // Handle highlighting words in the passage
   useEffect(() => {
+    // Handle text selection via mouse/touch
     const handleSelection = () => {
       const selection = window.getSelection();
       if (!selection || selection.isCollapsed) return;
-
+      
       const selectedText = selection.toString().trim();
       if (selectedText.length > 0 && !selectedWords.includes(selectedText)) {
+        // Add the selected word to the list
         setSelectedWords((prev) => [...prev, selectedText]);
+        
+        // Clear the selection
         window.getSelection()?.removeAllRanges();
       }
     };
 
+    // Handle word click - improved with direct element targeting for better mobile support
     const handleWordClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-
+      
+      // Handle click on highlighted word (mark)
       if (target.tagName === 'MARK') {
+        // Marked words are already selected, so we don't need to add them again
         return;
       }
-
+      
+      // Handle click on word span (our new clickable words)
       if (target.tagName === 'SPAN' && target.classList.contains('word')) {
         const clickedWord = target.textContent?.trim().replace(/[.,;:!?"'()[\]{}]/g, '') || '';
-
+        
         if (clickedWord && !selectedWords.includes(clickedWord)) {
           setSelectedWords((prev) => [...prev, clickedWord]);
+          
+          // Highlight the word immediately for better feedback
           target.style.borderBottomColor = 'currentColor';
           target.style.color = 'var(--primary)';
+          
+          // Reset styles after a short delay (the highlight effect will be updated by useEffect)
           setTimeout(() => {
             if (target) {
               target.style.borderBottomColor = '';
@@ -132,21 +149,25 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
         }
         return;
       }
-
+      
+      // Fallback for any other elements that might contain text
       if (target.nodeType === Node.ELEMENT_NODE) {
+        // Try to find the closest .word span
         const closestWord = target.closest('.word');
         if (closestWord && closestWord instanceof HTMLElement) {
           const clickedWord = closestWord.textContent?.trim().replace(/[.,;:!?"'()[\]{}]/g, '') || '';
-
+          
           if (clickedWord && !selectedWords.includes(clickedWord)) {
             setSelectedWords((prev) => [...prev, clickedWord]);
           }
           return;
         }
-
+        
+        // If we didn't find a .word span, try to use the text content
         const text = target.textContent || '';
         if (!text) return;
-
+        
+        // For a single word, use it directly
         if (!text.includes(' ')) {
           const clickedWord = text.trim().replace(/[.,;:!?"'()[\]{}]/g, '');
           if (clickedWord && !selectedWords.includes(clickedWord)) {
@@ -168,16 +189,20 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
     }
   }, [selectedWords]);
 
+  // Update the passage display whenever selected words change
   useEffect(() => {
     if (passageRef.current && passage) {
       const highlightedPassage = formatPassageWithHighlights(passage, selectedWords);
+      // Use dangerouslySetInnerHTML with a wrapper to safely render the content
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = highlightedPassage;
-
+      
+      // Clear the container first
       while (passageRef.current.firstChild) {
         passageRef.current.removeChild(passageRef.current.firstChild);
       }
-
+      
+      // Append the sanitized children
       Array.from(tempDiv.childNodes).forEach(node => {
         passageRef.current.appendChild(node.cloneNode(true));
       });
@@ -191,11 +216,13 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
   const handlePassageChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     const newPassage = e.target.value;
     setPassage(newPassage);
+    
+    // Clear any existing highlights when the passage changes
     setSelectedWords([]);
   };
 
   const handleSaveDraft = () => {
-    if (!title || !passage || selectedWords.length === 0) {
+    if (!title || !passage ||  selectedWords.length === 0) {
       toast({
         title: "Incomplete list",
         description: "Please provide a title, passage, and select at least one vocabulary word.",
@@ -204,7 +231,10 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
       return;
     }
 
+    // Parse the due date using our helper function
     const dueDateObj = parseDateSafely(dueDate);
+
+    // Get the class ID from the form
     const { classId } = form.getValues();
 
     createListMutation.mutate({
@@ -217,7 +247,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
   };
 
   const handlePublish = () => {
-    if (!title || !passage || selectedWords.length === 0) {
+    if (!title || !passage ||selectedWords.length === 0) {
       toast({
         title: "Incomplete list",
         description: "Please provide a title, passage, and select at least one vocabulary word.",
@@ -226,7 +256,10 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
       return;
     }
 
+    // Parse the due date using our helper function
     const dueDateObj = parseDateSafely(dueDate);
+
+    // Get the class ID from the form
     const { classId } = form.getValues();
 
     createListMutation.mutate({
@@ -245,6 +278,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
 
   return (
     <div className="px-4 py-5 sm:p-6">
+      {/* Use FormProvider from react-hook-form */}
       <Form {...form}>
         <form className="space-y-6">
           <div>
@@ -288,7 +322,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
                 Words → Passage (AI)
               </TabsTrigger>
             </TabsList>
-
+            
             <TabsContent value="passage-to-words" className="space-y-6">
               <div>
                 <Label htmlFor="reading-passage">Reading Passage</Label>
@@ -342,12 +376,14 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
                   )}
                 </div>
               </div>
-
+              
+              {/* AI Passage Analysis */}
               {passage.length >= 50 && (
                 <div className="mt-4">
                   <AIPassageAssist 
                     passage={passage} 
                     onSelectWords={(words) => {
+                      // Add new words while avoiding duplicates
                       const uniqueWords = words.filter(word => !selectedWords.includes(word));
                       setSelectedWords(prev => [...prev, ...uniqueWords]);
                     }} 
@@ -355,13 +391,14 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
                 </div>
               )}
             </TabsContent>
-
+            
             <TabsContent value="words-to-passage" className="space-y-6">
               <WordToPassage 
                 onPassageGenerated={(generatedPassage, wordList) => {
                   setPassage(generatedPassage);
                   setSelectedWords(wordList);
-
+                  
+                  // Switch back to the passage tab after generation
                   const tabsElement = document.querySelector('[role="tablist"]') as HTMLElement;
                   if (tabsElement) {
                     const passageTab = tabsElement.querySelector('[value="passage-to-words"]') as HTMLElement;
@@ -369,7 +406,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
                       passageTab.click();
                     }
                   }
-
+                  
                   toast({
                     title: "Passage and words added",
                     description: `Generated a passage with ${wordList.length} vocabulary words.`
@@ -380,20 +417,13 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
           </Tabs>
 
           <div className="flex justify-end space-x-3">
-            <Button
-              type="button"
-              onClick={handleSaveDraft}
-              variant="outline"
-              disabled={createListMutation.isPending}
-            >
-              Save Draft
-            </Button>
+            
             <Button
               type="button"
               onClick={handlePublish}
               disabled={createListMutation.isPending}
             >
-              {createListMutation.isPending ? "Publishing..." : "Publish"}
+              {createListMutation.isPending ? "Saving as a draft... (Remember to publish so student can see them!)" : "Save draft"}
             </Button>
           </div>
         </form>
