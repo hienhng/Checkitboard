@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Navbar } from "@/components/navbar";
 import { PassageEditor } from "@/components/passage-editor";
@@ -112,12 +113,10 @@ export default function EducatorDashboard() {
                   Create and manage vocabulary lists, classes, and grade student submissions.
                 </p>
               </div>
-              <Link to="/educator/statistics">
-                <Button className="flex items-center gap-2">
-                  <BarChart className="h-4 w-4" />
-                  View Statistics
-                </Button>
-              </Link>
+              <Button className="flex items-center gap-2" onClick={() => window.location.href = "/educator/statistics"}>
+                <BarChart className="h-4 w-4" />
+                View Statistics
+              </Button>
             </div>
           </div>
           
