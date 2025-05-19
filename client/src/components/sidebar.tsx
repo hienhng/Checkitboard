@@ -28,7 +28,8 @@ import {
   X,
   LineChart as LineChartIcon,
   ChartNoAxesCombinedIcon,
-  House
+  House,
+  LayoutDashboard
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMobile } from "@/hooks/use-mobile";
@@ -62,11 +63,11 @@ export function Sidebar() {
 
   const navLinks = isEducator
     ? [
-        { href: "/educator/dashboard", label: "Dashboard", icon: <House className="h-5 w-5" /> },
+        { href: "/educator/dashboard", label: "Dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
         { href: "/educator/create", label: "Classes", icon: <School className="h-5 w-5" /> },
       ]
     : [
-        { href: "/learner/dashboard", label: "Dashboard", icon: <House className="h-5 w-5" /> },
+        { href: "/learner/dashboard", label: "Dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
         { href: "/learner/flashcards", label: "Flashcards", icon: <Brain className="h-5 w-5" /> },
         { href: "/learner/analysis", label: "Analysis", icon: <ChartNoAxesCombinedIcon className="h-5 w-5" /> },
       ];

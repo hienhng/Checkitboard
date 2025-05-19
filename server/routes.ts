@@ -104,6 +104,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error fetching vocabulary lists" });
     }
   });
+  
+  // Get educator statistics
+  app.get("/api/educator/statistics", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "educator") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      // Get educator's classes
+      const educatorClasses = await storage.getClassesByEducator(req.user.id);
+      
+      // Get vocabulary lists
+      const vocabularyLists = await storage.getVocabularyListsByEducator(req.user.id);
+      
+      // Calculate total students (unique students across all classes)
+      const studentsSet = new Set();
+      educatorClasses.forEach(cls => {
+        cls.students.forEach(student => {
+          studentsSet.add(student.student.id);
+        });
+      });
+      
+      // Format lists with words
+      const listsWithDetails = await Promise.all(
+        vocabularyLists.map(async (list) => {
+          // Get words for this list
+          const listWithWords = await storage.getVocabularyListWithWords(list.id);
+          
+          // Get class name if assigned
+          let className = null;
+          if (list.classId) {
+            const classInfo = educatorClasses.find(c => c.id === list.classId);
+            if (classInfo) {
+              className = classInfo.name;
+            }
+          }
+          
+          return {
+            id: list.id,
+            title: list.title,
+            passage: list.passage,
+            dueDate: list.dueDate,
+            published: list.published,
+            class: className,
+            words: listWithWords.words || []
+          };
+        })
+      );
+      
+      const statistics = {
+        totalStudents: studentsSet.size,
+        totalClasses: educatorClasses.length,
+        totalLists: vocabularyLists.length,
+        lists: listsWithDetails
+      };
+      
+      res.json(statistics);
+    } catch (error) {
+      console.error("Error fetching educator statistics:", error);
+      res.status(500).json({ message: "Error fetching educator statistics" });
+    }
+  });
 
   // Get a specific vocabulary list with words
   app.get("/api/vocabulary-lists/:id", async (req, res) => {
@@ -182,7 +248,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
         dueDate: req.body.dueDate ? new Date(req.body.dueDate) : undefined
       };
 
-      const updatedList = await storage.updateVocabularyList(listId, requestData);
+      // First update the basic list details
+      let updatedList = await storage.updateVocabularyList(listId, requestData);
+      
+      // If words array is provided, update the vocabulary words
+      if (req.body.words && Array.isArray(req.body.words)) {
+        try {
+          // Get the existing words for this list
+          const listWithWords = await storage.getVocabularyListWithWords(listId);
+          const existingWords = listWithWords.words || [];
+          
+          // Find words to add (new) and words to remove (deleted)
+          const wordStrings = existingWords.map((w: any) => w.word);
+          const wordsToAdd = req.body.words.filter((word: string) => !wordStrings.includes(word));
+          const wordsToRemove = existingWords.filter((w: any) => !req.body.words.includes(w.word));
+          
+          // Remove words that are no longer in the list
+          for (const word of wordsToRemove) {
+            await db.delete(vocabularyWords)
+              .where(eq(vocabularyWords.id, word.id));
+          }
+          
+          // Add new words to the list
+          for (const word of wordsToAdd) {
+            await storage.createVocabularyWord({
+              listId,
+              word,
+              correctDefinition: "" // Will be populated later when needed
+            });
+          }
+          
+          // Get the updated list with all words
+          updatedList = await storage.getVocabularyListWithWords(listId);
+        } catch (wordError) {
+          console.error("Error updating words for vocabulary list:", wordError);
+          // We still return the updated list even if word updating failed
+        }
+      }
+      
       res.json(updatedList);
     } catch (error) {
       console.error("Error updating vocabulary list:", error);
