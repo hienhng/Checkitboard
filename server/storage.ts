@@ -995,16 +995,19 @@ export class DatabaseStorage {
   }
   
   async markAllNotificationsAsRead(userId: number, category?: string) {
-    let whereConditions = eq(notifications.userId, userId);
-    
     if (category && category !== 'all') {
-      whereConditions = and(whereConditions, eq(notifications.category, category));
+      await db.update(notifications)
+        .set({ read: true })
+        .where(and(
+          eq(notifications.userId, userId),
+          eq(notifications.category, category)
+        ));
+    } else {
+      await db.update(notifications)
+        .set({ read: true })
+        .where(eq(notifications.userId, userId));
     }
     
-    await db.update(notifications)
-      .set({ read: true })
-      .where(whereConditions);
-      
     return true;
   }
   
