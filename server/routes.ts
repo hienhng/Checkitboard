@@ -838,7 +838,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         completed: true,
         submittedAt: new Date(),
       });
-
+      
+      // Get full information about the list to use in notification
+      const fullList = await storage.getVocabularyList(submission.listId);
+      const student = await storage.getUser(submission.studentId);
+      
+      if (fullList && fullList.educatorId) {
+        // Create notification for the educator about the new submission
+        await createSystemNotification(
+          fullList.educatorId,
+          'new_submission',
+          'New Submission Ready to Grade',
+          `${student.name} has completed the vocabulary check-up for "${fullList.title}".`,
+          'submission',
+          submissionId
+        );
+      }
+      
       res.json(updatedSubmission);
     } catch (error) {
       console.error("Error completing submission:", error);
@@ -889,6 +905,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         gradedAt: currentDate,
         score: 0
       });
+      
+      // Get full information about the list to use in notification
+      const fullList = await storage.getVocabularyList(submission.listId);
+      const student = await storage.getUser(submission.studentId);
+      
+      if (fullList && fullList.educatorId) {
+        // Create notification for the educator about the discarded submission
+        await createSystemNotification(
+          fullList.educatorId,
+          'discard_test',
+          'Discarded Submission',
+          `${student.name} has discarded their vocabulary check-up for "${fullList.title}". Reason: ${discardReason}`,
+          'submission',
+          submissionId
+        );
+      }
 
       res.json(updatedSubmission);
     } catch (error) {
