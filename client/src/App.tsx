@@ -14,6 +14,7 @@ import VocabularyView from "@/pages/vocabulary-view";
 import FlashcardsPage from "@/pages/flashcards-page";
 import ClassListsPage from "@/pages/class-lists-page";
 import LearnerAnalysis from "@/pages/learner-analysis";
+import EducatorStatisticsPage from "@/pages/educator-statistics-page";
 import { Layout } from "@/components/layout";
 
 function Router() {
@@ -23,6 +24,7 @@ function Router() {
         <Route path="/auth" component={AuthPage} />
         <ProtectedRoute path="/" component={HomePage} />
         <ProtectedRoute path="/educator/dashboard" component={EducatorDashboard} />
+        <ProtectedRoute path="/educator/statistics" component={EducatorStatisticsPage} />
         <ProtectedRoute path="/learner/dashboard" component={LearnerDashboard} />
         <ProtectedRoute path="/learner/checkup/:id" component={VocabularyCheckup} />
         <ProtectedRoute path="/learner/vocabulary/:listId" component={VocabularyView} />

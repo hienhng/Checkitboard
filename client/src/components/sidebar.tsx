@@ -64,6 +64,7 @@ export function Sidebar() {
   const navLinks = isEducator
     ? [
         { href: "/educator/dashboard", label: "Dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
+        { href: "/educator/statistics", label: "Statistics", icon: <BarChart className="h-5 w-5" /> },
         { href: "/educator/create", label: "Classes", icon: <School className="h-5 w-5" /> },
       ]
     : [

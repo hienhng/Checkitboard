@@ -13,6 +13,7 @@ import {
   generatePassageFromWords
 } from "./huggingface";
 import { eq, and, desc, isNull, asc, not, inArray, sql } from "drizzle-orm";
+
 import { db, pool } from "../db";
 import {
   insertVocabularyListSchema,
@@ -256,7 +257,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           // Get the existing words for this list
           const listWithWords = await storage.getVocabularyListWithWords(listId);
-          const existingWords = listWithWords.words || [];
+          const existingWords = listWithWords?.words || [];
           
           // Find words to add (new) and words to remove (deleted)
           const wordStrings = existingWords.map((w: any) => w.word);
@@ -273,13 +274,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           for (const word of wordsToAdd) {
             await storage.createVocabularyWord({
               listId,
-              word,
-              correctDefinition: "" // Will be populated later when needed
+              word
             });
           }
           
           // Get the updated list with all words
-          updatedList = await storage.getVocabularyListWithWords(listId);
+          const updatedListWithWords = await storage.getVocabularyListWithWords(listId);
+          if (updatedListWithWords) {
+            updatedList = updatedListWithWords;
+          }
         } catch (wordError) {
           console.error("Error updating words for vocabulary list:", wordError);
           // We still return the updated list even if word updating failed
