@@ -288,3 +288,42 @@ export const selectFlashcardSchema = createSelectSchema(flashcards);
 export const selectParentStudentSchema = createSelectSchema(parentStudent);
 export const selectClassSchema = createSelectSchema(classes);
 export const selectStudentClassSchema = createSelectSchema(studentClass);
+
+// Notifications table
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  type: text("type").notNull(), // 'class_admission', 'submission_result', 'class_removal', 'submission_received', 'join_request', 'discard_test'
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  read: boolean("read").default(false).notNull(),
+  category: text("category").notNull(), // 'class', 'submission', 'system'
+  relatedId: integer("related_id"), // Can be classId, submissionId, or requestId depending on type
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Add notifications to user relations
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id],
+  }),
+}));
+
+// Add notification schema validators
+export const insertNotificationSchema = createInsertSchema(notifications, {
+  title: (schema) => schema.min(3, "Title must be at least 3 characters"),
+  message: (schema) => schema.min(5, "Message must be at least 5 characters"),
+  type: (schema) => schema.refine(
+    (val) => ['class_admission', 'submission_result', 'class_removal', 'submission_received', 'join_request', 'discard_test'].includes(val),
+    { message: "Invalid notification type" }
+  ),
+  category: (schema) => schema.refine(
+    (val) => ['class', 'submission', 'system'].includes(val),
+    { message: "Invalid notification category" }
+  ),
+}).omit({ id: true, createdAt: true, read: true });
+
+export const selectNotificationSchema = createSelectSchema(notifications);
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
