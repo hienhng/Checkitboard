@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatPassageWithHighlights, createMarkup } from "@/lib/utils";
+import { ClickableText } from "./clickable-text";
 import {
   Card,
   CardContent,
@@ -485,11 +486,12 @@ export function EducatorStatistics() {
                 
                 <div className="border rounded-md p-4 bg-white">
                   <h4 className="text-sm font-medium mb-2">Passage Preview (Click words to select them)</h4>
-                  <div 
-                    ref={passageRef}
-                    className="prose prose-sm max-w-none passage-container"
-                  >
-                    {editedPassage}
+                  <div className="prose prose-sm max-w-none passage-container">
+                    <ClickableText 
+                      text={editedPassage}
+                      selectedWords={selectedWords}
+                      onWordSelect={(word) => setSelectedWords(prev => [...prev, word])}
+                    />
                   </div>
                 </div>
               </div>
