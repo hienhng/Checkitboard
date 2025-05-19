@@ -113,15 +113,31 @@ export function EducatorStatistics() {
     const selectedText = selection.toString().trim();
     if (!selectedText) return;
     
-    // Add or remove the word from the selected words
-    setSelectedWords(prevWords => {
-      const wordExists = prevWords.includes(selectedText);
-      if (wordExists) {
-        return prevWords.filter(word => word !== selectedText);
-      } else {
-        return [...prevWords, selectedText];
-      }
-    });
+    // Add word to the selected words (check for spaces to handle multi-word selections)
+    if (selectedText.includes(' ')) {
+      // For multi-word selections, split by space and add each word
+      const words = selectedText.split(/\s+/).filter(word => word.length > 0);
+      setSelectedWords(prevWords => {
+        // Create a new set with all previous words plus new ones (to avoid duplicates)
+        const uniqueWords = new Set([...prevWords, ...words]);
+        return Array.from(uniqueWords);
+      });
+    } else {
+      // For single words, add or remove as before
+      setSelectedWords(prevWords => {
+        const wordExists = prevWords.includes(selectedText);
+        if (wordExists) {
+          return prevWords.filter(word => word !== selectedText);
+        } else {
+          return [...prevWords, selectedText];
+        }
+      });
+    }
+    
+    // Clear the selection after processing
+    if (selection.removeAllRanges) {
+      selection.removeAllRanges();
+    }
   };
   
   // Save updated passage and words
@@ -288,18 +304,25 @@ export function EducatorStatistics() {
           
           <div className="space-y-4">
             <div className="space-y-2">
-              <h3 className="text-sm font-medium">Selected Words</h3>
-              <div className="flex flex-wrap gap-2">
+              <h3 className="text-sm font-medium flex items-center gap-2">
+                Selected Words <Badge variant="outline">{selectedWords.length}</Badge>
+              </h3>
+              <div className="flex flex-wrap gap-2 p-2 border rounded-md min-h-[60px]">
                 {selectedWords.map((word, index) => (
-                  <Badge key={index} variant="secondary" className="cursor-pointer" onClick={() => {
-                    setSelectedWords(selectedWords.filter((w) => w !== word));
-                  }}>
-                    {word} ×
+                  <Badge 
+                    key={index} 
+                    variant="secondary" 
+                    className="cursor-pointer hover:bg-destructive/10 transition-colors" 
+                    onClick={() => {
+                      setSelectedWords(selectedWords.filter((w) => w !== word));
+                    }}
+                  >
+                    {word} <span className="ml-1">×</span>
                   </Badge>
                 ))}
                 {selectedWords.length === 0 && (
-                  <span className="text-sm text-muted-foreground">
-                    No words selected. Select words from the passage.
+                  <span className="text-sm text-muted-foreground w-full text-center py-2">
+                    No words selected. Select words from the passage below.
                   </span>
                 )}
               </div>
@@ -307,15 +330,24 @@ export function EducatorStatistics() {
             
             <div className="space-y-2">
               <h3 className="text-sm font-medium">Passage Editor</h3>
-              <p className="text-xs text-muted-foreground">
-                Select words to add them as vocabulary words. Click on a selected word to remove it.
-              </p>
+              <div className="bg-muted/50 p-3 rounded-md">
+                <p className="text-sm text-primary mb-2 flex items-center">
+                  <PlusCircle className="h-4 w-4 mr-1" />
+                  <strong>How to add words:</strong> Highlight a single word or multiple words in the passage.
+                </p>
+                <p className="text-xs text-muted-foreground mb-4">
+                  • For a single word: Select it to add/remove from your vocabulary list<br />
+                  • For multiple words: Select a phrase to add all words at once<br />
+                  • To remove: Click on any badge in the selected words area above
+                </p>
+              </div>
               <Textarea
                 value={editedPassage}
                 onChange={(e) => setEditedPassage(e.target.value)}
                 rows={10}
                 onMouseUp={handleWordSelection}
                 className="font-medium"
+                placeholder="Enter or paste your passage here. Then select words to add them to your vocabulary list."
               />
             </div>
           </div>
