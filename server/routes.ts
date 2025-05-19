@@ -37,6 +37,28 @@ import {
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Helper function to create notifications
+  const createSystemNotification = async (
+    userId: number, 
+    type: string, 
+    title: string, 
+    message: string, 
+    category: string, 
+    relatedId?: number
+  ) => {
+    try {
+      await storage.createNotification({
+        userId,
+        type,
+        title,
+        message,
+        category,
+        relatedId
+      });
+    } catch (error) {
+      console.error("Failed to create notification:", error);
+    }
+  };
   // Setup authentication routes
   setupAuth(app);
 

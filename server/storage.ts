@@ -9,6 +9,7 @@ import {
   parentStudent,
   classes,
   studentClass,
+  notifications,
   InsertUser,
   InsertVocabularyList,
   InsertVocabularyWord,
@@ -18,6 +19,7 @@ import {
   InsertParentStudent,
   InsertClass,
   InsertStudentClass,
+  InsertNotification,
 } from "@shared/schema";
 import { eq, and, desc, isNull, asc, count, sql, or, inArray } from "drizzle-orm";
 export class DatabaseStorage {
@@ -945,6 +947,70 @@ export class DatabaseStorage {
       )
       .returning();
     return removedRecord;
+  }
+
+  // Notification methods
+  async createNotification(notificationData: InsertNotification) {
+    const [notification] = await db.insert(notifications).values(notificationData).returning();
+    return notification;
+  }
+  
+  async getNotificationsByUser(userId: number) {
+    return await db.query.notifications.findMany({
+      where: eq(notifications.userId, userId),
+      orderBy: [desc(notifications.createdAt)],
+    });
+  }
+  
+  async getFilteredNotifications(userId: number, category?: string) {
+    if (category && category !== 'all') {
+      return await db.select().from(notifications)
+        .where(and(
+          eq(notifications.userId, userId),
+          eq(notifications.category, category)
+        ))
+        .orderBy(desc(notifications.createdAt));
+    } else {
+      return await db.select().from(notifications)
+        .where(eq(notifications.userId, userId))
+        .orderBy(desc(notifications.createdAt));
+    }
+  }
+  
+  async getUnreadNotificationCount(userId: number) {
+    const result = await db.select({ count: count() })
+      .from(notifications)
+      .where(and(
+        eq(notifications.userId, userId),
+        eq(notifications.read, false)
+      ));
+    return result[0]?.count || 0;
+  }
+  
+  async markNotificationAsRead(id: number) {
+    await db.update(notifications)
+      .set({ read: true })
+      .where(eq(notifications.id, id));
+    return true;
+  }
+  
+  async markAllNotificationsAsRead(userId: number, category?: string) {
+    let whereConditions = eq(notifications.userId, userId);
+    
+    if (category && category !== 'all') {
+      whereConditions = and(whereConditions, eq(notifications.category, category));
+    }
+    
+    await db.update(notifications)
+      .set({ read: true })
+      .where(whereConditions);
+      
+    return true;
+  }
+  
+  async deleteNotification(id: number) {
+    await db.delete(notifications).where(eq(notifications.id, id));
+    return true;
   }
 }
 
