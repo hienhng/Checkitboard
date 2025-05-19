@@ -432,17 +432,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
   );
 }
 
-interface WordToPassageProps {
-  onPassageGenerated: (passage: string, words: string[]) => void;
-}
-
-export function WordToPassage({ onPassageGenerated }: WordToPassageProps) {
-  const { toast } = useToast();
-  const [currentWord, setCurrentWord] = useState("");
-  const [words, setWords] = useState<string[]>([]);
-  const [generatedPassage, setGeneratedPassage] = useState("");
-  const [isPassageReady, setIsPassageReady] = useState(false);
-  const [isLoading, setIsLoading] = useState(false); // Tracks loading state for the button
+import { WordToPassage } from "./word-to-passage"; // Tracks loading state for the button
 
   // Function to add a new word to the list
   const handleAddWord = () => {
