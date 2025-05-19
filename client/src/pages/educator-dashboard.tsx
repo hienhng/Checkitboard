@@ -18,6 +18,7 @@ import {
   CalendarDays,
   ClipboardList,
   ArrowRight,
+  BarChart,
   User,
   Users,
   School
@@ -104,10 +105,20 @@ export default function EducatorDashboard() {
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           {/* Header */}
           <div className="px-4 py-5 sm:px-6">
-            <h2 className="text-2xl font-bold text-neutral-dark">Educator Dashboard</h2>
-            <p className="mt-1 max-w-2xl text-sm text-gray-500">
-              Create and manage vocabulary lists, classes, and grade student submissions.
-            </p>
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-neutral-dark">Educator Dashboard</h2>
+                <p className="mt-1 max-w-2xl text-sm text-gray-500">
+                  Create and manage vocabulary lists, classes, and grade student submissions.
+                </p>
+              </div>
+              <Link to="/educator/statistics">
+                <Button className="flex items-center gap-2">
+                  <BarChart className="h-4 w-4" />
+                  View Statistics
+                </Button>
+              </Link>
+            </div>
           </div>
           
           {/* Content */}

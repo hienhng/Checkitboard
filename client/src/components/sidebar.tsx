@@ -27,7 +27,8 @@ import {
   Menu,
   X,
   LineChart as LineChartIcon,
-  ChartNoAxesCombinedIcon,
+  BarChart as ChartNoAxesCombinedIcon,
+  BarChart,
   House,
   LayoutDashboard
 } from "lucide-react";
