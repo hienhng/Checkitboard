@@ -1368,6 +1368,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const updatedRequest = await storage.updateJoinRequest(requestId, validatedData.status);
+      
+      // Get student and class details for notification
+      const student = await storage.getUser(joinRequest.studentId);
+      const classInfo = await storage.getClassById(joinRequest.classId);
+      
+      if (!classInfo) {
+        console.error("Class not found for notification", joinRequest.classId);
+      } else {
+        if (validatedData.status === 'approved') {
+          // Create notification for the student about class admission
+          await createSystemNotification(
+            joinRequest.studentId,
+            'class_admission',
+            'Class Admission Approved',
+            `You have been admitted to the class "${classInfo.name}".`,
+            'class',
+            classInfo.id
+          );
+        } else {
+          // Create notification for the student about class rejection
+          await createSystemNotification(
+            joinRequest.studentId,
+            'class_admission',
+            'Class Admission Rejected',
+            `Your request to join "${classInfo.name}" has been rejected.`,
+            'class',
+            classInfo.id
+          );
+        }
+      }
+      
       res.json(updatedRequest);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -1408,12 +1439,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You don't have permission to manage this class" });
       }
 
+      // Get full class info and student info before removal
+      const fullClassInfo = await storage.getClassById(classId);
+      const student = await storage.getUser(studentId);
+      
       // Remove the student from the class
       const result = await storage.removeStudentFromClass(studentId, classId);
       
       if (!result) {
         return res.status(404).json({ message: "Student not found in this class" });
       }
+      
+      // Create notification for the student about class removal
+      await createSystemNotification(
+        studentId,
+        'class_removal',
+        'Removed from Class',
+        `You have been removed from the class "${fullClassInfo.name}".`,
+        'class',
+        classId
+      );
       
       res.json({ message: "Student removed from class successfully" });
     } catch (error) {
