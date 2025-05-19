@@ -31,18 +31,18 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
   const [selectedWords, setSelectedWords] = useState<string[]>([]);
   const passageRef = useRef<HTMLDivElement>(null);
   const [dueDate, setDueDate] = useState("");
-  
+
   // Helper function to parse a date string safely
   const parseDateSafely = (dateStr: string): Date | undefined => {
     if (!dateStr || dateStr.trim() === '') return undefined;
-    
+
     try {
       // Parse the date string (format: YYYY-MM-DD) and create a date at noon UTC
       // Using the Date constructor directly with the ISO string format (YYYY-MM-DD)
       // ensures proper handling by the database
       const formattedDateStr = `${dateStr}T12:00:00.000Z`;
       const date = new Date(formattedDateStr);
-      
+
       // Verify it's a valid date by checking if it's not "Invalid Date"
       if (!isNaN(date.getTime())) {
         return date;
@@ -50,7 +50,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
     } catch (e) {
       console.error("Error parsing date:", e);
     }
-    
+
     return undefined;
   };
 
@@ -85,7 +85,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
         ...data,
         dueDate: data.dueDate ? data.dueDate.toISOString() : undefined
       };
-      
+
       const res = await apiRequest("POST", "/api/vocabulary-lists", payload);
       return res.json();
     },
@@ -107,12 +107,12 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
     const handleSelection = () => {
       const selection = window.getSelection();
       if (!selection || selection.isCollapsed) return;
-      
+
       const selectedText = selection.toString().trim();
       if (selectedText.length > 0 && !selectedWords.includes(selectedText)) {
         // Add the selected word to the list
         setSelectedWords((prev) => [...prev, selectedText]);
-        
+
         // Clear the selection
         window.getSelection()?.removeAllRanges();
       }
@@ -121,24 +121,24 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
     // Handle word click - improved with direct element targeting for better mobile support
     const handleWordClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      
+
       // Handle click on highlighted word (mark)
       if (target.tagName === 'MARK') {
         // Marked words are already selected, so we don't need to add them again
         return;
       }
-      
+
       // Handle click on word span (our new clickable words)
       if (target.tagName === 'SPAN' && target.classList.contains('word')) {
         const clickedWord = target.textContent?.trim().replace(/[.,;:!?"'()[\]{}]/g, '') || '';
-        
+
         if (clickedWord && !selectedWords.includes(clickedWord)) {
           setSelectedWords((prev) => [...prev, clickedWord]);
-          
+
           // Highlight the word immediately for better feedback
           target.style.borderBottomColor = 'currentColor';
           target.style.color = 'var(--primary)';
-          
+
           // Reset styles after a short delay (the highlight effect will be updated by useEffect)
           setTimeout(() => {
             if (target) {
@@ -149,24 +149,24 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
         }
         return;
       }
-      
+
       // Fallback for any other elements that might contain text
       if (target.nodeType === Node.ELEMENT_NODE) {
         // Try to find the closest .word span
         const closestWord = target.closest('.word');
         if (closestWord && closestWord instanceof HTMLElement) {
           const clickedWord = closestWord.textContent?.trim().replace(/[.,;:!?"'()[\]{}]/g, '') || '';
-          
+
           if (clickedWord && !selectedWords.includes(clickedWord)) {
             setSelectedWords((prev) => [...prev, clickedWord]);
           }
           return;
         }
-        
+
         // If we didn't find a .word span, try to use the text content
         const text = target.textContent || '';
         if (!text) return;
-        
+
         // For a single word, use it directly
         if (!text.includes(' ')) {
           const clickedWord = text.trim().replace(/[.,;:!?"'()[\]{}]/g, '');
@@ -196,12 +196,12 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
       // Use dangerouslySetInnerHTML with a wrapper to safely render the content
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = highlightedPassage;
-      
+
       // Clear the container first
       while (passageRef.current.firstChild) {
         passageRef.current.removeChild(passageRef.current.firstChild);
       }
-      
+
       // Append the sanitized children
       Array.from(tempDiv.childNodes).forEach(node => {
         passageRef.current.appendChild(node.cloneNode(true));
@@ -216,7 +216,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
   const handlePassageChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     const newPassage = e.target.value;
     setPassage(newPassage);
-    
+
     // Clear any existing highlights when the passage changes
     setSelectedWords([]);
   };
@@ -322,7 +322,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
                 Words → Passage (AI)
               </TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="passage-to-words" className="space-y-6">
               <div>
                 <Label htmlFor="reading-passage">Reading Passage</Label>
@@ -376,7 +376,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
                   )}
                 </div>
               </div>
-              
+
               {/* AI Passage Analysis */}
               {passage.length >= 50 && (
                 <div className="mt-4">
@@ -391,13 +391,13 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
                 </div>
               )}
             </TabsContent>
-            
+
             <TabsContent value="words-to-passage" className="space-y-6">
               <WordToPassage 
                 onPassageGenerated={(generatedPassage, wordList) => {
                   setPassage(generatedPassage);
                   setSelectedWords(wordList);
-                  
+
                   // Switch back to the passage tab after generation
                   const tabsElement = document.querySelector('[role="tablist"]') as HTMLElement;
                   if (tabsElement) {
@@ -406,7 +406,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
                       passageTab.click();
                     }
                   }
-                  
+
                   toast({
                     title: "Passage and words added",
                     description: `Generated a passage with ${wordList.length} vocabulary words.`
@@ -417,7 +417,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
           </Tabs>
 
           <div className="flex justify-end space-x-3">
-            
+
             <Button
               type="button"
               onClick={handlePublish}
@@ -428,6 +428,183 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
           </div>
         </form>
       </Form>
+    </div>
+  );
+}
+
+import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { apiRequest } from "@/lib/queryClient";
+
+interface WordToPassageProps {
+  onPassageGenerated: (passage: string, words: string[]) => void;
+}
+
+export function WordToPassage({ onPassageGenerated }: WordToPassageProps) {
+  const { toast } = useToast();
+  const [currentWord, setCurrentWord] = useState("");
+  const [words, setWords] = useState<string[]>([]);
+  const [generatedPassage, setGeneratedPassage] = useState("");
+  const [isPassageReady, setIsPassageReady] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // Tracks loading state for the button
+
+  // Function to add a new word to the list
+  const handleAddWord = () => {
+    if (currentWord && !words.includes(currentWord)) {
+      setWords([...words, currentWord]);
+      setCurrentWord(""); // Clear the input after adding the word
+    }
+  };
+
+  // Function to remove a word from the list
+  const handleRemoveWord = (word: string) => {
+    setWords(words.filter((w) => w !== word));
+  };
+
+  // Function to generate a passage using AI
+  const handleGeneratePassage = async () => {
+    if (words.length === 0) {
+      toast({
+        title: "No words added",
+        description: "Please add at least one vocabulary word to generate a passage.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true); // Set loading state to true when starting the generation
+
+    try {
+      const response = await apiRequest("POST", "/api/ai/generate-passage", {
+        words: words,
+      });
+
+      if (!response.ok) {
+        // If the response was not ok, parse the JSON to get the error message
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to generate passage");
+      }
+
+      const data = await response.json();
+      setGeneratedPassage(data.passage);
+      setIsPassageReady(true);
+
+      toast({
+        title: "Passage generated",
+        description: "A passage has been generated with the provided vocabulary words."
+      });
+    } catch (error: any) {
+      console.error("Error generating passage:", error);
+      toast({
+        title: "Error generating passage",
+        description: error.message || "Failed to generate passage. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false); // Set loading state to false after the generation is complete (or has failed)
+    }
+  };
+
+  const handleUsePassage = () => {
+    if (generatedPassage) {
+      try {
+        // Safely pass the generated passage to the parent component
+        onPassageGenerated(generatedPassage, words);
+
+        // Reset the state after successful passage generation
+        setGeneratedPassage("");
+        setWords([]);
+        setCurrentWord("");
+        setIsPassageReady(false);
+
+        // Provide feedback to the user
+        toast({
+          title: "Passage added to list",
+          description: "You can now edit the list details and save it."
+        });
+      } catch (error) {
+        console.error("Error using generated passage:", error);
+        toast({
+          title: "Error adding passage",
+          description: "There was a problem adding the passage to your list. Please try again.",
+          variant: "destructive"
+        });
+        // Prevent redirect on error
+        return false;
+      }
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <Label htmlFor="add-word">Add Vocabulary Word</Label>
+        <div className="flex mt-1">
+          <Input
+            id="add-word"
+            type="text"
+            placeholder="e.g., ecosystem"
+            value={currentWord}
+            onChange={(e) => setCurrentWord(e.target.value)}
+          />
+          <Button type="button" className="ml-2" onClick={handleAddWord}>
+            Add Word
+          </Button>
+        </div>
+      </div>
+
+      <div>
+        <Label className="block text-sm font-medium text-gray-700">
+          Vocabulary Words ({words.length})
+        </Label>
+        <div className="mt-1 flex flex-wrap gap-2">
+          {words.map((word) => (
+            <Badge key={word} className="highlighted-word">
+              {word}
+              <button
+                type="button"
+                className="flex-shrink-0 ml-1 h-4 w-4 rounded-full inline-flex items-center justify-center text-blue-400 hover:bg-blue-200 hover:text-white-500 focus:outline-none focus:bg-blue-500 focus:text-white"
+                onClick={() => handleRemoveWord(word)}
+                aria-label={`Remove ${word}`}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          ))}
+          {words.length === 0 && (
+            <p className="text-sm text-gray-500">
+              No words added yet. Add vocabulary words above.
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div>
+        <Button
+          type="button"
+          onClick={handleGeneratePassage}
+          disabled={isLoading} // Disable the button while loading
+          className="w-full"
+        >
+          {isLoading ? "Generating Passage..." : "Generate Passage with AI"}
+        </Button>
+      </div>
+
+      {isPassageReady && (
+        <div className="space-y-2">
+          <Label>Generated Passage</Label>
+          <div className="p-4 border border-gray-300 rounded-md bg-white">
+            {generatedPassage}
+          </div>
+          <Button type="button" onClick={handleUsePassage} className="w-full">
+            Use This Passage
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
