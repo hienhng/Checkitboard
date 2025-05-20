@@ -52,7 +52,13 @@ export function AIPassageAssist({ passage, onSelectWords }: AIPassageAssistProps
     },
   });
 
-  const handleAnalyzePassage = () => {
+  const handleAnalyzePassage = (e?: React.MouseEvent) => {
+    // Prevent default behavior if event is provided
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     if (!passage || passage.length < 50) {
       toast({
         title: "Passage too short",
@@ -61,16 +67,46 @@ export function AIPassageAssist({ passage, onSelectWords }: AIPassageAssistProps
       });
       return;
     }
-    analyzePassageMutation();
+    
+    try {
+      analyzePassageMutation();
+    } catch (error) {
+      console.error("Error analyzing passage:", error);
+      toast({
+        title: "Error",
+        description: "Failed to analyze passage. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleSelectWords = () => {
+  const handleSelectWords = (e?: React.MouseEvent) => {
+    // Prevent default behavior if event is provided
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     if (analysisResult?.words) {
-      onSelectWords(analysisResult.words);
-      toast({
-        title: "Words selected",
-        description: `Added ${analysisResult.words.length} words to your vocabulary list`,
-      });
+      try {
+        // Make a copy of the words to prevent state issues
+        const wordsCopy = [...analysisResult.words];
+        
+        // Call the callback with our copied data
+        onSelectWords(wordsCopy);
+        
+        toast({
+          title: "Words selected",
+          description: `Added ${wordsCopy.length} words to your vocabulary list`,
+        });
+      } catch (error) {
+        console.error("Error selecting words:", error);
+        toast({
+          title: "Error adding words",
+          description: "Failed to add words to your list. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -107,7 +143,7 @@ export function AIPassageAssist({ passage, onSelectWords }: AIPassageAssistProps
       <div className="flex flex-wrap items-center gap-2">
         <Button 
           variant="secondary" 
-          onClick={handleAnalyzePassage}
+          onClick={(e) => handleAnalyzePassage(e)}
           disabled={isAnalyzing || passage.length < 50}
         >
           {isAnalyzing ? (
@@ -122,7 +158,7 @@ export function AIPassageAssist({ passage, onSelectWords }: AIPassageAssistProps
         
         {analysisResult && (
           <Button
-            onClick={handleSelectWords}
+            onClick={(e) => handleSelectWords(e)}
             disabled={!analysisResult.words || analysisResult.words.length === 0}
           >
             Use Suggested Words
