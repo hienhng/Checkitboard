@@ -403,7 +403,14 @@ export function WordToPassage({ onPassageGenerated }: WordToPassageProps) {
             <Button variant="outline" onClick={() => setGeneratedPassage("")}>
               Regenerate
             </Button>
-            <Button onClick={handleUsePassage} type="button">
+            <Button 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleUsePassage();
+              }} 
+              type="button"
+            >
               Use this Passage
             </Button>
           </CardFooter>

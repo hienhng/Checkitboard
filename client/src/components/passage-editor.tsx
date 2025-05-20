@@ -191,21 +191,26 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
 
   // Update the passage display whenever selected words change
   useEffect(() => {
-    if (passageRef.current && passage) {
+    const currentPassageRef = passageRef.current;
+    if (!currentPassageRef || !passage) return;
+    
+    try {
       const highlightedPassage = formatPassageWithHighlights(passage, selectedWords);
       // Use dangerouslySetInnerHTML with a wrapper to safely render the content
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = highlightedPassage;
       
       // Clear the container first
-      while (passageRef.current.firstChild) {
-        passageRef.current.removeChild(passageRef.current.firstChild);
+      while (currentPassageRef.firstChild) {
+        currentPassageRef.removeChild(currentPassageRef.firstChild);
       }
       
       // Append the sanitized children
       Array.from(tempDiv.childNodes).forEach(node => {
-        passageRef.current.appendChild(node.cloneNode(true));
+        currentPassageRef.appendChild(node.cloneNode(true));
       });
+    } catch (error) {
+      console.error("Error updating passage display:", error);
     }
   }, [passage, selectedWords]);
 
@@ -395,35 +400,17 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
             <TabsContent value="words-to-passage" className="space-y-6">
               <WordToPassage 
                 onPassageGenerated={(generatedPassage, wordList) => {
-                  // First update state synchronously with copies of the data
-                  const passageCopy = generatedPassage || "";
-                  const wordsCopy = [...(wordList || [])];
+                  console.log("Passage received from generation tool");
                   
-                  console.log("Passage generated successfully", { 
-                    passageLength: passageCopy.length, 
-                    wordCount: wordsCopy.length 
+                  // Set the state
+                  setPassage(generatedPassage || "");
+                  setSelectedWords(wordList || []);
+                  
+                  // Show success message
+                  toast({
+                    title: "Passage generated",
+                    description: `Created a passage with ${wordList.length} vocabulary words.`
                   });
-                  
-                  // Update state
-                  setPassage(passageCopy);
-                  setSelectedWords(wordsCopy);
-                  
-                  // Switch tabs with a slight delay
-                  setTimeout(() => {
-                    // Get the first tabs container to avoid any confusion with nested tabs
-                    const tabsContainer = document.querySelector('[data-orientation="horizontal"][role="tablist"]');
-                    if (tabsContainer instanceof HTMLElement) {
-                      const passageTab = tabsContainer.querySelector('[data-value="passage-to-words"][role="tab"]');
-                      if (passageTab instanceof HTMLElement) {
-                        passageTab.click();
-                        
-                        toast({
-                          title: "Passage and words added",
-                          description: `Generated a passage with ${wordsCopy.length} vocabulary words.`
-                        });
-                      }
-                    }
-                  }, 100);
                 }}
               />
             </TabsContent>
