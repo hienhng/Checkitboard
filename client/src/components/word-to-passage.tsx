@@ -111,7 +111,13 @@ export function WordToPassage({ onPassageGenerated }: WordToPassageProps) {
   };
 
   // Handle generating the passage
-  const handleGeneratePassage = () => {
+  const handleGeneratePassage = (e?: React.MouseEvent) => {
+    // Prevent default behavior if event is provided
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     if (words.length < 3) {
       toast({
         title: "Not enough words",
@@ -121,11 +127,26 @@ export function WordToPassage({ onPassageGenerated }: WordToPassageProps) {
       return;
     }
     
-    generatePassageMutation();
+    try {
+      generatePassageMutation();
+    } catch (error) {
+      console.error("Error triggering passage generation:", error);
+      toast({
+        title: "Error",
+        description: "Failed to start passage generation. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   // Handle using the generated passage
-  const handleUsePassage = () => {
+  const handleUsePassage = (e?: React.MouseEvent) => {
+    // Prevent default behavior if event is provided
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     // Check if we have a passage to use
     if (!generatedPassage) {
       toast({
@@ -142,20 +163,36 @@ export function WordToPassage({ onPassageGenerated }: WordToPassageProps) {
         wordCount: words.length 
       });
       
-      // Call the callback function with our generated content
-      onPassageGenerated(generatedPassage, words);
+      // Make copies of the data
+      const passageCopy = generatedPassage;
+      const wordsCopy = [...words];
       
-      // Reset state
+      // Reset state first
       setGeneratedPassage("");
       setWords([]);
       setCurrentWord("");
       setIsPassageReady(false);
       
-      // Feedback for the user
-      toast({
-        title: "Passage added to list",
-        description: "You can now edit the list details and save it."
-      });
+      // Use setTimeout to ensure state updates complete before callback
+      setTimeout(() => {
+        try {
+          // Call the callback function with copied content
+          onPassageGenerated(passageCopy, wordsCopy);
+          
+          // Feedback for the user
+          toast({
+            title: "Passage added to list",
+            description: "You can now edit the list details and save it."
+          });
+        } catch (innerError) {
+          console.error("Error in callback:", innerError);
+          toast({
+            title: "Error adding passage",
+            description: "There was a problem adding the passage to your list. Please try again.",
+            variant: "destructive"
+          });
+        }
+      }, 50);
     } catch (error) {
       console.error("Error using generated passage:", error);
       toast({
