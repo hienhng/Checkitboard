@@ -395,35 +395,35 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
             <TabsContent value="words-to-passage" className="space-y-6">
               <WordToPassage 
                 onPassageGenerated={(generatedPassage, wordList) => {
-                  try {
-                    // Safely set state values
-                    setPassage(generatedPassage || "");
-                    setSelectedWords(wordList || []);
-                    
-                    // Use setTimeout to ensure state has been updated before changing tabs
-                    setTimeout(() => {
-                      // Switch back to the passage tab after generation using a safer method
-                      const tabsElement = document.querySelector('[role="tablist"]');
-                      if (tabsElement instanceof HTMLElement) {
-                        const passageTab = tabsElement.querySelector('[value="passage-to-words"]');
-                        if (passageTab instanceof HTMLElement) {
-                          passageTab.click();
-                        }
+                  // First update state synchronously with copies of the data
+                  const passageCopy = generatedPassage || "";
+                  const wordsCopy = [...(wordList || [])];
+                  
+                  console.log("Passage generated successfully", { 
+                    passageLength: passageCopy.length, 
+                    wordCount: wordsCopy.length 
+                  });
+                  
+                  // Update state
+                  setPassage(passageCopy);
+                  setSelectedWords(wordsCopy);
+                  
+                  // Switch tabs with a slight delay
+                  setTimeout(() => {
+                    // Get the first tabs container to avoid any confusion with nested tabs
+                    const tabsContainer = document.querySelector('[data-orientation="horizontal"][role="tablist"]');
+                    if (tabsContainer instanceof HTMLElement) {
+                      const passageTab = tabsContainer.querySelector('[data-value="passage-to-words"][role="tab"]');
+                      if (passageTab instanceof HTMLElement) {
+                        passageTab.click();
+                        
+                        toast({
+                          title: "Passage and words added",
+                          description: `Generated a passage with ${wordsCopy.length} vocabulary words.`
+                        });
                       }
-                      
-                      toast({
-                        title: "Passage and words added",
-                        description: `Generated a passage with ${wordList.length} vocabulary words.`
-                      });
-                    }, 50);
-                  } catch (error) {
-                    console.error("Error processing generated passage:", error);
-                    toast({
-                      title: "Error processing passage",
-                      description: "There was a problem processing the generated passage. Please try again.",
-                      variant: "destructive"
-                    });
-                  }
+                    }
+                  }, 100);
                 }}
               />
             </TabsContent>

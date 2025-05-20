@@ -126,30 +126,43 @@ export function WordToPassage({ onPassageGenerated }: WordToPassageProps) {
 
   // Handle using the generated passage
   const handleUsePassage = () => {
-    if (generatedPassage) {
-      try {
-        // Safely pass the generated passage to the parent component
-        onPassageGenerated(generatedPassage, words);
-        
-        // Reset the state after successful passage generation
-        setGeneratedPassage("");
-        setWords([]);
-        setCurrentWord("");
-        setIsPassageReady(false);
-        
-        // Provide feedback to the user
-        toast({
-          title: "Passage added to list",
-          description: "You can now edit the list details and save it."
-        });
-      } catch (error) {
-        console.error("Error using generated passage:", error);
-        toast({
-          title: "Error adding passage",
-          description: "There was a problem adding the passage to your list. Please try again.",
-          variant: "destructive"
-        });
-      }
+    // Check if we have a passage to use
+    if (!generatedPassage) {
+      toast({
+        title: "No passage generated",
+        description: "Please generate a passage first.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      console.log("Using generated passage", { 
+        passageLength: generatedPassage.length, 
+        wordCount: words.length 
+      });
+      
+      // Call the callback function with our generated content
+      onPassageGenerated(generatedPassage, words);
+      
+      // Reset state
+      setGeneratedPassage("");
+      setWords([]);
+      setCurrentWord("");
+      setIsPassageReady(false);
+      
+      // Feedback for the user
+      toast({
+        title: "Passage added to list",
+        description: "You can now edit the list details and save it."
+      });
+    } catch (error) {
+      console.error("Error using generated passage:", error);
+      toast({
+        title: "Error adding passage",
+        description: "There was a problem adding the passage to your list. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -390,7 +403,7 @@ export function WordToPassage({ onPassageGenerated }: WordToPassageProps) {
             <Button variant="outline" onClick={() => setGeneratedPassage("")}>
               Regenerate
             </Button>
-            <Button onClick={handleUsePassage}>
+            <Button onClick={handleUsePassage} type="button">
               Use this Passage
             </Button>
           </CardFooter>
