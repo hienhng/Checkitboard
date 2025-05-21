@@ -234,6 +234,13 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
                   }`}>
                     {score}%
                   </Badge>
+                  
+                  {fullscreenExits?.length > 0 && (
+                    <Badge variant="outline" className="ml-2 bg-amber-50 text-amber-700 border-amber-200">
+                      <AlertTriangle className="h-3 w-3 mr-1" />
+                      {fullscreenExits.length} Exit{fullscreenExits.length !== 1 ? 's' : ''}
+                    </Badge>
+                  )}
                 </div>
                 <Progress value={score} className="h-2" />
                 <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
@@ -367,6 +374,37 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
           </div>
         </div>
       </div>
+      
+      {/* Fullscreen exits section */}
+      {fullscreenExits && fullscreenExits.length > 0 && (
+        <div className="mb-6">
+          <div className="rounded-md bg-amber-50 p-4 border border-amber-200">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <AlertTriangle className="h-5 w-5 text-amber-600" />
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-amber-800">
+                  Fullscreen Exit Events ({fullscreenExits.length})
+                </h3>
+                <div className="mt-2 text-sm text-amber-700">
+                  <p>
+                    The student exited fullscreen mode {fullscreenExits.length} time{fullscreenExits.length !== 1 ? 's' : ''} during this check-up, 
+                    which might indicate they referenced external sources.
+                  </p>
+                  <ul className="list-disc space-y-1 pl-5 mt-2">
+                    {fullscreenExits.map((exit: any, index: number) => (
+                      <li key={index}>
+                        Exit {index + 1}: {new Date(exit.timestamp).toLocaleString()}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
       <div className="flex justify-between space-x-3">
         <Button
