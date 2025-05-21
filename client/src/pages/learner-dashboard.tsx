@@ -211,7 +211,7 @@ export default function LearnerDashboard() {
                               .map(list => (
                                 <div 
                                   key={list.id} 
-                                  className="flex justify-between items-center p-4 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors group"
+                                  className="flex justify-between items-center mt-4 p-4 bg-white rounded-lg cursor-pointer hover:bg-slate-100 transition-colors group"
                                   onClick={() => startCheckUp(list.id)}
                                 >
                                   <div className="flex-1">
@@ -248,7 +248,7 @@ export default function LearnerDashboard() {
                           <div className="divide-y divide-gray-200">
                             {results.map(result => (
                               <div key={result.id} className="py-4 flex items-center cursor-pointer hover:bg-gray-50 px-2 rounded-md transition-colors" onClick={() => setSelectedResult(result)}>
-                                <div className="h-10 w-10 flex-shrink-0 rounded-full bg-blue-500 text-white flex items-center justify-center">
+                                <div className="h-10 w-10 flex-shrink-0 rounded-full bg-green-500 text-white flex items-center justify-center">
                                   <CheckCircle className="h-5 w-5" />
                                 </div>
                                 <div className="ml-3 flex-1">
