@@ -184,8 +184,8 @@ export default function LearnerDashboard() {
                           <CardTitle className="text-xl font-bold">
                             Pending Vocabulary Check-Ups
                           </CardTitle>
-                          {(() => {
-                            if (vocabularyLists && vocabularyLists.length > 0) {
+                          {vocabularyLists && vocabularyLists.length > 0 && (
+                            (() => {
                               const pendingCount = vocabularyLists.filter(list => 
                                 !list.submission || !list.submission.completed
                               ).length;
@@ -195,9 +195,8 @@ export default function LearnerDashboard() {
                                   {pendingCount} pending
                                 </Badge>
                               ) : null;
-                            }
-                            return null;
-                          })()}
+                            })()
+                          )}
                         </div>
                       </CardHeader>
                       <CardContent>
@@ -234,15 +233,13 @@ export default function LearnerDashboard() {
                     </Card>
                     
                     {/* Recent Results */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center text-xl">
-                          <Award className="mr-2 h-5 w-5 text-secondary" />
-                          Recent Results
-                        </CardTitle>
-                        <CardDescription>
-                          Your recent vocabulary check-up results.
-                        </CardDescription>
+                    <Card className="overflow-hidden">
+                      <CardHeader className="bg-green-500 p-4 pb-4 text-center text-white">
+                        <div className="w-full flex justify-between items-center">
+                          <CardTitle className="text-xl font-bold">
+                            Recent Results
+                          </CardTitle>
+                        </div>
                       </CardHeader>
                       <CardContent>
                         {resultsLoading ? (
@@ -284,29 +281,24 @@ export default function LearnerDashboard() {
                     </Card>
                     
                     {/* My Flashcards */}
-                    <Card>
-                      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-                        <div>
-                          <CardTitle className="flex items-center text-xl">
-                            <Brain className="mr-2 h-5 w-5 text-accent" />
+                    <Card className="overflow-hidden">
+                      <CardHeader className="bg-purple-500 p-4 pb-4 text-center text-white">
+                        <div className="w-full flex justify-between items-center">
+                          <CardTitle className="text-xl font-bold">
                             My Flashcards
                           </CardTitle>
-                          <CardDescription>
-                            Review vocabulary words you're still learning.
-                          </CardDescription>
+                          {flashcards && flashcards.length > 0 && (
+                            (() => {
+                              const cardCount = flashcards.filter(card => !card.learned).length;
+                              
+                              return cardCount > 0 ? (
+                                <Badge variant="secondary" className="bg-white text-purple-800 font-medium">
+                                  {cardCount} Cards
+                                </Badge>
+                              ) : null;
+                            })()
+                          )}
                         </div>
-                        {(() => {
-                          if (flashcards && flashcards.length > 0) {
-                            const cardCount = flashcards.filter(card => !card.learned).length;
-                            
-                            return cardCount > 0 ? (
-                              <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-100">
-                                {cardCount} Cards
-                              </Badge>
-                            ) : null;
-                          }
-                          return null;
-                        })()}
                       </CardHeader>
                       <CardContent>
                         {flashcardsLoading ? (
