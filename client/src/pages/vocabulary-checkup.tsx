@@ -25,13 +25,15 @@ export default function VocabularyCheckup() {
   const { id } = useParams();
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  const submissionId = parseInt(id);
+  const submissionId = parseInt(id || "0");
   
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [definition, setDefinition] = useState("");
   const [savedDefinitions, setSavedDefinitions] = useState<Record<number, string>>({});
   const [discardReason, setDiscardReason] = useState("");
   const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
+  const [isFullscreenActive, setIsFullscreenActive] = useState(false);
+  const [fullscreenExitCount, setFullscreenExitCount] = useState(0);
   
   // Get submission details with vocabulary list and words
   const { data: submission, isLoading } = useQuery({
@@ -123,7 +125,7 @@ export default function VocabularyCheckup() {
   useEffect(() => {
     if (submission?.wordDefinitions?.length) {
       const defMap: Record<number, string> = {};
-      submission.wordDefinitions.forEach(def => {
+      submission.wordDefinitions.forEach((def: any) => {
         defMap[def.wordId] = def.studentDefinition;
       });
       setSavedDefinitions(defMap);
@@ -195,8 +197,8 @@ export default function VocabularyCheckup() {
     
     // Check if all words have definitions
     const allDefined = submission.list.words.every(
-      word => savedDefinitions[word.id] || 
-      (submission.wordDefinitions?.some(def => def.wordId === word.id))
+      (word: any) => savedDefinitions[word.id] || 
+      (submission.wordDefinitions?.some((def: any) => def.wordId === word.id))
     );
     
     if (!allDefined) {
@@ -211,6 +213,19 @@ export default function VocabularyCheckup() {
     // Complete the submission
     await completeMutation.mutateAsync();
   };
+
+  // Handle fullscreen exit
+  const handleFullscreenExit = () => {
+    setFullscreenExitCount(prev => prev + 1);
+  };
+  
+  // Start fullscreen mode when check-up begins
+  useEffect(() => {
+    // Only activate fullscreen when we have a valid submission
+    if (submission && !submission.completed) {
+      setIsFullscreenActive(true);
+    }
+  }, [submission]);
 
   if (isLoading) {
     return (
@@ -259,169 +274,175 @@ export default function VocabularyCheckup() {
       <Navbar />
       
       <div className="flex-1 bg-neutral-light h-full">
-        <div className="h-full flex flex-col md:flex-row">
-          {/* Left Panel - Reading Passage */}
-          <div className="h-1/2 md:h-full md:w-1/2 overflow-auto p-6 bg-white border-b md:border-b-0 md:border-r border-gray-200">
-            <div className="max-w-3xl mx-auto">
-              <h2 className="text-xl font-semibold text-neutral-dark mb-4">
-                {submission.list.title}
-              </h2>
-              <div className="prose max-w-none passage-container">
-                <div dangerouslySetInnerHTML={createMarkup(
-                  submission.list.passage.replace(
-                    new RegExp(`\\b${currentWord.word}\\b`, 'gi'), 
-                    `<mark>${currentWord.word}</mark>`
-                  )
-                )} />
+        <FullscreenMonitor 
+          submissionId={submissionId} 
+          isActive={isFullscreenActive}
+          onFullscreenExit={handleFullscreenExit}
+        >
+          <div className="h-full flex flex-col md:flex-row">
+            {/* Left Panel - Reading Passage */}
+            <div className="h-1/2 md:h-full md:w-1/2 overflow-auto p-6 bg-white border-b md:border-b-0 md:border-r border-gray-200">
+              <div className="max-w-3xl mx-auto">
+                <h2 className="text-xl font-semibold text-neutral-dark mb-4">
+                  {submission.list.title}
+                </h2>
+                <div className="prose max-w-none passage-container">
+                  <div dangerouslySetInnerHTML={createMarkup(
+                    submission.list.passage.replace(
+                      new RegExp(`\\b${currentWord.word}\\b`, 'gi'), 
+                      `<mark>${currentWord.word}</mark>`
+                    )
+                  )} />
+                </div>
+              </div>
+            </div>
+            
+            {/* Right Panel - Vocabulary Check-Up */}
+            <div className="h-1/2 md:h-full md:w-1/2 overflow-auto p-6 bg-gray-50">
+              <div className="max-w-xl mx-auto">
+                <Card>
+                  <CardHeader className="px-6 py-4 border-b border-gray-200 bg-blue-50">
+                    <div className="flex justify-between items-center">
+                      <CardTitle>Vocabulary Check-Up</CardTitle>
+                      <Badge className="bg-blue-100 text-blue-800">
+                        Word {currentWordIndex + 1} of {totalWords}
+                      </Badge>
+                    </div>
+                    <CardDescription>
+                      Define each highlighted word from the passage.
+                    </CardDescription>
+                  </CardHeader>
+                  
+                  <CardContent className="p-6">
+                    <div className="space-y-6">
+                      <div>
+                        <label htmlFor="word-definition" className="block text-lg font-medium text-neutral-dark">
+                          {currentWord.word}
+                        </label>
+                        <p className="text-sm text-gray-500 mb-2">
+                          Write what you think this word means.
+                        </p>
+                        <Textarea
+                          id="word-definition"
+                          rows={4}
+                          placeholder="Type your definition here..."
+                          value={definition}
+                          onChange={(e) => setDefinition(e.target.value)}
+                        />
+                      </div>
+                      
+                      <div className="flex justify-between">
+                        <Button
+                          variant="outline"
+                          className="flex items-center"
+                          onClick={handlePrevious}
+                          disabled={currentWordIndex === 0}
+                        >
+                          <ChevronLeft className="mr-1 h-4 w-4" />
+                          Previous
+                        </Button>
+                        
+                        {currentWordIndex < totalWords - 1 ? (
+                          <Button
+                            className="flex items-center"
+                            onClick={handleNext}
+                          >
+                            Next
+                            <ChevronRight className="ml-1 h-4 w-4" />
+                          </Button>
+                        ) : (
+                          <Button
+                            className="flex items-center"
+                            onClick={handleComplete}
+                          >
+                            Submit Check-Up
+                          </Button>
+                        )}
+                      </div>
+                      
+                      <div className="pt-4 border-t border-gray-200">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <div className="flex -space-x-1 overflow-hidden">
+                              {submission.list.words.map((_: any, index: any) => (
+                                <div 
+                                  key={index} 
+                                  className={`inline-block h-6 w-6 rounded-full ring-2 ring-white ${
+                                    index === currentWordIndex 
+                                      ? 'bg-blue-500 text-white' 
+                                      : savedDefinitions[submission.list.words[index].id] 
+                                        ? 'bg-blue-100 text-blue-700' 
+                                        : 'bg-gray-200 text-gray-500'
+                                  } flex items-center justify-center text-xs cursor-pointer`}
+                                  onClick={() => setCurrentWordIndex(index)}
+                                >
+                                  {index + 1}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          <Dialog open={discardDialogOpen} onOpenChange={setDiscardDialogOpen}>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-sm text-red-500 hover:text-red-700"
+                              >
+                                <X className="mr-1 h-4 w-4" />
+                                Discard Test
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle className="flex items-center gap-2 text-red-600">
+                                  <AlertTriangle size={18} />
+                                  Discard Test?
+                                </DialogTitle>
+                                <DialogDescription>
+                                  This will discard your current test and you will receive a 0% score.
+                                  This action cannot be undone.
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="mt-4">
+                                <label htmlFor="discard-reason" className="block text-sm font-medium text-neutral-dark mb-1">
+                                  Please explain why you are discarding this test:
+                                </label>
+                                <Textarea
+                                  id="discard-reason"
+                                  rows={3}
+                                  placeholder="I'm discarding this test because..."
+                                  value={discardReason}
+                                  onChange={(e) => setDiscardReason(e.target.value)}
+                                  className="w-full"
+                                />
+                              </div>
+                              <DialogFooter className="mt-4">
+                                <Button 
+                                  variant="outline" 
+                                  onClick={() => setDiscardDialogOpen(false)}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button 
+                                  variant="destructive" 
+                                  className="bg-red-600 hover:bg-red-700"
+                                  onClick={handleDiscardSubmission}
+                                  disabled={discardMutation.isPending}
+                                >
+                                  {discardMutation.isPending ? "Discarding..." : "Discard Test"}
+                                </Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </div>
-          
-          {/* Right Panel - Vocabulary Check-Up */}
-          <div className="h-1/2 md:h-full md:w-1/2 overflow-auto p-6 bg-gray-50">
-            <div className="max-w-xl mx-auto">
-              <Card>
-                <CardHeader className="px-6 py-4 border-b border-gray-200 bg-blue-50">
-                  <div className="flex justify-between items-center">
-                    <CardTitle>Vocabulary Check-Up</CardTitle>
-                    <Badge className="bg-blue-100 text-blue-800">
-                      Word {currentWordIndex + 1} of {totalWords}
-                    </Badge>
-                  </div>
-                  <CardDescription>
-                    Define each highlighted word from the passage.
-                  </CardDescription>
-                </CardHeader>
-                
-                <CardContent className="p-6">
-                  <div className="space-y-6">
-                    <div>
-                      <label htmlFor="word-definition" className="block text-lg font-medium text-neutral-dark">
-                        {currentWord.word}
-                      </label>
-                      <p className="text-sm text-gray-500 mb-2">
-                        Write what you think this word means.
-                      </p>
-                      <Textarea
-                        id="word-definition"
-                        rows={4}
-                        placeholder="Type your definition here..."
-                        value={definition}
-                        onChange={(e) => setDefinition(e.target.value)}
-                      />
-                    </div>
-                    
-                    <div className="flex justify-between">
-                      <Button
-                        variant="outline"
-                        className="flex items-center"
-                        onClick={handlePrevious}
-                        disabled={currentWordIndex === 0}
-                      >
-                        <ChevronLeft className="mr-1 h-4 w-4" />
-                        Previous
-                      </Button>
-                      
-                      {currentWordIndex < totalWords - 1 ? (
-                        <Button
-                          className="flex items-center"
-                          onClick={handleNext}
-                        >
-                          Next
-                          <ChevronRight className="ml-1 h-4 w-4" />
-                        </Button>
-                      ) : (
-                        <Button
-                          className="flex items-center"
-                          onClick={handleComplete}
-                        >
-                          Submit Check-Up
-                        </Button>
-                      )}
-                    </div>
-                    
-                    <div className="pt-4 border-t border-gray-200">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className="flex -space-x-1 overflow-hidden">
-                            {submission.list.words.map((_, index) => (
-                              <div 
-                                key={index} 
-                                className={`inline-block h-6 w-6 rounded-full ring-2 ring-white ${
-                                  index === currentWordIndex 
-                                    ? 'bg-blue-500 text-white' 
-                                    : savedDefinitions[submission.list.words[index].id] 
-                                      ? 'bg-blue-100 text-blue-700' 
-                                      : 'bg-gray-200 text-gray-500'
-                                } flex items-center justify-center text-xs cursor-pointer`}
-                                onClick={() => setCurrentWordIndex(index)}
-                              >
-                                {index + 1}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                        <Dialog open={discardDialogOpen} onOpenChange={setDiscardDialogOpen}>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-sm text-red-500 hover:text-red-700"
-                            >
-                              <X className="mr-1 h-4 w-4" />
-                              Discard Test
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle className="flex items-center gap-2 text-red-600">
-                                <AlertTriangle size={18} />
-                                Discard Test?
-                              </DialogTitle>
-                              <DialogDescription>
-                                This will discard your current test and you will receive a 0% score.
-                                This action cannot be undone.
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div className="mt-4">
-                              <label htmlFor="discard-reason" className="block text-sm font-medium text-neutral-dark mb-1">
-                                Please explain why you are discarding this test:
-                              </label>
-                              <Textarea
-                                id="discard-reason"
-                                rows={3}
-                                placeholder="I'm discarding this test because..."
-                                value={discardReason}
-                                onChange={(e) => setDiscardReason(e.target.value)}
-                                className="w-full"
-                              />
-                            </div>
-                            <DialogFooter className="mt-4">
-                              <Button 
-                                variant="outline" 
-                                onClick={() => setDiscardDialogOpen(false)}
-                              >
-                                Cancel
-                              </Button>
-                              <Button 
-                                variant="destructive" 
-                                className="bg-red-600 hover:bg-red-700"
-                                onClick={handleDiscardSubmission}
-                                disabled={discardMutation.isPending}
-                              >
-                                {discardMutation.isPending ? "Discarding..." : "Discard Test"}
-                              </Button>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
+        </FullscreenMonitor>
       </div>
     </div>
   );
