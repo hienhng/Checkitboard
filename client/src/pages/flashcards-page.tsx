@@ -97,8 +97,8 @@ export default function FlashcardsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <Link to="/learner/dashboard">
-                  <Button variant="ghost" className="p-0 mb-2">
-                    <ArrowLeft className="h-4 w-4 mr-1" /> Back to Dashboard
+                  <Button variant="hover" className="p-0 mb-2">
+                    <ArrowLeft className="h-4 w-4 mr-1" /> 
                   </Button>
                 </Link>
                 <h2 className="text-2xl font-bold text-neutral-dark">My Flashcards</h2>

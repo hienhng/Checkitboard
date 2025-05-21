@@ -323,8 +323,14 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
                 Passage → Words
               </TabsTrigger>
               <TabsTrigger value="words-to-passage" className="flex items-center">
-                <Wand2 className="mr-2 h-4 w-4" /> 
-                Words → Passage (AI)
+                <div className="flex items-center space-x-2">
+                  <Wand2 className="mr-2 h-4 w-4" />
+                  <span className="text-sm font-medium">Words → Passage (AI)</span>
+                  <span className="text-xs px-2 py-0.5  rounded-md font-semibold bg-gradient-to-r from-blue-500 to-blue-300 text-blue-50">
+                    Beta
+                  </span>
+                </div>
+ 
               </TabsTrigger>
             </TabsList>
             

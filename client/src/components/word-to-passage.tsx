@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { X, Loader2, BookOpen, Settings, Wand } from "lucide-react";
+import { X, Loader2, BookOpen, Settings, Wand, Plus, CheckCheck } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import { generatePassageFromWords } from "@/lib/aiService";
@@ -233,8 +233,9 @@ export function WordToPassage({ onPassageGenerated }: WordToPassageProps) {
             <Button 
               onClick={handleAddWord} 
               disabled={!currentWord.trim() || isPending}
+              aria-label = "Add"
             >
-              Add
+              <CheckCheck className="w-4 h-4" />
             </Button>
           </div>
           

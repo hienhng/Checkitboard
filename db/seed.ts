@@ -49,31 +49,65 @@ async function seed() {
     });
     console.log("Linked parent to learner");
 
-    // Create sample vocabulary list
-    const [vocabList] = await db.insert(schema.vocabularyLists).values({
+    // Create a class
+    const [sampleClass] = await db.insert(schema.classes).values({
+      name: "English 101",
+      description: "Introduction to English vocabulary and grammar",
+      classCode: "EN101",
+      educatorId: educator.id,
+      active: true,
+    }).returning();
+    console.log("Created class:", sampleClass.name);
+
+    // Add student to class
+    await db.insert(schema.studentClass).values({
+      studentId: learner.id,
+      classId: sampleClass.id,
+      status: "approved",
+    });
+    console.log("Added student to class");
+
+    // Create science vocabulary list
+    const [scienceList] = await db.insert(schema.vocabularyLists).values({
       title: "Science Vocabulary - Rainforest Ecosystems",
       passage: "The rainforest ecosystem is one of the most biodiverse habitats on our planet. The complex canopy structure provides numerous microhabitats for various species. Scientists who study these ecosystems often observe fascinating symbiotic relationships between different organisms. The proliferation of unique plant and animal species in these environments continues to astound researchers.",
       educatorId: educator.id,
+      classId: sampleClass.id,
       published: true,
       dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
     }).returning();
-    console.log("Created vocabulary list:", vocabList.title);
+    console.log("Created science vocabulary list:", scienceList.title);
 
-    // Create sample vocabulary words
-    const words = ["ecosystem", "biodiverse", "canopy", "microhabitats", "symbiotic", "proliferation"];
-    for (const word of words) {
+    // Create sample science vocabulary words
+    const scienceWords = ["ecosystem", "biodiverse", "canopy", "microhabitats", "symbiotic", "proliferation"];
+    for (const word of scienceWords) {
       await db.insert(schema.vocabularyWords).values({
         word,
-        listId: vocabList.id,
+        listId: scienceList.id,
       });
     }
-    console.log(`Added ${words.length} vocabulary words`);
+    console.log(`Added ${scienceWords.length} science vocabulary words`);
 
-    
+    // Create math vocabulary list
+    const [mathList] = await db.insert(schema.vocabularyLists).values({
+      title: "Math Vocabulary - Geometry Concepts",
+      passage: "In geometry, we study properties of shapes and spaces. A polygon is a closed figure with straight sides, while a circle is defined by a set of points equidistant from a center point. Parallel lines never intersect, while perpendicular lines form right angles. Understanding these concepts helps in calculating area, perimeter, and volume of different shapes.",
+      educatorId: educator.id,
+      classId: sampleClass.id,
+      published: true,
+      dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
+    }).returning();
+    console.log("Created math vocabulary list:", mathList.title);
 
-    
-
-    );
+    // Create sample math vocabulary words
+    const mathWords = ["polygon", "circle", "parallel", "perpendicular", "area", "perimeter", "volume", "angle", "radius", "diameter"];
+    for (const word of mathWords) {
+      await db.insert(schema.vocabularyWords).values({
+        word,
+        listId: mathList.id,
+      });
+    }
+    console.log(`Added ${mathWords.length} math vocabulary words`);
 
     // Create a completed submission for the math list
     const [mathSubmission] = await db.insert(schema.submissions).values({
@@ -89,7 +123,7 @@ async function seed() {
     // Create a completed submission for science list
     const [scienceSubmission] = await db.insert(schema.submissions).values({
       studentId: learner.id,
-      listId: vocabList.id,
+      listId: scienceList.id,
       completed: true,
       score: 75,
       submittedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
@@ -130,7 +164,7 @@ async function seed() {
 
     // Get science vocabulary words
     const scienceVocabWords = await db.query.vocabularyWords.findMany({
-      where: eq(schema.vocabularyWords.listId, vocabList.id),
+      where: eq(schema.vocabularyWords.listId, scienceList.id),
     });
 
     // Add word definitions for science submission (three incorrect)
