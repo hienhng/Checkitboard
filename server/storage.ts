@@ -10,6 +10,7 @@ import {
   classes,
   studentClass,
   notifications,
+  fullscreenExits,
   InsertUser,
   InsertVocabularyList,
   InsertVocabularyWord,
@@ -20,6 +21,7 @@ import {
   InsertClass,
   InsertStudentClass,
   InsertNotification,
+  InsertFullscreenExit,
 } from "@shared/schema";
 import { eq, and, desc, isNull, asc, count, sql, or, inArray } from "drizzle-orm";
 export class DatabaseStorage {
@@ -1014,6 +1016,19 @@ export class DatabaseStorage {
   async deleteNotification(id: number) {
     await db.delete(notifications).where(eq(notifications.id, id));
     return true;
+  }
+  
+  // Fullscreen Exit Event Methods
+  async createFullscreenExit(exitData: InsertFullscreenExit) {
+    const [newExit] = await db.insert(fullscreenExits).values(exitData).returning();
+    return newExit;
+  }
+  
+  async getFullscreenExitsBySubmission(submissionId: number) {
+    return await db.query.fullscreenExits.findMany({
+      where: eq(fullscreenExits.submissionId, submissionId),
+      orderBy: [asc(fullscreenExits.timestamp)]
+    });
   }
 }
 

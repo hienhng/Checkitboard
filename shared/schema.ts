@@ -327,3 +327,28 @@ export const insertNotificationSchema = createInsertSchema(notifications, {
 export const selectNotificationSchema = createSelectSchema(notifications);
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
+// Fullscreen exit events for tracking when students exit fullscreen during check-ups
+export const fullscreenExits = pgTable("fullscreen_exits", {
+  id: serial("id").primaryKey(),
+  submissionId: integer("submission_id").references(() => submissions.id).notNull(),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  userAgent: text("user_agent"),
+});
+
+export const fullscreenExitsRelations = relations(fullscreenExits, ({ one }) => ({
+  submission: one(submissions, {
+    fields: [fullscreenExits.submissionId],
+    references: [submissions.id],
+  }),
+}));
+
+export const insertFullscreenExitSchema = createInsertSchema(fullscreenExits)
+  .omit({ id: true })
+  .extend({
+    timestamp: z.string().optional(),
+  });
+
+export const selectFullscreenExitSchema = createSelectSchema(fullscreenExits);
+export type FullscreenExit = typeof fullscreenExits.$inferSelect;
+export type InsertFullscreenExit = z.infer<typeof insertFullscreenExitSchema>;
