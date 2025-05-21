@@ -178,31 +178,27 @@ export default function LearnerDashboard() {
                 <TabsContent value="dashboard">
                   <div className="space-y-6">
                     {/* Pending Vocabulary Check-Ups */}
-                    <Card>
-                      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-                        <div>
-                          <CardTitle className="flex items-center text-xl">
-                            <BookOpen className="mr-2 h-5 w-5 text-primary" />
+                    <Card className="overflow-hidden">
+                      <CardHeader className="bg-blue-500 p-4 pb-4 text-center text-white">
+                        <div className="w-full flex justify-between items-center">
+                          <CardTitle className="text-xl font-bold">
                             Pending Vocabulary Check-Ups
                           </CardTitle>
-                          <CardDescription>
-                            Complete these vocabulary check-ups assigned by your teacher.
-                          </CardDescription>
+                          {(() => {
+                            if (vocabularyLists && vocabularyLists.length > 0) {
+                              const pendingCount = vocabularyLists.filter(list => 
+                                !list.submission || !list.submission.completed
+                              ).length;
+                              
+                              return pendingCount > 0 ? (
+                                <Badge variant="secondary" className="bg-white text-blue-800 font-medium">
+                                  {pendingCount} pending
+                                </Badge>
+                              ) : null;
+                            }
+                            return null;
+                          })()}
                         </div>
-                        {(() => {
-                          if (vocabularyLists && vocabularyLists.length > 0) {
-                            const pendingCount = vocabularyLists.filter(list => 
-                              !list.submission || !list.submission.completed
-                            ).length;
-                            
-                            return pendingCount > 0 ? (
-                              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
-                                {pendingCount} Pending
-                              </Badge>
-                            ) : null;
-                          }
-                          return null;
-                        })()}
                       </CardHeader>
                       <CardContent>
                         {listsLoading ? (
