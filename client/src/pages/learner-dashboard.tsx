@@ -191,7 +191,7 @@ export default function LearnerDashboard() {
                               ).length;
                               
                               return pendingCount > 0 ? (
-                                <Badge variant="secondary" className="bg-white text-blue-800 font-medium">
+                                <Badge variant="secondary" className="bg-blue text-white-800 font-medium">
                                   {pendingCount} pending
                                 </Badge>
                               ) : null;
@@ -248,7 +248,7 @@ export default function LearnerDashboard() {
                           <div className="divide-y divide-gray-200">
                             {results.map(result => (
                               <div key={result.id} className="py-4 flex items-center cursor-pointer hover:bg-gray-50 px-2 rounded-md transition-colors" onClick={() => setSelectedResult(result)}>
-                                <div className="h-10 w-10 flex-shrink-0 rounded-full bg-green-500 text-white flex items-center justify-center">
+                                <div className="h-10 w-10 flex-shrink-0 rounded-full bg-blue-500 text-white flex items-center justify-center">
                                   <CheckCircle className="h-5 w-5" />
                                 </div>
                                 <div className="ml-3 flex-1">
