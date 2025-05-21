@@ -18,7 +18,9 @@ import {
   BookOpen,
   Check,
   X,
-  Star
+  Star,
+  Maximize,
+  AlertTriangle
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -52,6 +54,13 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
   const { data: submission, isLoading } = useQuery({
     queryKey: [`/api/submissions/${submissionId}`],
     queryFn: getQueryFn({ on401: "throw" }),
+  });
+  
+  // Fetch fullscreen exit events for this submission
+  const { data: fullscreenExits = [], isLoading: isLoadingExits } = useQuery({
+    queryKey: [`/api/submissions/${submissionId}/fullscreen-exits`],
+    queryFn: getQueryFn(),
+    enabled: !!submissionId,
   });
 
   // Set up initial grading data when submission is loaded

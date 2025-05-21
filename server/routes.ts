@@ -862,6 +862,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get fullscreen exit events for a submission
+  app.get("/api/submissions/:id/fullscreen-exits", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "educator") {
+        return res.status(403).json({ message: "Only educators can view fullscreen exit data" });
+      }
+
+      const submissionId = parseInt(req.params.id);
+      if (isNaN(submissionId)) {
+        return res.status(400).json({ message: "Invalid submission ID" });
+      }
+
+      // Get the submission to check permissions
+      const submission = await storage.getSubmission(submissionId);
+      if (!submission) {
+        return res.status(404).json({ message: "Submission not found" });
+      }
+
+      // Get the list to verify the educator owns it
+      const list = await storage.getVocabularyList(submission.listId);
+      if (!list || list.educatorId !== req.user.id) {
+        return res.status(403).json({ message: "You don't have permission to view this data" });
+      }
+
+      // Get fullscreen exit events
+      const exitEvents = await storage.getFullscreenExitsBySubmission(submissionId);
+      
+      res.json(exitEvents);
+    } catch (error) {
+      console.error("Error fetching fullscreen exit events:", error);
+      res.status(500).json({ message: "Error fetching fullscreen exit events" });
+    }
+  });
+
   // Record fullscreen exit during a vocabulary check-up
   app.post("/api/submissions/:id/fullscreen-exit", async (req, res) => {
     try {
