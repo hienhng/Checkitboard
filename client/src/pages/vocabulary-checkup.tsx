@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { createMarkup } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, AlertTriangle, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, AlertTriangle, X, Maximize } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { 
   Dialog, 
@@ -19,6 +19,7 @@ import {
   DialogFooter, 
   DialogTrigger
 } from "@/components/ui/dialog";
+import { FullscreenMonitor } from "@/components/fullscreen-monitor";
 
 export default function VocabularyCheckup() {
   const { id } = useParams();

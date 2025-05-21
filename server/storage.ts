@@ -1020,7 +1020,13 @@ export class DatabaseStorage {
   
   // Fullscreen Exit Event Methods
   async createFullscreenExit(exitData: InsertFullscreenExit) {
-    const [newExit] = await db.insert(fullscreenExits).values(exitData).returning();
+    // Convert timestamp string to Date object if it exists
+    const data = {
+      ...exitData,
+      timestamp: exitData.timestamp ? new Date(exitData.timestamp) : undefined
+    };
+    
+    const [newExit] = await db.insert(fullscreenExits).values(data).returning();
     return newExit;
   }
   

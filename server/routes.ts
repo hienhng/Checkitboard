@@ -862,6 +862,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Record fullscreen exit during a vocabulary check-up
+  app.post("/api/submissions/:id/fullscreen-exit", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "learner") {
+        return res.status(403).json({ message: "Only learners can record fullscreen exits" });
+      }
+
+      const submissionId = parseInt(req.params.id);
+      if (isNaN(submissionId)) {
+        return res.status(400).json({ message: "Invalid submission ID" });
+      }
+
+      const submission = await storage.getSubmission(submissionId);
+      
+      if (!submission) {
+        return res.status(404).json({ message: "Submission not found" });
+      }
+
+      if (submission.studentId !== req.user.id) {
+        return res.status(403).json({ message: "You don't have permission to update this submission" });
+      }
+      
+      // Get user agent from request headers
+      const userAgent = req.headers['user-agent'] || '';
+      
+      // Create the fullscreen exit record
+      const exitRecord = await storage.createFullscreenExit({
+        submissionId,
+        userAgent,
+        timestamp: req.body.timestamp || new Date().toISOString(),
+      });
+      
+      res.status(201).json(exitRecord);
+    } catch (error) {
+      console.error("Error recording fullscreen exit:", error);
+      res.status(500).json({ message: "Error recording fullscreen exit" });
+    }
+  });
+
   // Discard a submission with reason and auto-grade with 0%
   app.post("/api/submissions/:id/discard", async (req, res) => {
     try {
