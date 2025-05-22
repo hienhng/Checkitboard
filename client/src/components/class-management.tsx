@@ -349,6 +349,10 @@ export function ClassManagement() {
   <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-blue-400/20 -mr-6 -mt-6 transform rotate-45"></div>
   <div className="absolute bottom-0 left-0 w-16 h-16 rounded-full bg-blue-400/10 -ml-4 -mb-4"></div>
   <div className="absolute top-1/2 right-1/4 w-12 h-12 rounded-lg bg-blue-400/15 transform rotate-12"></div>
+  <div className="absolute top-1/4 left-1/3 w-8 h-8 rounded-full bg-blue-400/20 transform rotate-90"></div>
+  <div className="absolute bottom-1/4 right-1/3 w-10 h-10 rounded-lg bg-blue-400/10 transform -rotate-45"></div>
+  <div className="absolute top-0 left-0 w-20 h-20 rounded-full bg-blue-400/5 -ml-10 -mt-10"></div>
+  <div className="absolute bottom-1/2 left-1/4 w-6 h-6 rounded-lg bg-blue-400/15 transform rotate-180"></div>
                     <CardTitle className="flex justify-between items-center text-white">
                       <span>{cls.name}</span>
                     </CardTitle>
