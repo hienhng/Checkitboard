@@ -491,6 +491,39 @@ export default function VocabularyCheckup() {
                               </DialogFooter>
                             </DialogContent>
                           </Dialog>
+
+                          {/* Navigation Warning Dialog */}
+                          <Dialog open={navigationWarningOpen} onOpenChange={setNavigationWarningOpen}>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle className="flex items-center gap-2 text-red-600">
+                                  <AlertTriangle size={18} />
+                                  Warning: Leaving Test
+                                </DialogTitle>
+                                <DialogDescription>
+                                  You are trying to leave the vocabulary check-up. If you continue, your test will be ended and you will receive a score of 0%. This action cannot be undone.
+                                </DialogDescription>
+                              </DialogHeader>
+                              <DialogFooter className="mt-4">
+                                <Button 
+                                  variant="outline" 
+                                  onClick={() => setNavigationWarningOpen(false)}
+                                >
+                                  Stay in Test
+                                </Button>
+                                <Button 
+                                  variant="destructive"
+                                  onClick={() => {
+                                    setNavigationWarningOpen(false);
+                                    endTestWithZeroMutation.mutate();
+                                  }}
+                                  disabled={endTestWithZeroMutation.isPending}
+                                >
+                                  {endTestWithZeroMutation.isPending ? "Ending Test..." : "End Test (0% Score)"}
+                                </Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
                         </div>
                       </div>
                     </div>
