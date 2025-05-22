@@ -277,9 +277,9 @@ export default function VocabularyCheckup() {
         onFullscreenExit={handleFullscreenExit}
       >
         <div className="h-screen flex flex-col md:flex-row">
-            {/* Left Panel - Reading Passage */}
-            <div className="h-1/2 md:h-full md:w-1/2 overflow-auto p-6 bg-white border-b md:border-b-0 md:border-r border-gray-200">
-              <div className="max-w-3xl mx-auto">
+          {/* Left Panel - Reading Passage */}
+          <div className="h-1/2 md:h-full md:w-1/2 overflow-auto p-6 bg-white border-b md:border-b-0 md:border-r border-gray-200">
+            <div className="max-w-3xl mx-auto">
                 <h2 className="text-xl font-semibold text-neutral-dark mb-4">
                   {submission.list.title}
                 </h2>
