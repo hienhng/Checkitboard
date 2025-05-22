@@ -64,7 +64,8 @@ import {
   ClipboardCheck,
   LineChart,
   UserMinus,
-  AlertTriangle
+  AlertTriangle,
+  CalendarDays
 } from "lucide-react";
 import {
   Table,
@@ -344,17 +345,22 @@ export function ClassManagement() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {classes?.map((cls: any) => (
                 <Card key={cls.id} className="overflow-hidden">
-                  <CardHeader className="bg-primary/5">
-                    <CardTitle className="flex justify-between items-center">
+                  <CardHeader className="bg-blue-500">
+                    <CardTitle className="flex justify-between items-center text-white">
                       <span>{cls.name}</span>
                     </CardTitle>
-                    <CardDescription className="flex items-center">
-                      <Users className="mr-2 h-4 w-4" />
-                      {cls.students?.length || 0} students
+                    <CardDescription className="flex justify-end items-center">
+                      <Users className="mr-2 h-4 w-4 text-blue-200" />
+                      <span className=" text-blue-200 font-bold">{cls.students?.length || 0}</span> 
+                       
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="pt-4">
                     {cls.description && <p className="mb-4">{cls.description}</p>}
+                    <div className="mb-4 text-sm text-gray-500 flex items-center">
+                      <CalendarDays className="mr-1 h-3.5 w-3.5" />
+                      Created: {formatDate(cls.createdAt)}
+                    </div>
                     <div className="flex items-center justify-between p-2 bg-muted rounded-md mb-4">
                       <div>
                         <p className="text-sm font-medium">Class Code</p>
@@ -395,8 +401,8 @@ export function ClassManagement() {
                     </div>
                   </CardContent>
                   <CardFooter className="border-t bg-muted/50 flex justify-between">
-                    <Button 
-                      variant="outline" 
+                    <Button className="mt-4 w-full"
+                      variant = "ghost" 
                       size="sm"
                       onClick={() => {
                         setSelectedClass(cls.id);

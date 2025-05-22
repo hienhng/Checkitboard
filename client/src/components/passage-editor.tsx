@@ -326,7 +326,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
                 <div className="flex items-center space-x-2">
                   <Wand2 className="mr-2 h-4 w-4" />
                   <span className="text-sm font-medium">Words → Passage (AI)</span>
-                  <span className="text-xs px-2 py-0.5  rounded-md font-semibold bg-gradient-to-r from-blue-500 to-blue-300 text-blue-50">
+                  <span className="text-xs px-2 py-0.5  rounded-md font-semibold bg-gradient-to-r from-orange-500 via-purple-400 to-blue-700 text-blue-50">
                     Beta
                   </span>
                 </div>

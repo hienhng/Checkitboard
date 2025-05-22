@@ -108,7 +108,9 @@ export default function EducatorDashboard() {
           <div className="px-4 py-5 sm:px-6">
             <div className="flex justify-between items-center">
               <div>
-                <h2 className="text-2xl font-bold text-neutral-dark">Educator Dashboard</h2>
+                <h2 className="text-5xl font-bold text-neutral-dark"> Welcome to <span className="text-black transition duration-300 ease-in-out hover:text-blue-500">Checkit</span>
+                </h2>
+                
                 <p className="mt-1 max-w-2xl text-sm text-gray-500">
                   Create and manage vocabulary lists, classes, and grade student submissions.
                 </p>
@@ -231,19 +233,19 @@ export default function EducatorDashboard() {
                       </Card>
                       
                       {/* Pending Submissions */}
-                      <Card>
-                        <CardHeader>
+                      <Card className="bg-blue-500">
+                        <CardHeader className="bg-blue-500 p-4 pb-4 text-center text-white rounded-t-lg">
                           <CardTitle className="flex items-center">
-                            <Clock className="mr-2 h-5 w-5 text-primary" />
+                            <Clock className="mr-2 h-5 w-5 text-primary text-white" />
                             Pending Submissions
                           </CardTitle>
-                          <CardDescription>
+                          <CardDescription className="text-blue-100 text-left">
                             Review and grade student submissions
                           </CardDescription>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="bg-blue-500 rounded-b-lg">
                           {submissionsLoading ? (
-                            <div className="py-4 text-center text-sm text-gray-500">Loading submissions...</div>
+                            <div className="py-4 text-center text-sm text-white">Loading submissions...</div>
                           ) : pendingSubmissions && pendingSubmissions.length > 0 ? (
                             <div className="divide-y divide-gray-200">
                               {pendingSubmissions.map((submission) => (
@@ -277,7 +279,7 @@ export default function EducatorDashboard() {
                               ))}
                             </div>
                           ) : (
-                            <div className="py-4 text-center text-sm text-gray-500">
+                            <div className="py-4 text-center text-sm text-blue-100">
                               No pending submissions to grade. Reload the page if needed.
                             </div>
                           )}

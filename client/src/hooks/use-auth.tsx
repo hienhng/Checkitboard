@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.setQueryData(["/api/user"], userData);
       toast({
         title: "Registration successful",
-        description: `Welcome to VocabCheckUp, ${userData.name}!`,
+        description: `Welcome, ${userData.name}!`,
       });
     },
     onError: (error: Error) => {

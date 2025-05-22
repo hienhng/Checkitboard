@@ -192,7 +192,7 @@ export default function LearnerDashboard() {
                               
                               return pendingCount > 0 ? (
                                 <Badge variant="secondary" className="bg-blue text-white-800 font-medium">
-                                  {pendingCount} pending
+                                  {pendingCount} lists
                                 </Badge>
                               ) : null;
                             })()
@@ -211,7 +211,7 @@ export default function LearnerDashboard() {
                               .map(list => (
                                 <div 
                                   key={list.id} 
-                                  className="flex justify-between items-center mt-4 p-4 bg-white rounded-lg cursor-pointer hover:bg-slate-100 transition-colors group"
+                                  className="flex justify-between items-center mt-2 p-4 bg-white rounded-lg cursor-pointer hover:bg-blue-100 transition-colors group"
                                   onClick={() => startCheckUp(list.id)}
                                 >
                                   <div className="flex-1">
@@ -234,7 +234,7 @@ export default function LearnerDashboard() {
                     
                     {/* Recent Results */}
                     <Card className="overflow-hidden">
-                      <CardHeader className="bg-green-500 p-4 pb-4 text-center text-white">
+                      <CardHeader className="bg-blue-500 p-4 pb-4 text-center text-white">
                         <div className="w-full flex justify-between items-center">
                           <CardTitle className="text-xl font-bold">
                             Recent Results
@@ -247,7 +247,7 @@ export default function LearnerDashboard() {
                         ) : results && results.length > 0 ? (
                           <div className="divide-y divide-gray-200">
                             {results.map(result => (
-                              <div key={result.id} className="py-4 flex items-center cursor-pointer hover:bg-gray-50 px-2 rounded-md transition-colors" onClick={() => setSelectedResult(result)}>
+                              <div key={result.id} className="py-4 flex items-center cursor-pointer hover:bg-blue-100 px-2 rounded-md transition-colors" onClick={() => setSelectedResult(result)}>
                                 <div className="h-10 w-10 flex-shrink-0 rounded-full bg-green-500 text-white flex items-center justify-center">
                                   <CheckCircle className="h-5 w-5" />
                                 </div>
@@ -274,7 +274,7 @@ export default function LearnerDashboard() {
                           </div>
                         ) : (
                           <div className="py-4 text-center text-sm text-gray-500">
-                            No completed check-ups yet.
+                            No completed check-ups yet. Wait for your mentor to grade your submissions.
                           </div>
                         )}
                       </CardContent>
@@ -282,7 +282,7 @@ export default function LearnerDashboard() {
                     
                     {/* My Flashcards */}
                     <Card className="overflow-hidden">
-                      <CardHeader className="bg-purple-500 p-4 pb-4 text-center text-white">
+                      <CardHeader className="bg-blue-500 p-4 pb-4 text-center text-white">
                         <div className="w-full flex justify-between items-center">
                           <CardTitle className="text-xl font-bold">
                             My Flashcards
