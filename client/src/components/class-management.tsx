@@ -354,13 +354,14 @@ export function ClassManagement() {
                       <span className=" text-blue-200 font-bold">{cls.students?.length || 0}</span> 
                        
                     </CardDescription>
+                    <div className="mb-4 text-sm text-blue-200 flex items-center">
+                      <CalendarDays className="mr-1 h-3.5 w-3.5" />
+                       {formatDate(cls.createdAt)}
+                    </div>
                   </CardHeader>
                   <CardContent className="pt-4">
                     {cls.description && <p className="mb-4">{cls.description}</p>}
-                    <div className="mb-4 text-sm text-gray-500 flex items-center">
-                      <CalendarDays className="mr-1 h-3.5 w-3.5" />
-                      Created: {formatDate(cls.createdAt)}
-                    </div>
+                    
                     <div className="flex items-center justify-between p-2 bg-muted rounded-md mb-4">
                       <div>
                         <p className="text-sm font-medium">Class Code</p>
