@@ -72,7 +72,7 @@ export default function LearnerAnalysis() {
   return (
     <div className="container mx-auto py-6 max-w-7xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Progress Analysis</h1>
+        <h1 className="text-5xl font-bold tracking-tight"><span className="text-black transition duration-300 ease-in-out hover:text-green-500">Progress</span> Analysis</h1>
         <p className="text-muted-foreground mt-2">
           Track your vocabulary learning progress over time
         </p>

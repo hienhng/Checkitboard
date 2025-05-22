@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import { Navbar } from "@/components/navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { 
   BookOpen, 
   CheckCircle, 
@@ -12,7 +13,8 @@ import {
   ChevronRight,
   School,
   Eye,
-  Brain
+  Brain,
+  Search
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getQueryFn, apiRequest } from "@/lib/queryClient";
@@ -89,6 +91,20 @@ export default function LearnerDashboard() {
   // State for the result details dialog
   const [selectedResult, setSelectedResult] = useState<SubmissionResult | null>(null);
   const [activeTab, setActiveTab] = useState("dashboard");
+  
+  // Search functionality
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Filter functions for search
+  const filteredVocabularyLists = vocabularyLists?.filter(list =>
+    list.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    list.educator?.name.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
+
+  const filteredClasses = classes?.filter(cls =>
+    cls.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    cls.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
 
   // Fetch published vocabulary lists
   const { data: vocabularyLists, isLoading: listsLoading } = useQuery<VocabularyList[]>({
@@ -155,7 +171,8 @@ export default function LearnerDashboard() {
           <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
             {/* Header */}
             <div className="px-4 py-5 sm:px-6">
-              <h2 className="text-2xl font-bold text-neutral-dark">Student Dashboard</h2>
+              <h2 className="text-5xl font-bold text-neutral-dark"> Welcome to <span className="text-black transition duration-300 ease-in-out hover:text-blue-500">Checkit</span>
+              </h2> 
               <p className="mt-1 max-w-2xl text-sm text-gray-500">
                 Complete vocabulary check-ups, join classes, and review your flashcards.
               </p>
@@ -183,6 +200,7 @@ export default function LearnerDashboard() {
                         <div className="w-full flex justify-between items-center">
                           <CardTitle className="text-xl font-bold">
                             Pending Vocabulary Check-Ups
+                            
                           </CardTitle>
                           {vocabularyLists && vocabularyLists.length > 0 && (
                             (() => {
@@ -234,7 +252,7 @@ export default function LearnerDashboard() {
                     
                     {/* Recent Results */}
                     <Card className="overflow-hidden">
-                      <CardHeader className="bg-blue-500 p-4 pb-4 text-center text-white">
+                      <CardHeader className="bg-green-500 p-4 pb-4 text-center text-white">
                         <div className="w-full flex justify-between items-center">
                           <CardTitle className="text-xl font-bold">
                             Recent Results
@@ -282,7 +300,7 @@ export default function LearnerDashboard() {
                     
                     {/* My Flashcards */}
                     <Card className="overflow-hidden">
-                      <CardHeader className="bg-blue-500 p-4 pb-4 text-center text-white">
+                      <CardHeader className="bg-purple-500 p-4 pb-4 text-center text-white">
                         <div className="w-full flex justify-between items-center">
                           <CardTitle className="text-xl font-bold">
                             My Flashcards

@@ -96,12 +96,8 @@ export default function FlashcardsPage() {
           <div className="px-4 py-5 sm:px-6">
             <div className="flex items-center justify-between">
               <div>
-                <Link to="/learner/dashboard">
-                  <Button variant="hover" className="p-0 mb-2">
-                    <ArrowLeft className="h-4 w-4 mr-1" /> 
-                  </Button>
-                </Link>
-                <h2 className="text-2xl font-bold text-neutral-dark">My Flashcards</h2>
+                
+                <h2 className="text-5xl font-bold text-neutral-dark">My <span className="text-black transition duration-300 ease-in-out hover:text-purple-500">Flashcards</span></h2>
                 <p className="mt-1 max-w-2xl text-sm text-gray-500">
                   Practice vocabulary words to improve your retention.
                 </p>

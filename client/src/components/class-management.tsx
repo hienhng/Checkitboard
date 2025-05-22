@@ -346,13 +346,12 @@ export function ClassManagement() {
               {classes?.map((cls: any) => (
                 <Card key={cls.id} className="overflow-hidden">
                   <CardHeader className="bg-blue-500 overflow-hidden relative">
-  <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-blue-400/20 -mr-6 -mt-6 transform rotate-45"></div>
-  <div className="absolute bottom-0 left-0 w-16 h-16 rounded-full bg-blue-400/10 -ml-4 -mb-4"></div>
-  <div className="absolute top-1/2 right-1/4 w-12 h-12 rounded-lg bg-blue-400/15 transform rotate-12"></div>
-  <div className="absolute top-1/4 left-1/3 w-8 h-8 rounded-full bg-blue-400/20 transform rotate-90"></div>
-  <div className="absolute bottom-1/4 right-1/3 w-10 h-10 rounded-lg bg-blue-400/10 transform -rotate-45"></div>
-  <div className="absolute top-0 left-0 w-20 h-20 rounded-full bg-blue-400/5 -ml-10 -mt-10"></div>
-  <div className="absolute bottom-1/2 left-1/4 w-6 h-6 rounded-lg bg-blue-400/15 transform rotate-180"></div>
+  <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-blue-400/20 -mr-6 -mt-6 transform rotate-45 z=0"></div>
+  <div className="absolute bottom-0 left-0 w-16 h-16 rounded-full bg-blue-400/10 -ml-4 -mb-4 z=0"></div>
+  <div className="absolute top-1/2 right-1/4 w-12 h-12 rounded-lg bg-blue-400/15 transform rotate-12 z=0"></div>
+  <div className="absolute top-1/4 left-1/3 w-8 h-8 rounded-full bg-blue-400/20 transform rotate-90 z=0"></div>
+  
+
                     <CardTitle className="flex justify-between items-center text-white">
                       <span>{cls.name}</span>
                     </CardTitle>
@@ -390,7 +389,7 @@ export function ClassManagement() {
                           {cls.vocabularyLists.map((list: any) => (
                             <div
                               key={list.id}
-                              className="flex items-center justify-between p-2 bg-background border rounded-md"
+                              className="flex items-center justify-between p-2 bg-white rounded-md transition duration-300 ease-in-out hover:bg-blue-50 hover:text-blue-500 "
                             >
                               <span>{list.title}</span>
                               {list.published ? (
@@ -409,8 +408,8 @@ export function ClassManagement() {
                     </div>
                   </CardContent>
                   <CardFooter className="border-t bg-muted/50 flex justify-between">
-                    <Button className="mt-4 w-full"
-                      variant = "ghost" 
+                    <Button className="mt-4 w-full bg-color-slate-50 text-black transition duration-300 ease-in-out hover:bg-blue-50 hover:text-blue-500"
+                       
                       size="sm"
                       onClick={() => {
                         setSelectedClass(cls.id);
