@@ -1,26 +1,23 @@
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { AlertCircle } from "lucide-react";
-import { Link } from "wouter";
+import { useLocation } from "wouter";
 
 export default function NotFound() {
+  const [location] = useLocation();
+  
+  // If we're at the root path, don't show the 404
+  if (location === "/") {
+    return null;
+  }
+
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
-      <Card className="w-full max-w-md mx-4">
-        <CardContent className="flex flex-col items-center space-y-4 pt-6">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-8 w-8 text-red-500" />
-            <h1 className="text-2xl font-bold text-gray-900">404 Page Not Found</h1>
-          </div>
-          <p className="text-sm text-gray-600">
-            The page you are looking for does not exist.
-          </p>
-          <Link href="/">
-            <Button>Return Home</Button>
-          </Link>
-        </CardContent>
-      </Card>
+      <div className="text-center">
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">404</h1>
+        <p className="text-gray-600 mb-4">The page you are looking for does not exist.</p>
+        <a href="/" className="text-blue-500 hover:text-blue-600">
+          Return Home
+        </a>
+      </div>
     </div>
   );
 }
