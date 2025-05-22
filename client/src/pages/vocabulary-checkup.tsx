@@ -270,16 +270,13 @@ export default function VocabularyCheckup() {
   const totalWords = submission.list.words.length;
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar />
-      
-      <div className="flex-1 bg-neutral-light h-full">
-        <FullscreenMonitor 
-          submissionId={submissionId} 
-          isActive={isFullscreenActive}
-          onFullscreenExit={handleFullscreenExit}
-        >
-          <div className="h-full flex flex-col md:flex-row">
+    <div className="min-h-screen bg-neutral-light">
+      <FullscreenMonitor 
+        submissionId={submissionId} 
+        isActive={isFullscreenActive}
+        onFullscreenExit={handleFullscreenExit}
+      >
+        <div className="h-screen flex flex-col md:flex-row">
             {/* Left Panel - Reading Passage */}
             <div className="h-1/2 md:h-full md:w-1/2 overflow-auto p-6 bg-white border-b md:border-b-0 md:border-r border-gray-200">
               <div className="max-w-3xl mx-auto">
@@ -441,9 +438,8 @@ export default function VocabularyCheckup() {
                 </Card>
               </div>
             </div>
-          </div>
-        </FullscreenMonitor>
-      </div>
+        </div>
+      </FullscreenMonitor>
     </div>
   );
 }
