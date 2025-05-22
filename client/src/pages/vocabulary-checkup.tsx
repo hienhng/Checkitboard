@@ -34,6 +34,7 @@ export default function VocabularyCheckup() {
   const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
   const [isFullscreenActive, setIsFullscreenActive] = useState(false);
   const [fullscreenExitCount, setFullscreenExitCount] = useState(0);
+  const [navigationWarningOpen, setNavigationWarningOpen] = useState(false);
   
   // Get submission details with vocabulary list and words
   const { data: submission, isLoading } = useQuery({
@@ -115,6 +116,33 @@ export default function VocabularyCheckup() {
     onError: (error: Error) => {
       toast({
         title: "Error discarding check-up",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation to end test with zero score when navigating away
+  const endTestWithZeroMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest(
+        "POST", 
+        `/api/submissions/${submissionId}/discard`, 
+        { discardReason: "Student navigated away from test" }
+      );
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Test ended with 0% score",
+        description: "You left the test and received a score of 0%.",
+        variant: "destructive"
+      });
+      navigate("/learner/dashboard");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error ending test",
         description: error.message,
         variant: "destructive",
       });
@@ -225,6 +253,38 @@ export default function VocabularyCheckup() {
     if (submission && !submission.completed) {
       setIsFullscreenActive(true);
     }
+  }, [submission]);
+
+  // Browser navigation warning system
+  useEffect(() => {
+    if (!submission || submission.completed) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = ''; // Modern browsers require this
+      return '';
+    };
+
+    const handlePopState = (e: PopStateEvent) => {
+      e.preventDefault();
+      setNavigationWarningOpen(true);
+      // Push the current state back to prevent navigation
+      window.history.pushState(null, '', window.location.pathname);
+    };
+
+    // Add beforeunload listener for browser refresh/close
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    // Add popstate listener for back button
+    window.addEventListener('popstate', handlePopState);
+    
+    // Push current state to enable back button detection
+    window.history.pushState(null, '', window.location.pathname);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, [submission]);
 
   if (isLoading) {
