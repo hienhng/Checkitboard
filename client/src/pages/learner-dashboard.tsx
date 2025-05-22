@@ -95,17 +95,6 @@ export default function LearnerDashboard() {
   // Search functionality
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Filter functions for search
-  const filteredVocabularyLists = vocabularyLists?.filter(list =>
-    list.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    list.educator?.name.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
-
-  const filteredClasses = classes?.filter(cls =>
-    cls.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    cls.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
-
   // Fetch published vocabulary lists
   const { data: vocabularyLists, isLoading: listsLoading } = useQuery<VocabularyList[]>({
     queryKey: ["/api/learner/vocabulary-lists"],
@@ -129,6 +118,17 @@ export default function LearnerDashboard() {
     queryKey: ["/api/learner/classes"],
     queryFn: getQueryFn({ on401: "throw" }),
   });
+
+  // Filter functions for search
+  const filteredVocabularyLists = vocabularyLists?.filter(list =>
+    list.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    list.educator?.name.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
+
+  const filteredClasses = classes?.filter(cls =>
+    cls.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    cls.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
 
   // Start a new vocabulary check-up
   const startCheckUp = async (listId: number) => {
@@ -176,6 +176,20 @@ export default function LearnerDashboard() {
               <p className="mt-1 max-w-2xl text-sm text-gray-500">
                 Complete vocabulary check-ups, join classes, and review your flashcards.
               </p>
+              
+              {/* Search Bar */}
+              <div className="mt-6 max-w-md">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    type="text"
+                    placeholder="Search classes and checkup lists..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 pr-4 py-2 w-full"
+                  />
+                </div>
+              </div>
             </div>
             
             {/* Content */}
@@ -204,7 +218,7 @@ export default function LearnerDashboard() {
                           </CardTitle>
                           {vocabularyLists && vocabularyLists.length > 0 && (
                             (() => {
-                              const pendingCount = vocabularyLists.filter(list => 
+                              const pendingCount = filteredVocabularyLists.filter(list => 
                                 !list.submission || !list.submission.completed
                               ).length;
                               
@@ -220,11 +234,11 @@ export default function LearnerDashboard() {
                       <CardContent>
                         {listsLoading ? (
                           <div className="py-4 text-center text-sm text-gray-500">Loading check-ups...</div>
-                        ) : vocabularyLists && vocabularyLists.length > 0 && vocabularyLists.filter(list => 
+                        ) : filteredVocabularyLists && filteredVocabularyLists.length > 0 && filteredVocabularyLists.filter(list => 
                           !list.submission || !list.submission.completed
                         ).length > 0 ? (
                           <div className="space-y-2">
-                            {vocabularyLists
+                            {filteredVocabularyLists
                               .filter(list => !list.submission || !list.submission.completed)
                               .map(list => (
                                 <div 
@@ -356,7 +370,50 @@ export default function LearnerDashboard() {
                 </TabsContent>
                 
                 <TabsContent value="classes">
-                  <JoinClass />
+                  <div className="space-y-6">
+                    {/* Join Class Section */}
+                    <JoinClass />
+                    
+                    {/* My Classes Section with Search */}
+                    {filteredClasses.length > 0 && (
+                      <Card>
+                        <CardHeader className="bg-purple-500 p-4 pb-4 text-center text-white">
+                          <CardTitle className="flex items-center justify-center text-lg font-bold">
+                            <School className="mr-2 h-5 w-5" />
+                            My Classes
+                            <Badge variant="secondary" className="ml-3 bg-purple-600 text-white">
+                              {filteredClasses.length} classes
+                            </Badge>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-6">
+                          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                            {filteredClasses.map((cls) => (
+                              <Card key={cls.id} className="border hover:shadow-md transition-shadow">
+                                <CardHeader className="pb-3">
+                                  <CardTitle className="text-base font-semibold flex items-center">
+                                    <School className="mr-2 h-4 w-4 text-purple-500" />
+                                    {cls.name}
+                                  </CardTitle>
+                                  {cls.description && (
+                                    <CardDescription className="text-sm text-gray-600">
+                                      {cls.description}
+                                    </CardDescription>
+                                  )}
+                                </CardHeader>
+                                <CardContent className="pt-0">
+                                  <div className="flex items-center text-sm text-gray-500">
+                                    <Users className="mr-1 h-3 w-3" />
+                                    {cls.studentCount || 0} students
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
                 </TabsContent>
               </Tabs>
             </div>
