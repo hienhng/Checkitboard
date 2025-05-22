@@ -345,7 +345,10 @@ export function ClassManagement() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {classes?.map((cls: any) => (
                 <Card key={cls.id} className="overflow-hidden">
-                  <CardHeader className="bg-blue-500">
+                  <CardHeader className="bg-blue-500 overflow-hidden relative">
+  <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-blue-400/20 -mr-6 -mt-6 transform rotate-45"></div>
+  <div className="absolute bottom-0 left-0 w-16 h-16 rounded-full bg-blue-400/10 -ml-4 -mb-4"></div>
+  <div className="absolute top-1/2 right-1/4 w-12 h-12 rounded-lg bg-blue-400/15 transform rotate-12"></div>
                     <CardTitle className="flex justify-between items-center text-white">
                       <span>{cls.name}</span>
                     </CardTitle>
