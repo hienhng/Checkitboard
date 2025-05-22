@@ -19,21 +19,24 @@ import { Layout } from "@/components/layout";
 
 function Router() {
   return (
-    <Layout>
-      <Switch>
-        <Route path="/auth" component={AuthPage} />
+    <Switch>
+      <Route path="/auth" component={AuthPage} />
+      {/* Vocabulary checkup without layout/sidebar */}
+      <ProtectedRoute path="/learner/checkup/:id" component={VocabularyCheckup} />
+      
+      {/* All other routes with layout/sidebar */}
+      <Layout>
         <ProtectedRoute path="/" component={HomePage} />
         <ProtectedRoute path="/educator/dashboard" component={EducatorDashboard} />
         <ProtectedRoute path="/educator/statistics" component={EducatorStatisticsPage} />
         <ProtectedRoute path="/learner/dashboard" component={LearnerDashboard} />
-        <ProtectedRoute path="/learner/checkup/:id" component={VocabularyCheckup} />
         <ProtectedRoute path="/learner/vocabulary/:listId" component={VocabularyView} />
         <ProtectedRoute path="/learner/flashcards" component={FlashcardsPage} />
         <ProtectedRoute path="/learner/class/:classId" component={ClassListsPage} />
         <ProtectedRoute path="/learner/analysis" component={LearnerAnalysis} />
         <Route component={NotFound} />
-      </Switch>
-    </Layout>
+      </Layout>
+    </Switch>
   );
 }
 
