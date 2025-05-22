@@ -120,15 +120,17 @@ export default function LearnerDashboard() {
   });
 
   // Filter functions for search
-  const filteredVocabularyLists = vocabularyLists?.filter(list =>
-    list.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    list.educator?.name.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  const filteredVocabularyLists = vocabularyLists?.filter(list => {
+    if (!searchQuery) return true; // Show all when no search query
+    return list.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           (list.educator?.name && list.educator.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  }) || [];
 
-  const filteredClasses = classes?.filter(cls =>
-    cls.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    cls.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  const filteredClasses = classes?.filter(cls => {
+    if (!searchQuery) return true; // Show all when no search query
+    return cls.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           (cls.description && cls.description.toLowerCase().includes(searchQuery.toLowerCase()));
+  }) || [];
 
   // Start a new vocabulary check-up
   const startCheckUp = async (listId: number) => {
