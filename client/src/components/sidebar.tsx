@@ -82,13 +82,9 @@ export function Sidebar() {
       <div className="p-6">
         <Link to="/" className="flex items-center justify-center">
           <img 
-            src={import.meta.env.BASE_URL + "logo.png"}
+            src="/logo.png"
             alt="Checkit" 
             className="h-12 w-auto"
-            onError={(e) => {
-              e.currentTarget.onerror = null;
-              e.currentTarget.src = "/logo.png";
-            }}
           />
         </Link>
       </div>
