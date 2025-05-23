@@ -98,9 +98,9 @@ export default function FlashcardsPage() {
               <div>
                 
                 <h2> 
-                  <span className ="text-black font-modak text-5xl transition duration -300 ease-in-out hover:text-blue-500">checkit</span>
+                  <span className ="text-black font-modak text-5xl transition duration -100 ease-in-out hover:text-blue-500">checkit</span>
                   <span className= "text-black text-5xl"> better with</span>
-                  <span className="text-black text-5xl transition duration-300 ease-in-out hover:text-purple-500"> flashcards!</span>
+                  <span className="text-black text-5xl transition duration-100 ease-in-out hover:text-purple-500"> flashcards!</span>
                 </h2>
                 <p className="mt-1 max-w-2xl text-sm text-gray-500">
                   Practice vocabulary words to improve your retention.

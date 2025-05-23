@@ -178,7 +178,7 @@ export default function LearnerDashboard() {
           <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
             {/* Header */}
             <div className="px-4 py-5 sm:px-6">
-              <h2 className="text-5xl text-neutral-dark"> Wait a sec, <span className="text-black font-modak transition duration-300 ease-in-out hover:text-blue-500">checkit</span>
+              <h2 className="text-5xl text-neutral-dark"> Wait a sec, <span className="text-black font-modak transition duration-100 ease-in-out hover:text-blue-500">checkit</span>
                 <span className="text-black"> out!</span>
               </h2> 
               <p className="mt-1 max-w-2xl text-sm text-gray-500">
