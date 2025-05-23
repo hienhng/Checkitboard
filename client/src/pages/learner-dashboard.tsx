@@ -132,7 +132,7 @@ export default function LearnerDashboard() {
   const filteredClasses = classes?.filter(cls => {
     if (!searchQuery) return true; // Show all results when not searching
     const searchTerm = searchQuery?.toLowerCase() || '';
-    const name = cls?.name?.toLowerCase() || '';
+    const name = cls?.class?.name?.toLowerCase() || cls?.name?.toLowerCase() || '';
     const description = cls?.description?.toLowerCase() || '';
     return name.includes(searchTerm) || description.includes(searchTerm);
   }) || [];
