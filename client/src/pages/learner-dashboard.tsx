@@ -14,7 +14,8 @@ import {
   School,
   Eye,
   Brain,
-  Search
+  Search,
+  Users
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getQueryFn, apiRequest } from "@/lib/queryClient";
@@ -281,7 +282,7 @@ export default function LearnerDashboard() {
                         ) : results && results.length > 0 ? (
                           <div className="divide-y divide-gray-200">
                             {results.map(result => (
-                              <div key={result.id} className="py-4 flex items-center cursor-pointer hover:bg-blue-100 px-2 rounded-md transition-colors" onClick={() => setSelectedResult(result)}>
+                              <div key={result.id} className=" mt-4 py-4 flex items-center cursor-pointer hover:bg-blue-100 px-2 rounded-md transition-colors" onClick={() => setSelectedResult(result)}>
                                 <div className="h-10 w-10 flex-shrink-0 rounded-full bg-green-500 text-white flex items-center justify-center">
                                   <CheckCircle className="h-5 w-5" />
                                 </div>
@@ -298,7 +299,7 @@ export default function LearnerDashboard() {
                                       {result.wordDefinitions?.filter(d => d.isCorrect).length || 0}/
                                       {result.wordDefinitions?.length || 0} correct
                                     </p>
-                                    <Button variant="ghost" size="sm" className="gap-1 text-xs text-blue-600 h-6">
+                                    <Button size="sm" className="text-blue-600 hover:text-white bg-transparent hover:bg-blue-800 gap-1 text-xs h-6">
                                       <Eye className="h-3.5 w-3.5" /> View Details
                                     </Button>
                                   </div>
