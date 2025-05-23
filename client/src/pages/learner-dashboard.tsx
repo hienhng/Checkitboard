@@ -185,7 +185,7 @@ export default function LearnerDashboard() {
               </p>
               
               {/* Search Bar */}
-              <div className="mt-6 max-w-md">
+              <div className="mt-6 max-w-2xl">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
@@ -196,6 +196,79 @@ export default function LearnerDashboard() {
                     className="pl-10 pr-4 py-2 w-full"
                   />
                 </div>
+                
+                {/* Search Results */}
+                {searchQuery && (
+                  <div className="mt-4 bg-white rounded-lg border shadow-sm p-4 max-h-96 overflow-y-auto">
+                    <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                      <Search className="mr-2 h-4 w-4" />
+                      Search Results for "{searchQuery}"
+                    </h3>
+                    
+                    {/* Vocabulary Lists Results */}
+                    {filteredVocabularyLists.length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-2">
+                          Vocabulary Check-ups ({filteredVocabularyLists.filter(list => !list.submission || !list.submission.completed).length})
+                        </h4>
+                        <div className="space-y-2">
+                          {filteredVocabularyLists
+                            .filter(list => !list.submission || !list.submission.completed)
+                            .map(list => (
+                              <div 
+                                key={list.id} 
+                                className="flex justify-between items-center p-3 bg-blue-50 rounded-md cursor-pointer hover:bg-blue-100 transition-colors"
+                                onClick={() => startCheckUp(list.id)}
+                              >
+                                <div>
+                                  <p className="font-medium text-gray-900">{list.title}</p>
+                                  <p className="text-sm text-gray-500">
+                                    By: {list.educator?.name} • Due: {formatDueDate(list.dueDate)}
+                                  </p>
+                                </div>
+                                <ChevronRight className="h-4 w-4 text-gray-400" />
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Classes Results */}
+                    {filteredClasses.length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="text-xs font-semibold text-purple-600 uppercase tracking-wide mb-2">
+                          My Classes ({filteredClasses.length})
+                        </h4>
+                        <div className="space-y-2">
+                          {filteredClasses.map((cls) => (
+                            <div 
+                              key={cls.id} 
+                              className="p-3 bg-purple-50 rounded-md"
+                            >
+                              <p className="font-medium text-gray-900 flex items-center">
+                                <School className="mr-2 h-4 w-4 text-purple-500" />
+                                {cls.name}
+                              </p>
+                              {cls.description && (
+                                <p className="text-sm text-gray-500 mt-1">{cls.description}</p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* No Results Message */}
+                    {filteredVocabularyLists.filter(list => !list.submission || !list.submission.completed).length === 0 && 
+                     filteredClasses.length === 0 && (
+                      <div className="text-center py-6 text-gray-500">
+                        <Search className="mx-auto h-12 w-12 text-gray-300 mb-3" />
+                        <p className="text-sm">No results found for "{searchQuery}"</p>
+                        <p className="text-xs text-gray-400 mt-1">Try searching for class names, vocabulary lists, or educator names</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
             
