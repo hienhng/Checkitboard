@@ -82,7 +82,7 @@ export function Sidebar() {
       <div className="p-6">
         <Link to="/" className="flex items-center justify-center">
           
-          <span className="text-4xl text-primary font-modak">Checkit</span>
+          <span className="text-4xl text-primary font-modak">checkit</span>
         </Link>
       </div>
 

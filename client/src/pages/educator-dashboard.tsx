@@ -108,7 +108,8 @@ export default function EducatorDashboard() {
           <div className="px-4 py-5 sm:px-6">
             <div className="flex justify-between items-center">
               <div>
-                <h2 className="text-5xl font-bold text-neutral-dark"> Welcome to <span className="text-black transition duration-300 ease-in-out hover:text-blue-500">Checkit</span>
+                <h2 className="text-5xl text-neutral-dark"> Ready to <span className="text-black font-modak transition duration-300 ease-in-out hover:text-blue-500">checkit</span>
+                    <span className="text-black transition duration-300 ease-in-out hover:text-blue-500">?</span>
                 </h2>
                 
                 <p className="mt-1 max-w-2xl text-sm text-gray-500">

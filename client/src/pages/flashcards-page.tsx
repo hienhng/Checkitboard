@@ -97,7 +97,11 @@ export default function FlashcardsPage() {
             <div className="flex items-center justify-between">
               <div>
                 
-                <h2 className="text-5xl font-bold text-neutral-dark">My <span className="text-black transition duration-300 ease-in-out hover:text-purple-500">Flashcards</span></h2>
+                <h2> 
+                  <span className ="text-black font-modak text-5xl transition duration -300 ease-in-out hover:text-blue-500">checkit</span>
+                  <span className= "text-black text-5xl"> better with</span>
+                  <span className="text-black text-5xl transition duration-300 ease-in-out hover:text-purple-500"> flashcards!</span>
+                </h2>
                 <p className="mt-1 max-w-2xl text-sm text-gray-500">
                   Practice vocabulary words to improve your retention.
                 </p>

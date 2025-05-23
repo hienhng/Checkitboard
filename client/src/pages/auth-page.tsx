@@ -23,7 +23,7 @@ export default function AuthPage() {
         <Card className="w-full max-w-md card-shadow rounded-xl border-0">
           <CardContent className="pt-8 px-6">
             <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-primary">Checkit</h1>
+              <h1 className="text-5xl font-modak text-primary">checkit</h1>
               <p className="mt-2 text-sm text-gray-600">Sign in or create a new account</p>
             </div>
 
@@ -50,7 +50,7 @@ export default function AuthPage() {
             Vocabulary Learning Made Simple
           </h2>
           <p className="text-lg mb-8">
-            Checkit is a powerful platform that helps educators create, assess, and reinforce vocabulary learning through reading passages.
+            <span className = "font-modak text-white">checkit</span> is a powerful platform that helps educators create, assess, and reinforce vocabulary learning through reading passages.
           </p>
           <div className="space-y-8">
             <div className="flex items-start space-x-5">
