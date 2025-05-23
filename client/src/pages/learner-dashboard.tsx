@@ -131,8 +131,10 @@ export default function LearnerDashboard() {
 
   const filteredClasses = classes?.filter(cls => {
     if (!searchQuery) return true; // Show all when no search query
-    return cls.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-           (cls.description && cls.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    const searchTerm = searchQuery?.toLowerCase() || '';
+    const name = cls?.name?.toLowerCase() || '';
+    const description = cls?.description?.toLowerCase() || '';
+    return name.includes(searchTerm) || description.includes(searchTerm);
   }) || [];
 
   // Start a new vocabulary check-up
