@@ -82,7 +82,7 @@ export function Sidebar() {
       <div className="p-6">
         <Link to="/" className="flex items-center justify-center">
           <GraduationCap className="h-8 w-8 text-primary mr-2" />
-          <span className="text-2xl font-bold text-primary">Checkit</span>
+          <span className="text-2xl font-bold text-primary font-modak">Checkit</span>
         </Link>
       </div>
 
