@@ -81,11 +81,8 @@ export function Sidebar() {
       {/* Logo */}
       <div className="p-6">
         <Link to="/" className="flex items-center justify-center">
-          <img 
-            src="checkitlogo.png"
-            alt="Checkit" 
-            className="h-12 w-auto"
-          />
+          <GraduationCap className="h-8 w-8 text-primary mr-2" />
+          <span className="text-2xl font-bold text-primary">Checkit</span>
         </Link>
       </div>
 
