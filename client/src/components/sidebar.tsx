@@ -82,7 +82,7 @@ export function Sidebar() {
       <div className="p-6">
         <Link to="/" className="flex items-center justify-center">
           <img 
-            src="/attached_assets/Checkit-5-23-2025.png" 
+            src="/logo.png" 
             alt="Checkit" 
             className="h-12 w-auto"
           />
