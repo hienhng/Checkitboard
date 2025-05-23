@@ -122,7 +122,7 @@ export default function LearnerDashboard() {
 
   // Filter functions for search
   const filteredVocabularyLists = vocabularyLists?.filter(list => {
-    if (!searchQuery) return true; // Show all when no search query
+    if (!searchQuery) return false; // Only show results when searching
     const searchTerm = searchQuery?.toLowerCase() || '';
     const title = list?.title?.toLowerCase() || '';
     const educatorName = list?.educator?.name?.toLowerCase() || '';
@@ -130,9 +130,9 @@ export default function LearnerDashboard() {
   }) || [];
 
   const filteredClasses = classes?.filter(cls => {
-    if (!searchQuery) return true; // Show all when no search query
+    if (!searchQuery) return false; // Only show results when searching
     const searchTerm = searchQuery?.toLowerCase() || '';
-    const name = cls?.name?.toLowerCase() || '';
+    const name = cls?.class?.name?.toLowerCase() || cls?.name?.toLowerCase() || '';
     const description = cls?.description?.toLowerCase() || '';
     return name.includes(searchTerm) || description.includes(searchTerm);
   }) || [];
@@ -185,7 +185,7 @@ export default function LearnerDashboard() {
               </p>
               
               {/* Search Bar */}
-              <div className="mt-6 max-w-2xl">
+              <div className="mt-6 max-w-2xl relative">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
@@ -197,9 +197,9 @@ export default function LearnerDashboard() {
                   />
                 </div>
                 
-                {/* Search Results */}
+                {/* Search Results Overlay */}
                 {searchQuery && (
-                  <div className="mt-4 bg-white rounded-lg border shadow-sm p-4 max-h-96 overflow-y-auto">
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg border shadow-lg p-4 max-h-64 overflow-y-auto z-50">
                     <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
                       <Search className="mr-2 h-4 w-4" />
                       Search Results for "{searchQuery}"
