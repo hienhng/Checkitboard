@@ -130,7 +130,7 @@ export default function LearnerDashboard() {
   }) || [];
 
   const filteredClasses = classes?.filter(cls => {
-    if (!searchQuery) return false; // Only show results when searching
+    if (!searchQuery) return true; // Show all results when not searching
     const searchTerm = searchQuery?.toLowerCase() || '';
     const name = cls?.class?.name?.toLowerCase() || cls?.name?.toLowerCase() || '';
     const description = cls?.description?.toLowerCase() || '';
