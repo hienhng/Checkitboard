@@ -123,8 +123,10 @@ export default function LearnerDashboard() {
   // Filter functions for search
   const filteredVocabularyLists = vocabularyLists?.filter(list => {
     if (!searchQuery) return true; // Show all when no search query
-    return list.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-           (list.educator?.name && list.educator.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    const searchTerm = searchQuery?.toLowerCase() || '';
+    const title = list?.title?.toLowerCase() || '';
+    const educatorName = list?.educator?.name?.toLowerCase() || '';
+    return title.includes(searchTerm) || educatorName.includes(searchTerm);
   }) || [];
 
   const filteredClasses = classes?.filter(cls => {
