@@ -122,7 +122,7 @@ export default function LearnerDashboard() {
 
   // Filter functions for search
   const filteredVocabularyLists = vocabularyLists?.filter(list => {
-    if (!searchQuery) return false; // Only show results when searching
+    if (!searchQuery) return true; // Show all results when not searching
     const searchTerm = searchQuery?.toLowerCase() || '';
     const title = list?.title?.toLowerCase() || '';
     const educatorName = list?.educator?.name?.toLowerCase() || '';
