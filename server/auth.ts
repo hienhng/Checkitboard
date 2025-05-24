@@ -98,14 +98,35 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ message: "Email already in use" });
       }
 
-      // Create new user with hashed password
+      // Create new user with hashed password and email verification
       const hashedPassword = await hashPassword(password);
+      const { generateVerificationToken, sendVerificationEmail } = await import("./email-verification");
+      
+      const verificationToken = generateVerificationToken();
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      
       const user = await storage.createUser({
         email,
         password: hashedPassword,
         name,
         role,
+        emailVerified: false,
+        emailVerificationToken: verificationToken,
+        emailVerificationExpires: expiresAt,
       });
+
+      // Send verification email
+      try {
+        await sendVerificationEmail({
+          email: user.email,
+          name: user.name,
+          verificationToken,
+        });
+        console.log(`Verification email sent to ${user.email}`);
+      } catch (emailError) {
+        console.error("Error sending verification email:", emailError);
+        // Continue with registration even if email fails
+      }
 
       // Log the user in
       req.login(user, (err) => {
