@@ -59,7 +59,7 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
   // Fetch fullscreen exit events for this submission
   const { data: fullscreenExits = [], isLoading: isLoadingExits } = useQuery({
     queryKey: [`/api/submissions/${submissionId}/fullscreen-exits`],
-    queryFn: getQueryFn(),
+    queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!submissionId,
   });
 
