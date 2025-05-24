@@ -584,6 +584,12 @@ export function SettingsPage() {
                           >
                             giahienhn@gmail.com
                           </a>
+                          <a
+                            href="https://www.facebook.com/hn.giahien/"
+                            className = "text-blue-600 hover:underline"
+                           >Facebook profile
+                          </a> 
+                          
                         </div>
                         <div className="flex items-center gap-2">
                           <Phone className="h-4 w-4" />
