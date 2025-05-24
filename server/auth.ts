@@ -117,14 +117,16 @@ export function setupAuth(app: Express) {
 
       // Send verification email
       try {
+        console.log(`Attempting to send verification email to ${user.email}`);
         await sendVerificationEmail({
           email: user.email,
           name: user.name,
           verificationToken,
         });
-        console.log(`Verification email sent to ${user.email}`);
+        console.log(`Verification email sent successfully to ${user.email}`);
       } catch (emailError) {
         console.error("Error sending verification email:", emailError);
+        console.error("Email error details:", emailError.message);
         // Continue with registration even if email fails
       }
 
