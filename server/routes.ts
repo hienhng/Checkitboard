@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { sendParentEmail } from "./email";
+import { sendVerificationEmail, sendWelcomeEmail, generateVerificationToken } from "./email-verification";
 import { 
   isHuggingFaceConfigured as isAIConfigured, 
   generateDefinitions,
@@ -2049,6 +2050,138 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // #endregion
+
+  // #region Email Verification Routes
+
+  // Verify email endpoint
+  app.get("/api/verify-email", async (req, res) => {
+    try {
+      const { token } = req.query;
+      
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({ message: "Invalid verification token" });
+      }
+
+      // Find user by verification token
+      const user = await storage.getUserByVerificationToken(token);
+      
+      if (!user) {
+        return res.status(400).json({ message: "Invalid or expired verification token" });
+      }
+
+      // Check if token is expired (24 hours)
+      if (user.emailVerificationExpires && new Date() > user.emailVerificationExpires) {
+        return res.status(400).json({ message: "Verification token has expired" });
+      }
+
+      // Update user to verified
+      await storage.updateUserVerification(user.id, {
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+      });
+
+      // Send welcome email
+      try {
+        await sendWelcomeEmail({
+          email: user.email,
+          name: user.name,
+          role: user.role as 'educator' | 'learner',
+        });
+      } catch (emailError) {
+        console.error("Error sending welcome email:", emailError);
+        // Don't fail verification if welcome email fails
+      }
+
+      res.json({ 
+        message: "Email verified successfully! Welcome to Checkit!",
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          emailVerified: true,
+        }
+      });
+    } catch (error) {
+      console.error("Error verifying email:", error);
+      res.status(500).json({ message: "Error verifying email" });
+    }
+  });
+
+  // Resend verification email
+  app.post("/api/resend-verification", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      if (user.emailVerified) {
+        return res.status(400).json({ message: "Email is already verified" });
+      }
+
+      // Generate new verification token
+      const verificationToken = generateVerificationToken();
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+      // Update user with new token
+      await storage.updateUserVerification(user.id, {
+        emailVerificationToken: verificationToken,
+        emailVerificationExpires: expiresAt,
+      });
+
+      // Send verification email
+      await sendVerificationEmail({
+        email: user.email,
+        name: user.name,
+        verificationToken,
+      });
+
+      res.json({ message: "Verification email sent successfully" });
+    } catch (error) {
+      console.error("Error resending verification email:", error);
+      if (error instanceof Error && error.message.includes('Email service not configured')) {
+        res.status(503).json({ message: "Email service is not configured. Please contact support." });
+      } else {
+        res.status(500).json({ message: "Error sending verification email" });
+      }
+    }
+  });
+
+  // Check email verification status
+  app.get("/api/email-verification-status", async (req, res) => {
+    try {
+      const { email } = req.query;
+      
+      if (!email || typeof email !== 'string') {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json({ 
+        emailVerified: user.emailVerified,
+        email: user.email,
+      });
+    } catch (error) {
+      console.error("Error checking verification status:", error);
+      res.status(500).json({ message: "Error checking verification status" });
+    }
+  });
+
   // #endregion
 
   const httpServer = createServer(app);
