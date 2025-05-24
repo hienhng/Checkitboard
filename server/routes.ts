@@ -2335,6 +2335,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // #endregion
 
+  // Test email endpoint
+  app.post("/api/test-email", async (req, res) => {
+    try {
+      const nodemailer = await import("nodemailer");
+      
+      const transporter = nodemailer.createTransporter({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_APP_PASSWORD,
+        },
+      });
+
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: req.body.email || 'checkitdev1@gmail.com',
+        subject: 'Checkit Email Test',
+        html: '<h1>Email Test Successful!</h1><p>Your Gmail configuration is working properly.</p>',
+      });
+
+      res.json({ message: "Test email sent successfully!" });
+    } catch (error) {
+      console.error("Email test failed:", error);
+      res.status(500).json({ message: "Email test failed", error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

@@ -38,7 +38,14 @@ function createTransporter() {
     });
   }
   
-  throw new Error('Email service not configured. Please provide email credentials.');
+  // Fallback to direct Gmail configuration
+  return nodemailer.createTransporter({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_APP_PASSWORD,
+    },
+  });
 }
 
 /**
