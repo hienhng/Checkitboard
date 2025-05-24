@@ -10,6 +10,9 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   role: text("role", { enum: ["educator", "learner"] }).notNull(),
   name: text("name").notNull(),
+  emailVerified: boolean("email_verified").default(false).notNull(),
+  emailVerificationToken: text("email_verification_token"),
+  emailVerificationExpires: timestamp("email_verification_expires"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -45,8 +45,33 @@ export class DatabaseStorage {
       email: users.email,
       name: users.name,
       role: users.role,
+      emailVerified: users.emailVerified,
       createdAt: users.createdAt,
     });
+    return user;
+  }
+
+  async getUserByVerificationToken(token: string) {
+    return await db.query.users.findFirst({
+      where: eq(users.emailVerificationToken, token),
+    });
+  }
+
+  async updateUserVerification(id: number, data: { 
+    emailVerified?: boolean; 
+    emailVerificationToken?: string | null; 
+    emailVerificationExpires?: Date | null;
+  }) {
+    const [user] = await db.update(users)
+      .set(data)
+      .where(eq(users.id, id))
+      .returning({
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        role: users.role,
+        emailVerified: users.emailVerified,
+      });
     return user;
   }
 
