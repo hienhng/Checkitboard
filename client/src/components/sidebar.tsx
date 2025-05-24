@@ -55,9 +55,10 @@ export function Sidebar() {
 
   // Get user initials for avatar
   const getInitials = (name: string) => {
+    if (!name) return '';
     return name
       .split(' ')
-      .map(part => part[0])
+      .map(part => part?.[0] || '')
       .join('')
       .toUpperCase()
       .slice(0, 2);
