@@ -11,6 +11,9 @@ interface EmailVerificationParams {
  * Creates a Nodemailer transporter using environment variables
  */
 function createTransporter() {
+  console.log('EMAIL_USER:', process.env.EMAIL_USER);
+  console.log('EMAIL_APP_PASSWORD:', process.env.EMAIL_APP_PASSWORD ? 'Set' : 'Not set');
+  
   // Check if Gmail credentials are provided
   if (process.env.EMAIL_USER && process.env.EMAIL_APP_PASSWORD) {
     return nodemailer.createTransport({
