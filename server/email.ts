@@ -1,3 +1,4 @@
+
 import { createTransport } from "nodemailer";
 
 interface ParentEmailParams {
@@ -8,9 +9,76 @@ interface ParentEmailParams {
   listTitle: string;
 }
 
+interface VerificationEmailParams {
+  email: string;
+  token: string;
+  name: string;
+}
+
 /**
- * Sends an email to a parent with their child's vocabulary check-up results
+ * Sends an email verification link to a newly registered user
  */
+export async function sendVerificationEmail({
+  email,
+  token,
+  name,
+}: VerificationEmailParams): Promise<void> {
+  try {
+    const transporter = createTransport({
+      host: process.env.EMAIL_HOST,
+      port: parseInt(process.env.EMAIL_PORT || '587'),
+      secure: process.env.EMAIL_SECURE === 'true',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASSWORD,
+      },
+    });
+
+    const verificationLink = `${process.env.APP_URL}/verify-email?token=${token}`;
+
+    const mailOptions = {
+      from: process.env.EMAIL_FROM,
+      to: email,
+      subject: 'Verify Your Email Address',
+      html: generateVerificationEmailTemplate({
+        name,
+        verificationLink,
+      }),
+    };
+
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error("Error sending verification email:", error);
+    throw error;
+  }
+}
+
+function generateVerificationEmailTemplate({
+  name,
+  verificationLink,
+}: {
+  name: string;
+  verificationLink: string;
+}): string {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <h1 style="color: #3B82F6;">Welcome to VocabCheckUp!</h1>
+      <p>Hello ${name},</p>
+      <p>Thank you for registering. Please verify your email address by clicking the button below:</p>
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${verificationLink}" 
+           style="background-color: #3B82F6; color: white; padding: 12px 24px; 
+                  text-decoration: none; border-radius: 4px; display: inline-block;">
+          Verify Email Address
+        </a>
+      </div>
+      <p style="color: #666;">If the button doesn't work, copy and paste this link into your browser:</p>
+      <p style="color: #666; word-break: break-all;">${verificationLink}</p>
+    </div>
+  `;
+}
+
+// Existing parent email functions...
 export async function sendParentEmail({
   parentEmail,
   studentName,
@@ -19,14 +87,6 @@ export async function sendParentEmail({
   listTitle,
 }: ParentEmailParams): Promise<void> {
   try {
-    // In a production environment, we would use environment variables for this
-    // For demo purposes, we're simulating the email sending
-    console.log(`Sending email to ${parentEmail} about ${studentName}'s vocabulary check-up results`);
-    console.log(`Score: ${score}%`);
-    console.log(`Incorrect words: ${incorrectWords.join(', ')}`);
-    
-    // For actual implementation, uncomment this code and set up environment variables:
-    /*
     const transporter = createTransport({
       host: process.env.EMAIL_HOST,
       port: parseInt(process.env.EMAIL_PORT || '587'),
@@ -50,10 +110,9 @@ export async function sendParentEmail({
     };
 
     await transporter.sendMail(mailOptions);
-    */
   } catch (error) {
     console.error("Error sending parent email:", error);
-    // Don't throw - we don't want to break the app if email sending fails
+    throw error;
   }
 }
 
@@ -63,9 +122,9 @@ function generateEmailTemplate({
   incorrectWords,
   listTitle,
 }: Omit<ParentEmailParams, 'parentEmail'>): string {
-  let scoreColor = '#10B981'; // Green for good scores
-  if (score < 70) scoreColor = '#F59E0B'; // Yellow for average scores
-  if (score < 60) scoreColor = '#EF4444'; // Red for low scores
+  let scoreColor = '#10B981';
+  if (score < 70) scoreColor = '#F59E0B';
+  if (score < 60) scoreColor = '#EF4444';
 
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">

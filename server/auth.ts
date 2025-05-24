@@ -6,6 +6,8 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User } from "@shared/schema";
+import crypto from "crypto"; // Import the crypto module
+import { sendVerificationEmail } from "./email"; // Import sendVerificationEmail
 
 declare global {
   namespace Express {
@@ -16,6 +18,8 @@ declare global {
       name: string;
       role: string;
       createdAt?: Date;
+      verificationToken?: string; // Add verificationToken
+      verified?: boolean; // Add verified field
     }
   }
 }
@@ -91,30 +95,77 @@ export function setupAuth(app: Express) {
   app.post("/api/register", async (req, res, next) => {
     try {
       const { email, password, name, role } = req.body;
-      
+
       // Check if email already exists
       const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {
         return res.status(400).json({ message: "Email already in use" });
       }
 
-      // Create new user with hashed password
+      // Generate verification token
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+
+      // Create new user with hashed password and verification token
       const hashedPassword = await hashPassword(password);
       const user = await storage.createUser({
         email,
         password: hashedPassword,
         name,
         role,
+        verificationToken,
+        verified: false
       });
 
-      // Log the user in
-      req.login(user, (err) => {
-        if (err) return next(err);
-        return res.status(201).json(user);
+      // Send verification email
+      try {
+        await sendVerificationEmail({
+          email,
+          token: verificationToken,
+          name
+        });
+      } catch (emailError) {
+        console.error("Failed to send verification email:", emailError);
+        // Continue registration process even if email fails
+      }
+
+      // Don't log in until email is verified
+      res.status(201).json({ 
+        message: "Registration successful. Please check your email to verify your account.",
+        email 
       });
     } catch (error: any) {
       console.error("Registration error:", error);
       res.status(500).json({ message: error.message || "Error during registration" });
+    }
+  });
+
+  // Email verification endpoint
+  app.get("/api/verify-email", async (req, res) => {
+    try {
+      const { token } = req.query;
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({ message: "Invalid verification token" });
+      }
+
+      const user = await storage.getUserByVerificationToken(token);
+      if (!user) {
+        return res.status(404).json({ message: "Invalid or expired verification token" });
+      }
+
+      // Mark user as verified
+      await storage.verifyUser(user.id);
+
+      // Log the user in
+      req.login(user, (err) => {
+        if (err) {
+          console.error("Login error after verification:", err);
+          return res.redirect('/auth?verified=true&login=failed');
+        }
+        res.redirect('/dashboard?verified=true');
+      });
+    } catch (error) {
+      console.error("Verification error:", error);
+      res.status(500).json({ message: "Error verifying email" });
     }
   });
 
