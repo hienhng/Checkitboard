@@ -15,6 +15,7 @@ import FlashcardsPage from "@/pages/flashcards-page";
 import ClassListsPage from "@/pages/class-lists-page";
 import LearnerAnalysis from "@/pages/learner-analysis";
 import EducatorStatisticsPage from "@/pages/educator-statistics-page";
+import { SettingsPage } from "@/pages/settings";
 import { Layout } from "@/components/layout";
 
 function Router() {
@@ -34,6 +35,7 @@ function Router() {
         <ProtectedRoute path="/learner/flashcards" component={FlashcardsPage} />
         <ProtectedRoute path="/learner/class/:classId" component={ClassListsPage} />
         <ProtectedRoute path="/learner/analysis" component={LearnerAnalysis} />
+        <ProtectedRoute path="/settings" component={SettingsPage} />
         <Route component={NotFound} />
       </Layout>
     </Switch>

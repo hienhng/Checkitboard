@@ -2184,6 +2184,157 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // #endregion
 
+  // #region Settings Routes
+
+  // Update user profile
+  app.patch("/api/user/profile", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const schema = z.object({
+        name: z.string().min(2, "Name must be at least 2 characters"),
+      });
+
+      const validatedData = schema.parse(req.body);
+
+      // Update user profile
+      await db.update(users)
+        .set({ name: validatedData.name })
+        .where(eq(users.id, req.user.id));
+
+      // Get updated user data
+      const updatedUser = await storage.getUser(req.user.id);
+
+      res.json({
+        id: updatedUser.id,
+        email: updatedUser.email,
+        name: updatedUser.name,
+        role: updatedUser.role,
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+      console.error("Error updating profile:", error);
+      res.status(500).json({ message: "Error updating profile" });
+    }
+  });
+
+  // Change password
+  app.patch("/api/user/password", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const schema = z.object({
+        currentPassword: z.string().min(1, "Current password is required"),
+        newPassword: z.string().min(6, "New password must be at least 6 characters"),
+      });
+
+      const validatedData = schema.parse(req.body);
+
+      // Get current user data
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Verify current password
+      const bcrypt = await import("bcrypt");
+      const isCurrentPasswordValid = await bcrypt.compare(validatedData.currentPassword, user.password);
+      
+      if (!isCurrentPasswordValid) {
+        return res.status(400).json({ message: "Current password is incorrect" });
+      }
+
+      // Hash new password
+      const hashedNewPassword = await bcrypt.hash(validatedData.newPassword, 10);
+
+      // Update password
+      await db.update(users)
+        .set({ password: hashedNewPassword })
+        .where(eq(users.id, req.user.id));
+
+      res.json({ message: "Password updated successfully" });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+      console.error("Error changing password:", error);
+      res.status(500).json({ message: "Error changing password" });
+    }
+  });
+
+  // Send help/contact message
+  app.post("/api/help/contact", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const schema = z.object({
+        subject: z.string().min(5, "Subject must be at least 5 characters"),
+        message: z.string().min(20, "Message must be at least 20 characters"),
+      });
+
+      const validatedData = schema.parse(req.body);
+
+      // Create email content
+      const emailContent = `
+        <h2>New Support Request from Checkit</h2>
+        <p><strong>From:</strong> ${req.user.name} (${req.user.email})</p>
+        <p><strong>Role:</strong> ${req.user.role}</p>
+        <p><strong>User ID:</strong> ${req.user.id}</p>
+        <p><strong>Subject:</strong> ${validatedData.subject}</p>
+        <h3>Message:</h3>
+        <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 10px 0;">
+          ${validatedData.message.replace(/\n/g, '<br>')}
+        </div>
+        <hr>
+        <p><small>This message was sent from the Checkit platform on ${new Date().toLocaleString()}.</small></p>
+      `;
+
+      // Send email using Nodemailer
+      const nodemailer = await import("nodemailer");
+      
+      const transporter = nodemailer.createTransporter({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_APP_PASSWORD,
+        },
+      });
+
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: 'giahienhn@gmail.com',
+        subject: `Checkit Support: ${validatedData.subject}`,
+        html: emailContent,
+        replyTo: req.user.email,
+      });
+
+      res.json({ message: "Your message has been sent successfully. We'll get back to you soon!" });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+      console.error("Error sending help message:", error);
+      
+      if (error instanceof Error && error.message.includes('Invalid login')) {
+        res.status(503).json({ 
+          message: "Email service is not configured. Please try again later or contact support directly at giahienhn@gmail.com" 
+        });
+      } else {
+        res.status(500).json({ message: "Error sending message. Please try again later." });
+      }
+    }
+  });
+
+  // #endregion
+
   const httpServer = createServer(app);
 
   return httpServer;
