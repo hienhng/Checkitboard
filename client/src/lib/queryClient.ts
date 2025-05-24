@@ -32,7 +32,6 @@ export const getQueryFn: <T>(options: {
     const res = await fetch(queryKey[0] as string, {
       credentials: "include",
     });
-    });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
       return null;
