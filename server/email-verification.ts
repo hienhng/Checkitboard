@@ -12,7 +12,7 @@ interface EmailVerificationParams {
  */
 function createTransporter() {
   // Check if Gmail credentials are provided
-  if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
+  if (process.env.EMAIL_USER && process.env.EMAIL_APP_PASSWORD) {
     return nodemailer.createTransport({
       service: 'gmail',
       auth: {
