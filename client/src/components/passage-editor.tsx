@@ -54,16 +54,16 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
     return undefined;
   };
 
-  // Schema for form validation
+  // Schema for form validation - now requiring at least one class
   const formSchema = z.object({
-    classId: z.number().nullable(),
+    classIds: z.array(z.number()).min(1, "At least one class must be selected"),
   });
 
   // Form for class selection
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      classId: null,
+      classIds: [],
     }
   });
 
@@ -74,7 +74,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
     words: string[];
     dueDate?: Date;
     published?: boolean;
-    classId?: number | null;
+    classIds: number[];
   };
 
   // Mutation to create a new vocabulary list
@@ -226,7 +226,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
     setSelectedWords([]);
   };
 
-  const handleSaveDraft = () => {
+  const handleSaveDraft = async () => {
     if (!title || !passage ||  selectedWords.length === 0) {
       toast({
         title: "Incomplete list",
@@ -239,19 +239,30 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
     // Parse the due date using our helper function
     const dueDateObj = parseDateSafely(dueDate);
 
-    // Get the class ID from the form
-    const { classId } = form.getValues();
+    // Validate class selection
+    const result = await form.trigger("classIds");
+    if (!result) {
+      toast({
+        title: "Class selection required",
+        description: "Please select at least one class to assign this vocabulary list.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Get the class IDs from the form
+    const { classIds } = form.getValues();
 
     createListMutation.mutate({
       title,
       passage,
       words: selectedWords,
       dueDate: dueDateObj,
-      classId: classId
+      classIds: classIds
     });
   };
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     if (!title || !passage ||selectedWords.length === 0) {
       toast({
         title: "Incomplete list",
@@ -261,18 +272,29 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
       return;
     }
 
+    // Validate class selection
+    const result = await form.trigger("classIds");
+    if (!result) {
+      toast({
+        title: "Class selection required",
+        description: "Please select at least one class to assign this vocabulary list.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Parse the due date using our helper function
     const dueDateObj = parseDateSafely(dueDate);
 
-    // Get the class ID from the form
-    const { classId } = form.getValues();
+    // Get the class IDs from the form
+    const { classIds } = form.getValues();
 
     createListMutation.mutate({
       title,
       passage,
       words: selectedWords,
       dueDate: dueDateObj,
-      classId: classId,
+      classIds: classIds,
       published: true
     });
   };
@@ -311,9 +333,10 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
 
           <ClassSelect
             formControl={form.control}
-            name="classId"
-            label="Assign to ..."
-            description="Assign this vocabulary list to a specific class."
+            name="classIds"
+            label="Assign to Classes *"
+            description="Select one or more classes to assign this vocabulary list."
+            multiple={true}
           />
 
           <Tabs defaultValue="passage-to-words" className="w-full">

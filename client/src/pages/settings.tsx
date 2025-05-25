@@ -455,10 +455,10 @@ export function SettingsPage() {
             <div className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardDescription className="text-3xl text-black flex items-center gap-2">
                     <HelpCircle className="h-5 w-5" />
-                    How to Use Checkit
-                  </CardTitle>
+                    How to Use <span className = "font-modak mt-2">checkit</span>
+                  </CardDescription>
                   <CardDescription>
                     Learn the basics of using our vocabulary learning platform
                   </CardDescription>
@@ -549,7 +549,7 @@ export function SettingsPage() {
           <TabsContent value="info">
             <Card>
               <CardHeader>
-                <CardTitle>About Checkit</CardTitle>
+                <CardDescription className ="text-3xl text-black">About <span className = "font-modak">checkit</span></CardDescription>
                 <CardDescription>
                   Information about the platform and developer
                 </CardDescription>
@@ -630,7 +630,7 @@ export function SettingsPage() {
 
                 <div className="text-center py-4">
                   <p className="text-sm text-neutral-medium">
-                    Thank you for using Checkit! We're committed to making vocabulary learning 
+                    Thank you for using <span className = "font-modak">checkit</span>! We're committed to making vocabulary learning 
                     engaging and effective for educators and students alike.
                   </p>
                 </div>

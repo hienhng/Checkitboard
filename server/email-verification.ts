@@ -81,7 +81,7 @@ function generateVerificationEmailTemplate({
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Verify Your Email - Checkit</title>
       <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        body { font-family: alacad, sans-serif; line-height: 1.6; color: #333; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
         .header { background: #3b82f6; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
         .content { background: #f8fafc; padding: 30px; border-radius: 0 0 8px 8px; }
@@ -92,7 +92,7 @@ function generateVerificationEmailTemplate({
     <body>
       <div class="container">
         <div class="header">
-          <h1>🎓 Welcome to Checkit!</h1>
+          <h1>🎓 Welcome to <span className="font-modak"> Checkit!</span></h1>
         </div>
         <div class="content">
           <h2>Hi ${name}!</h2>
