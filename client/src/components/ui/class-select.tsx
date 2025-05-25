@@ -18,10 +18,25 @@ import {
 } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
 import { 
   HelpCircle,
   Info,
-  X
+  X,
+  Check,
+  ChevronsUpDown
 } from "lucide-react";
 import {
   Tooltip,
@@ -30,6 +45,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Control } from "react-hook-form";
+import { cn } from "@/lib/utils";
 
 interface ClassSelectProps {
   formControl: Control<any>;
@@ -66,87 +82,110 @@ export function ClassSelect({
       <FormField
         control={formControl}
         name={name}
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel className="flex items-center">
-              {label}
-              {!required && (
-                <span className="ml-1 text-muted-foreground">(Optional)</span>
-              )}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-4 w-4 ml-1 text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    <p>
-                      Select one or more classes to assign this vocabulary list.
-                      Students will only see lists assigned to their classes.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </FormLabel>
-            <FormControl>
-              <div className="space-y-3">
-                {/* Selected classes display */}
-                {field.value && field.value.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {field.value.map((classId: number) => {
-                      const selectedClass = classes.find((cls: any) => cls.id === classId);
-                      return selectedClass ? (
-                        <Badge key={classId} variant="secondary" className="flex items-center gap-1">
-                          {selectedClass.name}
-                          <X 
-                            className="h-3 w-3 cursor-pointer" 
-                            onClick={() => {
-                              const newValue = field.value.filter((id: number) => id !== classId);
-                              field.onChange(newValue);
-                            }}
-                          />
-                        </Badge>
-                      ) : null;
-                    })}
-                  </div>
+        render={({ field }) => {
+          const [open, setOpen] = useState(false);
+          const selectedClasses = field.value || [];
+          
+          return (
+            <FormItem>
+              <FormLabel className="flex items-center">
+                {label}
+                {!required && (
+                  <span className="ml-1 text-muted-foreground">(Optional)</span>
                 )}
-                
-                {/* Class selection checkboxes */}
-                <div className="border rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
-                  {isLoading ? (
-                    <p className="text-sm text-muted-foreground">Loading classes...</p>
-                  ) : classes.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No classes available</p>
-                  ) : (
-                    classes.map((cls: any) => (
-                      <div key={cls.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`class-${cls.id}`}
-                          checked={field.value?.includes(cls.id) || false}
-                          onCheckedChange={(checked) => {
-                            const currentValue = field.value || [];
-                            if (checked) {
-                              field.onChange([...currentValue, cls.id]);
-                            } else {
-                              field.onChange(currentValue.filter((id: number) => id !== cls.id));
-                            }
-                          }}
-                        />
-                        <label 
-                          htmlFor={`class-${cls.id}`}
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                        >
-                          {cls.name}
-                        </label>
-                      </div>
-                    ))
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 ml-1 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p>
+                        Select one or more classes to assign this vocabulary list.
+                        Students will only see lists assigned to their classes.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </FormLabel>
+              <FormControl>
+                <div className="space-y-2">
+                  {/* Selected classes display */}
+                  {selectedClasses.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedClasses.map((classId: number) => {
+                        const selectedClass = classes.find((cls: any) => cls.id === classId);
+                        return selectedClass ? (
+                          <Badge key={classId} variant="secondary" className="flex items-center gap-1">
+                            {selectedClass.name}
+                            <X 
+                              className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                              onClick={() => {
+                                const newValue = selectedClasses.filter((id: number) => id !== classId);
+                                field.onChange(newValue);
+                              }}
+                            />
+                          </Badge>
+                        ) : null;
+                      })}
+                    </div>
                   )}
+                  
+                  {/* Multi-select dropdown */}
+                  <Popover open={open} onOpenChange={setOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={open}
+                        className="w-full justify-between"
+                        disabled={isLoading}
+                      >
+                        {selectedClasses.length === 0 
+                          ? placeholder
+                          : `${selectedClasses.length} class${selectedClasses.length === 1 ? '' : 'es'} selected`
+                        }
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0">
+                      <Command>
+                        <CommandInput placeholder="Search classes..." />
+                        <CommandEmpty>
+                          {isLoading ? "Loading classes..." : "No classes found."}
+                        </CommandEmpty>
+                        <CommandGroup className="max-h-64 overflow-auto">
+                          {classes.map((cls: any) => (
+                            <CommandItem
+                              key={cls.id}
+                              onSelect={() => {
+                                const currentValue = field.value || [];
+                                if (currentValue.includes(cls.id)) {
+                                  field.onChange(currentValue.filter((id: number) => id !== cls.id));
+                                } else {
+                                  field.onChange([...currentValue, cls.id]);
+                                }
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  selectedClasses.includes(cls.id) ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {cls.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
-              </div>
-            </FormControl>
-            {description && <FormDescription>{description}</FormDescription>}
-            <FormMessage />
-          </FormItem>
-        )}
+              </FormControl>
+              {description && <FormDescription>{description}</FormDescription>}
+              <FormMessage />
+            </FormItem>
+          );
+        }}
       />
     );
   }
