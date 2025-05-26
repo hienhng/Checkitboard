@@ -250,21 +250,21 @@ export default function EducatorDashboard() {
                           ) : pendingSubmissions && pendingSubmissions.length > 0 ? (
                             <div className="divide-y divide-gray-200">
                               {pendingSubmissions.map((submission) => (
-                                <div key={submission.id} className="py-4 flex justify-between items-center">
-                                  <div className="flex-1">
-                                    <h4 className="text-sm font-medium text-neutral-dark">
+                                <div key={submission.id} className="py-4 flex justify-between items-center bg-blue-600 rounded-lg">
+                                  <div className="ml-2 mr-2 flex-1">
+                                    <h4 className=" text-sm font-medium text-white">
                                       {submission.list.title}
                                     </h4>
-                                    <div className="mt-1 flex items-center text-xs text-gray-500">
+                                    <div className="mt-1 flex items-center text-xs text-blue-100">
                                       <CheckCircle className="mr-1 h-3.5 w-3.5" />
                                       Student: {submission.student.name}
                                     </div>
-                                    <div className="mt-1 flex items-center text-xs text-gray-500">
+                                    <div className="mt-1 flex items-center text-xs text-blue-100">
                                       <Clock className="mr-1 h-3.5 w-3.5" />
                                       Submitted: {formatDate(submission.submittedAt)}
                                     </div>
                                   </div>
-                                  <div className="ml-4 flex-shrink-0">
+                                  <div className="ml-4 mr-2 flex-shrink-0">
                                     <Button 
                                       size="sm"
                                       onClick={() => {

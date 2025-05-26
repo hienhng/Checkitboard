@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import HomePage from "@/pages/home-page";
+import VerifyEmail from "@/pages/verify-email";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { AuthProvider } from "@/hooks/use-auth";
 import EducatorDashboard from "@/pages/educator-dashboard";
@@ -22,6 +23,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/auth" component={AuthPage} />
+      <Route path="/verify-email" component={VerifyEmail} />
       {/* Vocabulary checkup without layout/sidebar */}
       <ProtectedRoute path="/learner/checkup/:id" component={VocabularyCheckup} />
       

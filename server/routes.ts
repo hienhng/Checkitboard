@@ -2335,6 +2335,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // #endregion
 
+  // Email verification endpoint
+  app.post("/api/verify-email", async (req, res) => {
+    try {
+      const { token } = req.body;
+      
+      if (!token) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Verification token is required" 
+        });
+      }
+
+      // Find user with this verification token
+      const user = await storage.getUserByVerificationToken(token);
+      
+      if (!user) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Invalid or expired verification token" 
+        });
+      }
+
+      if (user.emailVerified) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Email address has already been verified" 
+        });
+      }
+
+      // Update user as verified
+      await storage.updateUserVerification(user.id, {
+        emailVerified: true,
+        emailVerifiedAt: new Date(),
+        verificationToken: null
+      });
+
+      // Send welcome email
+      const { sendWelcomeEmail } = await import("./email-verification");
+      try {
+        await sendWelcomeEmail({
+          email: user.email,
+          name: user.name
+        });
+      } catch (emailError) {
+        console.error("Error sending welcome email:", emailError);
+        // Don't fail the verification if welcome email fails
+      }
+
+      res.json({ 
+        success: true, 
+        message: "Email verified successfully",
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email
+        }
+      });
+    } catch (error) {
+      console.error("Email verification error:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Internal server error during verification" 
+      });
+    }
+  });
+
   // Test email endpoint
   app.post("/api/test-email", async (req, res) => {
     try {
