@@ -2367,8 +2367,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update user as verified
       await storage.updateUserVerification(user.id, {
         emailVerified: true,
-        emailVerifiedAt: new Date(),
-        verificationToken: null
+        emailVerificationToken: null
       });
 
       // Send welcome email
@@ -2376,7 +2375,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         await sendWelcomeEmail({
           email: user.email,
-          name: user.name
+          name: user.name,
+          role: user.role
         });
       } catch (emailError) {
         console.error("Error sending welcome email:", emailError);
