@@ -61,7 +61,7 @@ export function generateVerificationToken(): string {
 function getVerificationUrl(token: string): string {
   // Use the correct Replit domain
   const baseUrl = 'https://workspace-checkitdevai.replit.app';
-  return `${baseUrl}/verify-email?token=${token}`;
+  return `${baseUrl}/verify?token=${token}`;
 }
 
 /**
