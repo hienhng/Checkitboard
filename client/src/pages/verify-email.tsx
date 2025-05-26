@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, Loader2, Mail } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
-export default function VerifyEmail() {
+function VerifyEmail() {
   const [location, setLocation] = useLocation();
   const [token, setToken] = useState<string | null>(null);
 
@@ -167,3 +167,5 @@ export default function VerifyEmail() {
     </div>
   );
 }
+
+export default VerifyEmail;
