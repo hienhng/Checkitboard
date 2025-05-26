@@ -2430,5 +2430,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
 
+  // Handle frontend routes by serving the main HTML for non-API routes
+  app.get('*', (req, res, next) => {
+    // Skip API routes
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    
+    // For all other routes, let the frontend router handle it
+    // This will be handled by setupVite or serveStatic
+    next();
+  });
+
   return httpServer;
 }
