@@ -38,8 +38,10 @@ function Router() {
         <ProtectedRoute path="/learner/class/:classId" component={ClassListsPage} />
         <ProtectedRoute path="/learner/analysis" component={LearnerAnalysis} />
         <ProtectedRoute path="/settings" component={SettingsPage} />
-        <Route component={NotFound} />
       </Layout>
+      
+      {/* Catch all unmatched routes */}
+      <Route component={NotFound} />
     </Switch>
   );
 }
