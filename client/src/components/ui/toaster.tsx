@@ -19,7 +19,19 @@ export function Toaster() {
             <div className="grid gap-1">
               {title && <ToastTitle>{title}</ToastTitle>}
               {description && (
-                <ToastDescription>{description}</ToastDescription>
+                <ToastDescription>
+                  {typeof description === 'string' && description.includes('{"message"') 
+                    ? (() => {
+                        try {
+                          const match = description.match(/\{"message":"([^"]+)"/);
+                          return match ? match[1] : description.replace(/^\d+:\s*/, '');
+                        } catch {
+                          return description.replace(/^\d+:\s*/, '');
+                        }
+                      })()
+                    : description
+                  }
+                </ToastDescription>
               )}
             </div>
             {action}
