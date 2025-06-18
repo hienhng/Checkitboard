@@ -458,7 +458,7 @@ export default function LearnerDashboard() {
                     {/* My Classes Section with Search */}
                     {filteredClasses.length > 0 && (
                       <Card>
-                        <CardHeader className="bg-purple-500 p-4 pb-4 text-center text-white">
+                        <CardHeader className=" rounded-t-lg bg-purple-500 p-4 pb-4 text-center text-white">
                           <CardTitle className="flex items-center justify-center text-lg font-bold">
                             <School className="mr-2 h-5 w-5" />
                             My Classes

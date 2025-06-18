@@ -50,7 +50,7 @@ export default function FlashcardsPage() {
     setIsFlipped(false);
     toast({
       title: "Cards shuffled",
-      description: "The cards have been randomly rearranged for better learning.",
+      description: "The cards have been randomly rearranged.",
     });
   };
 
