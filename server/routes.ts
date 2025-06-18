@@ -2195,13 +2195,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const schema = z.object({
         name: z.string().min(2, "Name must be at least 2 characters"),
+        profilePicture: z.string().optional(),
       });
 
       const validatedData = schema.parse(req.body);
 
       // Update user profile
       await db.update(users)
-        .set({ name: validatedData.name })
+        .set({ 
+          name: validatedData.name,
+          profilePicture: validatedData.profilePicture,
+        })
         .where(eq(users.id, req.user.id));
 
       // Get updated user data
@@ -2212,6 +2216,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: updatedUser.email,
         name: updatedUser.name,
         role: updatedUser.role,
+        profilePicture: updatedUser.profilePicture,
       });
     } catch (error) {
       if (error instanceof z.ZodError) {

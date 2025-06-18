@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import * as React from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ import { useLocation } from "wouter";
 // Form schemas
 const personalInfoSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
+  profilePicture: z.string().optional(),
 });
 
 const passwordSchema = z.object({
@@ -59,8 +61,20 @@ export function SettingsPage() {
     resolver: zodResolver(personalInfoSchema),
     defaultValues: {
       name: user?.name || "",
+      profilePicture: user?.profilePicture || "",
     },
   });
+
+  // Update form defaults when user data loads
+  React.useEffect(() => {
+    if (user) {
+      personalInfoForm.reset({
+        name: user.name,
+        profilePicture: user.profilePicture || "",
+      });
+      setProfilePicture(user.profilePicture || null);
+    }
+  }, [user, personalInfoForm]);
 
   // Password Form
   const passwordForm = useForm<PasswordForm>({
@@ -176,7 +190,9 @@ export function SettingsPage() {
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        setProfilePicture(e.target?.result as string);
+        const result = e.target?.result as string;
+        setProfilePicture(result);
+        personalInfoForm.setValue("profilePicture", result);
       };
       reader.readAsDataURL(file);
     }
@@ -241,7 +257,7 @@ export function SettingsPage() {
                 {/* Profile Picture Section */}
                 <div className="flex items-center space-x-4">
                   <Avatar className="h-20 w-20">
-                    <AvatarImage src={profilePicture || undefined} />
+                    <AvatarImage src={profilePicture || user?.profilePicture || undefined} />
                     <AvatarFallback className="text-lg">
                       {user?.name?.split(' ').map(n => n[0]).join('') || 'U'}
                     </AvatarFallback>
