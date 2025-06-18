@@ -69,7 +69,7 @@ export function SettingsPage() {
   React.useEffect(() => {
     if (user) {
       personalInfoForm.reset({
-        name: user.name,
+        name: user.name || "",
         profilePicture: user.profilePicture || "",
       });
       setProfilePicture(user.profilePicture || null);

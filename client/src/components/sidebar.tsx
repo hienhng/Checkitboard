@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NotificationCenter } from "@/components/notifications";
 import { 
   LogOut, 
@@ -127,6 +127,7 @@ export function Sidebar() {
             "h-10 w-10 text-white ring-2 ring-offset-2 mr-3",
             isEducator ? "ring-primary bg-primary" : "ring-secondary bg-secondary"
           )}>
+            <AvatarImage src={user.profilePicture || undefined} />
             <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
           </Avatar>
           

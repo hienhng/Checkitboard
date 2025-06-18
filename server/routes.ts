@@ -2210,6 +2210,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get updated user data
       const updatedUser = await storage.getUser(req.user.id);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
 
       res.json({
         id: updatedUser.id,
