@@ -293,9 +293,8 @@ export default function LearnerDashboard() {
                     <Card className="overflow-hidden">
                       <CardHeader className="bg-blue-500 p-4 pb-4 text-center text-white">
                         <div className="w-full flex justify-between items-center">
-                          <CardTitle className="text-xl font-bold">
-                            Pending Vocabulary Check-Ups
-                            
+                          <CardTitle className="text-xl">
+                             Check-up Lists
                           </CardTitle>
                           {vocabularyLists && vocabularyLists.length > 0 && (
                             (() => {
@@ -373,8 +372,8 @@ export default function LearnerDashboard() {
                                   </div>
                                   <div className="mt-1 flex items-center justify-between">
                                     <p className="text-sm text-gray-500">
-                                      Completed on {formatDate(result.submittedAt)} - 
-                                      {result.wordDefinitions?.filter(d => d.isCorrect).length || 0}/
+                                      Graded on {formatDate(result.submittedAt)} -  
+                                          {result.wordDefinitions?.filter(d => d.isCorrect).length || 0}/
                                       {result.wordDefinitions?.length || 0} correct
                                     </p>
                                     <Button size="sm" className="text-blue-600 hover:text-white bg-transparent hover:bg-blue-800 gap-1 text-xs h-6">
