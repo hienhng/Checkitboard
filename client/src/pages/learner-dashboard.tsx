@@ -328,7 +328,12 @@ function LearnerDashboard() {
                                 >
                                   <div className="flex-1">
                                     <h4 className="font-medium text-neutral-dark">{list.title}</h4>
-                                    <p className="text-sm text-gray-500">Due date: {formatDueDate(list.dueDate)}</p>
+                                    <div className="space-y-1">
+                                      <p className="text-sm text-gray-500">Due date: {formatDueDate(list.dueDate)}</p>
+                                      {list.educator && (
+                                        <p className="text-xs text-gray-400">Created by: {list.educator.name}</p>
+                                      )}
+                                    </div>
                                   </div>
                                   <div className="text-gray-400 group-hover:text-primary transition-colors">
                                     <ChevronRight className="h-5 w-5" />
