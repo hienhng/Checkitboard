@@ -85,7 +85,7 @@ interface SubmissionResult {
   }[];
 }
 
-export default function LearnerDashboard() {
+function LearnerDashboard() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   
@@ -570,3 +570,5 @@ export default function LearnerDashboard() {
     </>
   );
 }
+
+export default LearnerDashboard;
