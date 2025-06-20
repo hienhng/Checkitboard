@@ -91,7 +91,7 @@ function generatePasswordResetEmailTemplate({
     <body>
       <div class="container">
         <div class="header">
-          <h1 class="logo">checkit</h1>
+          <h1 class="logo">Reset your account password</h1>
         </div>
         <div class="content">
           <h2 class="title">Password Reset Request</h2>
@@ -202,7 +202,7 @@ export async function sendPasswordResetConfirmationEmail({
         <body>
           <div class="container">
             <div class="header">
-              <h1 class="logo">checkit</h1>
+              <h1 class="logo">Reset your account password</h1>
             </div>
             <div class="content">
               <h2 class="title">Password Successfully Reset</h2>

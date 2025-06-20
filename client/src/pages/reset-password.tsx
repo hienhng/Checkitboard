@@ -36,6 +36,7 @@ export default function ResetPassword() {
       password: "",
       confirmPassword: "",
     },
+    mode: "onChange",
   });
 
   useEffect(() => {
@@ -56,7 +57,20 @@ export default function ResetPassword() {
       setIsLoading(true);
       setError(null);
 
-      const response = await apiRequest("POST", "/api/reset-password", data);
+      // Ensure token is included in the request
+      const requestData = {
+        token: token || data.token,
+        password: data.password,
+        confirmPassword: data.confirmPassword
+      };
+      
+      console.log('Submitting reset password:', { 
+        token: requestData.token?.substring(0, 10) + '...', 
+        hasPassword: !!requestData.password,
+        hasConfirmPassword: !!requestData.confirmPassword
+      });
+      
+      const response = await apiRequest("POST", "/api/reset-password", requestData);
 
       if (response.ok) {
         setIsSubmitted(true);

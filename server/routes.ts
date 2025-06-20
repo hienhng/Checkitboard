@@ -2519,8 +2519,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { token, password } = resetPasswordSchema.parse(req.body);
       
+      console.log('Reset password request:', { 
+        token: token?.substring(0, 10) + '...', 
+        hasPassword: !!password,
+        requestBody: req.body 
+      });
+      
       // Find user by reset token
       const user = await storage.getUserByPasswordResetToken(token);
+      console.log('User found:', user ? { 
+        email: user.email, 
+        hasToken: !!user.passwordResetToken, 
+        expires: user.passwordResetExpires,
+        tokenMatch: user.passwordResetToken === token
+      } : 'No user found');
+      
       if (!user || !user.passwordResetExpires) {
         return res.status(400).json({ message: "Invalid or expired reset token" });
       }
