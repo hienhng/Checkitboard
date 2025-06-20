@@ -32,7 +32,7 @@ import { GradingPanel } from "@/components/grading-panel";
 import { ClassManagement } from "@/components/class-management";
 import { useToast } from "@/hooks/use-toast";
 
-export default function EducatorDashboard() {
+function EducatorDashboard() {
   const { toast } = useToast();
   const [showCreateList, setShowCreateList] = useState(false);
   const [showGrading, setShowGrading] = useState(false);
@@ -301,3 +301,5 @@ export default function EducatorDashboard() {
     </div>
   );
 }
+
+export default EducatorDashboard;
