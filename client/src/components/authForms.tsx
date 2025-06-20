@@ -16,6 +16,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { insertUserSchema, loginUserSchema } from "@shared/schema";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
+import { Link } from "wouter";
 
 export function LoginForm() {
   const { loginMutation } = useAuth();

@@ -1,12 +1,36 @@
-import { MailService } from '@sendgrid/mail';
+import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 
-if (!process.env.SENDGRID_API_KEY) {
-  throw new Error("SENDGRID_API_KEY environment variable must be set");
+/**
+ * Creates a Nodemailer transporter using environment variables
+ */
+function createTransporter() {
+  // Check if Gmail credentials are provided
+  if (process.env.EMAIL_USER && process.env.EMAIL_APP_PASSWORD) {
+    return nodemailer.createTransporter({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_APP_PASSWORD,
+      },
+    });
+  }
+  
+  // Check if SMTP credentials are provided
+  if (process.env.SMTP_HOST && process.env.SMTP_PORT && process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
+    return nodemailer.createTransporter({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT),
+      secure: process.env.SMTP_PORT === '465',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASSWORD,
+      },
+    });
+  }
+  
+  throw new Error('Email configuration not found. Please set up EMAIL_USER and EMAIL_APP_PASSWORD for Gmail, or SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASSWORD for SMTP.');
 }
-
-const mailService = new MailService();
-mailService.setApiKey(process.env.SENDGRID_API_KEY);
 
 interface PasswordResetParams {
   email: string;
@@ -108,15 +132,13 @@ export async function sendPasswordResetEmail({
   resetToken,
 }: PasswordResetParams): Promise<void> {
   try {
+    const transporter = createTransporter();
     const resetUrl = getPasswordResetUrl(resetToken);
     const htmlContent = generatePasswordResetEmailTemplate({ name, resetToken });
     
-    const msg = {
+    const mailOptions = {
+      from: `"Checkit" <${process.env.EMAIL_USER || process.env.SMTP_USER}>`,
       to: email,
-      from: {
-        email: process.env.SENDGRID_FROM_EMAIL || 'noreply@checkit.app',
-        name: 'Checkit'
-      },
       subject: 'Reset Your Password - Checkit',
       html: htmlContent,
       text: `Hello ${name},
@@ -133,7 +155,7 @@ Best regards,
 The Checkit Team`,
     };
 
-    await mailService.send(msg);
+    await transporter.sendMail(mailOptions);
     console.log(`Password reset email sent successfully to ${email}`);
   } catch (error) {
     console.error('Error sending password reset email:', error);
@@ -152,12 +174,11 @@ export async function sendPasswordResetConfirmationEmail({
   name: string;
 }): Promise<void> {
   try {
-    const msg = {
+    const transporter = createTransporter();
+    
+    const mailOptions = {
+      from: `"Checkit" <${process.env.EMAIL_USER || process.env.SMTP_USER}>`,
       to: email,
-      from: {
-        email: process.env.SENDGRID_FROM_EMAIL || 'noreply@checkit.app',
-        name: 'Checkit'
-      },
       subject: 'Password Successfully Reset - Checkit',
       html: `
         <!DOCTYPE html>
@@ -217,7 +238,7 @@ Best regards,
 The Checkit Team`,
     };
 
-    await mailService.send(msg);
+    await transporter.sendMail(mailOptions);
     console.log(`Password reset confirmation email sent successfully to ${email}`);
   } catch (error) {
     console.error('Error sending password reset confirmation email:', error);

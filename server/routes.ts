@@ -2475,9 +2475,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Forgot password endpoint
+  app.post("/api/forgot-password", async (req, res) => {
+    try {
+      const { email } = forgotPasswordSchema.parse(req.body);
+      
+      // Find user by email
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        // Don't reveal if email exists for security
+        return res.json({ message: "If an account with that email exists, we've sent password reset instructions." });
+      }
+
+      // Generate password reset token and expiration (1 hour)
+      const resetToken = generatePasswordResetToken();
+      const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+
+      // Save token to database
+      await storage.updateUserPasswordReset(user.id, {
+        passwordResetToken: resetToken,
+        passwordResetExpires: resetExpires,
+      });
+
+      // Send password reset email
+      await sendPasswordResetEmail({
+        email: user.email,
+        name: user.name,
+        resetToken,
+      });
+
+      res.json({ message: "If an account with that email exists, we've sent password reset instructions." });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+      console.error("Error in forgot password:", error);
+      res.status(500).json({ message: "Error processing password reset request" });
+    }
+  });
+
+  // Reset password endpoint
+  app.post("/api/reset-password", async (req, res) => {
+    try {
+      const { token, password } = resetPasswordSchema.parse(req.body);
+      
+      // Find user by reset token
+      const user = await storage.getUserByPasswordResetToken(token);
+      if (!user || !user.passwordResetExpires) {
+        return res.status(400).json({ message: "Invalid or expired reset token" });
+      }
+
+      // Check if token has expired
+      if (new Date() > user.passwordResetExpires) {
+        return res.status(400).json({ message: "Reset token has expired" });
+      }
+
+      // Verify the new password is different from the old one
+      const isSamePassword = await comparePasswords(password, user.password);
+      if (isSamePassword) {
+        return res.status(400).json({ message: "New password must be different from your current password" });
+      }
+
+      // Hash the new password
+      const hashedPassword = await hashPassword(password);
+
+      // Update user's password and clear reset token
+      await storage.updateUserPasswordReset(user.id, {
+        password: hashedPassword,
+        passwordResetToken: null,
+        passwordResetExpires: null,
+      });
+
+      // Send confirmation email
+      await sendPasswordResetConfirmationEmail({
+        email: user.email,
+        name: user.name,
+      });
+
+      // If user is currently logged in, log them out by destroying session
+      if (req.session) {
+        req.session.destroy((err) => {
+          if (err) {
+            console.error("Error destroying session:", err);
+          }
+        });
+      }
+
+      res.json({ message: "Password successfully reset. Please log in with your new password." });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+      console.error("Error in reset password:", error);
+      res.status(500).json({ message: "Error resetting password" });
+    }
+  });
+
   const httpServer = createServer(app);
-
-
-
   return httpServer;
 }

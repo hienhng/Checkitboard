@@ -7,6 +7,8 @@ import AuthPage from "@/pages/auth-page";
 import HomePage from "@/pages/home-page";
 import VerifyEmail from "@/pages/verify-email";
 import Verify from "@/pages/verify";
+import ForgotPassword from "@/pages/forgot-password";
+import ResetPassword from "@/pages/reset-password";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { AuthProvider } from "@/hooks/use-auth";
 import EducatorDashboard from "@/pages/educator-dashboard";
@@ -27,6 +29,8 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <Route path="/verify-email" component={VerifyEmail} />
       <Route path="/verify" component={Verify} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
       {/* Vocabulary checkup without layout/sidebar - requires verification */}
       <ProtectedRoute path="/learner/checkup/:id" component={withEmailVerification(VocabularyCheckup)} />
       
