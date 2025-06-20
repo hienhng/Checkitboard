@@ -478,10 +478,7 @@ function LearnerDashboard() {
                                 <CardHeader className="pb-3">
                                   <CardTitle className="text-base font-semibold flex items-center">
                                     <School className="mr-2 h-4 w-4 text-purple-500" />
-                                    <span>{cls.name}</span>
-                                    <span className="text-sm">
-                                      {cls.classes && cls.classes.length > 0 ? cls.classes.map((classItem: any) => classItem.name).join(", ") : "No classes"}
-                                    </span>
+                                    <span>{cls.class?.name || cls.name}</span>
                                   </CardTitle>
                                   {cls.description && (
                                     <CardDescription className="text-sm text-gray-600">
