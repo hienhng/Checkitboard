@@ -7,7 +7,7 @@ import crypto from 'crypto';
 function createTransporter() {
   // Check if Gmail credentials are provided
   if (process.env.EMAIL_USER && process.env.EMAIL_APP_PASSWORD) {
-    return nodemailer.createTransporter({
+    return nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: process.env.EMAIL_USER,
@@ -18,7 +18,7 @@ function createTransporter() {
   
   // Check if SMTP credentials are provided
   if (process.env.SMTP_HOST && process.env.SMTP_PORT && process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
-    return nodemailer.createTransporter({
+    return nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: parseInt(process.env.SMTP_PORT),
       secure: process.env.SMTP_PORT === '465',
