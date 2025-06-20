@@ -34,12 +34,7 @@ export default function ForgotPassword() {
       setIsLoading(true);
       setError(null);
 
-      const response = await apiRequest("POST", "/api/forgot-password", {
-        body: JSON.stringify(data),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await apiRequest("POST", "/api/forgot-password", data);
 
       if (response.ok) {
         setIsSubmitted(true);
@@ -134,7 +129,7 @@ export default function ForgotPassword() {
 
           <div className="mt-6 text-center">
             <Button variant="ghost" asChild>
-              <Link to="/auth" className="text-sm text-muted-foreground hover:text-primary">
+              <Link to="/auth" className=" bg-white text-sm text-muted-foreground ">
                 <ChevronLeft className="mr-2 h-4 w-4" />
                 Back to Login
               </Link>
