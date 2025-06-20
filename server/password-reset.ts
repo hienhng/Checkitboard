@@ -15,7 +15,7 @@ function createTransporter() {
       },
     });
   }
-  
+
   // Check if SMTP credentials are provided
   if (process.env.SMTP_HOST && process.env.SMTP_PORT && process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
     return nodemailer.createTransport({
@@ -28,7 +28,7 @@ function createTransporter() {
       },
     });
   }
-  
+
   throw new Error('Email configuration not found. Please set up EMAIL_USER and EMAIL_APP_PASSWORD for Gmail, or SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASSWORD for SMTP.');
 }
 
@@ -66,7 +66,7 @@ function generatePasswordResetEmailTemplate({
   resetToken: string;
 }): string {
   const resetUrl = getPasswordResetUrl(resetToken);
-  
+
   return `
     <!DOCTYPE html>
     <html>
@@ -78,7 +78,7 @@ function generatePasswordResetEmailTemplate({
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5; }
         .container { max-width: 600px; margin: 0 auto; background-color: white; }
         .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; text-align: center; }
-        .logo { color: white; font-size: 32px; font-weight: bold; margin: 0; }
+        .logo { color: white; font-size: 32px; font-weight: bold; margin: 0; font-family: 'Modak', cursive; }
         .content { padding: 40px 20px; }
         .title { color: #333; font-size: 24px; margin-bottom: 20px; }
         .text { color: #666; line-height: 1.6; margin-bottom: 20px; }
@@ -97,20 +97,20 @@ function generatePasswordResetEmailTemplate({
           <h2 class="title">Password Reset Request</h2>
           <p class="text">Hello ${name},</p>
           <p class="text">We received a request to reset your password for your Checkit account. If you made this request, click the button below to reset your password:</p>
-          
+
           <div style="text-align: center;">
             <a href="${resetUrl}" class="button">Reset My Password</a>
           </div>
-          
+
           <div class="warning">
             <strong>Important:</strong> This link will expire in 1 hour for security reasons. If you didn't request this password reset, you can safely ignore this email.
           </div>
-          
+
           <p class="text">If the button doesn't work, you can copy and paste this link into your browser:</p>
           <p class="text" style="word-break: break-all; color: #667eea;">${resetUrl}</p>
-          
+
           <p class="text">If you're having trouble, please contact our support team.</p>
-          
+
           <p class="text">Best regards,<br>The Checkit Team</p>
         </div>
         <div class="footer">
@@ -135,7 +135,7 @@ export async function sendPasswordResetEmail({
     const transporter = createTransporter();
     const resetUrl = getPasswordResetUrl(resetToken);
     const htmlContent = generatePasswordResetEmailTemplate({ name, resetToken });
-    
+
     const mailOptions = {
       from: `"Checkit" <${process.env.EMAIL_USER || process.env.SMTP_USER}>`,
       to: email,
@@ -175,7 +175,7 @@ export async function sendPasswordResetConfirmationEmail({
 }): Promise<void> {
   try {
     const transporter = createTransporter();
-    
+
     const mailOptions = {
       from: `"Checkit" <${process.env.EMAIL_USER || process.env.SMTP_USER}>`,
       to: email,
@@ -191,7 +191,7 @@ export async function sendPasswordResetConfirmationEmail({
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5; }
             .container { max-width: 600px; margin: 0 auto; background-color: white; }
             .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; text-align: center; }
-            .logo { color: white; font-size: 32px; font-weight: bold; margin: 0; }
+            .logo { color: white; font-size: 32px; font-weight: bold; margin: 0; font-family: 'Modak', cursive; }
             .content { padding: 40px 20px; }
             .title { color: #333; font-size: 24px; margin-bottom: 20px; }
             .text { color: #666; line-height: 1.6; margin-bottom: 20px; }
@@ -207,15 +207,15 @@ export async function sendPasswordResetConfirmationEmail({
             <div class="content">
               <h2 class="title">Password Successfully Reset</h2>
               <p class="text">Hello ${name},</p>
-              
+
               <div class="success">
                 <strong>Success!</strong> Your password has been successfully reset for your Checkit account.
               </div>
-              
+
               <p class="text">You can now log in with your new password. If you didn't make this change, please contact our support team immediately.</p>
-              
+
               <p class="text">For your security, you've been logged out of all devices and will need to log in again.</p>
-              
+
               <p class="text">Best regards,<br>The Checkit Team</p>
             </div>
             <div class="footer">
