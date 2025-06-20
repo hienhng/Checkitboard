@@ -20,13 +20,9 @@ function Verify() {
       return;
     }
 
-    // Verify the email token
-    fetch('/api/verify-email', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ token }),
+    // Verify the email token using GET request to match the URL structure
+    fetch(`/api/verify-email?token=${encodeURIComponent(token)}`, {
+      method: 'GET',
     })
     .then(response => response.json())
     .then(data => {

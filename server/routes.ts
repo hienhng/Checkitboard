@@ -2054,25 +2054,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // #region Email Verification Routes
 
-  // Verify email endpoint
-  app.get("/api/verify-email", async (req, res) => {
+  // Verify email endpoint - support both GET and POST
+  const verifyEmailHandler = async (req: any, res: any) => {
     try {
-      const { token } = req.query;
+      const token = req.method === 'GET' ? req.query.token : req.body.token;
       
       if (!token || typeof token !== 'string') {
-        return res.status(400).json({ message: "Invalid verification token" });
+        return res.status(400).json({ 
+          success: false,
+          message: "Invalid verification token" 
+        });
       }
 
       // Find user by verification token
       const user = await storage.getUserByVerificationToken(token);
       
       if (!user) {
-        return res.status(400).json({ message: "Invalid or expired verification token" });
+        return res.status(400).json({ 
+          success: false,
+          message: "Invalid or expired verification token" 
+        });
       }
 
       // Check if token is expired (24 hours)
       if (user.emailVerificationExpires && new Date() > user.emailVerificationExpires) {
-        return res.status(400).json({ message: "Verification token has expired" });
+        return res.status(400).json({ 
+          success: false,
+          message: "Verification token has expired" 
+        });
+      }
+
+      // Check if already verified
+      if (user.emailVerified) {
+        return res.json({
+          success: true,
+          message: "Email is already verified!",
+          user: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            emailVerified: true,
+          }
+        });
       }
 
       // Update user to verified
@@ -2084,6 +2108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Send welcome email
       try {
+        const { sendWelcomeEmail } = await import("./email-verification");
         await sendWelcomeEmail({
           email: user.email,
           name: user.name,
@@ -2095,6 +2120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.json({ 
+        success: true,
         message: "Email verified successfully! Welcome to Checkit!",
         user: {
           id: user.id,
@@ -2106,9 +2132,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Error verifying email:", error);
-      res.status(500).json({ message: "Error verifying email" });
+      res.status(500).json({ 
+        success: false,
+        message: "Error verifying email" 
+      });
     }
-  });
+  };
+
+  app.get("/api/verify-email", verifyEmailHandler);
+  app.post("/api/verify-email", verifyEmailHandler);
 
   // Resend verification email
   app.post("/api/resend-verification", async (req, res) => {

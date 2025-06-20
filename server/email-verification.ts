@@ -59,8 +59,10 @@ export function generateVerificationToken(): string {
  * Generates the verification URL
  */
 function getVerificationUrl(token: string): string {
-  // Use the correct Replit domain
-  const baseUrl = 'https://workspace-checkitdevai.replit.app';
+  // Use environment variable for base URL or fallback to Replit domain
+  const baseUrl = process.env.REPLIT_DOMAINS ? 
+    `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 
+    'https://workspace-checkitdevai.replit.app';
   return `${baseUrl}/verify?token=${token}`;
 }
 
