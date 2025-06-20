@@ -2283,16 +2283,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
 
-      // Verify current password
-      const bcrypt = await import("bcrypt");
-      const isCurrentPasswordValid = await bcrypt.default.compare(validatedData.currentPassword, user.password);
+      // Import password comparison and hashing functions from auth
+      const { comparePasswords, hashPassword } = await import("./auth");
+      
+      // Verify current password using the same method as login
+      const isCurrentPasswordValid = await comparePasswords(validatedData.currentPassword, user.password);
       
       if (!isCurrentPasswordValid) {
         return res.status(400).json({ message: "Current password is incorrect" });
       }
 
-      // Hash new password
-      const hashedNewPassword = await bcrypt.default.hash(validatedData.newPassword, 10);
+      // Hash new password using the same method as registration
+      const hashedNewPassword = await hashPassword(validatedData.newPassword);
 
       // Update password
       await db.update(users)
