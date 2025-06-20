@@ -2253,14 +2253,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Verify current password
       const bcrypt = await import("bcrypt");
-      const isCurrentPasswordValid = await bcrypt.compare(validatedData.currentPassword, user.password);
+      const isCurrentPasswordValid = await bcrypt.default.compare(validatedData.currentPassword, user.password);
       
       if (!isCurrentPasswordValid) {
         return res.status(400).json({ message: "Current password is incorrect" });
       }
 
       // Hash new password
-      const hashedNewPassword = await bcrypt.hash(validatedData.newPassword, 10);
+      const hashedNewPassword = await bcrypt.default.hash(validatedData.newPassword, 10);
 
       // Update password
       await db.update(users)

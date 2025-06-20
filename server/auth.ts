@@ -169,7 +169,14 @@ export function setupAuth(app: Express) {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    res.json(req.user);
+    res.json({
+      id: req.user.id,
+      email: req.user.email,
+      name: req.user.name,
+      role: req.user.role,
+      profilePicture: req.user.profilePicture,
+      emailVerified: req.user.emailVerified,
+    });
   });
 
   // Add a route to link a parent's email to a student
