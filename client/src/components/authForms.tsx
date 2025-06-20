@@ -34,6 +34,7 @@ export function LoginForm() {
   }
 
   return (
+    <>
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
@@ -80,6 +81,15 @@ export function LoginForm() {
         </Button>
       </form>
     </Form>
+    
+    <div className="mt-4 text-center">
+      <Button variant="link" asChild className="text-sm text-muted-foreground hover:text-primary">
+        <Link to="/forgot-password">
+          Forgot your password?
+        </Link>
+      </Button>
+    </div>
+    </>
   );
 }
 
