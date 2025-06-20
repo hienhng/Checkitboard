@@ -44,7 +44,7 @@ function Verify() {
   }, []);
 
   const handleContinue = () => {
-    setLocation('/login');
+    setLocation('/');
   };
 
   if (status === 'loading') {

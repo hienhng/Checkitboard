@@ -48,7 +48,7 @@ function VerifyEmail() {
   }, []);
 
   const handleContinue = () => {
-    setLocation('/auth');
+    setLocation('/');
   };
 
   if (status === 'loading') {
