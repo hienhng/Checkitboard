@@ -169,7 +169,7 @@ export function SettingsPage() {
     },
     onSuccess: () => {
       queryClient.clear();
-      setLocation("/login");
+      setLocation("/auth");
       toast({
         title: "Logged out",
         description: "You have been logged out successfully.",
