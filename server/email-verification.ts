@@ -95,7 +95,7 @@ function generateVerificationEmailTemplate({
     <body>
       <div class="container">
         <div class="header">
-          <h1>🎓 Welcome to <span className="font-modak"> Checkit!</span></h1>
+          <h1>Get ready to Checkit!</h1>
         </div>
         <div class="content">
           <h2>Hi ${name}!</h2>
@@ -144,7 +144,7 @@ export async function sendVerificationEmail({
     const mailOptions = {
       from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
       to: email,
-      subject: 'Verify Your Email - Welcome to Checkit! 🎓',
+      subject: 'Verify Your Email - Just one step away.. 🎓',
       html: htmlContent,
       text: `
         Hi ${name}!

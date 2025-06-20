@@ -4,6 +4,8 @@ import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { sendParentEmail } from "./email";
 import { sendVerificationEmail, sendWelcomeEmail, generateVerificationToken } from "./email-verification";
+import { sendPasswordResetEmail, sendPasswordResetConfirmationEmail, generatePasswordResetToken } from "./password-reset";
+import { hashPassword, comparePasswords } from "./auth";
 import { 
   isHuggingFaceConfigured as isAIConfigured, 
   generateDefinitions,
@@ -26,6 +28,8 @@ import {
   insertStudentClassSchema,
   joinClassSchema,
   classRequestResponseSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
   vocabularyLists,
   vocabularyWords,
   submissions,

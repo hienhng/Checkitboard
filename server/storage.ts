@@ -75,6 +75,27 @@ export class DatabaseStorage {
     return user;
   }
 
+  async updateUserPasswordReset(id: number, data: {
+    passwordResetToken?: string | null,
+    passwordResetExpires?: Date | null,
+    password?: string
+  }) {
+    const [user] = await db.update(users).set(data).where(eq(users.id, id)).returning({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      role: users.role,
+    });
+    return user;
+  }
+
+  async getUserByPasswordResetToken(token: string) {
+    const user = await db.query.users.findFirst({
+      where: eq(users.passwordResetToken, token),
+    });
+    return user;
+  }
+
   // Vocabulary list methods
   async getVocabularyList(id: number) {
     return await db.query.vocabularyLists.findFirst({
