@@ -20,6 +20,8 @@ import {
   DialogTrigger
 } from "@/components/ui/dialog";
 import { FullscreenMonitor } from "@/components/fullscreen-monitor";
+import { FullscreenWarning } from "@/components/fullscreen-warning";
+import { useFullscreen } from "@/hooks/use-fullscreen";
 
 export default function VocabularyCheckup() {
   const { id } = useParams();
@@ -33,8 +35,24 @@ export default function VocabularyCheckup() {
   const [discardReason, setDiscardReason] = useState("");
   const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
   const [isFullscreenActive, setIsFullscreenActive] = useState(false);
-  const [fullscreenExitCount, setFullscreenExitCount] = useState(0);
   const [navigationWarningOpen, setNavigationWarningOpen] = useState(false);
+  const [showFullscreenWarning, setShowFullscreenWarning] = useState(false);
+
+  // Fullscreen management
+  const { isFullscreen, exitCount, enterFullscreen } = useFullscreen({
+    onExitFullscreen: () => {
+      setShowFullscreenWarning(true);
+    },
+    onEnterFullscreen: () => {
+      setShowFullscreenWarning(false);
+    },
+    trackExits: true,
+    submissionId: submissionId
+  });
+
+  const handleFullscreenExit = () => {
+    setShowFullscreenWarning(true);
+  };
   
   // Get submission details with vocabulary list and words
   const { data: submission, isLoading } = useQuery({
@@ -329,6 +347,10 @@ export default function VocabularyCheckup() {
   const currentWord = submission.list.words[currentWordIndex];
   const totalWords = submission.list.words.length;
 
+  const handleReturnToFullscreen = async () => {
+    await enterFullscreen();
+  };
+
   return (
     <div className="min-h-screen bg-neutral-light">
       <FullscreenMonitor 
@@ -336,6 +358,36 @@ export default function VocabularyCheckup() {
         isActive={isFullscreenActive}
         onFullscreenExit={handleFullscreenExit}
       >
+        {/* Fullscreen warning overlay */}
+        <FullscreenWarning 
+          isVisible={showFullscreenWarning}
+          onReturnToFullscreen={handleReturnToFullscreen}
+        />
+        
+        {/* Overlay to block interactions when not in fullscreen */}
+        {showFullscreenWarning && (
+          <div 
+            className="fixed inset-0 z-[9998] bg-transparent cursor-not-allowed"
+            style={{ pointerEvents: 'all' }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onContextMenu={(e) => e.preventDefault()}
+            onKeyDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          />
+        )}
         <div className="h-screen flex flex-col md:flex-row">
           {/* Left Panel - Reading Passage */}
           <div className="h-1/2 md:h-full md:w-1/2 overflow-auto p-6 bg-white border-b md:border-b-0 md:border-r border-gray-200">
@@ -385,6 +437,8 @@ export default function VocabularyCheckup() {
                           placeholder="Type your definition here..."
                           value={definition}
                           onChange={(e) => setDefinition(e.target.value)}
+                          disabled={showFullscreenWarning}
+                          className={showFullscreenWarning ? "opacity-50 cursor-not-allowed" : ""}
                         />
                       </div>
                       

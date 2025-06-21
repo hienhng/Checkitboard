@@ -2584,6 +2584,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Fullscreen exit tracking endpoint
+  app.post("/api/fullscreen-exit", async (req, res) => {
+    try {
+      const { submissionId, exitedAt } = req.body;
+      
+      if (!submissionId || !exitedAt) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      await storage.createFullscreenExit({
+        submissionId: parseInt(submissionId),
+        exitedAt: new Date(exitedAt)
+      });
+
+      res.json({ message: "Fullscreen exit logged successfully" });
+    } catch (error) {
+      console.error("Error logging fullscreen exit:", error);
+      res.status(500).json({ message: "Failed to log fullscreen exit" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
