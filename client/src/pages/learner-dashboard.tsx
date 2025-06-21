@@ -198,7 +198,7 @@ function LearnerDashboard() {
                   />
                 </div>
                 
-                {/* Search Results Overlay - Only show vocabulary lists */}
+                {/* Search Results Overlay */}
                 {searchQuery && (
                   <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg border shadow-lg p-4 max-h-64 overflow-y-auto z-50">
                     <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
@@ -234,12 +234,38 @@ function LearnerDashboard() {
                       </div>
                     )}
                     
+                    {/* Classes Results */}
+                    {filteredClasses.length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="text-xs font-semibold text-purple-600 uppercase tracking-wide mb-2">
+                          My Classes ({filteredClasses.length})
+                        </h4>
+                        <div className="space-y-2">
+                          {filteredClasses.map((cls) => (
+                            <div 
+                              key={cls.id} 
+                              className="p-3 bg-purple-50 rounded-md"
+                            >
+                              <p className="font-medium text-gray-900 flex items-center">
+                                <School className="mr-2 h-4 w-4 text-purple-500" />
+                                {cls.name}
+                              </p>
+                              {cls.description && (
+                                <p className="text-sm text-gray-500 mt-1">{cls.description}</p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
                     {/* No Results Message */}
-                    {filteredVocabularyLists.filter(list => !list.submission || !list.submission.completed).length === 0 && (
+                    {filteredVocabularyLists.filter(list => !list.submission || !list.submission.completed).length === 0 && 
+                     filteredClasses.length === 0 && (
                       <div className="text-center py-6 text-gray-500">
                         <Search className="mx-auto h-12 w-12 text-gray-300 mb-3" />
-                        <p className="text-sm">No vocabulary check-ups found for "{searchQuery}"</p>
-                        <p className="text-xs text-gray-400 mt-1">Try searching for vocabulary list titles or educator names</p>
+                        <p className="text-sm">No results found for "{searchQuery}"</p>
+                        <p className="text-xs text-gray-400 mt-1">Try searching for class names, vocabulary lists, or educator names</p>
                       </div>
                     )}
                   </div>
@@ -430,15 +456,18 @@ function LearnerDashboard() {
                 
                 <TabsContent value="classes">
                   <div className="space-y-6">
-                    {/* Search Results for Classes - Only show when searching */}
-                    {searchQuery && filteredClasses.length > 0 && (
+                    {/* Join Class Section */}
+                    <JoinClass />
+                    
+                    {/* My Classes Section with Search */}
+                    {filteredClasses.length > 0 && (
                       <Card>
-                        <CardHeader className="bg-purple-500 p-4 pb-4 text-center text-white">
+                        <CardHeader className=" rounded-t-lg bg-purple-500 p-4 pb-4 text-center text-white">
                           <CardTitle className="flex items-center justify-center text-lg font-bold">
-                            <Search className="mr-2 h-5 w-5" />
-                            Search Results for "{searchQuery}"
+                            <School className="mr-2 h-5 w-5" />
+                            My Classes
                             <Badge variant="secondary" className="ml-3 bg-purple-600 text-white">
-                              {filteredClasses.length} classes found
+                              {filteredClasses.length} classes
                             </Badge>
                           </CardTitle>
                         </CardHeader>
@@ -449,50 +478,7 @@ function LearnerDashboard() {
                                 <CardHeader className="pb-3">
                                   <CardTitle className="text-base font-semibold flex items-center">
                                     <School className="mr-2 h-4 w-4 text-purple-500" />
-                                    <span>{cls.name}</span>
-                                  </CardTitle>
-                                  {cls.description && (
-                                    <CardDescription className="text-sm text-gray-600">
-                                      {cls.description}
-                                    </CardDescription>
-                                  )}
-                                </CardHeader>
-                                <CardContent className="pt-0">
-                                  <div className="flex items-center text-sm text-gray-500">
-                                    <Users className="mr-1 h-3 w-3" />
-                                    {cls.studentCount || 0} students
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )}
-
-                    {/* Join Class Section */}
-                    <JoinClass />
-                    
-                    {/* My Classes Section - Only show when not searching */}
-                    {!searchQuery && classes.length > 0 && (
-                      <Card>
-                        <CardHeader className=" rounded-t-lg bg-purple-500 p-4 pb-4 text-center text-white">
-                          <CardTitle className="flex items-center justify-center text-lg font-bold">
-                            <School className="mr-2 h-5 w-5" />
-                            My Classes
-                            <Badge variant="secondary" className="ml-3 bg-purple-600 text-white">
-                              {classes.length} classes
-                            </Badge>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-6">
-                          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                            {classes.map((cls) => (
-                              <Card key={cls.id} className="border hover:shadow-md transition-shadow">
-                                <CardHeader className="pb-3">
-                                  <CardTitle className="text-base font-semibold flex items-center">
-                                    <School className="mr-2 h-4 w-4 text-purple-500" />
-                                    <span>{cls.name}</span>
+                                    <span>{cls.class?.name || cls.name}</span>
                                   </CardTitle>
                                   {cls.description && (
                                     <CardDescription className="text-sm text-gray-600">
