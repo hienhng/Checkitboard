@@ -29,7 +29,7 @@ import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { VocabularyList } from "@shared/schema";
 import { formatDate, formatDueDate } from "@/lib/utils";
 import { GradingPanel } from "@/components/grading-panel";
-import { ClassManagement } from "@/components/class-management";
+import { CreateClassDialog } from "@/components/class-management";
 import { useToast } from "@/hooks/use-toast";
 
 function EducatorDashboard() {
@@ -172,7 +172,7 @@ function EducatorDashboard() {
                         className="flex items-center"
                       >
                         <PlusCircle className="mr-2 h-4 w-4" />
-                        Create New Vocabulary List
+                        Create New Draft
                       </Button>
                     </div>
 
@@ -227,7 +227,7 @@ function EducatorDashboard() {
                             </div>
                           ) : (
                             <div className="py-4 text-center text-sm text-gray-500">
-                              You haven't created any vocabulary lists yet. Try create one by clicking:
+                              You haven't created any vocabulary lists yet. Try create one by clicking the "Create" button above.
                             </div>
                           )}
                         </CardContent>
@@ -290,7 +290,21 @@ function EducatorDashboard() {
                   </TabsContent>
 
                   <TabsContent value="classes">
-                    <ClassManagement />
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="text-lg font-medium">Class Management</h3>
+                          <p className="text-sm text-gray-500">Create and manage your classes</p>
+                        </div>
+                        <CreateClassDialog />
+                      </div>
+                      
+                      {/* Classes content will be added here in future updates */}
+                      <div className="text-center py-8 text-gray-500">
+                        <School className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                        <p>Class management features coming soon!</p>
+                      </div>
+                    </div>
                   </TabsContent>
                 </Tabs>
               </>

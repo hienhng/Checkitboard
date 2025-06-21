@@ -1,761 +1,163 @@
-import { useState, useEffect } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { StudentProgressChart } from "@/components/student-progress-chart";
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
-import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
-} from "@/components/ui/tabs";
-import { 
-  Users, 
-  BookOpen, 
-  PlusCircle, 
-  User, 
-  CheckCircle, 
-  XCircle,
-  Copy,
-  School,
-  BarChart,
-  BookCheck,
-  Star,
-  PieChart,
-  Expand,
-  ClipboardCheck,
-  LineChart,
-  UserMinus,
-  AlertTriangle,
-  CalendarDays
-} from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Progress } from "@/components/ui/progress";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { formatDate, getScoreBgColor } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { Plus } from "lucide-react";
 
-// Schema for creating a class
-const createClassSchema = z.object({
-  name: z.string().min(2, "Class name must be at least 2 characters"),
-  description: z.string().optional(),
+const classSchema = z.object({
+  name: z.string().min(1, "Class name is required").max(100, "Class name must be less than 100 characters"),
+  description: z.string().max(500, "Description must be less than 500 characters").optional(),
 });
 
-type CreateClassData = z.infer<typeof createClassSchema>;
+type ClassFormData = z.infer<typeof classSchema>;
 
-export function ClassManagement() {
+interface CreateClassDialogProps {
+  onClassCreated?: (classData: any) => void;
+  trigger?: React.ReactNode;
+}
+
+export function CreateClassDialog({ onClassCreated, trigger }: CreateClassDialogProps) {
+  const [open, setOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("classes");
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [studentToRemove, setStudentToRemove] = useState<{id: number, name: string, classId: number} | null>(null);
-  const [confirmRemoval, setConfirmRemoval] = useState(false);
-  const [dontAskAgain, setDontAskAgain] = useState(false);
-  
-  // Local storage key for "don't ask again" preference
-  const dontAskAgainKey = "dontAskAgainForStudentRemoval";
-  
-  // Load don't ask again preference from local storage
-  useEffect(() => {
-    const savedPreference = localStorage.getItem(dontAskAgainKey);
-    if (savedPreference === "true") {
-      setDontAskAgain(true);
-    }
-  }, []);
 
-  // Form for creating a new class
-  const form = useForm<CreateClassData>({
-    resolver: zodResolver(createClassSchema),
+  const form = useForm<ClassFormData>({
+    resolver: zodResolver(classSchema),
     defaultValues: {
       name: "",
       description: "",
     },
   });
 
-  // Query for fetching educator's classes
-  const { 
-    data: classes = [], 
-    isLoading: classesLoading 
-  } = useQuery<any[]>({
-    queryKey: ["/api/educator/classes"],
-    queryFn: async () => {
-      const response = await apiRequest("GET", "/api/educator/classes");
-      return response.json();
-    },
-  });
-
-  // Query for fetching pending join requests
-  const { 
-    data: joinRequests = [], 
-    isLoading: requestsLoading 
-  } = useQuery<any[]>({
-    queryKey: ["/api/educator/join-requests"],
-    queryFn: async () => {
-      const response = await apiRequest("GET", "/api/educator/join-requests");
-      const data = await response.json();
-      return data;
-    },
-  });
-  
-  // State for selected class and student
-  const [selectedClass, setSelectedClass] = useState<number | null>(null);
-  const [selectedStudent, setSelectedStudent] = useState<{id: number, name: string} | null>(null);
-  
-  // Query for student performance data
-  const {
-    data: studentPerformance = [],
-    isLoading: performanceLoading,
-    isError: performanceError,
-  } = useQuery<any[]>({
-    queryKey: ["/api/educator/classes", selectedClass, "student-performance"],
-    queryFn: async () => {
-      if (!selectedClass) return [];
-      const response = await apiRequest("GET", `/api/educator/classes/${selectedClass}/student-performance`);
-      return response.json();
-    },
-    enabled: !!selectedClass // Only run the query if a class is selected
-  });
-
-  // Mutation for creating a new class
   const createClassMutation = useMutation({
-    mutationFn: async (data: CreateClassData) => {
-      const response = await apiRequest("POST", "/api/classes", data);
-      return response;
+    mutationFn: async (data: ClassFormData) => {
+      const res = await apiRequest("POST", "/api/classes", data);
+      return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (newClass) => {
+      toast({
+        title: "Class created successfully",
+        description: `${newClass.name} has been created with code: ${newClass.classCode}`,
+      });
+      
+      // Refresh the classes query
       queryClient.invalidateQueries({ queryKey: ["/api/educator/classes"] });
-      setIsCreateDialogOpen(false);
+      
+      // Notify parent component
+      onClassCreated?.(newClass);
+      
+      // Reset form and close dialog
       form.reset();
-      toast({
-        title: "Class created",
-        description: "The class has been created successfully.",
-      });
+      setOpen(false);
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "An error occurred while creating the class.",
+        title: "Error creating class",
+        description: error.message || "Failed to create class. Please try again.",
         variant: "destructive",
       });
     },
   });
 
-  // Mutation for responding to join requests
-  const respondToRequestMutation = useMutation({
-    mutationFn: async ({ 
-      requestId, 
-      status 
-    }: { 
-      requestId: number; 
-      status: "approved" | "rejected" 
-    }) => {
-      const response = await apiRequest("PATCH", `/api/join-requests/${requestId}`, { status });
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/educator/join-requests"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/educator/classes"] });
-      toast({
-        title: "Request updated",
-        description: "The join request has been processed.",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message || "An error occurred while processing the request.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Mutation for removing a student from a class
-  const removeStudentMutation = useMutation({
-    mutationFn: async ({ 
-      studentId, 
-      classId 
-    }: { 
-      studentId: number; 
-      classId: number; 
-    }) => {
-      const response = await apiRequest("DELETE", `/api/classes/${classId}/students/${studentId}`);
-      return response;
-    },
-    onSuccess: () => {
-      // Reset state
-      setStudentToRemove(null);
-      
-      // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ["/api/educator/classes"] });
-      if (selectedClass) {
-        queryClient.invalidateQueries({ 
-          queryKey: ["/api/educator/classes", selectedClass, "student-performance"] 
-        });
-      }
-      
-      toast({
-        title: "Student removed",
-        description: "The student has been removed from the class.",
-      });
-    },
-    onError: (error: Error) => {
-      setStudentToRemove(null);
-      toast({
-        title: "Error",
-        description: error.message || "An error occurred while removing the student.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Handle form submission
-  const onSubmit = (data: CreateClassData) => {
+  const onSubmit = (data: ClassFormData) => {
     createClassMutation.mutate(data);
   };
 
-  // Copy class code to clipboard
-  const copyClassCode = (code: string) => {
-    navigator.clipboard.writeText(code);
-    toast({
-      title: "Copied",
-      description: "Class code copied to clipboard.",
-    });
-  };
-  
-  // Handle initiating student removal
-  const handleRemoveStudent = (student: {id: number, name: string}, classId: number) => {
-    setStudentToRemove({
-      id: student.id,
-      name: student.name,
-      classId: classId
-    });
-    
-    // If the user has chosen to not be asked again, proceed directly
-    if (dontAskAgain) {
-      removeStudentMutation.mutate({
-        studentId: student.id,
-        classId: classId
-      });
-    } else {
-      setConfirmRemoval(true);
-    }
-  };
-  
-  // Handle confirmation of student removal
-  const confirmRemoveStudent = () => {
-    if (!studentToRemove) return;
-    
-    // Save preference if "don't ask again" is checked
-    if (dontAskAgain) {
-      localStorage.setItem(dontAskAgainKey, "true");
-    }
-    
-    // Process the removal
-    removeStudentMutation.mutate({
-      studentId: studentToRemove.id,
-      classId: studentToRemove.classId
-    });
-    
-    // Close the dialog
-    setConfirmRemoval(false);
-  };
-
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold tracking-tight">Class Management</h2>
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
-          <PlusCircle className="mr-2 h-4 w-4" /> Create Class
-        </Button>
-      </div>
-
-      <Tabs defaultValue="classes" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-4">
-          <TabsTrigger value="classes" className="flex items-center">
-            <School className="mr-2 h-4 w-4" />
-            My Classes
-          </TabsTrigger>
-          <TabsTrigger value="requests" className="flex items-center">
-            <Users className="mr-2 h-4 w-4" />
-            Join Requests
-            {joinRequests?.length > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {joinRequests.length}
-              </Badge>
-            )}
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="classes">
-          {classesLoading ? (
-            <div className="text-center py-8">Loading classes...</div>
-          ) : classes?.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">
-                You haven't created any classes yet. Create your first class to get started.
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {classes?.map((cls: any) => (
-                <Card key={cls.id} className="overflow-hidden">
-                  <CardHeader className="bg-blue-500 overflow-hidden relative">
-  <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-blue-400/20 -mr-6 -mt-6 transform rotate-45 z=0"></div>
-  <div className="absolute bottom-0 left-0 w-16 h-16 rounded-full bg-blue-400/10 -ml-4 -mb-4 z=0"></div>
-  <div className="absolute top-1/2 right-1/4 w-12 h-12 rounded-lg bg-blue-400/15 transform rotate-12 z=0"></div>
-  <div className="absolute top-1/4 left-1/3 w-8 h-8 rounded-full bg-blue-400/20 transform rotate-90 z=0"></div>
-  
-
-                    <CardTitle className="flex justify-between items-center text-white">
-                      <span>{cls.name}</span>
-                    </CardTitle>
-                    <CardDescription className="flex justify-end items-center">
-                      <Users className="mr-2 h-4 w-4 text-blue-200" />
-                      <span className=" text-blue-200 font-bold">{cls.students?.length || 0}</span> 
-                       
-                    </CardDescription>
-                    <div className="mb-4 text-sm text-blue-200 flex items-center">
-                      <CalendarDays className="mr-1 h-3.5 w-3.5" />
-                       {formatDate(cls.createdAt)}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-4">
-                    {cls.description && <p className="mb-4">{cls.description}</p>}
-                    
-                    <div className="flex items-center justify-between p-2 bg-muted rounded-md mb-4">
-                      <div>
-                        <p className="text-sm font-medium">Class Code</p>
-                        <p className="font-bold">{cls.classCode}</p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => copyClassCode(cls.classCode)}
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium">Vocabulary Lists</p>
-                      {cls.vocabularyLists?.length > 0 ? (
-                        <div className="space-y-1">
-                          {cls.vocabularyLists.map((list: any) => (
-                            <div
-                              key={list.id}
-                              className="flex items-center justify-between p-2 bg-white rounded-md transition duration-300 ease-in-out hover:bg-blue-50 hover:text-blue-500 "
-                            >
-                              <span>{list.title}</span>
-                              {list.published ? (
-                                <Badge variant="secondary" className="bg-green-100 text-green-800">Published</Badge>
-                              ) : (
-                                <Badge variant="outline">Draft</Badge>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">
-                          No vocabulary lists assigned to this class yet.
-                        </p>
-                      )}
-                    </div>
-                  </CardContent>
-                  <CardFooter className="border-t bg-muted/50 flex justify-between">
-                    <Button className="mt-4 w-full bg-color-slate-50 text-black transition duration-300 ease-in-out hover:bg-blue-50 hover:text-blue-500"
-                       
-                      size="sm"
-                      onClick={() => {
-                        setSelectedClass(cls.id);
-                      }}
-                    >
-                      <ClipboardCheck className="mr-2 h-4 w-4" />
-                      View Performance
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="requests">
-          {requestsLoading ? (
-            <div className="text-center py-8">Loading join requests...</div>
-          ) : joinRequests?.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">
-                There are currently no pending join requests.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Pending Join Requests</h3>
-              <div className="border rounded-md divide-y">
-                {joinRequests?.map((request: any) => (
-                  <div
-                    key={request.id}
-                    className="p-4 flex flex-col md:flex-row md:items-center md:justify-between"
-                  >
-                    <div className="mb-4 md:mb-0">
-                      <p className="font-medium flex items-center">
-                        <User className="mr-2 h-4 w-4" />
-                        {request.student.name}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {request.student.email}
-                      </p>
-                      <p className="text-sm mt-1">
-                        Wants to join <span className="font-medium">{request.class.name}</span>
-                      </p>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="outline"
-                        className="flex-1 md:flex-none"
-                        onClick={() =>
-                          respondToRequestMutation.mutate({
-                            requestId: request.id,
-                            status: "rejected",
-                          })
-                        }
-                      >
-                        <XCircle className="mr-2 h-4 w-4" />
-                        Reject
-                      </Button>
-                      <Button
-                        className="flex-1 md:flex-none"
-                        onClick={() =>
-                          respondToRequestMutation.mutate({
-                            requestId: request.id,
-                            status: "approved",
-                          })
-                        }
-                      >
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                        Approve
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
-
-      {/* Create Class Dialog */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create a New Class</DialogTitle>
-            <DialogDescription>
-              Create a class to organize your students and vocabulary lists.
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Class Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., English 101" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description (Optional)</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Describe the class purpose or content"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsCreateDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={createClassMutation.isPending}>
-                  {createClassMutation.isPending ? "Creating..." : "Create Class"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Student Performance Dialog */}
-      <Dialog 
-        open={!!selectedClass} 
-        onOpenChange={(open) => !open && setSelectedClass(null)}
-      >
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Class Performance</DialogTitle>
-            <DialogDescription>
-              View student performance for this class
-            </DialogDescription>
-          </DialogHeader>
-          
-          {performanceLoading ? (
-            <div className="py-8 text-center">Loading student performance data...</div>
-          ) : performanceError ? (
-            <div className="py-8 text-center text-destructive">
-              Error loading student performance data. Please try again.
-            </div>
-          ) : studentPerformance.length === 0 ? (
-            <div className="py-8 text-center">
-              <p className="text-muted-foreground">No student performance data available yet.</p>
-              <p className="text-sm mt-2">Students need to complete vocabulary lists to see their performance.</p>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Student</TableHead>
-                      <TableHead className="text-center">
-                        <BookCheck className="h-4 w-4 inline mr-1" />
-                        Lists Completed
-                      </TableHead>
-                      <TableHead className="text-center">
-                        <Star className="h-4 w-4 inline mr-1" />
-                        Accuracy
-                      </TableHead>
-                      <TableHead className="text-center">
-                        <LineChart className="h-4 w-4 inline mr-1" />
-                        Progress
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {studentPerformance.map((student: any) => (
-                      <TableRow key={student.student.id}>
-                        <TableCell className="font-medium">
-                          {student.student.name}
-                          <div className="text-xs text-muted-foreground">
-                            {student.student.email}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div className="font-semibold">
-                            {student.stats.completedLists} / {student.stats.totalLists}
-                          </div>
-                          <Progress 
-                            value={(student.stats.completedLists / Math.max(1, student.stats.totalLists)) * 100} 
-                            className="h-2 mt-1" 
-                          />
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div
-                            className={`font-semibold inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs ${
-                              getScoreBgColor(student.stats.averageAccuracy)
-                            }`}
-                          >
-                            {student.stats.averageAccuracy}%
-                          </div>
-                          <div className="text-xs mt-1">
-                            {student.stats.correctWords} / {student.stats.totalWords} words
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center space-y-2">
-                          <div className="flex gap-2 justify-center">
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              className="text-xs"
-                              onClick={() => setSelectedStudent({
-                                id: student.student.id,
-                                name: student.student.name
-                              })}
-                              disabled={student.stats.completedLists === 0}
-                            >
-                              <LineChart className="h-3 w-3 mr-1" />
-                              View Progress
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="destructive"
-                              className="text-xs"
-                              onClick={() => handleRemoveStudent({
-                                id: student.student.id,
-                                name: student.student.name
-                              }, selectedClass || 0)}
-                            >
-                              <UserMinus className="h-3 w-3 mr-1" />
-                              Remove
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-
-              <div className="space-y-2">
-                <h3 className="text-lg font-medium">Recent Submissions</h3>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {studentPerformance.flatMap((student: any) => 
-                    student.recentSubmissions.map((submission: any) => (
-                      <Card key={`${student.student.id}-${submission.id}`} className="overflow-hidden">
-                        <CardHeader className="p-4 pb-2">
-                          <CardTitle className="text-base">{student.student.name}</CardTitle>
-                          <CardDescription className="text-xs">
-                            {new Date(submission.submittedAt).toLocaleDateString()}
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-4 pt-0">
-                          <div className="text-sm">{submission.listTitle}</div>
-                          <div
-                            className={`mt-2 inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs ${
-                              getScoreBgColor(submission.score)
-                            }`}
-                          >
-                            Score: {submission.score}%
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))
-                  ).slice(0, 6)}
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {/* Student Progress Chart */}
-          {selectedStudent && selectedClass && (
-            <StudentProgressChart
-              studentId={selectedStudent.id}
-              studentName={selectedStudent.name}
-              classId={selectedClass}
-              isOpen={!!selectedStudent}
-              onClose={() => setSelectedStudent(null)}
-            />
-          )}
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        {trigger || (
+          <Button variant="outline" size="sm">
+            <Plus className="mr-2 h-4 w-4" />
+            Create New Class
+          </Button>
+        )}
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Create New Class</DialogTitle>
+          <DialogDescription>
+            Create a new class to organize your students and assignments.
+          </DialogDescription>
+        </DialogHeader>
         
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSelectedClass(null)}>Close</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Student Removal Confirmation Dialog */}
-      <Dialog open={confirmRemoval} onOpenChange={setConfirmRemoval}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="h-5 w-5" />
-              Remove Student
-            </DialogTitle>
-            <DialogDescription>
-              Are you sure you want to remove {studentToRemove?.name} from this class?
-              This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="flex items-center space-x-2 pt-2">
-            <Checkbox 
-              id="dontAskAgain" 
-              checked={dontAskAgain} 
-              onCheckedChange={(checked) => {
-                setDontAskAgain(checked === true);
-              }} 
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Class Name *</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g., 7th Grade English"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            <label
-              htmlFor="dontAskAgain"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              Don't ask me again
-            </label>
-          </div>
-          
-          <DialogFooter className="flex space-x-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setConfirmRemoval(false);
-                setStudentToRemove(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={confirmRemoveStudent}
-              disabled={removeStudentMutation.isPending}
-            >
-              {removeStudentMutation.isPending ? "Removing..." : "Remove Student"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+            
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Optional description for your class..."
+                      className="resize-none"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={createClassMutation.isPending}
+              >
+                {createClassMutation.isPending ? "Creating..." : "Create Class"}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 }

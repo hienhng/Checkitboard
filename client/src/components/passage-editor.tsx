@@ -337,6 +337,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
             label="Assign to Classes *"
             description="Select one or more classes to assign this vocabulary list."
             multiple={true}
+            required={true}
           />
 
           <Tabs defaultValue="passage-to-words" className="w-full">

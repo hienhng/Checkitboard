@@ -46,6 +46,8 @@ import {
 } from "@/components/ui/tooltip";
 import { Control } from "react-hook-form";
 import { cn } from "@/lib/utils";
+import { CreateClassDialog } from "@/components/class-management";
+import { Plus } from "lucide-react";
 
 interface ClassSelectProps {
   formControl: Control<any>;
@@ -154,6 +156,28 @@ export function ClassSelect({
                           {isLoading ? "Loading classes..." : "No classes found."}
                         </CommandEmpty>
                         <CommandGroup className="max-h-64 overflow-auto">
+                          {classes.length === 0 && !isLoading && (
+                            <div className="p-2">
+                              <CreateClassDialog
+                                onClassCreated={(newClass) => {
+                                  // Auto-select the newly created class
+                                  const currentValue = field.value || [];
+                                  field.onChange([...currentValue, newClass.id]);
+                                  setOpen(false);
+                                }}
+                                trigger={
+                                  <Button
+                                    variant="ghost"
+                                    className="w-full justify-start text-blue-600 hover:text-blue-700"
+                                  >
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Create new class
+                                  </Button>
+                                }
+                              />
+                            </div>
+                          )}
+                          
                           {classes.map((cls: any) => (
                             <CommandItem
                               key={cls.id}
@@ -175,6 +199,28 @@ export function ClassSelect({
                               {cls.name}
                             </CommandItem>
                           ))}
+                          
+                          {classes.length > 0 && (
+                            <div className="border-t p-2">
+                              <CreateClassDialog
+                                onClassCreated={(newClass) => {
+                                  // Auto-select the newly created class
+                                  const currentValue = field.value || [];
+                                  field.onChange([...currentValue, newClass.id]);
+                                  setOpen(false);
+                                }}
+                                trigger={
+                                  <Button
+                                    variant="ghost"
+                                    className="w-full justify-start text-blue-600 hover:text-blue-700"
+                                  >
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Create new class
+                                  </Button>
+                                }
+                              />
+                            </div>
+                          )}
                         </CommandGroup>
                       </Command>
                     </PopoverContent>
