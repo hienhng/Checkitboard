@@ -50,10 +50,6 @@ export default function VocabularyCheckup() {
     submissionId: submissionId
   });
 
-  const handleFullscreenExit = () => {
-    setShowFullscreenWarning(true);
-  };
-  
   // Get submission details with vocabulary list and words
   const { data: submission, isLoading } = useQuery({
     queryKey: [`/api/submissions/${submissionId}`],
@@ -260,10 +256,7 @@ export default function VocabularyCheckup() {
     await completeMutation.mutateAsync();
   };
 
-  // Handle fullscreen exit
-  const handleFullscreenExit = () => {
-    setFullscreenExitCount(prev => prev + 1);
-  };
+
   
   // Start fullscreen mode when check-up begins
   useEffect(() => {
@@ -356,7 +349,7 @@ export default function VocabularyCheckup() {
       <FullscreenMonitor 
         submissionId={submissionId} 
         isActive={isFullscreenActive}
-        onFullscreenExit={handleFullscreenExit}
+        onFullscreenExit={() => setShowFullscreenWarning(true)}
       >
         {/* Fullscreen warning overlay */}
         <FullscreenWarning 
@@ -447,7 +440,7 @@ export default function VocabularyCheckup() {
                           variant="outline"
                           className="flex items-center"
                           onClick={handlePrevious}
-                          disabled={currentWordIndex === 0}
+                          disabled={currentWordIndex === 0 || showFullscreenWarning}
                         >
                           <ChevronLeft className="mr-1 h-4 w-4" />
                           Previous
@@ -457,6 +450,7 @@ export default function VocabularyCheckup() {
                           <Button
                             className="flex items-center"
                             onClick={handleNext}
+                            disabled={showFullscreenWarning}
                           >
                             Next
                             <ChevronRight className="ml-1 h-4 w-4" />
@@ -465,6 +459,7 @@ export default function VocabularyCheckup() {
                           <Button
                             className="flex items-center"
                             onClick={handleComplete}
+                            disabled={showFullscreenWarning}
                           >
                             Submit Check-Up
                           </Button>
