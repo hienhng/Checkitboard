@@ -217,15 +217,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Vocabulary list not found" });
       }
 
-      // Check if user has access to this list
-      if (req.user.role === "educator" && list.educatorId !== req.user.id) {
-        return res.status(403).json({ message: "You don't have access to this list" });
+      // Check access permissions
+      if (req.user.role === "learner") {
+        // Learners can only access published lists
+        if (!list.published) {
+          return res.status(403).json({ message: "Access denied" });
+        }
+      } else if (req.user.role === "educator") {
+        // Educators can only access their own lists
+        if (list.educatorId !== req.user.id) {
+          return res.status(403).json({ message: "Access denied" });
+        }
       }
 
       res.json(list);
     } catch (error) {
       console.error("Error fetching vocabulary list:", error);
       res.status(500).json({ message: "Error fetching vocabulary list" });
+    }
+  });
+
+  // Start a vocabulary test (create submission)
+  app.post("/api/vocabulary-lists/:id/start-test", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "learner") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const listId = parseInt(req.params.id);
+      if (isNaN(listId)) {
+        return res.status(400).json({ message: "Invalid list ID" });
+      }
+
+      const list = await storage.getVocabularyList(listId);
+      
+      if (!list) {
+        return res.status(404).json({ message: "Vocabulary list not found" });
+      }
+
+      if (!list.published) {
+        return res.status(403).json({ message: "This test is not available" });
+      }
+
+      // Check if student already has an active submission for this list
+      const existingSubmission = await storage.getSubmissionByStudentAndList(req.user.id, listId);
+      
+      if (existingSubmission && !existingSubmission.completed) {
+        // Return existing submission
+        return res.json({ submissionId: existingSubmission.id });
+      }
+
+      // Create new submission
+      const submission = await storage.createSubmission({
+        studentId: req.user.id,
+        listId: listId,
+        startedAt: new Date(),
+      });
+
+      res.json({ submissionId: submission.id });
+    } catch (error) {
+      console.error("Error starting test:", error);
+      res.status(500).json({ message: "Error starting test" });
     }
   });
 
