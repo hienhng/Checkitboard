@@ -39,7 +39,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return await res.json();
     },
     onSuccess: (userData: User) => {
+      // Clear all cached data before setting new user to prevent cross-contamination
+      queryClient.clear();
+      
+      // Set new user data
       queryClient.setQueryData(["/api/user"], userData);
+      
       toast({
         title: "Login successful",
         description: `Welcome back, ${userData.name}!`,
@@ -80,7 +85,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await apiRequest("POST", "/api/logout");
     },
     onSuccess: () => {
+      // Clear all cached data to prevent cross-user contamination
+      queryClient.clear();
+      
+      // Set user to null after clearing cache
       queryClient.setQueryData(["/api/user"], null);
+      
       toast({
         title: "Logged out",
         description: "You have been logged out successfully.",

@@ -54,12 +54,23 @@ export function NotificationCenter() {
     queryFn: async () => {
       const response = await fetch("/api/notifications/count");
       if (!response.ok) {
+        if (response.status === 401) {
+          // User not authenticated, return 0 count
+          return { count: 0 };
+        }
         throw new Error("Failed to fetch notification count");
       }
       return response.json();
     },
     refetchInterval: 30000, // Refetch every 30 seconds
     refetchIntervalInBackground: true,
+    retry: (failureCount, error: any) => {
+      // Don't retry on authentication errors
+      if (error?.message?.includes('401') || error?.status === 401) {
+        return false;
+      }
+      return failureCount < 3;
+    },
   });
 
   // Query to get notifications with optional category filter
@@ -72,11 +83,22 @@ export function NotificationCenter() {
       
       const response = await fetch(url);
       if (!response.ok) {
+        if (response.status === 401) {
+          // User not authenticated, return empty array
+          return [];
+        }
         throw new Error("Failed to fetch notifications");
       }
       return response.json() as Promise<Notification[]>;
     },
     enabled: isOpen, // Only fetch when popover is open
+    retry: (failureCount, error: any) => {
+      // Don't retry on authentication errors
+      if (error?.message?.includes('401') || error?.status === 401) {
+        return false;
+      }
+      return failureCount < 3;
+    },
   });
 
   // Mutation to mark a notification as read
