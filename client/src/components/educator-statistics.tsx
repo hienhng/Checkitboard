@@ -4,9 +4,9 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatPassageWithHighlights, createMarkup } from "@/lib/utils";
 import { ClickableText } from "./clickable-text";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Card,
   CardContent,
@@ -143,6 +143,38 @@ export function EducatorStatistics() {
     },
   });
   
+  // Handle selecting/deselecting individual lists
+  const handleSelectList = (listId: number) => {
+    setSelectedLists(prev => 
+      prev.includes(listId) 
+        ? prev.filter(id => id !== listId)
+        : [...prev, listId]
+    );
+  };
+
+  // Handle select all functionality
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedLists(filteredLists.map((list: any) => list.id));
+    } else {
+      setSelectedLists([]);
+    }
+  };
+
+  // Handle delete action
+  const handleDelete = () => {
+    if (selectedLists.length > 0) {
+      deleteMutation.mutate(selectedLists);
+    }
+  };
+
+  // Filter lists based on selected class
+  const filteredLists = stats.lists.filter((list: any) => {
+    if (selectedClass === "all") return true;
+    if (selectedClass === "unassigned") return !list.class;
+    return list.class === selectedClass;
+  });
+
   // Open the edit dialog for a specific list
   const handleEditList = (list: any) => {
     setSelectedList(list);
