@@ -106,6 +106,15 @@ export function EducatorStatistics() {
         title: "Passage updated",
         description: "The vocabulary list has been updated successfully.",
       });
+    },
+    onError: (error) => {
+      toast({
+        title: "Update failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   // Delete vocabulary lists mutation
   const deleteMutation = useMutation({
@@ -132,9 +141,7 @@ export function EducatorStatistics() {
         variant: "destructive",
       });
     },
-  });
-    },
-    onError: (error: Error) => {
+    onError: (error: any) => {
       toast({
         title: "Error",
         description: error.message || "Failed to update the vocabulary list.",
@@ -402,8 +409,89 @@ export function EducatorStatistics() {
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {stats.lists.map((list: any) => (
+          <div className="space-y-6">
+            {/* Vocabulary List Management */}
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <BookOpen className="mr-2 h-5 w-5" />
+                  Vocabulary List Management
+                </CardTitle>
+                <CardDescription>
+                  Manage and delete vocabulary checkups you've created
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Filter Controls */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-2">
+                        <Filter className="h-4 w-4 text-gray-500" />
+                        <Select value={selectedClass} onValueChange={setSelectedClass}>
+                          <SelectTrigger className="w-48">
+                            <SelectValue placeholder="Filter by class" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Classes</SelectItem>
+                            <SelectItem value="unassigned">Unassigned</SelectItem>
+                            {classes.map((cls: any) => (
+                              <SelectItem key={cls.id} value={cls.name}>
+                                {cls.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="select-all"
+                          checked={selectedLists.length === filteredLists.length && filteredLists.length > 0}
+                          onCheckedChange={handleSelectAll}
+                        />
+                        <label htmlFor="select-all" className="text-sm font-medium">
+                          Select All ({filteredLists.length})
+                        </label>
+                      </div>
+                    </div>
+
+                    <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="destructive" 
+                          disabled={selectedLists.length === 0}
+                          className="flex items-center"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete Selected ({selectedLists.length})
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Vocabulary Lists</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete {selectedLists.length} vocabulary list(s)? 
+                            This action cannot be undone and will remove all associated student submissions and data.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={handleDelete}
+                            disabled={deleteMutation.isPending}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            {deleteMutation.isPending ? "Deleting..." : "Delete"}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+
+                  {/* Vocabulary Lists */}
+                  <div className="space-y-4">
+                    {filteredLists.map((list: any) => (
               <Card key={list.id} className="overflow-hidden">
                 <CardHeader className="bg-muted/50">
                   <CardTitle className="text-xl flex items-center justify-between">
@@ -446,44 +534,46 @@ export function EducatorStatistics() {
                       )}
                     </div>
                     
-                    {/* Passage Preview */}
-                    <div className="mt-4">
-                      <h3 className="font-medium mb-2">Passage</h3>
-                      <div className="text-sm text-muted-foreground line-clamp-3">
-                        {list.passage}
-                      </div>
-                    </div>
+                            {/* Passage Preview */}
+                            <div className="mt-4">
+                              <h4 className="text-sm font-medium mb-2">Passage</h4>
+                              <div className="text-sm text-muted-foreground line-clamp-3">
+                                {list.passage}
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </CardContent>
-                      <CardFooter className="border-t bg-muted/50 flex justify-end gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleEditList(list)}
-                        >
-                          <Edit className="h-4 w-4 mr-1" />
-                          Edit Passage & Words
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  ))}
+                        <CardFooter className="border-t bg-muted/50 flex justify-end gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleEditList(list)}
+                          >
+                            <Edit className="h-4 w-4 mr-1" />
+                            Edit Passage & Words
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    ))}
+                  </div>
+                  {filteredLists.length === 0 && (
+                    <div className="text-center py-12">
+                      <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No vocabulary lists found</h3>
+                      <p className="text-sm text-gray-500">
+                        {selectedClass === "all" 
+                          ? "You haven't created any vocabulary lists yet."
+                          : "No vocabulary lists found for the selected class filter."
+                        }
+                      </p>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="text-center py-12">
-                  <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No vocabulary lists found</h3>
-                  <p className="text-sm text-gray-500">
-                    {selectedClass === "all" 
-                      ? "You haven't created any vocabulary lists yet."
-                      : "No vocabulary lists found for the selected class filter."
-                    }
-                  </p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
       
       {/* Edit Passage Dialog */}
