@@ -4,6 +4,9 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatPassageWithHighlights, createMarkup } from "@/lib/utils";
 import { ClickableText } from "./clickable-text";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import {
   Card,
   CardContent,
@@ -39,7 +42,9 @@ import {
   Save,
   BookOpenCheck,
   BarChart,
-  ChevronRight
+  ChevronRight,
+  Trash2,
+  Filter
 } from "lucide-react";
 
 export function EducatorStatistics() {
@@ -48,6 +53,9 @@ export function EducatorStatistics() {
   const [selectedList, setSelectedList] = useState<any>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editedPassage, setEditedPassage] = useState("");
+  const [selectedClass, setSelectedClass] = useState<string>("all");
+  const [selectedLists, setSelectedLists] = useState<number[]>([]);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedWords, setSelectedWords] = useState<string[]>([]);
   
   // Query for fetching educator's stats
@@ -63,6 +71,15 @@ export function EducatorStatistics() {
     queryKey: ["/api/educator/statistics"],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/educator/statistics");
+      return response.json();
+    },
+  });
+
+  // Fetch educator's classes for filter dropdown
+  const { data: classes = [] } = useQuery<any[]>({
+    queryKey: ["/api/educator/classes"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/educator/classes");
       return response.json();
     },
   });
@@ -89,6 +106,33 @@ export function EducatorStatistics() {
         title: "Passage updated",
         description: "The vocabulary list has been updated successfully.",
       });
+
+  // Delete vocabulary lists mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (listIds: number[]) => {
+      const deletePromises = listIds.map(id => 
+        apiRequest("DELETE", `/api/vocabulary-lists/${id}`)
+      );
+      return Promise.all(deletePromises);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: `${selectedLists.length} vocabulary list(s) deleted successfully`,
+      });
+      setSelectedLists([]);
+      setShowDeleteDialog(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/educator/statistics"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/educator/vocabulary-lists"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete vocabulary lists",
+        variant: "destructive",
+      });
+    },
+  });
     },
     onError: (error: Error) => {
       toast({
@@ -409,22 +453,37 @@ export function EducatorStatistics() {
                         {list.passage}
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="border-t bg-muted/50 flex justify-end gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleEditList(list)}
-                  >
-                    <Edit className="h-4 w-4 mr-1" />
-                    Edit Passage & Words
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        )}
+                          </div>
+                        </div>
+                      </CardContent>
+                      <CardFooter className="border-t bg-muted/50 flex justify-end gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleEditList(list)}
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          Edit Passage & Words
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No vocabulary lists found</h3>
+                  <p className="text-sm text-gray-500">
+                    {selectedClass === "all" 
+                      ? "You haven't created any vocabulary lists yet."
+                      : "No vocabulary lists found for the selected class filter."
+                    }
+                  </p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
       
       {/* Edit Passage Dialog */}

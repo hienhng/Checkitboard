@@ -33,9 +33,7 @@ import { formatDate, formatDueDate } from "@/lib/utils";
 import { GradingPanel } from "@/components/grading-panel";
 import { CreateClassDialog, ClassManagement } from "@/components/class-management";
 import { RequestApprovalButton } from "@/components/request-approval";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+
 import { useToast } from "@/hooks/use-toast";
 
 function EducatorDashboard() {
@@ -43,9 +41,7 @@ function EducatorDashboard() {
   const [showCreateList, setShowCreateList] = useState(false);
   const [showGrading, setShowGrading] = useState(false);
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<number | null>(null);
-  const [selectedClass, setSelectedClass] = useState<string>("all");
-  const [selectedLists, setSelectedLists] = useState<number[]>([]);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
 
   // Fetch educator's vocabulary lists
   const { data: vocabularyLists = [], isLoading: listsLoading } = useQuery<any[]>({
@@ -59,14 +55,7 @@ function EducatorDashboard() {
     queryFn: getQueryFn({ on401: "throw" }),
   });
 
-  // Fetch educator's classes for filter dropdown
-  const { data: classes = [] } = useQuery<any[]>({
-    queryKey: ["/api/educator/classes"],
-    queryFn: async () => {
-      const response = await apiRequest("GET", "/api/educator/classes");
-      return response.json();
-    },
-  });
+
 
 
 
@@ -92,31 +81,7 @@ function EducatorDashboard() {
     },
   });
 
-  // Delete vocabulary lists mutation
-  const deleteMutation = useMutation({
-    mutationFn: async (listIds: number[]) => {
-      const deletePromises = listIds.map(id => 
-        apiRequest("DELETE", `/api/vocabulary-lists/${id}`)
-      );
-      return Promise.all(deletePromises);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: `${selectedLists.length} vocabulary list(s) deleted successfully`,
-      });
-      setSelectedLists([]);
-      setShowDeleteDialog(false);
-      queryClient.invalidateQueries({ queryKey: ["/api/educator/vocabulary-lists"] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete vocabulary lists",
-        variant: "destructive",
-      });
-    },
-  });
+
 
   const handlePublishToggle = (id: number, currentStatus: boolean) => {
     publishMutation.mutate({ id, published: !currentStatus });
@@ -143,34 +108,7 @@ function EducatorDashboard() {
 
   const [activeTab, setActiveTab] = useState("dashboard");
 
-  // Filter vocabulary lists based on selected class
-  const filteredLists = vocabularyLists.filter(list => {
-    if (selectedClass === "all") return true;
-    if (selectedClass === "unassigned") return !list.classId;
-    return list.classId === parseInt(selectedClass);
-  });
 
-  const handleSelectAll = () => {
-    if (selectedLists.length === filteredLists.length) {
-      setSelectedLists([]);
-    } else {
-      setSelectedLists(filteredLists.map(list => list.id));
-    }
-  };
-
-  const handleSelectList = (listId: number) => {
-    setSelectedLists(prev => 
-      prev.includes(listId) 
-        ? prev.filter(id => id !== listId)
-        : [...prev, listId]
-    );
-  };
-
-  const handleDelete = () => {
-    if (selectedLists.length > 0) {
-      deleteMutation.mutate(selectedLists);
-    }
-  };
 
   return (
     <div className="flex flex-col min-h-screen bg-neutral-light">
