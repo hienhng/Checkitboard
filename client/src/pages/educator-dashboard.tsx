@@ -22,14 +22,10 @@ import {
   BarChart,
   User,
   Users,
-  School,
-  Trash2,
-  Filter
+  School
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { VocabularyList } from "@shared/schema";
 import { formatDate, formatDueDate } from "@/lib/utils";
@@ -44,9 +40,7 @@ function EducatorDashboard() {
   const [showCreateList, setShowCreateList] = useState(false);
   const [showGrading, setShowGrading] = useState(false);
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<number | null>(null);
-  const [selectedClass, setSelectedClass] = useState<string>("all");
-  const [selectedLists, setSelectedLists] = useState<number[]>([]);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
 
 
   // Fetch educator's vocabulary lists
@@ -266,137 +260,40 @@ function EducatorDashboard() {
                     </div>
 
                     <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-                      {/* Vocabulary Lists */}
+                      {/* Quick Stats */}
                       <Card>
                         <CardHeader>
                           <CardTitle className="flex items-center">
-                            <BookOpen className="mr-2 h-5 w-5 text-primary" />
-                            My Vocabulary Lists
+                            <BarChart className="mr-2 h-5 w-5 text-primary" />
+                            Quick Overview
                           </CardTitle>
                           <CardDescription>
-                            Manage your created vocabulary lists
+                            Your teaching dashboard at a glance
                           </CardDescription>
                         </CardHeader>
                         <CardContent>
-                          {/* Delete Management Controls */}
-                          <div className="mb-4 space-y-3 border-b pb-4">
+                          <div className="space-y-4">
                             <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-4">
-                                <div className="flex items-center space-x-2">
-                                  <Filter className="h-4 w-4 text-gray-500" />
-                                  <Select value={selectedClass} onValueChange={setSelectedClass}>
-                                    <SelectTrigger className="w-48">
-                                      <SelectValue placeholder="Filter by class" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="all">All Classes</SelectItem>
-                                      <SelectItem value="unassigned">Unassigned</SelectItem>
-                                      {classes.map((cls: any) => (
-                                        <SelectItem key={cls.id} value={cls.id.toString()}>
-                                          {cls.name}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                
-                                <div className="flex items-center space-x-2">
-                                  <Checkbox
-                                    id="select-all"
-                                    checked={selectedLists.length === filteredLists.length && filteredLists.length > 0}
-                                    onCheckedChange={handleSelectAll}
-                                  />
-                                  <label htmlFor="select-all" className="text-sm font-medium">
-                                    Select All ({filteredLists.length})
-                                  </label>
-                                </div>
-                              </div>
-
-                              <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-                                <AlertDialogTrigger asChild>
-                                  <Button 
-                                    variant="destructive" 
-                                    size="sm"
-                                    disabled={selectedLists.length === 0}
-                                    className="flex items-center"
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete ({selectedLists.length})
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Delete Vocabulary Lists</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Are you sure you want to delete {selectedLists.length} vocabulary list(s)? 
-                                      This action cannot be undone and will remove all associated student submissions and data.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction 
-                                      onClick={handleDelete}
-                                      disabled={deleteMutation.isPending}
-                                      className="bg-red-600 hover:bg-red-700"
-                                    >
-                                      {deleteMutation.isPending ? "Deleting..." : "Delete"}
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
+                              <span className="text-sm text-gray-600">Total Vocabulary Lists</span>
+                              <span className="font-semibold">{vocabularyLists.length}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-gray-600">Published Lists</span>
+                              <span className="font-semibold">{vocabularyLists.filter(list => list.published).length}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-gray-600">Pending Submissions</span>
+                              <span className="font-semibold">{pendingSubmissions.length}</span>
+                            </div>
+                            <div className="pt-4 border-t">
+                              <Link href="/educator/assignments">
+                                <Button variant="outline" className="w-full">
+                                  <ClipboardList className="mr-2 h-4 w-4" />
+                                  Manage Assignments
+                                </Button>
+                              </Link>
                             </div>
                           </div>
-
-                          {listsLoading ? (
-                            <div className="py-4 text-center text-sm text-gray-500">Loading vocabulary lists...</div>
-                          ) : filteredLists && filteredLists.length > 0 ? (
-                            <div className="divide-y divide-gray-200">
-                              {filteredLists.map((list) => (
-                                <div key={list.id} className="py-4 flex justify-between items-center">
-                                  <div className="flex items-center space-x-3 flex-1">
-                                    <Checkbox
-                                      checked={selectedLists.includes(list.id)}
-                                      onCheckedChange={() => handleSelectList(list.id)}
-                                    />
-                                    <div className="flex-1">
-                                      <h4 className="text-sm font-medium text-neutral-dark">{list.title}</h4>
-                                      <div className="mt-1 flex items-center text-xs text-gray-500">
-                                        <CalendarDays className="mr-1 h-3.5 w-3.5" />
-                                        Created: {formatDate(list.createdAt)}
-                                      </div>
-                                      <div className="mt-1 flex items-center text-xs text-gray-500">
-                                        <ClipboardList className="mr-1 h-3.5 w-3.5" />
-                                        {list.words?.length || 0} vocabulary words
-                                      </div>
-                                      {list.class && (
-                                        <div className="mt-1 flex items-center text-xs text-gray-500">
-                                          <School className="mr-1 h-3.5 w-3.5" />
-                                          Class: {list.class.name}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <div className="ml-4 flex-shrink-0 flex items-center space-x-2">
-                                    <Button 
-                                      variant={list.published ? "outline" : "default"} 
-                                      size="sm"
-                                      className={list.published ? "hover:bg-red-50 hover:text-red-600 hover:border-red-200" : ""}
-                                      onClick={() => handlePublishToggle(list.id, list.published)}
-                                    >
-                                      {list.published ? "Unpublish" : "Publish"}
-                                    </Button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="py-4 text-center text-sm text-gray-500">
-                              {selectedClass === "all" 
-                                ? "You haven't created any vocabulary lists yet. Try create one by clicking the \"Create\" button above."
-                                : "No vocabulary lists found for the selected class filter."
-                              }
-                            </div>
-                          )}
                         </CardContent>
                       </Card>
                       

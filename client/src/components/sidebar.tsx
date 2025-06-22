@@ -33,7 +33,8 @@ import {
   House,
   LayoutDashboard,
   Settings,
-  ChevronDown
+  ChevronDown,
+  ClipboardList
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMobile } from "@/hooks/use-mobile";
@@ -68,6 +69,7 @@ export function Sidebar() {
   const navLinks = isEducator
     ? [
         { href: "/educator/dashboard", label: "Dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
+        { href: "/educator/assignments", label: "Assignments", icon: <ClipboardList className="h-5 w-5" /> },
         { href: "/educator/statistics", label: "Statistics", icon: <BarChart className="h-5 w-5" /> },
        
       ]
