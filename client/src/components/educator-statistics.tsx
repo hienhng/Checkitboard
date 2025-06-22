@@ -141,13 +141,6 @@ export function EducatorStatistics() {
         variant: "destructive",
       });
     },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update the vocabulary list.",
-        variant: "destructive",
-      });
-    },
   });
   
   // Open the edit dialog for a specific list
