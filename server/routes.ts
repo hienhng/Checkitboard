@@ -285,6 +285,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete a vocabulary list
+  app.delete("/api/vocabulary-lists/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "educator") {
+        return res.status(403).json({ message: "Only educators can delete vocabulary lists" });
+      }
+
+      const listId = parseInt(req.params.id);
+      if (isNaN(listId)) {
+        return res.status(400).json({ message: "Invalid list ID" });
+      }
+
+      // Verify the educator owns this list
+      const existingList = await storage.getVocabularyList(listId);
+      if (!existingList) {
+        return res.status(404).json({ message: "Vocabulary list not found" });
+      }
+
+      if (existingList.educatorId !== req.user.id) {
+        return res.status(403).json({ message: "You don't have permission to delete this vocabulary list" });
+      }
+
+      // Delete the vocabulary list (this will cascade delete words, submissions, etc.)
+      await db.delete(vocabularyLists).where(eq(vocabularyLists.id, listId));
+
+      res.json({ message: "Vocabulary list deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting vocabulary list:", error);
+      res.status(500).json({ message: "Error deleting vocabulary list" });
+    }
+  });
+
   // Update a vocabulary list (publish/unpublish or assign to class)
   app.patch("/api/vocabulary-lists/:id", async (req, res) => {
     try {

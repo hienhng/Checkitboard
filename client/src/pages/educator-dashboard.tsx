@@ -22,7 +22,9 @@ import {
   BarChart,
   User,
   Users,
-  School
+  School,
+  Trash2,
+  Filter
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
@@ -343,21 +345,22 @@ function EducatorDashboard() {
                                       onCheckedChange={() => handleSelectList(list.id)}
                                     />
                                     <div className="flex-1">
-                                    <h4 className="text-sm font-medium text-neutral-dark">{list.title}</h4>
-                                    <div className="mt-1 flex items-center text-xs text-gray-500">
-                                      <CalendarDays className="mr-1 h-3.5 w-3.5" />
-                                      Created: {formatDate(list.createdAt)}
-                                    </div>
-                                    <div className="mt-1 flex items-center text-xs text-gray-500">
-                                      <ClipboardList className="mr-1 h-3.5 w-3.5" />
-                                      {list.words?.length || 0} vocabulary words
-                                    </div>
-                                    {list.class && (
+                                      <h4 className="text-sm font-medium text-neutral-dark">{list.title}</h4>
                                       <div className="mt-1 flex items-center text-xs text-gray-500">
-                                        <School className="mr-1 h-3.5 w-3.5" />
-                                        Class: {list.class.name}
+                                        <CalendarDays className="mr-1 h-3.5 w-3.5" />
+                                        Created: {formatDate(list.createdAt)}
                                       </div>
-                                    )}
+                                      <div className="mt-1 flex items-center text-xs text-gray-500">
+                                        <ClipboardList className="mr-1 h-3.5 w-3.5" />
+                                        {list.words?.length || 0} vocabulary words
+                                      </div>
+                                      {list.class && (
+                                        <div className="mt-1 flex items-center text-xs text-gray-500">
+                                          <School className="mr-1 h-3.5 w-3.5" />
+                                          Class: {list.class.name}
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                   <div className="ml-4 flex-shrink-0 flex items-center space-x-2">
                                     <Button 
@@ -413,7 +416,6 @@ function EducatorDashboard() {
                                       <Clock className="mr-1 h-3.5 w-3.5" />
                                       Submitted: {formatDate(submission.submittedAt)}
                                     </div>
-                                  </div>
                                   </div>
                                   <div className="ml-4 mr-2 flex-shrink-0">
                                     <Button 
