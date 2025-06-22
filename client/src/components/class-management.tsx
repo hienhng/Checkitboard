@@ -40,7 +40,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, Users, BookOpen, Settings, Copy, Check } from "lucide-react";
+import { Plus, Users, BookOpen, Settings, Copy, Check, Mail, FileText, TrendingUp } from "lucide-react";
 
 const classSchema = z.object({
   name: z.string().min(1, "Class name is required").max(100, "Class name must be less than 100 characters"),
@@ -210,8 +210,135 @@ function ClassCodeDisplay({ classCode }: { classCode: string }) {
   );
 }
 
+interface StudentProgressDialogProps {
+  classData: any;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+function StudentProgressDialog({ classData, open, onOpenChange }: StudentProgressDialogProps) {
+  const { data: studentProgress = [], isLoading } = useQuery<any[]>({
+    queryKey: ["/api/classes", classData.id, "student-performance"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/classes/${classData.id}/student-performance`);
+      return response.json();
+    },
+    enabled: open, // Only fetch when dialog is open
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Students in {classData.name}</DialogTitle>
+          <DialogDescription>
+            View student information and their progress in this class
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          {isLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-2 text-sm text-gray-500">Loading student data...</p>
+            </div>
+          ) : studentProgress.length === 0 ? (
+            <div className="text-center py-12">
+              <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No students enrolled</h3>
+              <p className="text-sm text-gray-500">
+                Students can join this class using the class code: <strong>{classData.classCode}</strong>
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {studentProgress.map((student: any) => (
+                <Card key={student.studentId} className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="bg-blue-100 rounded-full p-2">
+                        <Users className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-gray-900">{student.studentName}</h4>
+                        <div className="flex items-center space-x-4 text-sm text-gray-500">
+                          <div className="flex items-center">
+                            <Mail className="h-4 w-4 mr-1" />
+                            {student.studentEmail}
+                          </div>
+                          <div className="flex items-center">
+                            <FileText className="h-4 w-4 mr-1" />
+                            {student.submissions?.length || 0} submissions
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="text-right">
+                      <div className="flex items-center space-x-2">
+                        <TrendingUp className="h-4 w-4 text-green-600" />
+                        <span className="text-sm font-medium">
+                          {student.averageScore !== null ? `${Math.round(student.averageScore)}%` : 'No scores yet'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Joined: {new Date(student.joinedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {student.submissions && student.submissions.length > 0 ? (
+                    <div className="mt-4 space-y-2">
+                      <h5 className="text-sm font-medium text-gray-700">Recent Submissions:</h5>
+                      <div className="space-y-2">
+                        {student.submissions.slice(0, 3).map((submission: any) => (
+                          <div key={submission.id} className="flex items-center justify-between bg-gray-50 rounded p-2">
+                            <div>
+                              <p className="text-sm font-medium">{submission.listTitle}</p>
+                              <p className="text-xs text-gray-500">
+                                Submitted: {new Date(submission.submittedAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <Badge variant={submission.score >= 70 ? "default" : submission.score >= 50 ? "secondary" : "destructive"}>
+                                {submission.score !== null ? `${submission.score}%` : 'Pending'}
+                              </Badge>
+                              {submission.gradedAt && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Graded: {new Date(submission.gradedAt).toLocaleDateString()}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                        {student.submissions.length > 3 && (
+                          <p className="text-xs text-gray-500 text-center">
+                            ... and {student.submissions.length - 3} more submissions
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-4 text-center py-4 bg-gray-50 rounded">
+                      <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-sm text-gray-500">No submissions yet</p>
+                      <p className="text-xs text-gray-400">Student hasn't completed any vocabulary check-ups</p>
+                    </div>
+                  )}
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function ClassManagement() {
   const { toast } = useToast();
+  const [selectedClass, setSelectedClass] = useState<any>(null);
+  const [showStudentDialog, setShowStudentDialog] = useState(false);
 
   // Fetch educator's classes
   const { data: classes = [], isLoading, error } = useQuery<any[]>({
@@ -318,7 +445,15 @@ export function ClassManagement() {
                 </div>
 
                 <div className="flex space-x-2 pt-2">
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => {
+                      setSelectedClass(cls);
+                      setShowStudentDialog(true);
+                    }}
+                  >
                     <Users className="h-4 w-4 mr-1" />
                     Students
                   </Button>
@@ -374,6 +509,15 @@ export function ClassManagement() {
             </Table>
           </CardContent>
         </Card>
+      )}
+
+      {/* Student Progress Dialog */}
+      {selectedClass && (
+        <StudentProgressDialog
+          classData={selectedClass}
+          open={showStudentDialog}
+          onOpenChange={setShowStudentDialog}
+        />
       )}
     </div>
   );
