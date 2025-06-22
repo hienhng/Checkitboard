@@ -29,7 +29,7 @@ import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { VocabularyList } from "@shared/schema";
 import { formatDate, formatDueDate } from "@/lib/utils";
 import { GradingPanel } from "@/components/grading-panel";
-import { CreateClassDialog } from "@/components/class-management";
+import { CreateClassDialog, ClassManagement } from "@/components/class-management";
 import { useToast } from "@/hooks/use-toast";
 
 function EducatorDashboard() {
@@ -290,21 +290,7 @@ function EducatorDashboard() {
                   </TabsContent>
 
                   <TabsContent value="classes">
-                    <div className="space-y-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-lg font-medium">Class Management</h3>
-                          <p className="text-sm text-gray-500">Create and manage your classes</p>
-                        </div>
-                        <CreateClassDialog />
-                      </div>
-                      
-                      {/* Classes content will be added here in future updates */}
-                      <div className="text-center py-8 text-gray-500">
-                        <School className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                        <p>Class management features coming soon!</p>
-                      </div>
-                    </div>
+                    <ClassManagement />
                   </TabsContent>
                 </Tabs>
               </>
