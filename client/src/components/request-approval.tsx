@@ -41,8 +41,8 @@ export function RequestApprovalDialog({ open, onOpenChange }: RequestApprovalDia
 
   const handleRequestMutation = useMutation({
     mutationFn: async ({ requestId, action }: { requestId: number; action: 'approved' | 'rejected' }) => {
-      const res = await apiRequest("POST", `/api/educator/join-requests/${requestId}/respond`, {
-        action
+      const res = await apiRequest("PATCH", `/api/join-requests/${requestId}`, {
+        status: action
       });
       return res.json();
     },
@@ -113,7 +113,7 @@ export function RequestApprovalDialog({ open, onOpenChange }: RequestApprovalDia
                         <p className="text-sm text-gray-500">{request.studentEmail}</p>
                         <div className="mt-1">
                           <span className="text-sm text-gray-600">wants to join </span>
-                          <span className="text-sm font-medium text-blue-600">{request.className}</span>
+                          <span className="text-sm font-medium text-blue-600">{request.class?.name || 'Unknown Class'}</span>
                         </div>
                         <p className="text-xs text-gray-400 mt-1">
                           Requested: {new Date(request.createdAt).toLocaleDateString()} at {new Date(request.createdAt).toLocaleTimeString()}

@@ -915,7 +915,7 @@ export class DatabaseStorage {
     // Find pending join requests for those classes
     return await db.query.studentClass.findMany({
       where: and(
-        sql`${studentClass.classId} in (${sql.join(classIds, sql`, `)})`,
+        inArray(studentClass.classId, classIds),
         eq(studentClass.status, 'pending')
       ),
       with: {

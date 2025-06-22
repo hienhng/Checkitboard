@@ -178,7 +178,7 @@ function EducatorDashboard() {
                   </TabsList>
 
                   <TabsContent value="dashboard">
-                    <div className="mb-6 flex">
+                    <div className="mb-6 flex justify-between items-center">
                       <Button 
                         onClick={() => setShowCreateList(true)}
                         className="flex items-center"
@@ -186,6 +186,7 @@ function EducatorDashboard() {
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Create New Draft
                       </Button>
+                      <RequestApprovalButton requestCount={pendingRequestsCount} />
                     </div>
 
                     <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
