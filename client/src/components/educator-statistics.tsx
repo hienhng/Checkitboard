@@ -6,7 +6,6 @@ import { formatPassageWithHighlights, createMarkup } from "@/lib/utils";
 import { ClickableText } from "./clickable-text";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Card,
   CardContent,
@@ -82,6 +81,9 @@ export function EducatorStatistics() {
       const response = await apiRequest("GET", "/api/educator/classes");
       return response.json();
     },
+    onError: (error) => {
+      console.error("Failed to fetch classes:", error);
+    }
   });
   
   // Mutation for updating vocabulary list
@@ -453,20 +455,19 @@ export function EducatorStatistics() {
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center space-x-2">
                         <Filter className="h-4 w-4 text-gray-500" />
-                        <Select value={selectedClass} onValueChange={setSelectedClass}>
-                          <SelectTrigger className="w-48">
-                            <SelectValue placeholder="Filter by class" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Classes</SelectItem>
-                            <SelectItem value="unassigned">Unassigned</SelectItem>
-                            {classes.map((cls: any) => (
-                              <SelectItem key={cls.id} value={cls.name}>
-                                {cls.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <select 
+                          value={selectedClass} 
+                          onChange={(e) => setSelectedClass(e.target.value)}
+                          className="flex h-10 w-48 items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                        >
+                          <option value="all">All Classes</option>
+                          <option value="unassigned">Unassigned</option>
+                          {classes.map((cls: any) => (
+                            <option key={cls.id} value={cls.name}>
+                              {cls.name}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                       
                       <div className="flex items-center space-x-2">
