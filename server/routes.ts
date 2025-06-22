@@ -2400,35 +2400,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         <p><small>This message was sent from the Checkit platform on ${new Date().toLocaleString()}.</small></p>
       `;
 
-      // Use the existing email configuration from password-reset.ts
-      const { sendPasswordResetEmail } = await import("./password-reset");
-      
-      // Create a transporter using the same configuration as other email functions
+      // Use the same email transporter configuration from other email functions
       const nodemailer = await import("nodemailer");
       
-      function createTransporter() {
-        if (!process.env.EMAIL_USER || !process.env.EMAIL_APP_PASSWORD) {
-          throw new Error('Email configuration is missing. Please check EMAIL_USER and EMAIL_APP_PASSWORD environment variables.');
-        }
-
-        return nodemailer.createTransporter({
-          service: 'gmail',
-          auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_APP_PASSWORD,
-          },
-        });
+      if (!process.env.EMAIL_USER || !process.env.EMAIL_APP_PASSWORD) {
+        throw new Error('Email configuration is missing. Please check EMAIL_USER and EMAIL_APP_PASSWORD environment variables.');
       }
 
-      const transporter = createTransporter();
+      const transporter = nodemailer.createTransporter({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_APP_PASSWORD,
+        },
+      });
 
-      await transporter.sendMail({
+      const mailOptions = {
         from: process.env.EMAIL_USER,
         to: 'giahienhn@gmail.com',
         subject: `Checkit Support: ${validatedData.subject}`,
         html: emailContent,
         replyTo: req.user.email,
-      });
+      };
+
+      console.log('Attempting to send contact support email...');
+      await transporter.sendMail(mailOptions);
+      console.log('Contact support email sent successfully');
 
       res.json({ message: "Your message has been sent successfully. We'll get back to you soon!" });
     } catch (error) {
