@@ -27,6 +27,9 @@ import {
   Filter
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { VocabularyList } from "@shared/schema";
 import { formatDate, formatDueDate } from "@/lib/utils";
@@ -41,6 +44,9 @@ function EducatorDashboard() {
   const [showCreateList, setShowCreateList] = useState(false);
   const [showGrading, setShowGrading] = useState(false);
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<number | null>(null);
+  const [selectedClass, setSelectedClass] = useState<string>("all");
+  const [selectedLists, setSelectedLists] = useState<number[]>([]);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
 
   // Fetch educator's vocabulary lists
@@ -53,6 +59,18 @@ function EducatorDashboard() {
   const { data: pendingSubmissions = [], isLoading: submissionsLoading } = useQuery<any[]>({
     queryKey: ["/api/educator/submissions"],
     queryFn: getQueryFn({ on401: "throw" }),
+  });
+
+  // Fetch educator's classes for filter dropdown
+  const { data: classes = [] } = useQuery<any[]>({
+    queryKey: ["/api/educator/classes"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/educator/classes");
+      return response.json();
+    },
+    onError: (error) => {
+      console.error("Failed to fetch classes:", error);
+    }
   });
 
 
