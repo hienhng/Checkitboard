@@ -492,58 +492,60 @@ export function EducatorStatistics() {
                   {/* Vocabulary Lists */}
                   <div className="space-y-4">
                     {filteredLists.map((list: any) => (
-              <Card key={list.id} className="overflow-hidden">
-                <CardHeader className="bg-muted/50">
-                  <CardTitle className="text-xl flex items-center justify-between">
-                    <span>{list.title}</span>
-                    <div>
-                      {list.published ? (
-                        <Badge className="bg-green-100 text-green-800">Published</Badge>
-                      ) : (
-                        <Badge variant="outline">Draft</Badge>
-                      )}
-                    </div>
-                  </CardTitle>
-                  <CardDescription>
-                    {list.dueDate ? (
-                      <span>Due: {new Date(list.dueDate).toLocaleDateString()}</span>
-                    ) : (
-                      <span>No due date</span>
-                    )}
-                    {list.class && (
-                      <span className="ml-3">Class: {list.class}</span>
-                    )}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <h3 className="font-medium">Words</h3>
-                      <span className="text-sm text-muted-foreground">
-                        {list.words.length} words
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {list.words.slice(0, 10).map((word: any) => (
-                        <Badge key={word.id} variant="secondary">
-                          {word.word}
-                        </Badge>
-                      ))}
-                      {list.words.length > 10 && (
-                        <Badge variant="outline">+{list.words.length - 10} more</Badge>
-                      )}
-                    </div>
-                    
-                            {/* Passage Preview */}
-                            <div className="mt-4">
-                              <h4 className="text-sm font-medium mb-2">Passage</h4>
-                              <div className="text-sm text-muted-foreground line-clamp-3">
-                                {list.passage}
+                      <Card key={list.id} className="p-0 overflow-hidden">
+                        <CardContent className="p-4">
+                          <div className="flex items-start space-x-3">
+                            <Checkbox
+                              checked={selectedLists.includes(list.id)}
+                              onCheckedChange={() => handleSelectList(list.id)}
+                              className="mt-1"
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h3 className="font-semibold text-lg">{list.title}</h3>
+                                {list.class && (
+                                  <Badge variant="secondary">{list.class}</Badge>
+                                )}
+                                {list.published && (
+                                  <Badge variant="default">Published</Badge>
+                                )}
+                              </div>
+
+                              {/* Word Count */}
+                              <div className="flex flex-wrap gap-2 mb-3">
+                                <Badge variant="outline" className="text-xs">
+                                  {list.words?.length || 0} words
+                                </Badge>
+                                <Badge variant="outline" className="text-xs">
+                                  Created: {new Date(list.dueDate || Date.now()).toLocaleDateString()}
+                                </Badge>
+                              </div>
+
+                              {/* Word Preview */}
+                              <div className="mb-3">
+                                <h4 className="text-sm font-medium mb-2">Words</h4>
+                                <div className="flex flex-wrap gap-1">
+                                  {list.words?.slice(0, 10).map((word: any, index: number) => (
+                                    <Badge key={index} variant="secondary" className="text-xs">
+                                      {word.word}
+                                    </Badge>
+                                  ))}
+                                  {list.words?.length > 10 && (
+                                    <Badge variant="outline">+{list.words.length - 10} more</Badge>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              {/* Passage Preview */}
+                              <div className="mt-4">
+                                <h4 className="text-sm font-medium mb-2">Passage</h4>
+                                <div className="text-sm text-muted-foreground line-clamp-3">
+                                  {list.passage}
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      </CardContent>
+                        </CardContent>
                         <CardFooter className="border-t bg-muted/50 flex justify-end gap-2">
                           <Button 
                             variant="outline" 
