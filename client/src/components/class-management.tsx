@@ -41,6 +41,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Plus, Users, BookOpen, Settings, Copy, Check, Mail, FileText, TrendingUp } from "lucide-react";
+import { RequestApprovalButton } from "@/components/request-approval";
 
 const classSchema = z.object({
   name: z.string().min(1, "Class name is required").max(100, "Class name must be less than 100 characters"),
@@ -349,6 +350,17 @@ export function ClassManagement() {
     },
   });
 
+  // Fetch pending join requests count
+  const { data: joinRequestsData } = useQuery<any[]>({
+    queryKey: ["/api/educator/join-requests"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/educator/join-requests");
+      return response.json();
+    },
+  });
+
+  const pendingRequestsCount = joinRequestsData?.length || 0;
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -383,7 +395,10 @@ export function ClassManagement() {
           <h3 className="text-lg font-medium">Class Management</h3>
           <p className="text-sm text-gray-500">Manage your classes and students</p>
         </div>
-        <CreateClassDialog />
+        <div className="flex items-center space-x-3">
+          <RequestApprovalButton requestCount={pendingRequestsCount} />
+          <CreateClassDialog />
+        </div>
       </div>
 
       {classes.length === 0 ? (

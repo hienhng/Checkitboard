@@ -51,16 +51,7 @@ function EducatorDashboard() {
     queryFn: getQueryFn({ on401: "throw" }),
   });
 
-  // Fetch pending join requests count
-  const { data: joinRequestsData } = useQuery<any[]>({
-    queryKey: ["/api/educator/join-requests"],
-    queryFn: async () => {
-      const response = await apiRequest("GET", "/api/educator/join-requests");
-      return response.json();
-    },
-  });
 
-  const pendingRequestsCount = joinRequestsData?.length || 0;
 
   // Mutation to publish/unpublish a vocabulary list
   const publishMutation = useMutation({
@@ -178,7 +169,7 @@ function EducatorDashboard() {
                   </TabsList>
 
                   <TabsContent value="dashboard">
-                    <div className="mb-6 flex justify-between items-center">
+                    <div className="mb-6 flex">
                       <Button 
                         onClick={() => setShowCreateList(true)}
                         className="flex items-center"
@@ -186,7 +177,6 @@ function EducatorDashboard() {
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Create New Draft
                       </Button>
-                      <RequestApprovalButton requestCount={pendingRequestsCount} />
                     </div>
 
                     <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
