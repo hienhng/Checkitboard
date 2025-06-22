@@ -108,6 +108,13 @@ export default function VocabularyManagement() {
     );
   };
 
+  // Filter lists based on selected class
+  const filteredLists = vocabularyLists.filter((list: any) => {
+    if (selectedClass === "all") return true;
+    if (selectedClass === "unassigned") return !list.class;
+    return list.class?.name === selectedClass;
+  });
+
   // Handle select all functionality
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -123,13 +130,6 @@ export default function VocabularyManagement() {
       deleteMutation.mutate(selectedLists);
     }
   };
-
-  // Filter lists based on selected class
-  const filteredLists = vocabularyLists.filter((list: any) => {
-    if (selectedClass === "all") return true;
-    if (selectedClass === "unassigned") return !list.class;
-    return list.class?.name === selectedClass;
-  });
 
   const handlePublishToggle = (id: number, currentPublished: boolean) => {
     publishMutation.mutate({ id, published: !currentPublished });
