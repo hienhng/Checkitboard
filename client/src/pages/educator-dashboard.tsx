@@ -30,6 +30,7 @@ import { VocabularyList } from "@shared/schema";
 import { formatDate, formatDueDate } from "@/lib/utils";
 import { GradingPanel } from "@/components/grading-panel";
 import { CreateClassDialog, ClassManagement } from "@/components/class-management";
+import { RequestApprovalButton } from "@/components/request-approval";
 import { useToast } from "@/hooks/use-toast";
 
 function EducatorDashboard() {
@@ -49,6 +50,17 @@ function EducatorDashboard() {
     queryKey: ["/api/educator/submissions"],
     queryFn: getQueryFn({ on401: "throw" }),
   });
+
+  // Fetch pending join requests count
+  const { data: joinRequestsData } = useQuery<any[]>({
+    queryKey: ["/api/educator/join-requests"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/educator/join-requests");
+      return response.json();
+    },
+  });
+
+  const pendingRequestsCount = joinRequestsData?.length || 0;
 
   // Mutation to publish/unpublish a vocabulary list
   const publishMutation = useMutation({

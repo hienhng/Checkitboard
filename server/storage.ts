@@ -742,6 +742,18 @@ export class DatabaseStorage {
         // Get student info
         const student = classData.students.find(s => s.student.id === studentId)?.student;
         
+        // Skip if no lists in this class
+        if (listIds.length === 0) {
+          return {
+            studentId: student.id,
+            studentName: student.name,
+            studentEmail: student.email,
+            averageScore: null,
+            joinedAt: classData.students.find(s => s.student.id === studentId)?.createdAt,
+            submissions: [],
+          };
+        }
+
         // Get all submissions by this student for lists in this class
         const studentSubmissions = await db.query.submissions.findMany({
           columns: {
@@ -759,7 +771,7 @@ export class DatabaseStorage {
           where: and(
             eq(submissions.studentId, studentId),
             eq(submissions.completed, true),
-            sql`${submissions.listId} IN (${sql.join(listIds, sql`, `)})`
+            inArray(submissions.listId, listIds)
           ),
           with: {
             list: {
@@ -777,31 +789,22 @@ export class DatabaseStorage {
           },
         });
 
-        // Calculate overall stats
-        const completedLists = studentSubmissions.length;
-        const totalDefinitions = studentSubmissions.reduce((sum: number, sub: any) => sum + sub.wordDefinitions.length, 0);
-        const correctDefinitions = studentSubmissions.reduce(
-          (sum: number, sub: any) => sum + sub.wordDefinitions.filter((def: any) => def.isCorrect).length, 
-          0
-        );
-        
-        const averageAccuracy = totalDefinitions > 0 
-          ? Math.round((correctDefinitions / totalDefinitions) * 100) 
-          : 0;
+        // Calculate average score from submissions
+        const scores = studentSubmissions.filter((sub: any) => sub.score !== null).map((sub: any) => sub.score);
+        const averageScore = scores.length > 0 ? scores.reduce((sum: number, score: number) => sum + score, 0) / scores.length : null;
+
+        // Get join date for this student in this class
+        const joinData = classData.students.find(s => s.student.id === studentId);
 
         return {
-          student,
-          stats: {
-            completedLists,
-            totalLists: listIds.length,
-            averageAccuracy,
-            totalWords: totalDefinitions,
-            correctWords: correctDefinitions,
-          },
-          // Include the most recent submissions for additional details
-          recentSubmissions: studentSubmissions
+          studentId: student.id,
+          studentName: student.name,
+          studentEmail: student.email,
+          averageScore,
+          joinedAt: joinData?.createdAt,
+          submissions: studentSubmissions
             .sort((a: any, b: any) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
-            .slice(0, 3)
+            .slice(0, 5)
             .map((sub: any) => ({
               id: sub.id,
               listTitle: sub.list.title,
