@@ -101,6 +101,64 @@ function EducatorDashboard() {
 
 
 
+  // Delete vocabulary lists mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (listIds: number[]) => {
+      const deletePromises = listIds.map(id => 
+        apiRequest("DELETE", `/api/vocabulary-lists/${id}`)
+      );
+      return Promise.all(deletePromises);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: `${selectedLists.length} vocabulary list(s) deleted successfully`,
+      });
+      setSelectedLists([]);
+      setShowDeleteDialog(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/educator/vocabulary-lists"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete vocabulary lists",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle selecting/deselecting individual lists
+  const handleSelectList = (listId: number) => {
+    setSelectedLists(prev => 
+      prev.includes(listId) 
+        ? prev.filter(id => id !== listId)
+        : [...prev, listId]
+    );
+  };
+
+  // Handle select all functionality
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedLists(filteredLists.map((list: any) => list.id));
+    } else {
+      setSelectedLists([]);
+    }
+  };
+
+  // Handle delete action
+  const handleDelete = () => {
+    if (selectedLists.length > 0) {
+      deleteMutation.mutate(selectedLists);
+    }
+  };
+
+  // Filter lists based on selected class
+  const filteredLists = vocabularyLists.filter((list: any) => {
+    if (selectedClass === "all") return true;
+    if (selectedClass === "unassigned") return !list.class;
+    return list.class?.name === selectedClass;
+  });
+
   const handlePublishToggle = (id: number, currentStatus: boolean) => {
     publishMutation.mutate({ id, published: !currentStatus });
   };
