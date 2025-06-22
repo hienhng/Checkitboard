@@ -2400,16 +2400,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         <p><small>This message was sent from the Checkit platform on ${new Date().toLocaleString()}.</small></p>
       `;
 
-      // Send email using Nodemailer
+      // Use the existing email configuration from password-reset.ts
+      const { sendPasswordResetEmail } = await import("./password-reset");
+      
+      // Create a transporter using the same configuration as other email functions
       const nodemailer = await import("nodemailer");
       
-      const transporter = nodemailer.createTransporter({
-        service: 'gmail',
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_APP_PASSWORD,
-        },
-      });
+      function createTransporter() {
+        if (!process.env.EMAIL_USER || !process.env.EMAIL_APP_PASSWORD) {
+          throw new Error('Email configuration is missing. Please check EMAIL_USER and EMAIL_APP_PASSWORD environment variables.');
+        }
+
+        return nodemailer.createTransporter({
+          service: 'gmail',
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_APP_PASSWORD,
+          },
+        });
+      }
+
+      const transporter = createTransporter();
 
       await transporter.sendMail({
         from: process.env.EMAIL_USER,
@@ -2426,10 +2437,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.error("Error sending help message:", error);
       
-      if (error instanceof Error && error.message.includes('Invalid login')) {
-        res.status(503).json({ 
-          message: "Email service is not configured. Please try again later or contact support directly at giahienhn@gmail.com" 
-        });
+      if (error instanceof Error) {
+        if (error.message.includes('Invalid login') || error.message.includes('authentication')) {
+          res.status(503).json({ 
+            message: "Email service authentication failed. Please try again later or contact support directly at giahienhn@gmail.com" 
+          });
+        } else if (error.message.includes('configuration')) {
+          res.status(503).json({ 
+            message: "Email service is not configured properly. Please contact support directly at giahienhn@gmail.com" 
+          });
+        } else {
+          res.status(500).json({ 
+            message: "Error sending message. Please try again later.", 
+            details: error.message 
+          });
+        }
       } else {
         res.status(500).json({ message: "Error sending message. Please try again later." });
       }
