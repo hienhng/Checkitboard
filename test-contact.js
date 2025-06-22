@@ -10,7 +10,7 @@ async function testContactSupport() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        email: 'checkitdev3@outlook.com',
+        email: 'giahienhn@gmail.com',
         password: 'password123'
       })
     });
