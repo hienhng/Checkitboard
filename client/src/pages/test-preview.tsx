@@ -22,6 +22,9 @@ export default function TestPreview() {
     queryFn: getQueryFn({ on401: "throw" }),
   });
 
+  // Type guard for vocabulary list data
+  const listData = vocabularyList as any;
+
   // Mutation to start the test
   const startTestMutation = useMutation({
     mutationFn: async () => {
@@ -68,7 +71,7 @@ export default function TestPreview() {
     );
   }
 
-  if (!vocabularyList) {
+  if (!listData) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Card className="w-full max-w-md">
@@ -85,7 +88,7 @@ export default function TestPreview() {
   }
 
   // Create blurred preview of passage (show first half, blur second half)
-  const passageWords = vocabularyList.passage.split(' ');
+  const passageWords = listData.passage.split(' ');
   const midPoint = Math.floor(passageWords.length / 2);
   const visiblePart = passageWords.slice(0, midPoint).join(' ');
   const blurredPart = passageWords.slice(midPoint).join(' ');
@@ -107,33 +110,33 @@ export default function TestPreview() {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                  {vocabularyList.title}
+                  {listData.title}
                 </h1>
                 <p className="text-gray-600 mb-4">
-                  {vocabularyList.description || "Vocabulary comprehension test"}
+                  {listData.description || "Vocabulary comprehension test"}
                 </p>
                 
                 <div className="flex flex-wrap gap-4 text-sm text-gray-500">
                   <div className="flex items-center gap-1">
                     <BookOpen className="h-4 w-4" />
-                    <span>{vocabularyList.words?.length || 0} vocabulary words</span>
+                    <span>{listData.words?.length || 0} vocabulary words</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Clock className="h-4 w-4" />
-                    <span>Estimated time: {Math.ceil((vocabularyList.words?.length || 0) * 2)} minutes</span>
+                    <span>Estimated time: {Math.ceil((listData.words?.length || 0) * 2)} minutes</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Users className="h-4 w-4" />
-                    <span>Created by {vocabularyList.educator?.name}</span>
+                    <span>Created by {listData.educator?.name}</span>
                   </div>
                 </div>
               </div>
               
               <Badge 
-                variant={vocabularyList.published ? "default" : "secondary"}
+                variant={listData.published ? "default" : "secondary"}
                 className="ml-4"
               >
-                {vocabularyList.published ? "Published" : "Draft"}
+                {listData.published ? "Published" : "Draft"}
               </Badge>
             </div>
           </div>

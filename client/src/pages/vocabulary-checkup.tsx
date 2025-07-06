@@ -199,7 +199,7 @@ export default function VocabularyCheckup() {
     }
     
     // Move to the next word if not at the end
-    if (currentWordIndex < submission.list.words.length - 1) {
+    if (currentWordIndex < submissionData.list.words.length - 1) {
       setCurrentWordIndex(currentWordIndex + 1);
     }
   };
@@ -229,10 +229,10 @@ export default function VocabularyCheckup() {
   };
 
   const handleComplete = async () => {
-    if (!submission?.list?.words) return;
+    if (!submissionData?.list?.words) return;
     
     // Save the current definition if it's not empty and has changed
-    const currentWord = submission.list.words[currentWordIndex];
+    const currentWord = submissionData.list.words[currentWordIndex];
     if (definition && definition !== savedDefinitions[currentWord.id]) {
       await definitionMutation.mutateAsync({ 
         wordId: currentWord.id, 
@@ -241,9 +241,9 @@ export default function VocabularyCheckup() {
     }
     
     // Check if all words have definitions
-    const allDefined = submission.list.words.every(
+    const allDefined = submissionData.list.words.every(
       (word: any) => savedDefinitions[word.id] || 
-      (submission.wordDefinitions?.some((def: any) => def.wordId === word.id))
+      (submissionData.wordDefinitions?.some((def: any) => def.wordId === word.id))
     );
     
     if (!allDefined) {
@@ -264,7 +264,7 @@ export default function VocabularyCheckup() {
   // Start fullscreen mode when check-up begins
   useEffect(() => {
     // Only activate fullscreen when we have a valid submission
-    if (submission && !submission.completed) {
+    if (submissionData && !submissionData.completed) {
       setIsFullscreenActive(true);
       // Check if already in fullscreen (triggered from test preview)
       if (!document.fullscreenElement) {
@@ -272,11 +272,11 @@ export default function VocabularyCheckup() {
         setShowFullscreenWarning(true);
       }
     }
-  }, [submission]);
+  }, [submissionData]);
 
   // Browser navigation warning system
   useEffect(() => {
-    if (!submission || submission.completed) return;
+    if (!submissionData || submissionData.completed) return;
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault();
@@ -317,7 +317,7 @@ export default function VocabularyCheckup() {
     );
   }
 
-  if (!submission) {
+  if (!submissionData) {
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar />
@@ -331,7 +331,7 @@ export default function VocabularyCheckup() {
     );
   }
 
-  if (submission.completed) {
+  if (submissionData.completed) {
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar />
@@ -345,8 +345,8 @@ export default function VocabularyCheckup() {
     );
   }
 
-  const currentWord = submission.list.words[currentWordIndex];
-  const totalWords = submission.list.words.length;
+  const currentWord = submissionData.list.words[currentWordIndex];
+  const totalWords = submissionData.list.words.length;
 
   const handleReturnToFullscreen = async () => {
     await enterFullscreen();
@@ -394,11 +394,11 @@ export default function VocabularyCheckup() {
           <div className="h-1/2 md:h-full md:w-1/2 overflow-auto p-6 bg-white border-b md:border-b-0 md:border-r border-gray-200">
             <div className="max-w-3xl mx-auto">
                 <h2 className="text-xl font-semibold text-neutral-dark mb-4">
-                  {submission.list.title}
+                  {submissionData.list.title}
                 </h2>
                 <div className="prose max-w-none passage-container">
                   <div dangerouslySetInnerHTML={createMarkup(
-                    submission.list.passage.replace(
+                    submissionData.list.passage.replace(
                       new RegExp(`\\b${currentWord.word}\\b`, 'gi'), 
                       `<mark>${currentWord.word}</mark>`
                     )
@@ -478,13 +478,13 @@ export default function VocabularyCheckup() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
                             <div className="flex -space-x-1 overflow-hidden">
-                              {submission.list.words.map((_: any, index: any) => (
+                              {submissionData.list.words.map((_: any, index: any) => (
                                 <div 
                                   key={index} 
                                   className={`inline-block h-6 w-6 rounded-full ring-2 ring-white ${
                                     index === currentWordIndex 
                                       ? 'bg-blue-500 text-white' 
-                                      : savedDefinitions[submission.list.words[index].id] 
+                                      : savedDefinitions[submissionData.list.words[index].id] 
                                         ? 'bg-blue-100 text-blue-700' 
                                         : 'bg-gray-200 text-gray-500'
                                   } flex items-center justify-center text-xs cursor-pointer`}
