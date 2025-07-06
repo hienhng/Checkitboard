@@ -531,6 +531,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get a specific submission with student definitions
   app.get("/api/submissions/:id", async (req, res) => {
     try {
+      console.log("Submission request auth check:", { 
+        isAuthenticated: req.isAuthenticated(),
+        user: req.user,
+        sessionID: req.sessionID,
+        headers: req.headers.cookie 
+      });
+      
       if (!req.isAuthenticated()) {
         return res.status(401).json({ message: "Not authenticated" });
       }

@@ -53,7 +53,7 @@ export default function VocabularyCheckup() {
   // Get submission details with vocabulary list and words
   const { data: submission, isLoading, error } = useQuery({
     queryKey: [`/api/submissions/${submissionId}`],
-    queryFn: getQueryFn({ on401: "throw" }),
+    queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
   console.log("Query state:", { isLoading, error, submission, submissionId });
@@ -324,13 +324,18 @@ export default function VocabularyCheckup() {
   }
 
   if (!submissionData) {
-    console.log("No submission data found:", { submission, submissionData });
+    console.log("No submission data found:", { submission, submissionData, error });
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <p className="text-lg text-gray-500 mb-4">Vocabulary check-up not found.</p>
+            <p className="text-lg text-gray-500 mb-4">
+              {error ? "Error loading vocabulary check-up." : "Vocabulary check-up not found."}
+            </p>
+            <p className="text-sm text-gray-400 mb-4">
+              {error ? `Error: ${error.message}` : "Please try again or contact support."}
+            </p>
             <Button onClick={() => navigate("/learner/dashboard")}>Return to Dashboard</Button>
           </div>
         </div>
