@@ -72,10 +72,7 @@ export function FullscreenMonitor({
     
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     
-    // If active and component mounts, enter fullscreen
-    if (isActive && !isFullscreen) {
-      enterFullscreen();
-    }
+    // Don't automatically enter fullscreen - it should be triggered by user gesture
     
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);

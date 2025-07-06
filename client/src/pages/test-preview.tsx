@@ -44,6 +44,16 @@ export default function TestPreview() {
 
   const handleStartTest = async () => {
     setIsStarting(true);
+    
+    // First enter fullscreen with user gesture context
+    try {
+      await document.documentElement.requestFullscreen();
+    } catch (error) {
+      console.error("Failed to enter fullscreen:", error);
+      // Continue with test even if fullscreen fails
+    }
+    
+    // Then start the test
     await startTestMutation.mutateAsync();
   };
 

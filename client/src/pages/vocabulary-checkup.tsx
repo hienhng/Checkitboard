@@ -56,6 +56,9 @@ export default function VocabularyCheckup() {
     queryFn: getQueryFn({ on401: "throw" }),
   });
 
+  // Type guard for submission data to fix TypeScript issues
+  const submissionData = submission as any;
+
   // Mutation to submit a definition
   const definitionMutation = useMutation({
     mutationFn: async ({ wordId, studentDefinition }: { wordId: number; studentDefinition: string }) => {
@@ -165,27 +168,27 @@ export default function VocabularyCheckup() {
 
   // Load any existing definitions when the submission data is loaded
   useEffect(() => {
-    if (submission?.wordDefinitions?.length) {
+    if (submissionData?.wordDefinitions?.length) {
       const defMap: Record<number, string> = {};
-      submission.wordDefinitions.forEach((def: any) => {
+      submissionData.wordDefinitions.forEach((def: any) => {
         defMap[def.wordId] = def.studentDefinition;
       });
       setSavedDefinitions(defMap);
     }
-  }, [submission]);
+  }, [submissionData]);
 
   // Set the current definition when changing words
   useEffect(() => {
-    if (submission?.list?.words && submission.list.words[currentWordIndex]) {
-      const currentWordId = submission.list.words[currentWordIndex].id;
+    if (submissionData?.list?.words && submissionData.list.words[currentWordIndex]) {
+      const currentWordId = submissionData.list.words[currentWordIndex].id;
       setDefinition(savedDefinitions[currentWordId] || "");
     }
-  }, [currentWordIndex, savedDefinitions, submission?.list?.words]);
+  }, [currentWordIndex, savedDefinitions, submissionData?.list?.words]);
 
   const handleNext = async () => {
-    if (!submission?.list?.words) return;
+    if (!submissionData?.list?.words) return;
     
-    const currentWord = submission.list.words[currentWordIndex];
+    const currentWord = submissionData.list.words[currentWordIndex];
     
     // Save the current definition if it's changed
     if (definition && definition !== savedDefinitions[currentWord.id]) {
@@ -263,6 +266,11 @@ export default function VocabularyCheckup() {
     // Only activate fullscreen when we have a valid submission
     if (submission && !submission.completed) {
       setIsFullscreenActive(true);
+      // Check if already in fullscreen (triggered from test preview)
+      if (!document.fullscreenElement) {
+        // If not in fullscreen, show warning for user to manually enter
+        setShowFullscreenWarning(true);
+      }
     }
   }, [submission]);
 
