@@ -268,6 +268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (existingSubmission && !existingSubmission.completed) {
         // Return existing submission
+        console.log("Returning existing submission:", existingSubmission.id);
         return res.json({ submissionId: existingSubmission.id });
       }
 
@@ -275,9 +276,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const submission = await storage.createSubmission({
         studentId: req.user.id,
         listId: listId,
-        startedAt: new Date(),
+        isRedo: false,
       });
 
+      console.log("Created new submission:", submission.id);
       res.json({ submissionId: submission.id });
     } catch (error) {
       console.error("Error starting test:", error);
