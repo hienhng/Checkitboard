@@ -56,6 +56,8 @@ export default function VocabularyCheckup() {
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
+  console.log("Frontend debug:", { submissionId, submission, isLoading, error });
+
 
 
   // Type guard for submission data to fix TypeScript issues
