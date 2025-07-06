@@ -145,7 +145,7 @@ function LearnerDashboard() {
       const data = await res.json();
       
       // Navigate to the check-up page with the submission ID
-      navigate(`/learner/checkup/${data.id}`);
+      navigate(`/vocabulary-checkup/${data.id}`);
     } catch (error: any) {
       // If a submission already exists, we might get back the existing submission ID
       if (error.message?.includes("already have a submission")) {
