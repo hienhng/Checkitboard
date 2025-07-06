@@ -2,9 +2,11 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
+import { pool } from "../db";
 import { User } from "@shared/schema";
 
 declare global {
@@ -40,12 +42,20 @@ export function setupAuth(app: Express) {
     console.warn("No SESSION_SECRET env variable set. Using a default secret for development.");
   }
 
+  const PgSession = connectPgSimple(session);
+
   const sessionSettings: session.SessionOptions = {
+    store: new PgSession({
+      pool: pool,
+      tableName: 'session',
+      createTableIfMissing: true,
+    }),
     secret: process.env.SESSION_SECRET || "default_secret_for_development_only",
     resave: false,
     saveUninitialized: false,
     cookie: {
       secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     }
   };
