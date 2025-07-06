@@ -304,7 +304,7 @@ export default function VocabularyCheckup() {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('popstate', handlePopState);
     };
-  }, [submission]);
+  }, [submissionData]);
 
   if (isLoading) {
     return (
@@ -338,6 +338,21 @@ export default function VocabularyCheckup() {
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <p className="text-lg text-gray-500 mb-4">This check-up has already been completed and is awaiting grading.</p>
+            <Button onClick={() => navigate("/learner/dashboard")}>Return to Dashboard</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Safety checks for word data
+  if (!submissionData.list?.words || submissionData.list.words.length === 0) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-lg text-gray-500 mb-4">No vocabulary words found for this check-up.</p>
             <Button onClick={() => navigate("/learner/dashboard")}>Return to Dashboard</Button>
           </div>
         </div>
