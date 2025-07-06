@@ -1,0 +1,129 @@
+# Checkit - Vocabulary Learning Platform
+
+## Overview
+
+Checkit is a comprehensive vocabulary learning application designed for educators and learners. The platform allows educators to create reading passages, highlight vocabulary words, and generate check-up tests for students. Learners can take vocabulary tests, receive feedback, and review incorrect words through a flashcard system. The application also includes parent integration through email notifications.
+
+## System Architecture
+
+This application follows a full-stack TypeScript architecture with a clear separation between client and server:
+
+### Frontend Architecture
+- **Framework**: React 18 with TypeScript
+- **Routing**: Wouter for client-side routing
+- **State Management**: TanStack React Query for server state management
+- **UI Components**: Radix UI components with Tailwind CSS styling
+- **Form Handling**: React Hook Form with Zod validation
+- **Build Tool**: Vite for development and build processes
+
+### Backend Architecture
+- **Runtime**: Node.js with Express.js
+- **Language**: TypeScript with ES modules
+- **Authentication**: Passport.js with local strategy and express-session
+- **Password Security**: Node.js crypto module with scrypt hashing
+
+### Database Architecture
+- **ORM**: Drizzle ORM with PostgreSQL dialect
+- **Database**: PostgreSQL (configured via DATABASE_URL)
+- **Migrations**: Drizzle Kit for schema migrations
+- **Connection**: Connection pooling with pg package
+
+## Key Components
+
+### Authentication System
+- Role-based access control (educator/learner)
+- Email verification system with token-based verification
+- Password reset functionality with secure tokens
+- Session-based authentication with secure cookie configuration
+
+### Vocabulary Management
+- Passage editor with word highlighting functionality
+- AI-powered vocabulary analysis and definition generation
+- Class management system for organizing students
+- Vocabulary list creation and assignment
+
+### Assessment System
+- Interactive vocabulary check-up tests
+- Real-time grading with educator feedback
+- Fullscreen monitoring for test integrity
+- Score tracking and analytics
+
+### Learning Tools
+- Flashcard system for reviewing incorrect words
+- Progress tracking and analytics
+- Parent email notifications with test results
+
+### AI Integration
+- Multiple AI provider support (OpenAI and Hugging Face)
+- Fallback mechanisms when AI services are unavailable
+- Automatic definition generation and passage analysis
+
+## Data Flow
+
+1. **Educator Workflow**:
+   - Creates vocabulary lists by highlighting words in passages
+   - Assigns lists to classes with due dates
+   - Reviews student submissions and provides grades
+   - Monitors student progress through analytics
+
+2. **Learner Workflow**:
+   - Accesses assigned vocabulary lists
+   - Takes vocabulary check-up tests in fullscreen mode
+   - Reviews incorrect words through flashcards
+   - Tracks personal progress and improvement
+
+3. **Assessment Flow**:
+   - Students submit definitions for vocabulary words
+   - Educators grade submissions and mark incorrect answers
+   - Incorrect words automatically added to student flashcards
+   - Parents receive email summaries of performance
+
+## External Dependencies
+
+### Core Dependencies
+- **Database**: PostgreSQL via @neondatabase/serverless
+- **Email**: Nodemailer for email functionality (Gmail and SMTP support)
+- **AI Services**: OpenAI API and Hugging Face Inference API
+- **Authentication**: Passport.js with session management
+- **Validation**: Zod for runtime type validation
+
+### UI Dependencies
+- **Component Library**: Radix UI primitives
+- **Styling**: Tailwind CSS with custom design system
+- **Icons**: Lucide React icon library
+- **Charts**: Recharts for data visualization
+- **Animations**: Framer Motion for smooth interactions
+
+### Development Tools
+- **Build**: Vite with TypeScript support
+- **Linting**: ESBuild for production builds
+- **Development**: TSX for TypeScript execution
+
+## Deployment Strategy
+
+### Environment Configuration
+- Database connection via DATABASE_URL environment variable
+- AI service keys: OPENAI_API_KEY and HUGGINGFACE_API_KEY
+- Email configuration: EMAIL_USER, EMAIL_APP_PASSWORD for Gmail
+- Session security: SESSION_SECRET for secure sessions
+
+### Build Process
+1. Frontend build via Vite (outputs to dist/public)
+2. Backend build via ESBuild (outputs to dist)
+3. Database migrations via Drizzle Kit
+4. Production server runs from compiled JavaScript
+
+### Production Considerations
+- Connection pooling for database efficiency
+- Error handling with fallback mechanisms for AI services
+- Secure session configuration for production
+- Email service configuration for parent notifications
+
+## User Preferences
+
+Preferred communication style: Simple, everyday language.
+
+## Changelog
+
+Changelog:
+- July 06, 2025. Initial setup
