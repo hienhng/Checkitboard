@@ -29,6 +29,8 @@ export default function VocabularyCheckup() {
   const { toast } = useToast();
   const submissionId = parseInt(id || "0");
   
+  console.log("VocabularyCheckup component mounted", { id, submissionId });
+  
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [definition, setDefinition] = useState("");
   const [savedDefinitions, setSavedDefinitions] = useState<Record<number, string>>({});
@@ -54,9 +56,20 @@ export default function VocabularyCheckup() {
   const { data: submission, isLoading, error } = useQuery({
     queryKey: [`/api/submissions/${submissionId}`],
     queryFn: getQueryFn({ on401: "returnNull" }),
+    enabled: submissionId > 0, // Only run query if we have a valid submission ID
   });
 
   console.log("Frontend debug:", { submissionId, submission, isLoading, error });
+  
+  // Additional debugging
+  useEffect(() => {
+    console.log("VocabularyCheckup effect running", { 
+      submissionId, 
+      isLoading, 
+      hasSubmission: !!submission,
+      error: error?.message 
+    });
+  }, [submissionId, isLoading, submission, error]);
 
 
 
