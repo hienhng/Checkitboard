@@ -56,7 +56,7 @@ export default function VocabularyCheckup() {
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
-  console.log("Query state:", { isLoading, error, submission, submissionId });
+
 
   // Type guard for submission data to fix TypeScript issues
   const submissionData = submission as any;
@@ -265,14 +265,11 @@ export default function VocabularyCheckup() {
   
   // Start fullscreen mode when check-up begins
   useEffect(() => {
-    console.log("Vocabulary checkup useEffect triggered:", { submissionData, hasData: !!submissionData });
     // Only activate fullscreen when we have a valid submission
     if (submissionData && !submissionData.completed) {
-      console.log("Setting fullscreen active...");
       setIsFullscreenActive(true);
       // Check if already in fullscreen (triggered from test preview)
       if (!document.fullscreenElement) {
-        console.log("Not in fullscreen, showing warning...");
         // If not in fullscreen, show warning for user to manually enter
         setShowFullscreenWarning(true);
       }
@@ -312,7 +309,6 @@ export default function VocabularyCheckup() {
   }, [submissionData]);
 
   if (isLoading) {
-    console.log("Component is loading...");
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar />
@@ -324,7 +320,6 @@ export default function VocabularyCheckup() {
   }
 
   if (!submissionData) {
-    console.log("No submission data found:", { submission, submissionData, error });
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar />
