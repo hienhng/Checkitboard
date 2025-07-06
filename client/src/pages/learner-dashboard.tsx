@@ -137,35 +137,9 @@ function LearnerDashboard() {
     return name.includes(searchTerm) || description.includes(searchTerm);
   }) || [];
 
-  // Start a new vocabulary check-up
-  const startCheckUp = async (listId: number) => {
-    try {
-      // First create a submission
-      const res = await apiRequest("POST", "/api/submissions", { listId });
-      const data = await res.json();
-      
-      // Navigate to the check-up page with the submission ID
-      navigate(`/vocabulary-checkup/${data.id}`);
-    } catch (error: any) {
-      // If a submission already exists, we might get back the existing submission ID
-      if (error.message?.includes("already have a submission")) {
-        try {
-          const data = JSON.parse(error.message);
-          if (data.submissionId) {
-            navigate(`/learner/checkup/${data.submissionId}`);
-            return;
-          }
-        } catch {
-          // If we can't parse the error message, just show the error
-        }
-      }
-      
-      toast({
-        title: "Error starting check-up",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
+  // Start a new vocabulary check-up (navigate to preview page)
+  const startCheckUp = (listId: number) => {
+    navigate(`/learner/test-preview/${listId}`);
   };
 
   return (

@@ -22,6 +22,8 @@ export default function TestPreview() {
     queryFn: getQueryFn({ on401: "throw" }),
   });
 
+  console.log("TestPreview loaded", { listId, isLoading, hasData: !!vocabularyList });
+
   // Type guard for vocabulary list data
   const listData = vocabularyList as any;
 
