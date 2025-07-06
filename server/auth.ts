@@ -53,10 +53,13 @@ export function setupAuth(app: Express) {
     secret: process.env.SESSION_SECRET || "default_secret_for_development_only",
     resave: false,
     saveUninitialized: false,
+    name: 'connect.sid',
     cookie: {
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
+      sameSite: 'lax',
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      path: '/',
     }
   };
 
