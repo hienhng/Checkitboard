@@ -348,13 +348,14 @@ export class DatabaseStorage {
 
   async getSubmissionByStudentAndList(studentId: number, listId: number, includeRedo: boolean = false) {
     if (includeRedo) {
-      // Return all submissions for the student and list
+      // Return the most recent completed and graded submission for viewing results
       return await db.query.submissions.findFirst({
         where: and(
           eq(submissions.studentId, studentId),
           eq(submissions.listId, listId),
-          eq(submissions.completed, false) // Return only incomplete ones
+          eq(submissions.completed, true) // Return only completed ones
         ),
+        orderBy: [desc(submissions.gradedAt), desc(submissions.submittedAt)],
         columns: {
           id: true,
           studentId: true,
