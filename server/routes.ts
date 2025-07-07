@@ -530,6 +530,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get student's submission for a specific vocabulary list (for preview page)
+  app.get("/api/vocabulary-lists/:listId/submission", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "learner") {
+        return res.status(403).json({ message: "Only students can access their submissions" });
+      }
+
+      const listId = parseInt(req.params.listId);
+      if (isNaN(listId)) {
+        return res.status(400).json({ message: "Invalid list ID" });
+      }
+
+      // Get the student's completed and graded submission for this list
+      const submission = await storage.getSubmissionByStudentAndList(req.user.id, listId, true);
+      
+      if (!submission || !submission.completed || !submission.gradedAt) {
+        return res.status(404).json({ message: "No graded submission found" });
+      }
+
+      // Get submission with full details including definitions
+      const submissionWithDetails = await storage.getSubmissionWithDefinitions(submission.id);
+      
+      res.json(submissionWithDetails);
+    } catch (error) {
+      console.error("Error fetching submission for list:", error);
+      res.status(500).json({ message: "Error fetching submission" });
+    }
+  });
+
   // Get a specific submission with student definitions
   app.get("/api/submissions/:id", async (req, res) => {
     try {

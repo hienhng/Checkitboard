@@ -63,34 +63,14 @@ interface FlashcardType {
   learned: boolean;
 }
 
-interface SubmissionResult {
-  id: number;
-  score: number;
-  submittedAt: string | Date;
-  list: {
-    id: number;
-    title: string;
-    passage?: string;
-  };
-  wordDefinitions?: {
-    id: number;
-    studentDefinition: string;
-    correctDefinition?: string;
-    isCorrect: boolean;
-    showCorrectDefinition?: boolean;
-    word?: {
-      id: number;
-      word: string;
-    };
-  }[];
-}
+
 
 function LearnerDashboard() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   
   // State for the result details dialog
-  const [selectedResult, setSelectedResult] = useState<SubmissionResult | null>(null);
+
   const [activeTab, setActiveTab] = useState("dashboard");
   
   // Search functionality
@@ -103,10 +83,7 @@ function LearnerDashboard() {
   });
 
   // Fetch learner's completed and graded submissions
-  const { data: results, isLoading: resultsLoading } = useQuery<SubmissionResult[]>({
-    queryKey: ["/api/learner/results"],
-    queryFn: getQueryFn({ on401: "throw" }),
-  });
+
 
   // Fetch learner's flashcards
   const { data: flashcards, isLoading: flashcardsLoading } = useQuery<FlashcardType[]>({
@@ -322,54 +299,7 @@ function LearnerDashboard() {
                         )}
                       </CardContent>
                     </Card>
-                    
-                    {/* Recent Results */}
-                    <Card className="overflow-hidden">
-                      <CardHeader className="bg-green-500 p-4 pb-4 text-center text-white">
-                        <div className="w-full flex justify-between items-center">
-                          <CardTitle className="text-xl font-bold">
-                            Recent Results
-                          </CardTitle>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        {resultsLoading ? (
-                          <div className="py-4 text-center text-sm text-gray-500">Loading results...</div>
-                        ) : results && results.length > 0 ? (
-                          <div className="divide-y divide-gray-200">
-                            {results.map(result => (
-                              <div key={result.id} className=" mt-4 py-4 flex items-center cursor-pointer hover:bg-blue-100 px-2 rounded-md transition-colors" onClick={() => setSelectedResult(result)}>
-                                <div className="h-10 w-10 flex-shrink-0 rounded-full bg-green-500 text-white flex items-center justify-center">
-                                  <CheckCircle className="h-5 w-5" />
-                                </div>
-                                <div className="ml-3 flex-1">
-                                  <div className="flex items-center justify-between">
-                                    <h4 className="text-sm font-medium text-neutral-dark">{result.list.title}</h4>
-                                    <Badge className={getScoreBgColor(result.score)}>
-                                      {result.score}% Score
-                                    </Badge>
-                                  </div>
-                                  <div className="mt-1 flex items-center justify-between">
-                                    <p className="text-sm text-gray-500">
-                                      Graded on {formatDate(result.submittedAt)} -  
-                                          {result.wordDefinitions?.filter(d => d.isCorrect).length || 0}/
-                                      {result.wordDefinitions?.length || 0} correct
-                                    </p>
-                                    <Button size="sm" className="text-blue-600 hover:text-white bg-transparent hover:bg-blue-800 gap-1 text-xs h-6">
-                                      <Eye className="h-3.5 w-3.5" /> View Details
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="py-4 text-center text-sm text-gray-500">
-                            No completed check-ups yet. Wait for your mentor to grade your submissions.
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
+
                     
                     {/* My Flashcards */}
                     <Card className="overflow-hidden">
@@ -479,73 +409,7 @@ function LearnerDashboard() {
           </div>
         </div>
       </div>
-      
-      {/* Result Details Dialog */}
-      {selectedResult && (
-        <Dialog open={!!selectedResult} onOpenChange={(open) => !open && setSelectedResult(null)}>
-          <DialogContent className="sm:max-w-3xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-bold flex items-center">
-                <Award className="mr-2 h-5 w-5 text-secondary" />
-                {selectedResult?.list?.title}
-                <Badge className={`ml-3 ${getScoreBgColor(selectedResult?.score)}`}>
-                  {selectedResult?.score}% Score
-                </Badge>
-              </DialogTitle>
-              <DialogDescription>
-                Completed on {formatDate(selectedResult?.submittedAt)} - 
-                {selectedResult?.wordDefinitions?.filter(d => d.isCorrect).length || 0}/
-                {selectedResult?.wordDefinitions?.length || 0} correct
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-6">
-              {/* Passage */}
-              {selectedResult?.list?.passage && (
-                <div className="space-y-2">
-                  <h3 className="text-lg font-medium">Assigned Passage</h3>
-                  <div className="p-4 bg-gray-50 rounded-md border border-gray-200">
-                    <p className="whitespace-pre-line">{selectedResult.list.passage}</p>
-                  </div>
-                </div>
-              )}
-              
-              {/* Word Definitions */}
-              <div className="space-y-3">
-                <h3 className="text-lg font-medium">Your Answers</h3>
-                {selectedResult?.wordDefinitions?.map(def => (
-                  <div key={def.id} className="p-4 border rounded-md">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-neutral-dark">{def.word?.word || 'Unknown word'}</h4>
-                      {def.isCorrect ? (
-                        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-                          Correct
-                        </Badge>
-                      ) : (
-                        <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
-                          Incorrect
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="mt-2 space-y-2">
-                      <div>
-                        <p className="text-sm text-gray-500">Your definition:</p>
-                        <p className="text-sm">{def.studentDefinition}</p>
-                      </div>
-                      {!def.isCorrect && def.showCorrectDefinition && def.correctDefinition && (
-                        <div>
-                          <p className="text-sm text-gray-500">Correct definition:</p>
-                          <p className="text-sm text-green-700">{def.correctDefinition}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
+
     </>
   );
 }

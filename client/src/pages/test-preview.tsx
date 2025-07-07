@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, BookOpen, Eye, Play, Users, Calendar } from "lucide-react";
+import { Clock, BookOpen, Eye, Play, Users, Calendar, CheckCircle, XCircle, Award } from "lucide-react";
 import { useState } from "react";
 
 export default function TestPreview() {
@@ -20,6 +20,13 @@ export default function TestPreview() {
   const { data: vocabularyList, isLoading } = useQuery({
     queryKey: [`/api/vocabulary-lists/${listId}`],
     queryFn: getQueryFn({ on401: "throw" }),
+  });
+
+  // Check for existing submission and results
+  const { data: submissionData } = useQuery({
+    queryKey: [`/api/vocabulary-lists/${listId}/submission`],
+    queryFn: getQueryFn({ on401: "throw" }),
+    enabled: !!listId,
   });
 
   console.log("TestPreview loaded", { listId, isLoading, hasData: !!vocabularyList });
@@ -258,43 +265,102 @@ export default function TestPreview() {
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                  <span>Test progress is automatically saved</span>
+                  <span>Each test can only be done once</span>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Start Test Button */}
-            <Card className="border-blue-200 bg-blue-50">
-              <CardContent className="p-6">
-                <div className="text-center space-y-4">
-                  <div>
-                    <h3 className="font-semibold text-blue-900 mb-2">Ready to Begin?</h3>
-                    <p className="text-sm text-blue-700">
-                      Once you start the test, you'll enter fullscreen mode and see the complete passage with highlighted vocabulary words.
+            {/* Conditional Section: Start Test or View Results */}
+            {submissionData && submissionData.gradedAt ? (
+              // Show Results Section
+              <Card className="border-green-200 bg-green-50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-green-800">
+                    <Award className="h-5 w-5" />
+                    Test Results
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-green-800 mb-2">
+                      {submissionData.score}%
+                    </div>
+                    <p className="text-sm text-green-700 mb-4">
+                      Completed on {new Date(submissionData.gradedAt).toLocaleDateString()}
                     </p>
                   </div>
-                  
+
+                  {/* Show word results */}
+                  {submissionData.definitions && submissionData.definitions.length > 0 && (
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-gray-800">Word Results:</h4>
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {submissionData.definitions.map((def: any) => (
+                          <div key={def.id} className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                            <div className="flex-1">
+                              <span className="font-medium">{def.word?.word}</span>
+                              {def.showCorrectDefinition && def.correctDefinition && (
+                                <p className="text-xs text-gray-600 mt-1">
+                                  Correct: {def.correctDefinition}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex items-center">
+                              {def.isCorrect ? (
+                                <CheckCircle className="h-5 w-5 text-green-500" />
+                              ) : (
+                                <XCircle className="h-5 w-5 text-red-500" />
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <Button 
-                    onClick={handleStartTest}
-                    disabled={isStarting || startTestMutation.isPending}
-                    size="lg"
-                    className="w-full bg-blue-600 hover:bg-blue-700"
+                    onClick={() => navigate("/learner/dashboard")}
+                    className="w-full"
+                    variant="outline"
                   >
-                    {isStarting || startTestMutation.isPending ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Starting Test...
-                      </>
-                    ) : (
-                      <>
-                        <Play className="mr-2 h-4 w-4" />
-                        Start Vocabulary Test
-                      </>
-                    )}
+                    Return to Dashboard
                   </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            ) : (
+              // Show Start Test Section
+              <Card className="border-blue-200 bg-blue-50">
+                <CardContent className="p-6">
+                  <div className="text-center space-y-4">
+                    <div>
+                      <h3 className="font-semibold text-blue-900 mb-2">Ready to Begin?</h3>
+                      <p className="text-sm text-blue-700">
+                        Once you start the test, you'll enter fullscreen mode and see the complete passage with highlighted vocabulary words.
+                      </p>
+                    </div>
+                    
+                    <Button 
+                      onClick={handleStartTest}
+                      disabled={isStarting || startTestMutation.isPending}
+                      size="lg"
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                    >
+                      {isStarting || startTestMutation.isPending ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Starting Test...
+                        </>
+                      ) : (
+                        <>
+                          <Play className="mr-2 h-4 w-4" />
+                          Start Vocabulary Test
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
