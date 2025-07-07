@@ -6,6 +6,7 @@ import { formatDate } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   Card,
   CardContent,
@@ -14,13 +15,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { EditVocabularyForm } from "@/components/edit-vocabulary-form";
 import {
   BookOpen,
   CalendarDays,
   ClipboardList,
   School,
   Trash2,
-  Filter
+  Filter,
+  Edit
 } from "lucide-react";
 
 export default function VocabularyManagement() {
@@ -29,6 +32,8 @@ export default function VocabularyManagement() {
   const [selectedClass, setSelectedClass] = useState<string>("all");
   const [selectedLists, setSelectedLists] = useState<number[]>([]);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [editingList, setEditingList] = useState<any>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   // Fetch educator's vocabulary lists
   const { data: vocabularyLists = [], isLoading: listsLoading } = useQuery<any[]>({
@@ -135,6 +140,23 @@ export default function VocabularyManagement() {
     publishMutation.mutate({ id, published: !currentPublished });
   };
 
+  // Handle edit action
+  const handleEdit = (list: any) => {
+    setEditingList(list);
+    setShowEditDialog(true);
+  };
+
+  // Handle successful edit
+  const handleEditSuccess = () => {
+    setShowEditDialog(false);
+    setEditingList(null);
+    queryClient.invalidateQueries({ queryKey: ["/api/educator/vocabulary-lists"] });
+    toast({
+      title: "Success",
+      description: "Vocabulary list updated successfully",
+    });
+  };
+
   return (
     <div className="container py-8 max-w-6xl mx-auto">
       <div className="mb-8">
@@ -223,6 +245,23 @@ export default function VocabularyManagement() {
               </AlertDialog>
             </div>
 
+            {/* Edit Dialog */}
+            <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Edit Vocabulary List</DialogTitle>
+                </DialogHeader>
+                {editingList && (
+                  <EditVocabularyForm 
+                    vocabularyList={editingList}
+                    classes={classes}
+                    onSuccess={handleEditSuccess}
+                    onCancel={() => setShowEditDialog(false)}
+                  />
+                )}
+              </DialogContent>
+            </Dialog>
+
             {/* Vocabulary Lists */}
             {listsLoading ? (
               <div className="py-4 text-center text-sm text-gray-500">Loading vocabulary lists...</div>
@@ -254,6 +293,15 @@ export default function VocabularyManagement() {
                       </div>
                     </div>
                     <div className="ml-4 flex-shrink-0 flex items-center space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEdit(list)}
+                        className="flex items-center"
+                      >
+                        <Edit className="mr-1 h-3 w-3" />
+                        Edit
+                      </Button>
                       <Button 
                         variant={list.published ? "outline" : "default"} 
                         size="sm"
