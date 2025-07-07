@@ -549,12 +549,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get the student's completed and graded submission for this list
       const submission = await storage.getSubmissionByStudentAndList(req.user.id, listId, true);
       
-      console.log("Submission check:", { 
-        hasSubmission: !!submission,
-        completed: submission?.completed,
-        gradedAt: submission?.gradedAt,
-        score: submission?.score
-      });
+
       
       if (!submission || !submission.completed || !submission.gradedAt) {
         return res.status(404).json({ message: "No graded submission found" });
