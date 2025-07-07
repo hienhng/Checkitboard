@@ -8,10 +8,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Form } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
-import { X, BookOpen, Wand2 } from "lucide-react";
+import { X, BookOpen, Wand2, CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { extractHighlightedWords, formatPassageWithHighlights } from "@/lib/utils";
 import { ClassSelect } from "@/components/ui/class-select";
@@ -30,29 +34,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
   const [passage, setPassage] = useState("");
   const [selectedWords, setSelectedWords] = useState<string[]>([]);
   const passageRef = useRef<HTMLDivElement>(null);
-  const [dueDate, setDueDate] = useState("");
-  
-  // Helper function to parse a date string safely
-  const parseDateSafely = (dateStr: string): Date | undefined => {
-    if (!dateStr || dateStr.trim() === '') return undefined;
-    
-    try {
-      // Parse the date string (format: YYYY-MM-DD) and create a date at noon UTC
-      // Using the Date constructor directly with the ISO string format (YYYY-MM-DD)
-      // ensures proper handling by the database
-      const formattedDateStr = `${dateStr}T12:00:00.000Z`;
-      const date = new Date(formattedDateStr);
-      
-      // Verify it's a valid date by checking if it's not "Invalid Date"
-      if (!isNaN(date.getTime())) {
-        return date;
-      }
-    } catch (e) {
-      console.error("Error parsing date:", e);
-    }
-    
-    return undefined;
-  };
+  const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
 
   // Schema for form validation - now requiring at least one class
   const formSchema = z.object({
@@ -236,9 +218,6 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
       return;
     }
 
-    // Parse the due date using our helper function
-    const dueDateObj = parseDateSafely(dueDate);
-
     // Validate class selection
     const result = await form.trigger("classIds");
     if (!result) {
@@ -257,7 +236,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
       title,
       passage,
       words: selectedWords,
-      dueDate: dueDateObj,
+      dueDate: dueDate,
       classIds: classIds
     });
   };
@@ -283,9 +262,6 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
       return;
     }
 
-    // Parse the due date using our helper function
-    const dueDateObj = parseDateSafely(dueDate);
-
     // Get the class IDs from the form
     const { classIds } = form.getValues();
 
@@ -293,7 +269,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
       title,
       passage,
       words: selectedWords,
-      dueDate: dueDateObj,
+      dueDate: dueDate,
       classIds: classIds,
       published: true
     });
@@ -321,14 +297,29 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
           </div>
 
           <div>
-            <Label htmlFor="due-date">Due Date</Label>
-            <Input
-              id="due-date"
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              className="mt-1"
-            />
+            <Label>Due Date (Optional)</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal mt-1",
+                    !dueDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dueDate ? format(dueDate, "PPP") : "Pick a due date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={dueDate}
+                  onSelect={setDueDate}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           <ClassSelect
