@@ -161,26 +161,50 @@ function LearnerDashboard() {
                     {filteredVocabularyLists.length > 0 && (
                       <div className="mb-4">
                         <h4 className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-2">
-                          Vocabulary Check-ups ({filteredVocabularyLists.filter(list => !list.submission || !list.submission.completed).length})
+                          Vocabulary Lists ({filteredVocabularyLists.length})
                         </h4>
                         <div className="space-y-2">
-                          {filteredVocabularyLists
-                            .filter(list => !list.submission || !list.submission.completed)
-                            .map(list => (
+                          {filteredVocabularyLists.map(list => {
+                            const isCompleted = list.submission && list.submission.completed;
+                            const isGraded = isCompleted && list.submission.gradedAt;
+                            
+                            return (
                               <div 
                                 key={list.id} 
-                                className="flex justify-between items-center p-3 bg-blue-50 rounded-md cursor-pointer hover:bg-blue-100 transition-colors"
+                                className={`flex justify-between items-center p-3 rounded-md cursor-pointer transition-colors ${
+                                  isGraded ? 'bg-green-50 hover:bg-green-100' :
+                                  isCompleted ? 'bg-yellow-50 hover:bg-yellow-100' :
+                                  'bg-blue-50 hover:bg-blue-100'
+                                }`}
                                 onClick={() => startCheckUp(list.id)}
                               >
                                 <div>
-                                  <p className="font-medium text-gray-900">{list.title}</p>
+                                  <div className="flex items-center gap-2">
+                                    <p className="font-medium text-gray-900">{list.title}</p>
+                                    {isGraded && (
+                                      <Badge className="bg-green-100 text-green-800 text-xs">
+                                        {list.submission.score}% - Graded
+                                      </Badge>
+                                    )}
+                                    {isCompleted && !isGraded && (
+                                      <Badge className="bg-yellow-100 text-yellow-800 text-xs">
+                                        Pending
+                                      </Badge>
+                                    )}
+                                    {!isCompleted && (
+                                      <Badge className="bg-blue-100 text-blue-800 text-xs">
+                                        Not Started
+                                      </Badge>
+                                    )}
+                                  </div>
                                   <p className="text-sm text-gray-500">
                                     By: {list.educator?.name} • Due: {formatDueDate(list.dueDate)}
                                   </p>
                                 </div>
                                 <ChevronRight className="h-4 w-4 text-gray-400" />
                               </div>
-                            ))}
+                            );
+                          })}
                         </div>
                       </div>
                     )}
@@ -211,7 +235,7 @@ function LearnerDashboard() {
                     )}
                     
                     {/* No Results Message */}
-                    {filteredVocabularyLists.filter(list => !list.submission || !list.submission.completed).length === 0 && 
+                    {filteredVocabularyLists.length === 0 && 
                      filteredClasses.length === 0 && (
                       <div className="text-center py-6 text-gray-500">
                         <Search className="mx-auto h-12 w-12 text-gray-300 mb-3" />
@@ -240,49 +264,67 @@ function LearnerDashboard() {
 
                 <TabsContent value="dashboard">
                   <div className="space-y-6">
-                    {/* Pending Vocabulary Check-Ups */}
+                    {/* All Vocabulary Lists */}
                     <Card className="overflow-hidden">
                       <CardHeader className="bg-blue-500 p-4 pb-4 text-center text-white">
                         <div className="w-full flex justify-between items-center">
                           <CardTitle className="text-xl">
-                             Check-up Lists
+                             All Vocabulary Lists
                           </CardTitle>
                           {vocabularyLists && vocabularyLists.length > 0 && (
-                            (() => {
-                              const pendingCount = filteredVocabularyLists.filter(list => 
-                                !list.submission || !list.submission.completed
-                              ).length;
-                              
-                              return pendingCount > 0 ? (
-                                <Badge variant="secondary" className="bg-blue text-white-800 font-medium">
-                                  {pendingCount} lists
-                                </Badge>
-                              ) : null;
-                            })()
+                            <Badge variant="secondary" className="bg-blue text-white-800 font-medium">
+                              {filteredVocabularyLists.length} lists
+                            </Badge>
                           )}
                         </div>
                       </CardHeader>
                       <CardContent>
                         {listsLoading ? (
-                          <div className="py-4 text-center text-sm text-gray-500">Loading check-ups...</div>
-                        ) : filteredVocabularyLists && filteredVocabularyLists.length > 0 && filteredVocabularyLists.filter(list => 
-                          !list.submission || !list.submission.completed
-                        ).length > 0 ? (
+                          <div className="py-4 text-center text-sm text-gray-500">Loading vocabulary lists...</div>
+                        ) : filteredVocabularyLists && filteredVocabularyLists.length > 0 ? (
                           <div className="space-y-2">
-                            {filteredVocabularyLists
-                              .filter(list => !list.submission || !list.submission.completed)
-                              .map(list => (
+                            {filteredVocabularyLists.map(list => {
+                              const isCompleted = list.submission && list.submission.completed;
+                              const isGraded = isCompleted && list.submission.gradedAt;
+                              
+                              return (
                                 <div 
                                   key={list.id} 
-                                  className="flex justify-between items-center mt-2 p-4 bg-white rounded-lg cursor-pointer hover:bg-blue-100 transition-colors group"
+                                  className={`flex justify-between items-center mt-2 p-4 rounded-lg cursor-pointer transition-colors group ${
+                                    isGraded ? 'bg-green-50 hover:bg-green-100' :
+                                    isCompleted ? 'bg-yellow-50 hover:bg-yellow-100' :
+                                    'bg-white hover:bg-blue-100'
+                                  }`}
                                   onClick={() => startCheckUp(list.id)}
                                 >
                                   <div className="flex-1">
-                                    <h4 className="font-medium text-neutral-dark">{list.title}</h4>
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <h4 className="font-medium text-neutral-dark">{list.title}</h4>
+                                      {isGraded && (
+                                        <Badge className="bg-green-100 text-green-800 text-xs">
+                                          {list.submission.score}% - Graded
+                                        </Badge>
+                                      )}
+                                      {isCompleted && !isGraded && (
+                                        <Badge className="bg-yellow-100 text-yellow-800 text-xs">
+                                          Pending Grade
+                                        </Badge>
+                                      )}
+                                      {!isCompleted && (
+                                        <Badge className="bg-blue-100 text-blue-800 text-xs">
+                                          Not Started
+                                        </Badge>
+                                      )}
+                                    </div>
                                     <div className="space-y-1">
                                       <p className="text-sm text-gray-500">Due date: {formatDueDate(list.dueDate)}</p>
                                       {list.educator && (
                                         <p className="text-xs text-gray-400">Created by: {list.educator.name}</p>
+                                      )}
+                                      {isCompleted && (
+                                        <p className="text-xs text-gray-500">
+                                          Completed on: {new Date(list.submission.submittedAt).toLocaleDateString()}
+                                        </p>
                                       )}
                                     </div>
                                   </div>
@@ -290,11 +332,12 @@ function LearnerDashboard() {
                                     <ChevronRight className="h-5 w-5" />
                                   </div>
                                 </div>
-                              ))}
+                              );
+                            })}
                           </div>
                         ) : (
                           <div className="py-4 text-center text-sm text-gray-500">
-                            No pending vocabulary check-ups.
+                            No vocabulary lists available.
                           </div>
                         )}
                       </CardContent>
