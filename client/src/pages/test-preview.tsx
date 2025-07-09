@@ -23,11 +23,13 @@ export default function TestPreview() {
   });
 
   // Check for existing submission and results
-  const { data: submissionData } = useQuery({
+  const { data: submissionData, error: submissionError } = useQuery({
     queryKey: [`/api/vocabulary-lists/${listId}/submission`],
     queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!listId,
   });
+
+
 
   console.log("TestPreview loaded", { listId, isLoading, hasData: !!vocabularyList });
 

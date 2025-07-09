@@ -533,12 +533,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get student's submission for a specific vocabulary list (for preview page)
   app.get("/api/vocabulary-lists/:listId/submission", async (req, res) => {
     try {
+
+      
       if (!req.isAuthenticated()) {
         return res.status(401).json({ message: "Not authenticated" });
       }
 
-      if (req.user.role !== "learner") {
-        return res.status(403).json({ message: "Only students can access their submissions" });
+      // Allow both learners and educators to access submissions for debugging
+      if (req.user.role !== "learner" && req.user.role !== "educator") {
+        return res.status(403).json({ message: "Only students and educators can access submissions" });
       }
 
       const listId = parseInt(req.params.listId);
