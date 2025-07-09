@@ -605,6 +605,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get detailed submission results for students
+  app.get("/api/submissions/:id/results", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const submissionId = parseInt(req.params.id);
+      if (isNaN(submissionId)) {
+        return res.status(400).json({ message: "Invalid submission ID" });
+      }
+
+      const submission = await storage.getSubmissionWithDefinitions(submissionId);
+      
+      if (!submission) {
+        return res.status(404).json({ message: "Submission not found" });
+      }
+
+      // Check if the user is the owner of the submission
+      if (submission.studentId !== req.user?.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      // Only show results if the submission is completed and graded
+      if (!submission.completed || !submission.gradedAt) {
+        return res.status(404).json({ message: "Results not available" });
+      }
+
+      res.json(submission);
+    } catch (error) {
+      console.error("Error fetching submission results:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Grade a submission
   app.post("/api/submissions/:id/grade", async (req, res) => {
     try {

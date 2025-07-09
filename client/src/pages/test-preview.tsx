@@ -318,13 +318,22 @@ export default function TestPreview() {
                     </div>
                   )}
 
-                  <Button 
-                    onClick={() => navigate("/learner/dashboard")}
-                    className="w-full"
-                    variant="outline"
-                  >
-                    Return to Dashboard
-                  </Button>
+                  <div className="space-y-3">
+                    <Button 
+                      onClick={() => navigate(`/test-results/${submissionData.id}`)}
+                      className="w-full"
+                    >
+                      <Award className="h-4 w-4 mr-2" />
+                      View Detailed Results
+                    </Button>
+                    <Button 
+                      onClick={() => navigate("/learner/dashboard")}
+                      className="w-full"
+                      variant="outline"
+                    >
+                      Return to Dashboard
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ) : (
