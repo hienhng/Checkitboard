@@ -33,7 +33,7 @@ export default function TestResults() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-600">Results not found</p>
-          <Button onClick={() => navigate("/learner-dashboard")} className="mt-4">
+          <Button onClick={() => navigate("/learner/dashboard")} className="mt-4">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard
           </Button>
@@ -77,7 +77,7 @@ export default function TestResults() {
         <div className="mb-8">
           <Button 
             variant="ghost" 
-            onClick={() => navigate("/learner-dashboard")}
+            onClick={() => navigate("/learner/dashboard")}
             className="mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />

@@ -127,3 +127,4 @@ Preferred communication style: Simple, everyday language.
 
 Changelog:
 - July 06, 2025. Initial setup
+- July 09, 2025. Updated learner dashboard to show all vocabulary lists with status badges and cleared all test data from database
