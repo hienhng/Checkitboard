@@ -86,7 +86,7 @@ export const wordDefinitions = pgTable("word_definitions", {
   id: serial("id").primaryKey(),
   submissionId: integer("submission_id").references(() => submissions.id).notNull(),
   wordId: integer("word_id").references(() => vocabularyWords.id).notNull(),
-  studentDefinition: text("student_definition").notNull(),
+  studentDefinition: text("student_definition"),
   correctDefinition: text("correct_definition"),
   showCorrectDefinition: boolean("show_correct_definition").default(true).notNull(),
   isCorrect: boolean("is_correct"),
@@ -247,7 +247,7 @@ export const insertSubmissionSchema = createInsertSchema(submissions, {
 }).omit({ id: true, createdAt: true, completed: true, score: true, submittedAt: true, gradedAt: true });
 
 export const insertWordDefinitionSchema = createInsertSchema(wordDefinitions, {
-  studentDefinition: (schema) => schema.min(1, "Definition cannot be empty"),
+  studentDefinition: (schema) => schema.optional(),
 }).omit({ id: true, createdAt: true, isCorrect: true, addedToFlashcards: true });
 
 export const insertParentStudentSchema = createInsertSchema(parentStudent, {

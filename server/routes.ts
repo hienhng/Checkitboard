@@ -1004,13 +1004,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "This submission is already completed" });
       }
 
-      // Check if all words have definitions
+      // Check if all words have been addressed (either defined or skipped)
       const list = await storage.getVocabularyListWithWords(submission.listId);
       const definitions = await storage.getWordDefinitionsBySubmission(submissionId);
       
       if (!list || !list.words || definitions.length < list.words.length) {
         return res.status(400).json({ 
-          message: "All words must have definitions before completing the submission",
+          message: "All words must be addressed before completing the submission. You can skip words you don't know.",
           definitionsCount: definitions.length,
           wordsCount: list?.words?.length || 0
         });

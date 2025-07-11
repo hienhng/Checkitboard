@@ -286,13 +286,6 @@ function LearnerDashboard() {
                             {filteredVocabularyLists.map(list => {
                               const isCompleted = list.submission && list.submission.completed;
                               const isGraded = isCompleted && list.submission.gradedAt;
-                              console.log("List grading status:", { 
-                                listId: list.id, 
-                                title: list.title, 
-                                isCompleted, 
-                                isGraded, 
-                                submission: list.submission 
-                              });
                               
                               return (
                                 <div 

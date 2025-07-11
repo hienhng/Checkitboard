@@ -207,11 +207,11 @@ export default function VocabularyCheckup() {
     
     const currentWord = submissionData.list.words[currentWordIndex];
     
-    // Save the current definition if it's changed
-    if (definition && definition !== savedDefinitions[currentWord.id]) {
+    // Save the current definition if it's changed (including empty string to represent skipped words)
+    if (definition !== savedDefinitions[currentWord.id]) {
       await definitionMutation.mutateAsync({ 
         wordId: currentWord.id, 
-        studentDefinition: definition 
+        studentDefinition: definition || null
       });
     }
     
@@ -248,25 +248,25 @@ export default function VocabularyCheckup() {
   const handleComplete = async () => {
     if (!submissionData?.list?.words) return;
     
-    // Save the current definition if it's not empty and has changed
+    // Save the current definition if it's changed (including empty definitions)
     const currentWord = submissionData.list.words[currentWordIndex];
-    if (definition && definition !== savedDefinitions[currentWord.id]) {
+    if (definition !== savedDefinitions[currentWord.id]) {
       await definitionMutation.mutateAsync({ 
         wordId: currentWord.id, 
-        studentDefinition: definition 
+        studentDefinition: definition || null
       });
     }
     
-    // Check if all words have definitions
-    const allDefined = submissionData.list.words.every(
-      (word: any) => savedDefinitions[word.id] || 
+    // Check if all words have been addressed (either defined or skipped)
+    const allAddressed = submissionData.list.words.every(
+      (word: any) => savedDefinitions.hasOwnProperty(word.id) || 
       (submissionData.wordDefinitions?.some((def: any) => def.wordId === word.id))
     );
     
-    if (!allDefined) {
+    if (!allAddressed) {
       toast({
         title: "Cannot complete check-up",
-        description: "Please provide definitions for all words before submitting.",
+        description: "Please provide definitions for all words or skip the ones you don't know.",
         variant: "destructive",
       });
       return;
@@ -467,17 +467,40 @@ export default function VocabularyCheckup() {
                           {currentWord.word}
                         </label>
                         <p className="text-sm text-gray-500 mb-2">
-                          Write what you think this word means.
+                          Write what you think this word means, or skip if you don't know.
                         </p>
                         <Textarea
                           id="word-definition"
                           rows={4}
-                          placeholder="Type your definition here..."
+                          placeholder="Type your definition here or leave blank to skip..."
                           value={definition}
                           onChange={(e) => setDefinition(e.target.value)}
                           disabled={showFullscreenWarning}
                           className={showFullscreenWarning ? "opacity-50 cursor-not-allowed" : ""}
                         />
+                        <div className="mt-2 flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setDefinition("")}
+                            disabled={showFullscreenWarning}
+                            className="text-gray-600"
+                          >
+                            Clear
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                              setDefinition("");
+                              await handleNext();
+                            }}
+                            disabled={showFullscreenWarning}
+                            className="text-orange-600 border-orange-300 hover:bg-orange-50"
+                          >
+                            Skip Word
+                          </Button>
+                        </div>
                       </div>
                       
                       <div className="flex justify-between">
@@ -515,21 +538,29 @@ export default function VocabularyCheckup() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
                             <div className="flex -space-x-1 overflow-hidden">
-                              {submissionData.list.words.map((_: any, index: any) => (
-                                <div 
-                                  key={index} 
-                                  className={`inline-block h-6 w-6 rounded-full ring-2 ring-white ${
-                                    index === currentWordIndex 
-                                      ? 'bg-blue-500 text-white' 
-                                      : savedDefinitions[submissionData.list.words[index].id] 
-                                        ? 'bg-blue-100 text-blue-700' 
-                                        : 'bg-gray-200 text-gray-500'
-                                  } flex items-center justify-center text-xs cursor-pointer`}
-                                  onClick={() => setCurrentWordIndex(index)}
-                                >
-                                  {index + 1}
-                                </div>
-                              ))}
+                              {submissionData.list.words.map((_: any, index: any) => {
+                                const wordId = submissionData.list.words[index].id;
+                                const hasDefinition = savedDefinitions[wordId];
+                                const isSkipped = savedDefinitions.hasOwnProperty(wordId) && !savedDefinitions[wordId];
+                                
+                                return (
+                                  <div 
+                                    key={index} 
+                                    className={`inline-block h-6 w-6 rounded-full ring-2 ring-white ${
+                                      index === currentWordIndex 
+                                        ? 'bg-blue-500 text-white' 
+                                        : hasDefinition
+                                          ? 'bg-green-100 text-green-700' 
+                                          : isSkipped
+                                            ? 'bg-orange-100 text-orange-700'
+                                            : 'bg-gray-200 text-gray-500'
+                                    } flex items-center justify-center text-xs cursor-pointer`}
+                                    onClick={() => setCurrentWordIndex(index)}
+                                  >
+                                    {index + 1}
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
                           <Dialog open={discardDialogOpen} onOpenChange={setDiscardDialogOpen}>
