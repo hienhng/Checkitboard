@@ -37,6 +37,25 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Check AI service status on startup
+  try {
+    const { isAIConfigured, getPrimaryAIProvider } = await import("./ai");
+    const { isGroqConfigured } = await import("./groq");
+    
+    console.log("AI Service Status:");
+    console.log("- AI Configured:", isAIConfigured());
+    console.log("- Primary Provider:", getPrimaryAIProvider());
+    console.log("- Groq Configured:", isGroqConfigured());
+    
+    if (isGroqConfigured()) {
+      console.log("Groq API integration is ready!");
+    } else {
+      console.log("Groq API key not found. AI features will use fallback providers.");
+    }
+  } catch (error) {
+    console.error("Error checking AI service status:", error);
+  }
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

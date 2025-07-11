@@ -54,9 +54,10 @@ This application follows a full-stack TypeScript architecture with a clear separ
 - Parent email notifications with test results
 
 ### AI Integration
-- Multiple AI provider support (OpenAI and Hugging Face)
-- Fallback mechanisms when AI services are unavailable
-- Automatic definition generation and passage analysis
+- Multiple AI provider support with priority system: Groq (primary), OpenAI, Hugging Face
+- Groq API integration provides fast, reliable AI inference for passage generation
+- Comprehensive fallback mechanisms when AI services are unavailable
+- Automatic definition generation, passage analysis, and vocabulary word extraction
 
 ## Data Flow
 
@@ -83,7 +84,7 @@ This application follows a full-stack TypeScript architecture with a clear separ
 ### Core Dependencies
 - **Database**: PostgreSQL via @neondatabase/serverless
 - **Email**: Nodemailer for email functionality (Gmail and SMTP support)
-- **AI Services**: OpenAI API and Hugging Face Inference API
+- **AI Services**: Groq API (primary), OpenAI API, and Hugging Face Inference API
 - **Authentication**: Passport.js with session management
 - **Validation**: Zod for runtime type validation
 
@@ -103,7 +104,7 @@ This application follows a full-stack TypeScript architecture with a clear separ
 
 ### Environment Configuration
 - Database connection via DATABASE_URL environment variable
-- AI service keys: OPENAI_API_KEY and HUGGINGFACE_API_KEY
+- AI service keys: GROQ_API_KEY (primary), OPENAI_API_KEY, and HUGGINGFACE_API_KEY
 - Email configuration: EMAIL_USER, EMAIL_APP_PASSWORD for Gmail
 - Session security: SESSION_SECRET for secure sessions
 
@@ -128,3 +129,4 @@ Preferred communication style: Simple, everyday language.
 Changelog:
 - July 06, 2025. Initial setup
 - July 09, 2025. Updated learner dashboard to show all vocabulary lists with status badges and cleared all test data from database
+- July 11, 2025. Integrated Groq API as primary AI provider for faster, more reliable passage generation and vocabulary analysis. Added comprehensive fallback system with OpenAI and Hugging Face as backup providers. Enhanced vocabulary check-up system to support optional definitions allowing students to skip unknown words.

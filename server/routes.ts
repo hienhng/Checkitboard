@@ -2837,6 +2837,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // #region AI Service Testing Routes
+
+  // Test Groq AI service endpoint
+  app.post("/api/test-groq", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "educator") {
+        return res.status(403).json({ message: "Only educators can test AI services" });
+      }
+
+      const { words, testType = "definitions" } = req.body;
+
+      if (!words || !Array.isArray(words) || words.length === 0) {
+        return res.status(400).json({ message: "Please provide an array of words to test" });
+      }
+
+      let result;
+      const { isAIConfigured, getPrimaryAIProvider } = await import("./ai");
+
+      if (!isAIConfigured()) {
+        return res.status(503).json({ 
+          message: "No AI service is configured. Please configure GROQ_API_KEY, OPENAI_API_KEY, or HUGGINGFACE_API_KEY." 
+        });
+      }
+
+      const provider = getPrimaryAIProvider();
+
+      switch (testType) {
+        case "definitions":
+          const { generateDefinitions } = await import("./ai");
+          result = await generateDefinitions(words);
+          break;
+        case "passage":
+          const { generatePassageFromWords } = await import("./ai");
+          result = await generatePassageFromWords(words, { 
+            topic: req.body.topic || "general knowledge",
+            gradeLevel: req.body.gradeLevel || "middle school"
+          });
+          break;
+        case "analyze":
+          const { analyzePassage } = await import("./ai");
+          const passage = req.body.passage;
+          if (!passage) {
+            return res.status(400).json({ message: "Please provide a passage to analyze" });
+          }
+          result = await analyzePassage(passage, req.body.wordCount || 10);
+          break;
+        default:
+          return res.status(400).json({ message: "Invalid test type. Use 'definitions', 'passage', or 'analyze'" });
+      }
+
+      res.json({
+        success: true,
+        provider,
+        testType,
+        input: testType === "analyze" ? { passage: req.body.passage } : { words },
+        result
+      });
+    } catch (error) {
+      console.error("Error testing AI service:", error);
+      res.status(500).json({ 
+        message: "Error testing AI service", 
+        error: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+
+  // Get AI service status
+  app.get("/api/ai-status", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const { isAIConfigured, getPrimaryAIProvider } = await import("./ai");
+      const { isGroqConfigured } = await import("./groq");
+      const { isHuggingFaceConfigured } = await import("./huggingface");
+
+      res.json({
+        isConfigured: isAIConfigured(),
+        primaryProvider: getPrimaryAIProvider(),
+        providers: {
+          groq: isGroqConfigured(),
+          openai: process.env.OPENAI_API_KEY ? true : false,
+          huggingface: isHuggingFaceConfigured()
+        }
+      });
+    } catch (error) {
+      console.error("Error getting AI status:", error);
+      res.status(500).json({ message: "Error getting AI status" });
+    }
+  });
+
+  // #endregion
+
   const httpServer = createServer(app);
   return httpServer;
 }
