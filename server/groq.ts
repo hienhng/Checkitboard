@@ -216,6 +216,9 @@ Words to include: ${words.join(', ')}
 Write only the passage, no additional text or explanations:`;
 
     console.log("Calling Groq API to generate passage...");
+    console.log("Using model:", DEFAULT_MODEL);
+    console.log("Prompt length:", prompt.length);
+    
     const completion = await groq.chat.completions.create({
       messages: [
         {
@@ -231,6 +234,9 @@ Write only the passage, no additional text or explanations:`;
       temperature: 0.7,
       max_tokens: 1500,
     });
+    
+    console.log("Groq API response received");
+    console.log("Response choices length:", completion.choices?.length || 0);
 
     const passage = completion.choices[0]?.message?.content?.trim();
     

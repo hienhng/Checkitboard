@@ -389,19 +389,27 @@ export async function generatePassageFromWords(
     style?: string;
   } = {}
 ): Promise<string> {
+  console.log("generatePassageFromWords called with:", { words, options });
+  
   // Convert gradeLevel to difficulty format for Groq
   const difficulty = options.gradeLevel === "elementary" ? "elementary" :
                     options.gradeLevel === "high school" ? "high" : "middle";
+
+  console.log("Converted difficulty:", difficulty);
+  console.log("Groq configured?", groqService.isGroqConfigured());
 
   // Try Groq first
   if (groqService.isGroqConfigured()) {
     try {
       console.log("Attempting to generate passage using Groq API...");
       const result = await groqService.generatePassageFromWords(words, difficulty, options.topic);
-      console.log("Groq API call successful!");
+      console.log("Groq API call successful! Generated passage length:", result.length);
       return result;
-    } catch (error) {
-      console.error("Groq failed, falling back to other providers:", error);
+    } catch (error: any) {
+      console.error("Groq failed, falling back to other providers:");
+      console.error("Error type:", typeof error);
+      console.error("Error message:", error.message);
+      console.error("Full error:", error);
     }
   } else {
     console.log("Groq is not configured, skipping to next provider");
