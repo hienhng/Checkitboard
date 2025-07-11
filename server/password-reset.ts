@@ -49,9 +49,12 @@ export function generatePasswordResetToken(): string {
  * Generates the password reset URL
  */
 function getPasswordResetUrl(token: string): string {
-  const baseUrl = process.env.REPLIT_DEV_DOMAIN 
-    ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-    : 'http://localhost:5000';
+  // Use the current request host or fallback to production URL
+  const baseUrl = process.env.REPLIT_DOMAINS 
+    ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
+    : process.env.REPLIT_DEV_DOMAIN 
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+      : 'http://localhost:5000';
   return `${baseUrl}/reset-password?token=${token}`;
 }
 

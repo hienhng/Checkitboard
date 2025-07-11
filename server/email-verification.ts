@@ -63,7 +63,7 @@ function getVerificationUrl(token: string): string {
   const baseUrl = process.env.REPLIT_DOMAINS ? 
     `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 
     'https://workspace-checkitdevai.replit.app';
-  return `${baseUrl}/verify?token=${token}`;
+  return `${baseUrl}/verify-email?token=${token}`;
 }
 
 /**

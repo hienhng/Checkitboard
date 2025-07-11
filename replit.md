@@ -129,4 +129,4 @@ Preferred communication style: Simple, everyday language.
 Changelog:
 - July 06, 2025. Initial setup
 - July 09, 2025. Updated learner dashboard to show all vocabulary lists with status badges and cleared all test data from database
-- July 11, 2025. Integrated Groq API as primary AI provider for faster, more reliable passage generation and vocabulary analysis. Added comprehensive fallback system with OpenAI and Hugging Face as backup providers. Enhanced vocabulary check-up system to support optional definitions allowing students to skip unknown words.
+- July 11, 2025. Integrated Groq API as primary AI provider for faster, more reliable passage generation and vocabulary analysis. Added comprehensive fallback system with OpenAI and Hugging Face as backup providers. Enhanced vocabulary check-up system to support optional definitions allowing students to skip unknown words. Fixed email verification and password reset URLs to use production domain instead of development domain.
