@@ -272,9 +272,9 @@ export default function TestPreview() {
               </CardContent>
             </Card>
 
-            {/* Conditional Section: Start Test or View Results */}
+            {/* Conditional Section: Start Test, Pending Grade, or View Results */}
             {submissionData && submissionData.gradedAt ? (
-              // Show Results Section
+              // Show Results Section - Test has been graded
               <Card className="border-green-200 bg-green-50">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-green-800">
@@ -338,8 +338,61 @@ export default function TestPreview() {
                   </div>
                 </CardContent>
               </Card>
+            ) : submissionData && submissionData.submittedAt && !submissionData.gradedAt ? (
+              // Show Pending Grade Section - Test submitted but not graded yet
+              <Card className="border-orange-200 bg-orange-50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-orange-800">
+                    <Clock className="h-5 w-5" />
+                    Test Pending Grade
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="text-center">
+                    <div className="text-orange-600 mb-4">
+                      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-orange-100 flex items-center justify-center">
+                        <Clock className="h-8 w-8 text-orange-600" />
+                      </div>
+                      <h3 className="font-semibold text-orange-900 mb-2">Test Under Review</h3>
+                      <p className="text-sm text-orange-700 mb-4">
+                        You have already completed this vocabulary test. Your teacher is currently reviewing and grading your submission.
+                      </p>
+                      <p className="text-xs text-orange-600">
+                        Submitted on {new Date(submissionData.submittedAt).toLocaleDateString()} at {new Date(submissionData.submittedAt).toLocaleTimeString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-orange-100 border border-orange-200 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0">
+                        <div className="w-5 h-5 rounded-full bg-orange-200 flex items-center justify-center">
+                          <span className="text-orange-600 text-xs font-bold">!</span>
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium text-orange-800 mb-1">Please Wait</h4>
+                        <p className="text-sm text-orange-700">
+                          You cannot retake this test until your teacher has finished grading. 
+                          You will receive your results and any feedback once grading is complete.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Button 
+                      onClick={() => navigate("/learner/dashboard")}
+                      className="w-full"
+                      variant="outline"
+                    >
+                      Return to Dashboard
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             ) : (
-              // Show Start Test Section
+              // Show Start Test Section - No submission yet
               <Card className="border-blue-200 bg-blue-50">
                 <CardContent className="p-6">
                   <div className="text-center space-y-4">
