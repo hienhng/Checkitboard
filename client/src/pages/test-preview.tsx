@@ -392,34 +392,54 @@ export default function TestPreview() {
                 </CardContent>
               </Card>
             ) : (
-              // Show Start Test Section - No submission yet
-              <Card className="border-blue-200 bg-blue-50">
-                <CardContent className="p-6">
-                  <div className="text-center space-y-4">
-                    <div>
-                      <h3 className="font-semibold text-blue-900 mb-2">Ready to Begin?</h3>
-                      <p className="text-sm text-blue-700">
-                        Once you start the test, you'll enter fullscreen mode and see the complete passage with highlighted vocabulary words.
+              // Show Pending Grade Section - Simulating submitted test awaiting grading
+              <Card className="border-orange-200 bg-orange-50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-orange-800">
+                    <Clock className="h-5 w-5" />
+                    Test Pending Grade
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="text-center">
+                    <div className="text-orange-600 mb-4">
+                      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-orange-100 flex items-center justify-center">
+                        <Clock className="h-8 w-8 text-orange-600" />
+                      </div>
+                      <h3 className="font-semibold text-orange-900 mb-2">Test Under Review</h3>
+                      <p className="text-sm text-orange-700 mb-4">
+                        You have already completed this vocabulary test. Your teacher is currently reviewing and grading your submission.
+                      </p>
+                      <p className="text-xs text-orange-600">
+                        Submitted recently - awaiting grading
                       </p>
                     </div>
-                    
+                  </div>
+
+                  <div className="bg-orange-100 border border-orange-200 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0">
+                        <div className="w-5 h-5 rounded-full bg-orange-200 flex items-center justify-center">
+                          <span className="text-orange-600 text-xs font-bold">!</span>
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium text-orange-800 mb-1">Please Wait</h4>
+                        <p className="text-sm text-orange-700">
+                          You cannot retake this test until your teacher has finished grading. 
+                          You will receive your results and any feedback once grading is complete.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
                     <Button 
-                      onClick={handleStartTest}
-                      disabled={isStarting || startTestMutation.isPending}
-                      size="lg"
-                      className="w-full bg-blue-600 hover:bg-blue-700"
+                      onClick={() => navigate("/learner/dashboard")}
+                      className="w-full"
+                      variant="outline"
                     >
-                      {isStarting || startTestMutation.isPending ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Starting Test...
-                        </>
-                      ) : (
-                        <>
-                          <Play className="mr-2 h-4 w-4" />
-                          Start Vocabulary Test
-                        </>
-                      )}
+                      Return to Dashboard
                     </Button>
                   </div>
                 </CardContent>
