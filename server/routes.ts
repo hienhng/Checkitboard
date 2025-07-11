@@ -838,7 +838,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ...list,
             submission: existingSubmission ? {
               id: existingSubmission.id,
-              completed: existingSubmission.completed || false
+              completed: existingSubmission.completed || false,
+              gradedAt: existingSubmission.gradedAt,
+              score: existingSubmission.score,
+              submittedAt: existingSubmission.submittedAt
             } : null,
             class: list.class ? {
               id: list.class.id,
