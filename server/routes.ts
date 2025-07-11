@@ -7,14 +7,14 @@ import { sendVerificationEmail, sendWelcomeEmail, generateVerificationToken } fr
 import { sendPasswordResetEmail, sendPasswordResetConfirmationEmail, generatePasswordResetToken } from "./password-reset";
 import { hashPassword, comparePasswords } from "./auth";
 import { 
-  isHuggingFaceConfigured as isAIConfigured, 
+  isAIConfigured, 
   generateDefinitions,
   analyzePassage,
   gradeDefinition,
   generateExampleSentences,
   generateLearningStrategies,
   generatePassageFromWords
-} from "./huggingface";
+} from "./ai";
 import { eq, and, desc, isNull, asc, not, inArray, sql } from "drizzle-orm";
 
 import { db, pool } from "../db";

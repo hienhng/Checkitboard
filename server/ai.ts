@@ -396,10 +396,15 @@ export async function generatePassageFromWords(
   // Try Groq first
   if (groqService.isGroqConfigured()) {
     try {
-      return await groqService.generatePassageFromWords(words, difficulty, options.topic);
+      console.log("Attempting to generate passage using Groq API...");
+      const result = await groqService.generatePassageFromWords(words, difficulty, options.topic);
+      console.log("Groq API call successful!");
+      return result;
     } catch (error) {
-      console.warn("Groq failed, falling back to other providers:", error);
+      console.error("Groq failed, falling back to other providers:", error);
     }
+  } else {
+    console.log("Groq is not configured, skipping to next provider");
   }
 
   // Try OpenAI as fallback

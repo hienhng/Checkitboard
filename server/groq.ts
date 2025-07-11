@@ -188,7 +188,10 @@ export async function generatePassageFromWords(
   topic?: string
 ): Promise<string> {
   try {
+    console.log("generatePassageFromWords called with:", { words, difficulty, topic });
+    
     if (!groq) {
+      console.error("Groq client is null - API key not configured properly");
       throw new Error("Groq API key is not configured");
     }
 
@@ -212,6 +215,7 @@ Words to include: ${words.join(', ')}
 
 Write only the passage, no additional text or explanations:`;
 
+    console.log("Calling Groq API to generate passage...");
     const completion = await groq.chat.completions.create({
       messages: [
         {
@@ -237,14 +241,20 @@ Write only the passage, no additional text or explanations:`;
       throw new Error("No passage content received from Groq API");
     }
   } catch (error: any) {
-    console.error("Error generating passage:", error);
+    console.error("Error generating passage with Groq:", error);
+    console.error("Error details:", {
+      message: error.message,
+      status: error.status,
+      code: error.code,
+      name: error.name
+    });
     
     if (error.status === 429) {
-      throw new Error("API rate limit exceeded. Please try again later.");
+      throw new Error("Groq API rate limit exceeded. Please try again later.");
     } else if (error.status === 401 || error.status === 403) {
-      throw new Error("API key authentication failed. Please check your API key.");
+      throw new Error("Groq API key authentication failed. Please check your GROQ_API_KEY.");
     } else {
-      throw new Error("Failed to generate passage. Please try again later.");
+      throw new Error(`Groq API error: ${error.message || 'Unknown error'}`);
     }
   }
 }
