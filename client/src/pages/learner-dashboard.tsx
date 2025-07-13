@@ -369,14 +369,48 @@ function LearnerDashboard() {
                           <div className="py-4 text-center text-sm text-gray-500">Loading flashcards...</div>
                         ) : flashcards && flashcards.length > 0 && flashcards.filter(card => !card.learned).length > 0 ? (
                           <div>
-                            {/* Show only first 3 flashcards in dashboard preview */}
+                            {/* Show only first 3 flashcards in dashboard preview - read-only */}
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
                               {flashcards
                                 .filter(card => !card.learned)
                                 .slice(0, 3) // Limit to 3 cards
                                 .map(card => (
-                                  <div key={card.id} className="w-full">
-                                    <Flashcard flashcard={card} />
+                                  <div key={card.id} className="w-full max-w-sm mx-auto">
+                                    <div className="w-full h-56 bg-white rounded-lg border shadow-sm overflow-hidden">
+                                      <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
+                                        <div className="flex justify-between items-center">
+                                          <div className="flex-1">
+                                            <div className="mb-1 bg-white text-blue-700 border-blue-200 text-xs px-2 py-1 rounded border inline-block">
+                                              Word
+                                            </div>
+                                            <h3 className="text-xl font-bold text-blue-900 text-center">{card.word.word}</h3>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="p-6 flex flex-col justify-between h-[calc(100%-90px)]">
+                                        <div>
+                                          <p className="text-gray-700 italic text-center px-2">"{card.definition?.studentDefinition || ''}"</p>
+                                          
+                                          {card.definition?.showCorrectDefinition && 
+                                           card.definition?.correctDefinition && (
+                                            <div className="mt-3 pt-3 border-t border-gray-100">
+                                              <div className={`mb-1 text-xs px-2 py-1 rounded border inline-block ${
+                                                card.definition?.isCorrect ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
+                                              }`}>
+                                                {card.definition?.isCorrect ? 'Correct' : 'Correct Definition'}
+                                              </div>
+                                              <p className="text-gray-700 text-sm px-2">{card.definition?.correctDefinition}</p>
+                                            </div>
+                                          )}
+                                        </div>
+                                        
+                                        <div className="text-center mt-4">
+                                          <div className="text-xs text-gray-500">
+                                            From: {card.definition.submission.list.title}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
                                   </div>
                                 ))}
                             </div>
