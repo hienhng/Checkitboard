@@ -387,25 +387,12 @@ function LearnerDashboard() {
                                           </div>
                                         </div>
                                       </div>
-                                      <div className="p-6 flex flex-col justify-between h-[calc(100%-90px)]">
-                                        <div>
-                                          <p className="text-gray-700 italic text-center px-2">"{card.definition?.studentDefinition || ''}"</p>
-                                          
-                                          {card.definition?.showCorrectDefinition && 
-                                           card.definition?.correctDefinition && (
-                                            <div className="mt-3 pt-3 border-t border-gray-100">
-                                              <div className={`mb-1 text-xs px-2 py-1 rounded border inline-block ${
-                                                card.definition?.isCorrect ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
-                                              }`}>
-                                                {card.definition?.isCorrect ? 'Correct' : 'Correct Definition'}
-                                              </div>
-                                              <p className="text-gray-700 text-sm px-2">{card.definition?.correctDefinition}</p>
-                                            </div>
-                                          )}
-                                        </div>
-                                        
-                                        <div className="text-center mt-4">
-                                          <div className="text-xs text-gray-500">
+                                      <div className="p-6 flex flex-col justify-center h-[calc(100%-90px)]">
+                                        <div className="text-center">
+                                          <div className="text-sm text-gray-500 mb-2">
+                                            Click "Study All Cards" to practice
+                                          </div>
+                                          <div className="text-xs text-gray-400">
                                             From: {card.definition.submission.list.title}
                                           </div>
                                         </div>
