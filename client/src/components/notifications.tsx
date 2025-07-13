@@ -42,11 +42,21 @@ interface Notification {
   createdAt: string;
 }
 
-export function NotificationCenter() {
+interface NotificationCenterProps {
+  onOpenChange?: (open: boolean) => void;
+}
+
+export function NotificationCenter({ onOpenChange }: NotificationCenterProps = {}) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("all");
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  
+  // Notify parent when open state changes
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    onOpenChange?.(open);
+  };
 
   // Query to get unread notification count
   const countQuery = useQuery({
@@ -211,13 +221,12 @@ export function NotificationCenter() {
   };
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
+    <Popover open={isOpen} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
           size="icon"
           className="relative"
-          onClick={() => setIsOpen(!isOpen)}
         >
           <Bell className="h-5 w-5" />
           {(countQuery.data?.count || 0) > 0 && (

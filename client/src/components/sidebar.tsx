@@ -51,6 +51,8 @@ export function Sidebar() {
   const isMobile = useMobile();
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const sidebarRef = useRef<HTMLElement>(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
   if (!user) {
     return null;
@@ -75,7 +77,7 @@ export function Sidebar() {
 
   // Handle mouse leave to collapse
   const handleMouseLeave = () => {
-    if (isMobile || collapsed) return;
+    if (isMobile || collapsed || isDropdownOpen || isNotificationOpen) return;
     
     // Clear any existing timeout
     if (hoverTimeoutRef.current) {
@@ -84,7 +86,10 @@ export function Sidebar() {
     
     // Set timeout to collapse after 200ms delay
     hoverTimeoutRef.current = setTimeout(() => {
-      toggleCollapsed();
+      // Double check that dropdowns are still closed before collapsing
+      if (!isDropdownOpen && !isNotificationOpen) {
+        toggleCollapsed();
+      }
     }, 200);
   };
 
@@ -193,9 +198,9 @@ export function Sidebar() {
             </Avatar>
             
             <div className="flex flex-col items-center space-y-1">
-              <NotificationCenter />
+              <NotificationCenter onOpenChange={setIsNotificationOpen} />
               
-              <DropdownMenu>
+              <DropdownMenu onOpenChange={setIsDropdownOpen}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-6 w-6">
                     <MoreHorizontal className="h-4 w-4" />
@@ -209,7 +214,7 @@ export function Sidebar() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <Link href="/settings">
+                  <Link to="/settings">
                     <DropdownMenuItem className="cursor-pointer">
                       <Settings className="mr-2 h-4 w-4" />
                       <span>Settings</span>
@@ -253,9 +258,9 @@ export function Sidebar() {
             </div>
             
             <div className="flex items-center space-x-1">
-              <NotificationCenter />
+              <NotificationCenter onOpenChange={setIsNotificationOpen} />
               
-              <DropdownMenu>
+              <DropdownMenu onOpenChange={setIsDropdownOpen}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8">
                     <Settings className="h-4 w-4" />
@@ -264,7 +269,7 @@ export function Sidebar() {
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <Link href="/settings">
+                  <Link to="/settings">
                     <DropdownMenuItem className="cursor-pointer">
                       <Settings className="mr-2 h-4 w-4" />
                       <span>Settings</span>
