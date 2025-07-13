@@ -11,6 +11,7 @@ import ForgotPassword from "@/pages/forgot-password";
 import ResetPassword from "@/pages/reset-password";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { AuthProvider } from "@/hooks/use-auth";
+import { SidebarProvider } from "@/hooks/use-sidebar";
 import EducatorDashboard from "@/pages/educator-dashboard";
 import LearnerDashboard from "@/pages/learner-dashboard";
 import VocabularyCheckup from "@/pages/vocabulary-checkup";
@@ -40,20 +41,22 @@ function Router() {
       <ProtectedRoute path="/test-results/:submissionId" component={withEmailVerification(TestResults)} />
       
       {/* All other routes with layout/sidebar */}
-      <Layout>
-        <EmailVerificationGuard showBanner={true}>
-          <ProtectedRoute path="/" component={HomePage} />
-          <ProtectedRoute path="/educator/dashboard" component={withEmailVerification(EducatorDashboard)} />
-          <ProtectedRoute path="/educator/statistics" component={withEmailVerification(EducatorStatisticsPage)} />
-          <ProtectedRoute path="/educator/assignments" component={withEmailVerification(VocabularyManagement)} />
-          <ProtectedRoute path="/learner/dashboard" component={withEmailVerification(LearnerDashboard)} />
-          <ProtectedRoute path="/learner/vocabulary/:listId" component={withEmailVerification(VocabularyView)} />
-          <ProtectedRoute path="/learner/flashcards" component={withEmailVerification(FlashcardsPage)} />
-          <ProtectedRoute path="/learner/class/:classId" component={withEmailVerification(ClassListsPage)} />
-          <ProtectedRoute path="/learner/analysis" component={withEmailVerification(LearnerAnalysis)} />
-          <ProtectedRoute path="/settings" component={SettingsPage} />
-        </EmailVerificationGuard>
-      </Layout>
+      <SidebarProvider>
+        <Layout>
+          <EmailVerificationGuard showBanner={true}>
+            <ProtectedRoute path="/" component={HomePage} />
+            <ProtectedRoute path="/educator/dashboard" component={withEmailVerification(EducatorDashboard)} />
+            <ProtectedRoute path="/educator/statistics" component={withEmailVerification(EducatorStatisticsPage)} />
+            <ProtectedRoute path="/educator/assignments" component={withEmailVerification(VocabularyManagement)} />
+            <ProtectedRoute path="/learner/dashboard" component={withEmailVerification(LearnerDashboard)} />
+            <ProtectedRoute path="/learner/vocabulary/:listId" component={withEmailVerification(VocabularyView)} />
+            <ProtectedRoute path="/learner/flashcards" component={withEmailVerification(FlashcardsPage)} />
+            <ProtectedRoute path="/learner/class/:classId" component={withEmailVerification(ClassListsPage)} />
+            <ProtectedRoute path="/learner/analysis" component={withEmailVerification(LearnerAnalysis)} />
+            <ProtectedRoute path="/settings" component={SettingsPage} />
+          </EmailVerificationGuard>
+        </Layout>
+      </SidebarProvider>
       
       {/* Catch all unmatched routes */}
       <Route component={NotFound} />

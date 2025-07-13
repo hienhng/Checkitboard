@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { useSidebar } from "@/hooks/use-sidebar";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -34,7 +35,10 @@ import {
   LayoutDashboard,
   Settings,
   ChevronDown,
-  ClipboardList
+  ClipboardList,
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMobile } from "@/hooks/use-mobile";
@@ -43,6 +47,7 @@ export function Sidebar() {
   const { user, logoutMutation } = useAuth();
   const [location] = useLocation();
   const [open, setOpen] = useState(false);
+  const { collapsed, toggleCollapsed } = useSidebar();
   const isMobile = useMobile();
 
   if (!user) {
@@ -80,101 +85,174 @@ export function Sidebar() {
       ];
 
   // Sidebar content - shared between mobile and desktop
-  const SidebarContent = () => (
+  const SidebarContent = ({ isCollapsed = false }) => (
     <>
-      {/* Logo */}
-      <div className="p-6">
-        <Link to="/" className="flex items-center justify-center">
-          
-          <span className="text-4xl text-primary font-modak">checkit</span>
-        </Link>
-      </div>
-
-      {/* Divider */}
-      <div className="px-6">
-        <div className="h-[1px] bg-gray-200"></div>
+      {/* Header with Logo and Toggle */}
+      <div className={cn("flex items-center justify-between p-4 border-b border-gray-100", isCollapsed && "px-2")}>
+        {!isCollapsed && (
+          <Link to="/" className="flex items-center">
+            <span className="text-2xl text-primary font-modak">checkit</span>
+          </Link>
+        )}
+        
+        {!isMobile && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleCollapsed}
+            className="h-8 w-8 hover:bg-gray-100"
+          >
+            {isCollapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
+          </Button>
+        )}
       </div>
 
       {/* Navigation links */}
-      <div className="flex-1 px-3 py-6">
-        <div className="space-y-1">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              to={link.href}
-              className={cn(
-                "flex items-center rounded-lg px-4 py-3 text-sm font-medium transition-colors duration-200",
-                location === link.href
-                  ? "bg-primary/10 text-primary"
-                  : "text-gray-700 hover:bg-primary/5 hover:text-primary"
-              )}
-              onClick={() => isMobile && setOpen(false)}
-            >
-              <div className={cn(
-                "flex items-center justify-center h-8 w-8 rounded-md mr-3",
-                location === link.href ? "bg-primary text-white" : "bg-gray-100 text-gray-700"
-              )}>
-                {link.icon}
-              </div>
-              {link.label}
-            </Link>
-          ))}
-        </div>
+      <div className="flex-1 p-3">
+        <nav className="space-y-1">
+          {navLinks.map((link) => {
+            const isActive = location === link.href;
+            return (
+              <Link
+                key={link.href}
+                to={link.href}
+                className={cn(
+                  "group flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 relative",
+                  isActive
+                    ? "bg-primary text-white shadow-sm"
+                    : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                )}
+                onClick={() => isMobile && setOpen(false)}
+              >
+                <div className={cn(
+                  "flex items-center justify-center h-5 w-5 transition-colors duration-200",
+                  isCollapsed ? "mx-auto" : "mr-3"
+                )}>
+                  {link.icon}
+                </div>
+                
+                {!isCollapsed && (
+                  <span className="truncate">{link.label}</span>
+                )}
+                
+                {isCollapsed && (
+                  <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50">
+                    {link.label}
+                  </div>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
       </div>
 
       {/* User profile section */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center p-2">
-          <Avatar className={cn(
-            "h-10 w-10 text-white ring-2 ring-offset-2 mr-3",
-            isEducator ? "ring-primary bg-primary" : "ring-secondary bg-secondary"
-          )}>
-            <AvatarImage src={user.profilePicture || undefined} />
-            <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-          </Avatar>
-          
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">
-              {user.name}
-            </p>
-            <p className="text-xs text-gray-500 truncate">
-              {user.email}
-            </p>
-            <p className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full w-fit capitalize mt-1">
-              {user.role}
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-1">
-            <NotificationCenter />
+      <div className={cn("border-t border-gray-100 p-3", isCollapsed && "p-2")}>
+        {isCollapsed ? (
+          <div className="flex flex-col items-center space-y-2">
+            <Avatar className={cn(
+              "h-8 w-8 text-white",
+              isEducator ? "bg-primary" : "bg-secondary"
+            )}>
+              <AvatarImage src={user.profilePicture || undefined} />
+              <AvatarFallback className="text-xs">{getInitials(user.name)}</AvatarFallback>
+            </Avatar>
             
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full h-8 w-8">
-                  <Settings className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <Link href="/settings">
-                  <DropdownMenuItem className="cursor-pointer">
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Settings</span>
+            <div className="flex flex-col items-center space-y-1">
+              <NotificationCenter />
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" side="right" className="w-56">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{user.name}</span>
+                      <span className="text-xs text-gray-500 font-normal">{user.email}</span>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <Link href="/settings">
+                    <DropdownMenuItem className="cursor-pointer">
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </DropdownMenuItem>
+                  </Link>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sign out</span>
                   </DropdownMenuItem>
-                </Link>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={handleLogout}
-                  className="cursor-pointer text-red-600 hover:text-red-700 transition duration-200 hover:bg-red-50"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+            <Avatar className={cn(
+              "h-10 w-10 text-white",
+              isEducator ? "bg-primary" : "bg-secondary"
+            )}>
+              <AvatarImage src={user.profilePicture || undefined} />
+              <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+            </Avatar>
+            
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">
+                {user.name}
+              </p>
+              <p className="text-xs text-gray-500 truncate">
+                {user.email}
+              </p>
+              <div className={cn(
+                "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize mt-1",
+                isEducator ? "bg-primary/10 text-primary" : "bg-secondary/10 text-secondary"
+              )}>
+                {user.role}
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-1">
+              <NotificationCenter />
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <Link href="/settings">
+                    <DropdownMenuItem className="cursor-pointer">
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </DropdownMenuItem>
+                  </Link>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sign out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
@@ -187,13 +265,13 @@ export function Sidebar() {
         <div className="fixed top-4 left-4 z-40">
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="h-10 w-10 rounded-full bg-white shadow-md">
+              <Button variant="outline" size="icon" className="h-10 w-10 rounded-full bg-white shadow-lg border-gray-200">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-72">
+            <SheetContent side="left" className="p-0 w-72 bg-white">
               <div className="h-full flex flex-col">
-                <SidebarContent />
+                <SidebarContent isCollapsed={false} />
               </div>
             </SheetContent>
           </Sheet>
@@ -202,10 +280,15 @@ export function Sidebar() {
     );
   }
 
-  // Desktop sidebar (permanently visible)
+  // Desktop sidebar with collapse functionality
   return (
-    <div className="fixed left-0 top-0 bottom-0 w-64 bg-white shadow-md flex flex-col border-r border-gray-200 z-30">
-      <SidebarContent />
+    <div 
+      className={cn(
+        "fixed left-0 top-0 bottom-0 bg-white shadow-lg flex flex-col border-r border-gray-200 z-30 transition-all duration-300 ease-in-out",
+        collapsed ? "w-16" : "w-64"
+      )}
+    >
+      <SidebarContent isCollapsed={collapsed} />
     </div>
   );
 }
