@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useSidebar } from "@/hooks/use-sidebar";
@@ -49,6 +49,8 @@ export function Sidebar() {
   const [open, setOpen] = useState(false);
   const { collapsed, toggleCollapsed } = useSidebar();
   const isMobile = useMobile();
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
 
   if (!user) {
     return null;
@@ -57,6 +59,40 @@ export function Sidebar() {
   const handleLogout = async () => {
     await logoutMutation.mutateAsync();
   };
+
+  // Handle hover with delay to prevent rapid toggling
+  const handleMouseEnter = () => {
+    if (isMobile) return;
+    
+    // Clear any existing timeout
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    
+    // Set a new timeout to toggle after 300ms
+    hoverTimeoutRef.current = setTimeout(() => {
+      toggleCollapsed();
+    }, 300);
+  };
+
+  const handleMouseLeave = () => {
+    if (isMobile) return;
+    
+    // Clear the timeout if mouse leaves before toggle
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+  };
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const isEducator = user.role === "educator";
   const isLearner = user.role === "learner";
@@ -87,15 +123,11 @@ export function Sidebar() {
   // Sidebar content - shared between mobile and desktop
   const SidebarContent = ({ isCollapsed = false }) => (
     <>
-      {/* Header with Logo and Hover Toggle */}
-      <div 
-        className={cn(
-          "flex items-center p-4 border-b border-gray-100 relative cursor-pointer group transition-all duration-300",
-          isCollapsed ? "justify-center px-2 hover:bg-gray-50" : "justify-center hover:bg-gray-50"
-        )}
-        onMouseEnter={!isMobile ? toggleCollapsed : undefined}
-        title={isCollapsed ? "Hover to expand sidebar" : "Hover to collapse sidebar"}
-      >
+      {/* Header with Logo */}
+      <div className={cn(
+        "flex items-center p-4 border-b border-gray-100 relative transition-all duration-300",
+        isCollapsed ? "justify-center px-2" : "justify-center"
+      )}>
         <Link to="/" className="flex items-center">
           <span className={cn(
             "text-primary font-modak transition-all duration-500 ease-in-out",
@@ -104,20 +136,6 @@ export function Sidebar() {
             {isCollapsed ? "C" : "checkit"}
           </span>
         </Link>
-        
-        {/* Hover indicator */}
-        {!isMobile && (
-          <div className={cn(
-            "absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200",
-            isCollapsed ? "top-2 right-2" : "top-2 right-4"
-          )}>
-            {isCollapsed ? (
-              <ChevronRight className="h-3 w-3 text-gray-400" />
-            ) : (
-              <ChevronLeft className="h-3 w-3 text-gray-400" />
-            )}
-          </div>
-        )}
       </div>
 
       {/* Navigation links */}
@@ -292,10 +310,13 @@ export function Sidebar() {
   // Desktop sidebar with collapse functionality
   return (
     <div 
+      ref={sidebarRef}
       className={cn(
         "fixed left-0 top-0 bottom-0 bg-white shadow-lg flex flex-col border-r border-gray-200 z-30 transition-all duration-300 ease-in-out",
         collapsed ? "w-16" : "w-64"
       )}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <SidebarContent isCollapsed={collapsed} />
     </div>
