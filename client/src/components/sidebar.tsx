@@ -82,10 +82,10 @@ export function Sidebar() {
       clearTimeout(hoverTimeoutRef.current);
     }
     
-    // Set timeout to collapse after 500ms delay
+    // Set timeout to collapse after 200ms delay
     hoverTimeoutRef.current = setTimeout(() => {
       toggleCollapsed();
-    }, 500);
+    }, 200);
   };
 
   // Clean up timeout on unmount
@@ -134,7 +134,7 @@ export function Sidebar() {
         <Link to="/" className="flex items-center">
           <span className={cn(
             "text-primary font-modak transition-all duration-500 ease-in-out",
-            isCollapsed ? "text-3xl transform rotate-45" : "text-4xl"
+            isCollapsed ? "text-3xl transform rotate-135" : "text-4xl"
           )}>
             {isCollapsed ? "C" : "checkit"}
           </span>
