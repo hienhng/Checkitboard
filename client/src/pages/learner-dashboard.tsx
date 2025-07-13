@@ -369,27 +369,38 @@ function LearnerDashboard() {
                           <div className="py-4 text-center text-sm text-gray-500">Loading flashcards...</div>
                         ) : flashcards && flashcards.length > 0 && flashcards.filter(card => !card.learned).length > 0 ? (
                           <div>
-                            <div className="flex overflow-x-auto overflow-y-hidden hide-scrollbar pb-6 pt-2 px-0 sm:px-4 space-x-6 sm:justify-center justify-start h-[280px]">
+                            {/* Show only first 3 flashcards in dashboard preview */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
                               {flashcards
                                 .filter(card => !card.learned)
+                                .slice(0, 3) // Limit to 3 cards
                                 .map(card => (
-                                  <div key={card.id} className="flex-none mx-auto sm:mx-0">
+                                  <div key={card.id} className="w-full">
                                     <Flashcard flashcard={card} />
                                   </div>
                                 ))}
                             </div>
                             
-                            {flashcards.filter(card => !card.learned).length > 0 && (
-                              <div className="mt-4 text-center">
+                            {/* Show count and button for remaining cards */}
+                            <div className="px-4 pb-4">
+                              {flashcards.filter(card => !card.learned).length > 3 && (
+                                <div className="text-center text-sm text-gray-600 mb-3">
+                                  Showing 3 of {flashcards.filter(card => !card.learned).length} flashcards
+                                </div>
+                              )}
+                              <div className="text-center">
                                 <Button 
                                   className="inline-flex items-center"
                                   onClick={() => navigate('/learner/flashcards')}
                                 >
-                                  Review All Flashcards
+                                  {flashcards.filter(card => !card.learned).length > 3 
+                                    ? `Study All ${flashcards.filter(card => !card.learned).length} Cards`
+                                    : 'Open Study Center'
+                                  }
                                   <ChevronRight className="ml-1 h-3.5 w-3.5" />
                                 </Button>
                               </div>
-                            )}
+                            </div>
                           </div>
                         ) : (
                           <div className="py-4 text-center text-sm text-gray-500">
