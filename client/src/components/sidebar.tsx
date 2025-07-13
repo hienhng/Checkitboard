@@ -87,8 +87,15 @@ export function Sidebar() {
   // Sidebar content - shared between mobile and desktop
   const SidebarContent = ({ isCollapsed = false }) => (
     <>
-      {/* Header with Logo and Toggle */}
-      <div className={cn("flex items-center p-4 border-b border-gray-100 relative", isCollapsed ? "justify-center px-2" : "justify-between")}>
+      {/* Header with Logo and Hover Toggle */}
+      <div 
+        className={cn(
+          "flex items-center p-4 border-b border-gray-100 relative cursor-pointer group transition-all duration-300",
+          isCollapsed ? "justify-center px-2 hover:bg-gray-50" : "justify-center hover:bg-gray-50"
+        )}
+        onMouseEnter={!isMobile ? toggleCollapsed : undefined}
+        title={isCollapsed ? "Hover to expand sidebar" : "Hover to collapse sidebar"}
+      >
         <Link to="/" className="flex items-center">
           <span className={cn(
             "text-primary font-modak transition-all duration-500 ease-in-out",
@@ -98,22 +105,18 @@ export function Sidebar() {
           </span>
         </Link>
         
+        {/* Hover indicator */}
         {!isMobile && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleCollapsed}
-            className={cn(
-              "h-8 w-8 hover:bg-gray-100 transition-all duration-300 flex-shrink-0",
-              isCollapsed ? "absolute top-3 right-1" : ""
-            )}
-          >
+          <div className={cn(
+            "absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200",
+            isCollapsed ? "top-2 right-2" : "top-2 right-4"
+          )}>
             {isCollapsed ? (
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-3 w-3 text-gray-400" />
             ) : (
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-3 w-3 text-gray-400" />
             )}
-          </Button>
+          </div>
         )}
       </div>
 
