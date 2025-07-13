@@ -49,9 +49,7 @@ export function Sidebar() {
   const [open, setOpen] = useState(false);
   const { collapsed, toggleCollapsed } = useSidebar();
   const isMobile = useMobile();
-  const [isHoverLocked, setIsHoverLocked] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lockTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const sidebarRef = useRef<HTMLElement>(null);
 
   if (!user) {
@@ -62,38 +60,39 @@ export function Sidebar() {
     await logoutMutation.mutateAsync();
   };
 
-  // Handle hover with lock mechanism to prevent rapid toggling
-  const handleHoverToggle = () => {
-    if (isMobile || isHoverLocked) return;
+  // Handle hover to expand
+  const handleMouseEnter = () => {
+    if (isMobile || !collapsed) return;
     
-    // Clear any existing timeouts
+    // Clear any leave timeout
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
     }
-    if (lockTimeoutRef.current) {
-      clearTimeout(lockTimeoutRef.current);
-    }
     
-    // Set hover lock to prevent immediate re-trigger
-    setIsHoverLocked(true);
-    
-    // Toggle the sidebar
+    // Expand the sidebar
     toggleCollapsed();
-    
-    // Release the lock after 1 second
-    lockTimeoutRef.current = setTimeout(() => {
-      setIsHoverLocked(false);
-    }, 1000);
   };
 
-  // Clean up timeouts on unmount
+  // Handle mouse leave to collapse
+  const handleMouseLeave = () => {
+    if (isMobile || collapsed) return;
+    
+    // Clear any existing timeout
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    
+    // Set timeout to collapse after 500ms delay
+    hoverTimeoutRef.current = setTimeout(() => {
+      toggleCollapsed();
+    }, 500);
+  };
+
+  // Clean up timeout on unmount
   useEffect(() => {
     return () => {
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
-      }
-      if (lockTimeoutRef.current) {
-        clearTimeout(lockTimeoutRef.current);
       }
     };
   }, []);
@@ -319,22 +318,10 @@ export function Sidebar() {
         "fixed left-0 top-0 h-screen bg-white shadow-lg flex flex-col border-r border-gray-200 z-30 transition-all duration-300 ease-in-out relative overflow-hidden",
         collapsed ? "w-16" : "w-64"
       )}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <SidebarContent isCollapsed={collapsed} />
-      
-      {/* Hover trigger zone - part of sidebar */}
-      <div
-        className={cn(
-          "absolute top-0 bottom-0 w-3 group transition-opacity duration-300",
-          collapsed ? "right-0" : "right-0",
-          isHoverLocked && "opacity-50"
-        )}
-        onMouseEnter={handleHoverToggle}
-        style={{ cursor: 'ew-resize' }}
-      >
-        {/* Visual indicator on hover */}
-        <div className="absolute inset-y-0 right-0 w-0.5 bg-gray-300 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-      </div>
     </div>
   );
 }
