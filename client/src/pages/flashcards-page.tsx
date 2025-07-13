@@ -86,7 +86,7 @@ export default function FlashcardsPage() {
       description: "Classic flip cards to review terms and definitions",
       difficulty: 1,
       estimatedTime: Math.ceil(learningCards.length * 0.5),
-      color: "blue"
+      activeStyles: "bg-blue-600 hover:bg-blue-700 text-white"
     },
     {
       id: "learn" as StudyMode,
@@ -95,7 +95,7 @@ export default function FlashcardsPage() {
       description: "Adaptive learning with spaced repetition",
       difficulty: 2,
       estimatedTime: Math.ceil(learningCards.length * 1.5),
-      color: "purple"
+      activeStyles: "bg-purple-600 hover:bg-purple-700 text-white"
     },
     {
       id: "test" as StudyMode,
@@ -104,7 +104,7 @@ export default function FlashcardsPage() {
       description: "Multiple choice and written questions",
       difficulty: 3,
       estimatedTime: Math.ceil(learningCards.length * 2),
-      color: "green"
+      activeStyles: "bg-green-600 hover:bg-green-700 text-white"
     },
     {
       id: "match" as StudyMode,
@@ -113,7 +113,7 @@ export default function FlashcardsPage() {
       description: "Fun drag-and-drop matching game",
       difficulty: 2,
       estimatedTime: Math.ceil(learningCards.length * 1),
-      color: "orange"
+      activeStyles: "bg-orange-600 hover:bg-orange-700 text-white"
     },
     {
       id: "spell" as StudyMode,
@@ -122,7 +122,7 @@ export default function FlashcardsPage() {
       description: "Type the correct definition or word",
       difficulty: 4,
       estimatedTime: Math.ceil(learningCards.length * 1.5),
-      color: "pink"
+      activeStyles: "bg-pink-600 hover:bg-pink-700 text-white"
     }
   ];
 
@@ -243,8 +243,8 @@ export default function FlashcardsPage() {
                     <Button
                       key={mode.id}
                       variant={isActive ? "default" : "outline"}
-                      className={`h-auto p-4 flex flex-col items-center space-y-2 ${
-                        isActive ? `bg-${mode.color}-600 hover:bg-${mode.color}-700` : ""
+                      className={`h-auto p-4 flex flex-col items-center space-y-2 transition-colors ${
+                        isActive ? mode.activeStyles : "hover:bg-gray-50"
                       }`}
                       onClick={() => setActiveMode(mode.id)}
                       disabled={isDisabled}
