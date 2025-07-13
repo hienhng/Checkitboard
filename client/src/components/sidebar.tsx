@@ -88,19 +88,25 @@ export function Sidebar() {
   const SidebarContent = ({ isCollapsed = false }) => (
     <>
       {/* Header with Logo and Toggle */}
-      <div className={cn("flex items-center justify-between p-4 border-b border-gray-100", isCollapsed && "px-2")}>
-        {!isCollapsed && (
-          <Link to="/" className="flex items-center">
-            <span className="text-2xl text-primary font-modak">checkit</span>
-          </Link>
-        )}
+      <div className={cn("flex items-center justify-between p-4 border-b border-gray-100", isCollapsed && "px-2 justify-center")}>
+        <Link to="/" className="flex items-center">
+          <span className={cn(
+            "text-primary font-modak transition-all duration-500 ease-in-out",
+            isCollapsed ? "text-3xl transform rotate-180" : "text-4xl"
+          )}>
+            {isCollapsed ? "C" : "checkit"}
+          </span>
+        </Link>
         
         {!isMobile && (
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleCollapsed}
-            className="h-8 w-8 hover:bg-gray-100"
+            className={cn(
+              "h-8 w-8 hover:bg-gray-100 transition-all duration-300",
+              isCollapsed && "absolute top-4 right-2"
+            )}
           >
             {isCollapsed ? (
               <ChevronRight className="h-4 w-4" />
