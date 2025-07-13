@@ -242,9 +242,11 @@ export default function FlashcardsPage() {
                   return (
                     <Button
                       key={mode.id}
-                      variant={isActive ? "default" : "outline"}
-                      className={`h-auto p-4 flex flex-col items-center space-y-2 transition-colors ${
-                        isActive ? mode.activeStyles : "hover:bg-gray-50"
+                      variant="ghost"
+                      className={`h-auto p-4 flex flex-col items-center space-y-2 transition-colors border ${
+                        isActive 
+                          ? `${mode.activeStyles} border-transparent` 
+                          : "border-gray-200 hover:border-gray-300 hover:bg-gray-50 bg-white"
                       }`}
                       onClick={() => setActiveMode(mode.id)}
                       disabled={isDisabled}
