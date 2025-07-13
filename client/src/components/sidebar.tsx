@@ -126,7 +126,7 @@ export function Sidebar() {
 
   // Sidebar content - shared between mobile and desktop
   const SidebarContent = ({ isCollapsed = false }) => (
-    <>
+    <div className="h-full flex flex-col overflow-hidden">
       {/* Header with Logo */}
       <div className={cn(
         "flex items-center p-4 border-b border-gray-100 relative transition-all duration-300",
@@ -143,7 +143,7 @@ export function Sidebar() {
       </div>
 
       {/* Navigation links */}
-      <div className="flex-1 p-3">
+      <div className="flex-1 p-3 overflow-y-auto overflow-x-hidden">
         <nav className="space-y-1">
           {navLinks.map((link) => {
             const isActive = location === link.href;
@@ -182,7 +182,7 @@ export function Sidebar() {
       </div>
 
       {/* User profile section */}
-      <div className={cn("border-t border-gray-100 p-3", isCollapsed && "p-2")}>
+      <div className={cn("border-t border-gray-100 p-3 flex-shrink-0", isCollapsed && "p-2")}>
         {isCollapsed ? (
           <div className="flex flex-col items-center space-y-2">
             <Avatar className={cn(
@@ -285,7 +285,7 @@ export function Sidebar() {
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 
   // Mobile sidebar with Sheet component
@@ -301,7 +301,7 @@ export function Sidebar() {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="p-0 w-72 bg-white">
-              <div className="h-full flex flex-col">
+              <div className="h-full flex flex-col overflow-hidden">
                 <SidebarContent isCollapsed={false} />
               </div>
             </SheetContent>
@@ -316,7 +316,7 @@ export function Sidebar() {
     <div 
       ref={sidebarRef}
       className={cn(
-        "fixed left-0 top-0 bottom-0 bg-white shadow-lg flex flex-col border-r border-gray-200 z-30 transition-all duration-300 ease-in-out relative",
+        "fixed left-0 top-0 h-screen bg-white shadow-lg flex flex-col border-r border-gray-200 z-30 transition-all duration-300 ease-in-out relative overflow-hidden",
         collapsed ? "w-16" : "w-64"
       )}
     >
