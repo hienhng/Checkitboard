@@ -1230,6 +1230,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get learner's study statistics
+  app.get("/api/learner/study-stats", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "learner") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      // Get flashcards and submissions to calculate stats
+      const flashcards = await storage.getFlashcardsByStudent(req.user.id);
+      const submissions = await storage.getGradedSubmissionsByStudent(req.user.id);
+      
+      // Calculate basic stats
+      const totalWordsStudied = flashcards.length;
+      const masteredWords = flashcards.filter(card => card.learned).length;
+      const averageAccuracy = submissions.length > 0 
+        ? submissions.reduce((sum, sub) => sum + (sub.score || 0), 0) / submissions.length 
+        : 0;
+      
+      // Simple streak calculation (this could be enhanced with actual date tracking)
+      const studyStreak = submissions.length > 0 ? Math.min(submissions.length, 7) : 0;
+      
+      // Basic XP system (could be enhanced)
+      const xp = (masteredWords * 100) + (submissions.length * 50);
+      const level = Math.floor(xp / 1000) + 1;
+      const xpToNextLevel = level * 1000;
+      
+      // Weekly goal (could be user-configurable)
+      const weeklyGoal = 50;
+      const weeklyProgress = Math.min(totalWordsStudied, weeklyGoal);
+
+      const stats = {
+        totalWordsStudied,
+        averageAccuracy,
+        studyStreak,
+        totalTimeSpent: submissions.length * 300, // Estimated 5min per submission
+        weeklyGoal,
+        weeklyProgress,
+        level,
+        xp,
+        xpToNextLevel,
+        masteredWords,
+        submissionsCount: submissions.length
+      };
+
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching study stats:", error);
+      res.status(500).json({ message: "Error fetching study stats" });
+    }
+  });
+
   // Mark a flashcard as learned
   app.patch("/api/flashcards/:id", async (req, res) => {
     try {
