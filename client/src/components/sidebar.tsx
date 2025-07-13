@@ -315,7 +315,7 @@ export function Sidebar() {
     <div 
       ref={sidebarRef}
       className={cn(
-        "fixed left-0 top-0 h-screen bg-white shadow-lg flex flex-col border-r border-gray-200 z-30 transition-all duration-300 ease-in-out relative overflow-hidden",
+        "fixed left-0 top-0 bottom-0 bg-white shadow-lg flex flex-col border-r border-gray-200 z-30 transition-all duration-300 ease-in-out overflow-hidden",
         collapsed ? "w-16" : "w-64"
       )}
       onMouseEnter={handleMouseEnter}

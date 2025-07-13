@@ -29,10 +29,10 @@ function LayoutWithSidebar({ children }: LayoutProps) {
   const collapsed = sidebarContext?.collapsed || false;
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="relative min-h-screen bg-gray-50">
       <Sidebar />
       <div 
-        className={`flex-1 transition-all duration-300 ease-in-out ${
+        className={`transition-all duration-300 ease-in-out ${
           !isMobile 
             ? collapsed 
               ? "ml-16" 
@@ -40,7 +40,7 @@ function LayoutWithSidebar({ children }: LayoutProps) {
             : ""
         }`}
       >
-        <main className="p-6">
+        <main className="min-h-screen p-6">
           {children}
         </main>
       </div>

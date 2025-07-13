@@ -9,6 +9,16 @@
   user-select: none;
 }
 
+/* Ensure proper scrolling behavior */
+html, body {
+  height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  overflow-y: auto;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
