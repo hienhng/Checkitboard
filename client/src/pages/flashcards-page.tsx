@@ -246,7 +246,7 @@ export default function FlashcardsPage() {
                       className={`h-auto p-4 flex flex-col items-center space-y-2 transition-colors border ${
                         isActive 
                           ? `${mode.activeStyles} border-transparent` 
-                          : "border-gray-200 hover:border-gray-300 hover:bg-gray-50 bg-white"
+                          : "border-gray-200 hover:border-gray-300 hover:bg-gray-50 bg-white text-gray-900 hover:text-gray-900"
                       }`}
                       onClick={() => setActiveMode(mode.id)}
                       disabled={isDisabled}
