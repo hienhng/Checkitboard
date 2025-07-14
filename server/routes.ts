@@ -263,13 +263,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "This test is not available" });
       }
 
-      // Check if student already has an active submission for this list
-      const existingSubmission = await storage.getSubmissionByStudentAndList(req.user.id, listId);
+      // Check if student already has ANY submission for this list (prevent retaking)
+      const existingSubmission = await storage.getSubmissionByStudentAndList(req.user.id, listId, false);
       
-      if (existingSubmission && !existingSubmission.completed) {
-        // Return existing submission
-        console.log("Returning existing submission:", existingSubmission.id);
-        return res.json({ submissionId: existingSubmission.id });
+      if (existingSubmission) {
+        // Student already has a submission, don't allow starting a new one
+        return res.status(400).json({ 
+          message: "You have already started or completed this test. Each test can only be taken once.",
+          submissionId: existingSubmission.id,
+          exists: true
+        });
       }
 
       // Create new submission
@@ -605,6 +608,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching submission:", error);
       res.status(500).json({ message: "Error fetching submission" });
+    }
+  });
+
+  // Check if student has any existing submission for a list (completed or not)
+  app.get("/api/submissions/check/:listId", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "learner") {
+        return res.status(403).json({ message: "Only learners can check submissions" });
+      }
+
+      const listId = parseInt(req.params.listId);
+      if (isNaN(listId)) {
+        return res.status(400).json({ message: "Invalid list ID" });
+      }
+
+      // Check for ANY existing submission (completed or not) for this student and list
+      const existingSubmission = await storage.getSubmissionByStudentAndList(req.user.id, listId, false);
+      
+      if (!existingSubmission) {
+        return res.status(404).json({ message: "No submission found" });
+      }
+
+      // Return basic submission info
+      res.json({
+        id: existingSubmission.id,
+        completed: existingSubmission.completed,
+        submittedAt: existingSubmission.submittedAt,
+        gradedAt: existingSubmission.gradedAt,
+        score: existingSubmission.score,
+        exists: true
+      });
+    } catch (error) {
+      console.error("Error checking for existing submission:", error);
+      res.status(500).json({ message: "Error checking submission" });
     }
   });
 

@@ -22,9 +22,16 @@ export default function TestPreview() {
     queryFn: getQueryFn({ on401: "throw" }),
   });
 
-  // Check for existing submission and results
+  // Check for existing submission and results (graded submissions only)
   const { data: submissionData, error: submissionError } = useQuery({
     queryKey: [`/api/vocabulary-lists/${listId}/submission`],
+    queryFn: getQueryFn({ on401: "throw" }),
+    enabled: !!listId,
+  });
+
+  // Check for ANY existing submission (completed or not) to prevent retaking
+  const { data: existingSubmission } = useQuery({
+    queryKey: [`/api/submissions/check/${listId}`],
     queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!listId,
   });
@@ -338,49 +345,68 @@ export default function TestPreview() {
                   </div>
                 </CardContent>
               </Card>
-            ) : submissionData && submissionData.submittedAt && !submissionData.gradedAt ? (
-              // Show Pending Grade Section - Test submitted but not graded yet
-              <Card className="border-orange-200 bg-orange-50">
+            ) : existingSubmission && existingSubmission.exists ? (
+              // Show Already Done Section - Any submission exists (completed, in progress, or graded)
+              <Card className="border-gray-200 bg-gray-50">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-orange-800">
-                    <Clock className="h-5 w-5" />
-                    Test Pending Grade
+                  <CardTitle className="flex items-center gap-2 text-gray-800">
+                    <CheckCircle className="h-5 w-5" />
+                    Already Done
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="text-center">
-                    <div className="text-orange-600 mb-4">
-                      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-orange-100 flex items-center justify-center">
-                        <Clock className="h-8 w-8 text-orange-600" />
+                    <div className="text-gray-600 mb-4">
+                      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+                        <CheckCircle className="h-8 w-8 text-gray-600" />
                       </div>
-                      <h3 className="font-semibold text-orange-900 mb-2">Test Under Review</h3>
-                      <p className="text-sm text-orange-700 mb-4">
-                        You have already completed this vocabulary test. Your teacher is currently reviewing and grading your submission.
+                      <h3 className="font-semibold text-gray-900 mb-2">Test Already Completed</h3>
+                      <p className="text-sm text-gray-700 mb-4">
+                        {existingSubmission.completed && existingSubmission.gradedAt 
+                          ? "You have already completed and received results for this vocabulary test."
+                          : existingSubmission.completed 
+                          ? "You have completed this test and it's awaiting grading by your teacher."
+                          : "You have started this test but haven't finished it yet. Each test can only be taken once."
+                        }
                       </p>
-                      <p className="text-xs text-orange-600">
-                        Submitted on {new Date(submissionData.submittedAt).toLocaleDateString()} at {new Date(submissionData.submittedAt).toLocaleTimeString()}
-                      </p>
+                      {existingSubmission.submittedAt && (
+                        <p className="text-xs text-gray-600">
+                          {existingSubmission.completed 
+                            ? `Submitted on ${new Date(existingSubmission.submittedAt).toLocaleDateString()}`
+                            : "Test in progress"
+                          }
+                        </p>
+                      )}
                     </div>
                   </div>
 
-                  <div className="bg-orange-100 border border-orange-200 rounded-lg p-4">
+                  <div className="bg-gray-100 border border-gray-200 rounded-lg p-4">
                     <div className="flex items-start gap-3">
                       <div className="flex-shrink-0">
-                        <div className="w-5 h-5 rounded-full bg-orange-200 flex items-center justify-center">
-                          <span className="text-orange-600 text-xs font-bold">!</span>
+                        <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center">
+                          <span className="text-gray-600 text-xs font-bold">!</span>
                         </div>
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-medium text-orange-800 mb-1">Please Wait</h4>
-                        <p className="text-sm text-orange-700">
-                          You cannot retake this test until your teacher has finished grading. 
-                          You will receive your results and any feedback once grading is complete.
+                        <h4 className="font-medium text-gray-800 mb-1">One Test Per List</h4>
+                        <p className="text-sm text-gray-700">
+                          Each vocabulary test can only be taken once to ensure fair assessment. 
+                          Contact your teacher if you need a retake.
                         </p>
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-3">
+                    {existingSubmission.completed && existingSubmission.gradedAt && (
+                      <Button 
+                        onClick={() => navigate(`/test-results/${existingSubmission.id}`)}
+                        className="w-full"
+                      >
+                        <Award className="h-4 w-4 mr-2" />
+                        View Results
+                      </Button>
+                    )}
                     <Button 
                       onClick={() => navigate("/learner/dashboard")}
                       className="w-full"
