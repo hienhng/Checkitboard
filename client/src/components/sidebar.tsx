@@ -206,7 +206,7 @@ export function Sidebar() {
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" side="right" className="w-56">
+                <DropdownMenuContent align="start" side="right" className="w-56 ml-2 z-[100]" sideOffset={8}>
                   <DropdownMenuLabel>
                     <div className="flex flex-col">
                       <span className="font-medium">{user.name}</span>
@@ -266,7 +266,7 @@ export function Sidebar() {
                     <Settings className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="end" className="w-56 z-[100]" sideOffset={8}>
                   <DropdownMenuLabel>Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <Link to="/settings">
@@ -319,11 +319,14 @@ export function Sidebar() {
   return (
     <div 
       className={cn(
-        "fixed left-0 top-0 bottom-0 bg-white shadow-lg flex flex-col border-r border-gray-200 z-30 transition-all duration-300 ease-in-out overflow-hidden",
+        "fixed left-0 top-0 bottom-0 bg-white shadow-lg flex flex-col border-r border-gray-200 z-30 transition-all duration-300 ease-in-out",
         collapsed ? "w-16" : "w-64"
       )}
+      style={{ overflow: "visible" }}
     >
-      <SidebarContent isCollapsed={collapsed} />
+      <div className="h-full overflow-hidden">
+        <SidebarContent isCollapsed={collapsed} />
+      </div>
     </div>
   );
 }
