@@ -118,7 +118,7 @@ export function Sidebar() {
               size="icon"
               onClick={toggleCollapsed}
               className={cn(
-                "absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-8 w-8 transition-all duration-300 ease-in-out hover:bg-gray-100",
+                "absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-8 w-8 transition-all duration-300 ease-in-out hover:bg-gray-100 hover:text-black text-gray-700",
                 showToggleButton ? "opacity-100 visible" : "opacity-0 invisible"
               )}
             >
@@ -137,7 +137,7 @@ export function Sidebar() {
               variant="ghost"
               size="icon"
               onClick={toggleCollapsed}
-              className="h-8 w-8 transition-all duration-300 ease-in-out hover:bg-gray-100"
+              className="h-8 w-8 transition-all duration-300 ease-in-out hover:bg-gray-100 hover:text-black text-gray-700"
             >
               <PanelLeftClose className="h-4 w-4" />
             </Button>
