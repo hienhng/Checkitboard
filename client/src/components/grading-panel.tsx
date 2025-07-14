@@ -20,7 +20,10 @@ import {
   X,
   Star,
   Maximize,
-  AlertTriangle
+  AlertTriangle,
+  Wand2,
+  Zap,
+  Loader2
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -49,6 +52,8 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
   }>({
     definitions: [],
   });
+  const [loadingAI, setLoadingAI] = useState<{ [key: number]: boolean }>({});
+  const [aiGradingLoading, setAiGradingLoading] = useState(false);
 
   // Get submission with definitions
   const { data: submission, isLoading } = useQuery({
@@ -61,6 +66,82 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
     queryKey: [`/api/submissions/${submissionId}/fullscreen-exits`],
     queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!submissionId,
+  });
+
+  // AI definition generation mutation
+  const generateDefinitionMutation = useMutation({
+    mutationFn: async (word: string) => {
+      const response = await apiRequest(`/api/ai/generate-definitions`, {
+        method: "POST",
+        body: JSON.stringify({ words: [word] }),
+      });
+      return response[word];
+    },
+    onSuccess: (definition, word) => {
+      toast({
+        title: "Definition Generated",
+        description: `AI generated definition for "${word}"`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate definition",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // AI grading mutation
+  const aiGradingMutation = useMutation({
+    mutationFn: async () => {
+      if (!submission?.wordDefinitions) throw new Error("No definitions to grade");
+      
+      const gradingPromises = submission.wordDefinitions.map(async (def) => {
+        const correctDef = gradingData.definitions.find(d => d.definitionId === def.id)?.correctDefinition;
+        if (!correctDef) throw new Error(`Correct definition required for "${def.word.word}"`);
+        
+        const response = await apiRequest(`/api/ai/grade-definition`, {
+          method: "POST",
+          body: JSON.stringify({
+            word: def.word.word,
+            studentDefinition: def.studentDefinition,
+            correctDefinition: correctDef,
+          }),
+        });
+        return { definitionId: def.id, grading: response };
+      });
+      
+      return Promise.all(gradingPromises);
+    },
+    onSuccess: (results) => {
+      // Apply AI grading results
+      setGradingData(prev => ({
+        definitions: prev.definitions.map(def => {
+          const result = results.find(r => r.definitionId === def.definitionId);
+          if (result) {
+            return {
+              ...def,
+              isCorrect: result.grading.isCorrect,
+              addToFlashcards: !result.grading.isCorrect,
+            };
+          }
+          return def;
+        })
+      }));
+      
+      toast({
+        title: "AI Grading Complete",
+        description: `Graded ${results.length} definitions automatically`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "AI Grading Failed",
+        description: error.message || "Failed to grade definitions with AI",
+        variant: "destructive",
+      });
+    },
   });
 
   // Set up initial grading data when submission is loaded
@@ -187,7 +268,50 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
     }));
   };
 
+  // Helper function to generate AI definition for a specific word
+  const handleGenerateDefinition = async (definitionId: number, word: string) => {
+    setLoadingAI(prev => ({ ...prev, [definitionId]: true }));
+    try {
+      const definition = await generateDefinitionMutation.mutateAsync(word);
+      handleCorrectDefinitionChange(definitionId, definition);
+    } finally {
+      setLoadingAI(prev => ({ ...prev, [definitionId]: false }));
+    }
+  };
+
+  // Helper function to run AI grading for all definitions
+  const handleAIGrading = async () => {
+    // Check if all correct definitions are provided
+    const missingDefinitions = gradingData.definitions.filter(def => !def.correctDefinition.trim());
+    if (missingDefinitions.length > 0) {
+      toast({
+        title: "Missing Correct Definitions",
+        description: "Please provide correct definitions for all words before using AI grading.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setAiGradingLoading(true);
+    try {
+      await aiGradingMutation.mutateAsync();
+    } finally {
+      setAiGradingLoading(false);
+    }
+  };
+
   const handleSubmitGrading = () => {
+    // Validate that all correct definitions are provided
+    const missingDefinitions = gradingData.definitions.filter(def => !def.correctDefinition.trim());
+    if (missingDefinitions.length > 0) {
+      toast({
+        title: "Correct Definitions Required",
+        description: "Please provide correct definitions for all words before submitting.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     gradeMutation.mutate({
       definitions: gradingData.definitions,
       score,
@@ -248,22 +372,38 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
                     {gradingData.definitions.filter(d => d.isCorrect).length}/
                     {gradingData.definitions.length} correct
                   </span>
-                  <Button
-                    variant="link"
-                    className="p-0 h-auto text-xs"
-                    onClick={() => {
-                      const allCorrect = gradingData.definitions.every(d => d.isCorrect);
-                      setGradingData(prev => ({
-                        definitions: prev.definitions.map(def => ({
-                          ...def,
-                          isCorrect: !allCorrect,
-                          addToFlashcards: allCorrect
-                        }))
-                      }));
-                    }}
-                  >
-                    {gradingData.definitions.every(d => d.isCorrect) ? "Mark all incorrect" : "Mark all correct"}
-                  </Button>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="link"
+                      className="p-0 h-auto text-xs"
+                      onClick={() => {
+                        const allCorrect = gradingData.definitions.every(d => d.isCorrect);
+                        setGradingData(prev => ({
+                          definitions: prev.definitions.map(def => ({
+                            ...def,
+                            isCorrect: !allCorrect,
+                            addToFlashcards: allCorrect
+                          }))
+                        }));
+                      }}
+                    >
+                      {gradingData.definitions.every(d => d.isCorrect) ? "Mark all incorrect" : "Mark all correct"}
+                    </Button>
+                    <div className="text-gray-300">|</div>
+                    <Button
+                      variant="link"
+                      className="p-0 h-auto text-xs text-blue-600 hover:text-blue-800"
+                      onClick={handleAIGrading}
+                      disabled={aiGradingLoading || aiGradingMutation.isPending}
+                    >
+                      {aiGradingLoading ? (
+                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                      ) : (
+                        <Zap className="h-3 w-3 mr-1" />
+                      )}
+                      AI Auto-Grade
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -327,15 +467,41 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
                       
                       <div className="mt-4 space-y-4 pt-2 border-t border-gray-100">
                         <div>
-                          <p className="text-sm font-medium text-gray-700">Correct definition:</p>
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-sm font-medium text-gray-700">
+                              Correct definition: <span className="text-red-500">*</span>
+                            </p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleGenerateDefinition(definition.id, definition.word.word)}
+                              disabled={loadingAI[definition.id] || generateDefinitionMutation.isPending}
+                              className="text-xs h-7 px-2"
+                            >
+                              {loadingAI[definition.id] ? (
+                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                              ) : (
+                                <Wand2 className="h-3 w-3 mr-1" />
+                              )}
+                              AI Generate
+                            </Button>
+                          </div>
                           <div className="mt-1">
                             <Input
                               id={`correct-def-${definition.id}`}
                               value={gradingData.definitions.find(d => d.definitionId === definition.id)?.correctDefinition || ''}
                               onChange={(e) => handleCorrectDefinitionChange(definition.id, e.target.value)}
-                              className="text-sm"
-                              placeholder="Provide the correct definition..."
+                              className={`text-sm ${
+                                !gradingData.definitions.find(d => d.definitionId === definition.id)?.correctDefinition?.trim()
+                                  ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                                  : ''
+                              }`}
+                              placeholder="Provide the correct definition... (required)"
+                              required
                             />
+                            {!gradingData.definitions.find(d => d.definitionId === definition.id)?.correctDefinition?.trim() && (
+                              <p className="text-xs text-red-500 mt-1">Correct definition is required</p>
+                            )}
                           </div>
                           <div className="flex items-center justify-between mt-2">
                             <div className="flex items-center space-x-2">
@@ -425,7 +591,15 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
           </Button>
           <Button
             onClick={handleSubmitGrading}
-            disabled={gradeMutation.isPending}
+            disabled={
+              gradeMutation.isPending || 
+              gradingData.definitions.some(def => !def.correctDefinition.trim())
+            }
+            className={
+              gradingData.definitions.some(def => !def.correctDefinition.trim())
+                ? "opacity-50 cursor-not-allowed"
+                : ""
+            }
           >
             {gradeMutation.isPending ? "Submitting..." : "Submit Grading"}
           </Button>
