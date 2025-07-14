@@ -2205,7 +2205,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const schema = z.object({
         word: z.string().min(1, "Word is required"),
-        studentDefinition: z.string().min(1, "Student definition is required"),
+        studentDefinition: z.string().nullable().transform(val => val || "No definition provided"),
         correctDefinition: z.string().optional()
       });
 

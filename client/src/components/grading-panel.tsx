@@ -97,18 +97,20 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
     mutationFn: async () => {
       if (!submission?.wordDefinitions) throw new Error("No definitions to grade");
       
-      const gradingPromises = submission.wordDefinitions.map(async (def) => {
-        const correctDef = gradingData.definitions.find(d => d.definitionId === def.id)?.correctDefinition;
-        if (!correctDef) throw new Error(`Correct definition required for "${def.word.word}"`);
-        
-        const response = await apiRequest("POST", `/api/ai/grade-definition`, {
-          word: def.word.word,
-          studentDefinition: def.studentDefinition,
-          correctDefinition: correctDef,
+      const gradingPromises = submission.wordDefinitions
+        .filter(def => def.studentDefinition && def.studentDefinition.trim() !== '')
+        .map(async (def) => {
+          const correctDef = gradingData.definitions.find(d => d.definitionId === def.id)?.correctDefinition;
+          if (!correctDef) throw new Error(`Correct definition required for "${def.word.word}"`);
+          
+          const response = await apiRequest("POST", `/api/ai/grade-definition`, {
+            word: def.word.word,
+            studentDefinition: def.studentDefinition,
+            correctDefinition: correctDef,
+          });
+          const result = await response.json();
+          return { definitionId: def.id, grading: result };
         });
-        const result = await response.json();
-        return { definitionId: def.id, grading: result };
-      });
       
       return Promise.all(gradingPromises);
     },
@@ -128,9 +130,11 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
         })
       }));
       
+      const gradedCount = results.length;
+      const totalCount = submission?.wordDefinitions?.length || 0;
       toast({
         title: "AI Grading Complete",
-        description: `Graded ${results.length} definitions automatically`,
+        description: `Graded ${gradedCount} of ${totalCount} definitions automatically. Empty definitions were skipped.`,
       });
     },
     onError: (error: any) => {
