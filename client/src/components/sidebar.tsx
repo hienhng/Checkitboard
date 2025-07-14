@@ -38,7 +38,9 @@ import {
   ClipboardList,
   ChevronLeft,
   ChevronRight,
-  MoreHorizontal
+  MoreHorizontal,
+  PanelLeftClose,
+  PanelLeftOpen
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMobile } from "@/hooks/use-mobile";
@@ -120,7 +122,7 @@ export function Sidebar() {
                 showToggleButton ? "opacity-100 visible" : "opacity-0 invisible"
               )}
             >
-              <ChevronRight className="h-4 w-4" />
+              <PanelLeftOpen className="h-4 w-4" />
             </Button>
           </div>
         ) : (
@@ -137,7 +139,7 @@ export function Sidebar() {
               onClick={toggleCollapsed}
               className="h-8 w-8 transition-all duration-300 ease-in-out"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <PanelLeftClose className="h-4 w-4" />
             </Button>
           </>
         )}
@@ -153,7 +155,8 @@ export function Sidebar() {
                 key={link.href}
                 to={link.href}
                 className={cn(
-                  "group flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 relative",
+                  "group flex items-center rounded-lg text-sm font-medium transition-all duration-200 relative",
+                  isCollapsed ? "mx-auto p-2.5 w-10 h-10 justify-center" : "px-3 py-2.5",
                   isActive
                     ? "bg-primary text-white shadow-sm"
                     : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
@@ -162,7 +165,7 @@ export function Sidebar() {
               >
                 <div className={cn(
                   "flex items-center justify-center h-5 w-5 transition-colors duration-200",
-                  isCollapsed ? "mx-auto" : "mr-3"
+                  isCollapsed ? "" : "mr-3"
                 )}>
                   {link.icon}
                 </div>
