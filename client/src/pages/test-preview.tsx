@@ -392,48 +392,62 @@ export default function TestPreview() {
                 </CardContent>
               </Card>
             ) : (
-              // Show Pending Grade Section - Simulating submitted test awaiting grading
-              <Card className="border-orange-200 bg-orange-50">
+              // Show Start Test Section - No submission exists yet
+              <Card className="border-blue-200 bg-blue-50">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-orange-800">
-                    <Clock className="h-5 w-5" />
-                    Test Pending Grade
+                  <CardTitle className="flex items-center gap-2 text-blue-800">
+                    <Play className="h-5 w-5" />
+                    Ready to Start
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="text-center">
-                    <div className="text-orange-600 mb-4">
-                      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-orange-100 flex items-center justify-center">
-                        <Clock className="h-8 w-8 text-orange-600" />
+                    <div className="text-blue-600 mb-4">
+                      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-100 flex items-center justify-center">
+                        <Play className="h-8 w-8 text-blue-600" />
                       </div>
-                      <h3 className="font-semibold text-orange-900 mb-2">Test Under Review</h3>
-                      <p className="text-sm text-orange-700 mb-4">
-                        You have already completed this vocabulary test. Your teacher is currently reviewing and grading your submission.
-                      </p>
-                      <p className="text-xs text-orange-600">
-                        Submitted recently - awaiting grading
+                      <h3 className="font-semibold text-blue-900 mb-2">Start Your Vocabulary Test</h3>
+                      <p className="text-sm text-blue-700 mb-4">
+                        You haven't started this vocabulary test yet. Click the button below to begin.
                       </p>
                     </div>
                   </div>
 
-                  <div className="bg-orange-100 border border-orange-200 rounded-lg p-4">
+                  <div className="bg-blue-100 border border-blue-200 rounded-lg p-4">
                     <div className="flex items-start gap-3">
                       <div className="flex-shrink-0">
-                        <div className="w-5 h-5 rounded-full bg-orange-200 flex items-center justify-center">
-                          <span className="text-orange-600 text-xs font-bold">!</span>
+                        <div className="w-5 h-5 rounded-full bg-blue-200 flex items-center justify-center">
+                          <span className="text-blue-600 text-xs font-bold">!</span>
                         </div>
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-medium text-orange-800 mb-1">Please Wait</h4>
-                        <p className="text-sm text-orange-700">
-                          You cannot retake this test until your teacher has finished grading. 
-                          You will receive your results and any feedback once grading is complete.
+                        <h4 className="font-medium text-blue-800 mb-1">Important</h4>
+                        <p className="text-sm text-blue-700">
+                          Once you start the test, you must complete it in one session. 
+                          Make sure you have enough time and a stable internet connection.
                         </p>
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-3">
+                    <Button 
+                      onClick={handleStartTest}
+                      disabled={isStarting || startTestMutation.isPending}
+                      className="w-full"
+                    >
+                      {isStarting || startTestMutation.isPending ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Starting Test...
+                        </>
+                      ) : (
+                        <>
+                          <Play className="h-4 w-4 mr-2" />
+                          Start Vocabulary Test
+                        </>
+                      )}
+                    </Button>
                     <Button 
                       onClick={() => navigate("/learner/dashboard")}
                       className="w-full"
