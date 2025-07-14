@@ -71,11 +71,11 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
   // AI definition generation mutation
   const generateDefinitionMutation = useMutation({
     mutationFn: async (word: string) => {
-      const response = await apiRequest(`/api/ai/generate-definitions`, {
-        method: "POST",
-        body: JSON.stringify({ words: [word] }),
+      const response = await apiRequest("POST", `/api/ai/definitions`, {
+        words: [word]
       });
-      return response[word];
+      const result = await response.json();
+      return result.definitions[word];
     },
     onSuccess: (definition, word) => {
       toast({
@@ -101,15 +101,13 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
         const correctDef = gradingData.definitions.find(d => d.definitionId === def.id)?.correctDefinition;
         if (!correctDef) throw new Error(`Correct definition required for "${def.word.word}"`);
         
-        const response = await apiRequest(`/api/ai/grade-definition`, {
-          method: "POST",
-          body: JSON.stringify({
-            word: def.word.word,
-            studentDefinition: def.studentDefinition,
-            correctDefinition: correctDef,
-          }),
+        const response = await apiRequest("POST", `/api/ai/grade-definition`, {
+          word: def.word.word,
+          studentDefinition: def.studentDefinition,
+          correctDefinition: correctDef,
         });
-        return { definitionId: def.id, grading: response };
+        const result = await response.json();
+        return { definitionId: def.id, grading: result };
       });
       
       return Promise.all(gradingPromises);
