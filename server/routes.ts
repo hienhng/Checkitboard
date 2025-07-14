@@ -830,18 +830,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Also get the submission status for each list
       const listsWithStatus = await Promise.all(
         lists.map(async (list) => {
-          // Check for ANY existing submission for this list, completed or not
-          const existingSubmission = await storage.getSubmissionByStudentAndList(req.user.id, Number(list.id), true);
+          // Check for any existing submission (completed or not) - use false for includeRedo to get current submission
+          const currentSubmission = await storage.getSubmissionByStudentAndList(req.user.id, Number(list.id), false);
           
           // Always include the list, but attach submission status if it exists
           return {
             ...list,
-            submission: existingSubmission ? {
-              id: existingSubmission.id,
-              completed: existingSubmission.completed || false,
-              gradedAt: existingSubmission.gradedAt,
-              score: existingSubmission.score,
-              submittedAt: existingSubmission.submittedAt
+            submission: currentSubmission ? {
+              id: currentSubmission.id,
+              completed: currentSubmission.completed || false,
+              gradedAt: currentSubmission.gradedAt,
+              score: currentSubmission.score,
+              submittedAt: currentSubmission.submittedAt
             } : null,
             class: list.class ? {
               id: list.class.id,
