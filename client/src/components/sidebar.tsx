@@ -49,10 +49,9 @@ export function Sidebar() {
   const [open, setOpen] = useState(false);
   const { collapsed, toggleCollapsed } = useSidebar();
   const isMobile = useMobile();
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const sidebarRef = useRef<HTMLElement>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [showToggleButton, setShowToggleButton] = useState(false);
 
   if (!user) {
     return null;
@@ -61,46 +60,6 @@ export function Sidebar() {
   const handleLogout = async () => {
     await logoutMutation.mutateAsync();
   };
-
-  // Handle hover to expand
-  const handleMouseEnter = () => {
-    if (isMobile || !collapsed) return;
-    
-    // Clear any leave timeout
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-    }
-    
-    // Expand the sidebar
-    toggleCollapsed();
-  };
-
-  // Handle mouse leave to collapse
-  const handleMouseLeave = () => {
-    if (isMobile || collapsed || isDropdownOpen || isNotificationOpen) return;
-    
-    // Clear any existing timeout
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-    }
-    
-    // Set timeout to collapse after 200ms delay
-    hoverTimeoutRef.current = setTimeout(() => {
-      // Double check that dropdowns are still closed before collapsing
-      if (!isDropdownOpen && !isNotificationOpen) {
-        toggleCollapsed();
-      }
-    }, 200);
-  };
-
-  // Clean up timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-    };
-  }, []);
 
   const isEducator = user.role === "educator";
   const isLearner = user.role === "learner";
@@ -134,16 +93,54 @@ export function Sidebar() {
       {/* Header with Logo */}
       <div className={cn(
         "flex items-center p-4 border-b border-gray-100 relative transition-all duration-300",
-        isCollapsed ? "justify-center px-2" : "justify-center"
+        isCollapsed ? "justify-center px-2" : "justify-between px-4"
       )}>
-        <Link to="/" className="flex items-center">
-          <span className={cn(
-            "text-primary font-modak transition-all duration-500 ease-in-out",
-            isCollapsed ? "text-3xl transform rotate-135" : "text-4xl"
-          )}>
-            {isCollapsed ? "C" : "checkit"}
-          </span>
-        </Link>
+        {isCollapsed ? (
+          // Collapsed state: Show "C" with hover effect to reveal toggle button
+          <div 
+            className="relative flex items-center justify-center w-full"
+            onMouseEnter={() => setShowToggleButton(true)}
+            onMouseLeave={() => setShowToggleButton(false)}
+          >
+            <Link to="/" className="flex items-center">
+              <span className={cn(
+                "text-primary font-modak transition-all duration-300 ease-in-out text-3xl",
+                showToggleButton ? "opacity-0" : "opacity-100"
+              )}>
+                C
+              </span>
+            </Link>
+            {/* Toggle button appears on hover over "C" */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleCollapsed}
+              className={cn(
+                "absolute inset-0 h-8 w-8 transition-all duration-300 ease-in-out",
+                showToggleButton ? "opacity-100 visible" : "opacity-0 invisible"
+              )}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : (
+          // Extended state: Left-aligned "checkit" with right-aligned toggle button
+          <>
+            <Link to="/" className="flex items-center">
+              <span className="text-primary font-modak text-4xl transition-all duration-300 ease-in-out">
+                checkit
+              </span>
+            </Link>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleCollapsed}
+              className="h-8 w-8 transition-all duration-300 ease-in-out"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          </>
+        )}
       </div>
 
       {/* Navigation links */}
@@ -318,13 +315,10 @@ export function Sidebar() {
   // Desktop sidebar with collapse functionality
   return (
     <div 
-      ref={sidebarRef}
       className={cn(
         "fixed left-0 top-0 bottom-0 bg-white shadow-lg flex flex-col border-r border-gray-200 z-30 transition-all duration-300 ease-in-out overflow-hidden",
         collapsed ? "w-16" : "w-64"
       )}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
     >
       <SidebarContent isCollapsed={collapsed} />
     </div>
