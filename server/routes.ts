@@ -228,7 +228,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (list.classId) {
           const studentClasses = await storage.getClassesForStudent(req.user.id);
           const isEnrolledInClass = studentClasses.some(
-            (cls: any) => cls.id === list.classId && cls.status === 'approved'
+            (enrollment: any) => enrollment.classId === list.classId && enrollment.status === 'approved'
           );
           
           if (!isEnrolledInClass) {
@@ -279,7 +279,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (list.classId) {
         const studentClasses = await storage.getClassesForStudent(req.user.id);
         const isEnrolledInClass = studentClasses.some(
-          (cls: any) => cls.id === list.classId && cls.status === 'approved'
+          (enrollment: any) => enrollment.classId === list.classId && enrollment.status === 'approved'
         );
         
         if (!isEnrolledInClass) {
