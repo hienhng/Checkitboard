@@ -932,7 +932,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Student ${req.user.id} requesting vocabulary lists:`);
       console.log(`- Student has ${lists.length} accessible lists`);
       lists.forEach(list => {
-        console.log(`  - List ${list.id}: "${list.title}" (class: ${list.classId || 'global'})`);
+        console.log(`  - List ${list.id}: "${list.title}" (class: ${list.classId || 'NO CLASS - SHOULD NOT BE VISIBLE'})`);
       });
       
       // Also get the submission status for each list

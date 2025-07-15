@@ -139,124 +139,86 @@ export class DatabaseStorage {
   }
 
   async getPublishedVocabularyLists(studentId?: number) {
-    // First get all global lists that are published (no class association)
-    const publishedLists = await db.query.vocabularyLists.findMany({
+    // Students can only see vocabulary lists assigned to classes they're enrolled in
+    // No global lists should be visible
+    
+    if (!studentId) {
+      return []; // No student ID means no access to any lists
+    }
+
+    // Get all classes the student is approved for
+    const studentClasses = await db.query.studentClass.findMany({
       where: and(
-        eq(vocabularyLists.published, true),
-        isNull(vocabularyLists.classId)
+        eq(studentClass.studentId, studentId),
+        eq(studentClass.status, 'approved')
       ),
-      orderBy: [
-        desc(vocabularyLists.createdAt),
-      ],
       columns: {
-        id: true,
-        title: true,
-        dueDate: true,
-        published: true,
-        educatorId: true,
         classId: true,
-        createdAt: true,
-        passage: true,
-      },
-      with: {
-        words: {
-          columns: {
-            id: true,
-            word: true,
-          },
-        },
-        educator: {
-          columns: {
-            id: true,
-            name: true,
-          },
-        },
-        class: {
-          columns: {
-            id: true,
-            name: true,
-          },
-        },
       },
     });
-
-    // If studentId is provided, also get lists assigned to their classes
-    if (studentId) {
-      // Get all classes the student is approved for
-      const studentClasses = await db.query.studentClass.findMany({
-        where: and(
-          eq(studentClass.studentId, studentId),
-          eq(studentClass.status, 'approved')
-        ),
-        columns: {
-          classId: true,
-        },
-      });
-      
-      const classIds = studentClasses.map(sc => sc.classId);
-      
-      // If student is in any classes, get the class-specific lists
-      if (classIds.length > 0) {
-        // Run a separate query to get lists assigned to these classes (only published ones)
-        const classQuery = `
-          SELECT 
-            vl.id, vl.title, vl.due_date, vl.published, 
-            vl.educator_id, vl.class_id, vl.created_at, vl.passage,
-            e.id as educator_id, e.name as educator_name,
-            c.id as class_id, c.name as class_name
-          FROM vocabulary_lists vl
-          LEFT JOIN users e ON vl.educator_id = e.id
-          LEFT JOIN classes c ON vl.class_id = c.id
-          WHERE vl.class_id = ANY($1) AND vl.published = true
-          ORDER BY vl.created_at DESC
-        `;
-        
-        const result = await pool.query(classQuery, [classIds]);
-        const classListRows = result.rows;
-        
-        // Get words for each list
-        const wordQuery = `
-          SELECT vw.id, vw.word, vw.list_id
-          FROM vocabulary_words vw
-          WHERE vw.list_id = ANY($1)
-        `;
-        
-        const listIds = classListRows.map((list: any) => list.id);
-        const wordResult = await pool.query(wordQuery, [listIds]);
-        const wordRows = wordResult.rows;
-        
-        // Format class lists to match the structure from the ORM query
-        const classLists = classListRows.map((row: any) => ({
-          id: row.id,
-          title: row.title,
-          dueDate: row.due_date,
-          published: row.published,
-          educatorId: row.educator_id,
-          classId: row.class_id,
-          createdAt: row.created_at,
-          passage: row.passage,
-          words: wordRows
-            .filter((word: any) => word.list_id === row.id)
-            .map((word: any) => ({
-              id: word.id,
-              word: word.word
-            })),
-          educator: row.educator_id ? {
-            id: row.educator_id,
-            name: row.educator_name
-          } : null,
-          class: row.class_id ? {
-            id: row.class_id,
-            name: row.class_name
-          } : null
-        }));
-        
-        // Combine published global lists and class-specific lists
-        return [...publishedLists, ...classLists];
-      }
-    }
     
-    return publishedLists;
+    const classIds = studentClasses.map(sc => sc.classId);
+    
+    // If student is not in any classes, they can't see any vocabulary lists
+    if (classIds.length === 0) {
+      return [];
+    }
+
+    // Get only the class-specific lists for classes the student is enrolled in
+    const classQuery = `
+      SELECT 
+        vl.id, vl.title, vl.due_date, vl.published, 
+        vl.educator_id, vl.class_id, vl.created_at, vl.passage,
+        e.id as educator_id, e.name as educator_name,
+        c.id as class_id, c.name as class_name
+      FROM vocabulary_lists vl
+      LEFT JOIN users e ON vl.educator_id = e.id
+      LEFT JOIN classes c ON vl.class_id = c.id
+      WHERE vl.class_id = ANY($1) AND vl.published = true
+      ORDER BY vl.created_at DESC
+    `;
+    
+    const result = await pool.query(classQuery, [classIds]);
+    const classListRows = result.rows;
+    
+    // Get words for each list
+    const wordQuery = `
+      SELECT vw.id, vw.word, vw.list_id
+      FROM vocabulary_words vw
+      WHERE vw.list_id = ANY($1)
+    `;
+    
+    const listIds = classListRows.map((list: any) => list.id);
+    const wordResult = await pool.query(wordQuery, [listIds]);
+    const wordRows = wordResult.rows;
+    
+    // Format class lists to match the structure from the ORM query
+    const classLists = classListRows.map((row: any) => ({
+      id: row.id,
+      title: row.title,
+      dueDate: row.due_date,
+      published: row.published,
+      educatorId: row.educator_id,
+      classId: row.class_id,
+      createdAt: row.created_at,
+      passage: row.passage,
+      words: wordRows
+        .filter((word: any) => word.list_id === row.id)
+        .map((word: any) => ({
+          id: word.id,
+          word: word.word
+        })),
+      educator: row.educator_id ? {
+        id: row.educator_id,
+        name: row.educator_name
+      } : null,
+      class: row.class_id ? {
+        id: row.class_id,
+        name: row.class_name
+      } : null
+    }));
+    
+    return classLists;
   }
 
   async createVocabularyList(listData: InsertVocabularyList) {
