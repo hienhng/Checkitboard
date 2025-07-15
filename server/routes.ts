@@ -223,6 +223,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!list.published) {
           return res.status(403).json({ message: "Access denied" });
         }
+        
+        // If the list is assigned to a class, check if the student is enrolled in that class
+        if (list.classId) {
+          const studentClasses = await storage.getClassesForStudent(req.user.id);
+          const isEnrolledInClass = studentClasses.some(
+            (cls: any) => cls.id === list.classId && cls.status === 'approved'
+          );
+          
+          if (!isEnrolledInClass) {
+            return res.status(403).json({ message: "Access denied - you are not enrolled in the required class" });
+          }
+        }
       } else if (req.user.role === "educator") {
         // Educators can only access their own lists
         if (list.educatorId !== req.user.id) {
@@ -261,6 +273,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!list.published) {
         return res.status(403).json({ message: "This test is not available" });
+      }
+
+      // If the list is assigned to a class, check if the student is enrolled in that class
+      if (list.classId) {
+        const studentClasses = await storage.getClassesForStudent(req.user.id);
+        const isEnrolledInClass = studentClasses.some(
+          (cls: any) => cls.id === list.classId && cls.status === 'approved'
+        );
+        
+        if (!isEnrolledInClass) {
+          return res.status(403).json({ message: "Access denied - you are not enrolled in the required class" });
+        }
       }
 
       // Check if student already has ANY submission for this list (prevent retaking)

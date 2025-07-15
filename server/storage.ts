@@ -197,7 +197,7 @@ export class DatabaseStorage {
       
       // If student is in any classes, get the class-specific lists
       if (classIds.length > 0) {
-        // Run a separate query to get lists assigned to these classes
+        // Run a separate query to get lists assigned to these classes (only published ones)
         const classQuery = `
           SELECT 
             vl.id, vl.title, vl.due_date, vl.published, 
@@ -207,7 +207,7 @@ export class DatabaseStorage {
           FROM vocabulary_lists vl
           LEFT JOIN users e ON vl.educator_id = e.id
           LEFT JOIN classes c ON vl.class_id = c.id
-          WHERE vl.class_id = ANY($1)
+          WHERE vl.class_id = ANY($1) AND vl.published = true
           ORDER BY vl.created_at DESC
         `;
         
