@@ -188,6 +188,31 @@ export function SettingsPage() {
   const handleProfilePictureUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      // Check file size (10MB = 10 * 1024 * 1024 bytes)
+      const maxSize = 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        toast({
+          title: "File too large",
+          description: "Please select an image smaller than 10MB",
+          variant: "destructive",
+        });
+        // Clear the file input
+        event.target.value = '';
+        return;
+      }
+
+      // Check file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please select a valid image file (JPG, PNG, or GIF)",
+          variant: "destructive",
+        });
+        // Clear the file input
+        event.target.value = '';
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
@@ -277,7 +302,7 @@ export function SettingsPage() {
                       </Button>
                     </Label>
                     <p className="text-sm text-neutral-medium mt-1">
-                      JPG, PNG or GIF. Max size 5MB.
+                      JPG, PNG or GIF. Max size 10MB.
                     </p>
                   </div>
                 </div>
