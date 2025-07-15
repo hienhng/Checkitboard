@@ -928,6 +928,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get lists filtered by the student's class enrollments
       const lists = await storage.getPublishedVocabularyLists(req.user.id);
       
+      // Debug logging to verify class filtering is working correctly
+      console.log(`Student ${req.user.id} requesting vocabulary lists:`);
+      console.log(`- Student has ${lists.length} accessible lists`);
+      lists.forEach(list => {
+        console.log(`  - List ${list.id}: "${list.title}" (class: ${list.classId || 'global'})`);
+      });
+      
       // Also get the submission status for each list
       const listsWithStatus = await Promise.all(
         lists.map(async (list) => {
