@@ -340,7 +340,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You don't have permission to delete this vocabulary list" });
       }
 
-      // Delete the vocabulary list (this will cascade delete words, submissions, etc.)
+      // Delete related data in the correct order due to foreign key constraints
+      
+      // 1. Delete fullscreen exits related to submissions for this list
+      await db.execute(sql`
+        DELETE FROM fullscreen_exits 
+        WHERE submission_id IN (
+          SELECT id FROM submissions WHERE list_id = ${listId}
+        )
+      `);
+      
+      // 2. Delete flashcards related to words in this list
+      await db.execute(sql`
+        DELETE FROM flashcards 
+        WHERE word_id IN (
+          SELECT id FROM vocabulary_words WHERE list_id = ${listId}
+        )
+      `);
+      
+      // 3. Delete word definitions related to words in this list
+      await db.execute(sql`
+        DELETE FROM word_definitions 
+        WHERE word_id IN (
+          SELECT id FROM vocabulary_words WHERE list_id = ${listId}
+        )
+      `);
+      
+      // 4. Delete submissions for this list
+      await db.execute(sql`
+        DELETE FROM submissions WHERE list_id = ${listId}
+      `);
+      
+      // 5. Delete vocabulary words in this list
+      await db.execute(sql`
+        DELETE FROM vocabulary_words WHERE list_id = ${listId}
+      `);
+      
+      // 6. Finally delete the vocabulary list itself
       await db.delete(vocabularyLists).where(eq(vocabularyLists.id, listId));
 
       res.json({ message: "Vocabulary list deleted successfully" });
