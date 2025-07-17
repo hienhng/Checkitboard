@@ -3,6 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
+import HeroPage from "@/pages/hero-page";
 import AuthPage from "@/pages/auth-page";
 import HomePage from "@/pages/home-page";
 import VerifyEmail from "@/pages/verify-email";
@@ -30,6 +31,7 @@ import { EmailVerificationGuard, withEmailVerification } from "@/components/emai
 function Router() {
   return (
     <Switch>
+      <Route path="/hero" component={HeroPage} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/verify-email" component={VerifyEmail} />
       <Route path="/verify" component={Verify} />

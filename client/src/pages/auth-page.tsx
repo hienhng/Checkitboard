@@ -34,13 +34,11 @@ export default function AuthPage() {
           <CardContent className="pt-10 px-8 pb-8">
             {/* Logo Section */}
             <div className="text-center mb-10">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-700 rounded-2xl mb-4 shadow-lg">
-                <GraduationCap className="h-8 w-8 text-white" />
-              </div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+  
+              <h1 className="text-5xl font-modak bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
                 checkit
               </h1>
-              <p className="mt-3 text-base text-slate-600 font-medium">Welcome to your learning journey</p>
+              <p className="mt-3 text-base text-slate-600 ">Sign in or create a new account</p>
             </div>
 
             <Tabs defaultValue="login" className="w-full">

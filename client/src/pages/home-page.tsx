@@ -14,6 +14,6 @@ export default function HomePage() {
   }
 
   // This shouldn't be reached due to ProtectedRoute wrapper,
-  // but added for safety
-  return <Redirect to="/auth" />;
+  // but added for safety - redirect to hero page for marketing
+  return <Redirect to="/hero" />;
 }
