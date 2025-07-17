@@ -31,12 +31,16 @@ import { EmailVerificationGuard, withEmailVerification } from "@/components/emai
 function Router() {
   return (
     <Switch>
-      <Route path="/hero" component={HeroPage} />
+      {/* Root route shows hero page for unauthenticated users, redirects authenticated users */}
+      <Route path="/" component={HeroPage} />
+      
+      {/* Public routes */}
       <Route path="/auth" component={AuthPage} />
       <Route path="/verify-email" component={VerifyEmail} />
       <Route path="/verify" component={Verify} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
+      
       {/* Test preview and vocabulary checkup without layout/sidebar - requires verification */}
       <ProtectedRoute path="/learner/test-preview/:id" component={withEmailVerification(TestPreview)} />
       <ProtectedRoute path="/vocabulary-checkup/:id" component={withEmailVerification(VocabularyCheckup)} />
@@ -46,7 +50,7 @@ function Router() {
       <SidebarProvider>
         <Layout>
           <EmailVerificationGuard showBanner={true}>
-            <ProtectedRoute path="/" component={HomePage} />
+            <ProtectedRoute path="/home" component={HomePage} />
             <ProtectedRoute path="/educator/dashboard" component={withEmailVerification(EducatorDashboard)} />
             <ProtectedRoute path="/educator/statistics" component={withEmailVerification(EducatorStatisticsPage)} />
             <ProtectedRoute path="/educator/assignments" component={withEmailVerification(VocabularyManagement)} />

@@ -2,6 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
+import { Redirect } from "wouter";
 import { 
   BookOpen, 
   Users, 
@@ -18,6 +20,16 @@ import {
 } from "lucide-react";
 
 export default function HeroPage() {
+  const { user } = useAuth();
+
+  // Redirect authenticated users to their dashboard
+  if (user) {
+    if (user.role === "educator") {
+      return <Redirect to="/educator/dashboard" />;
+    } else if (user.role === "learner") {
+      return <Redirect to="/learner/dashboard" />;
+    }
+  }
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
       {/* Navigation */}
@@ -84,21 +96,7 @@ export default function HeroPage() {
               </Button>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-              <div className="text-center">
-                <div className="text-4xl font-bold text-blue-600 mb-2">10K+</div>
-                <div className="text-slate-600">Active Students</div>
-              </div>
-              <div className="text-center">
-                <div className="text-4xl font-bold text-blue-600 mb-2">500+</div>
-                <div className="text-slate-600">Educators</div>
-              </div>
-              <div className="text-center">
-                <div className="text-4xl font-bold text-blue-600 mb-2">50K+</div>
-                <div className="text-slate-600">Words Learned</div>
-              </div>
-            </div>
+
           </div>
         </div>
       </section>
