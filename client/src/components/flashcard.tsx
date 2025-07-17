@@ -235,7 +235,7 @@ export function Flashcard({
               <div className="flex justify-between items-center">
                 <div className="flex-1">
                   <Badge variant="outline" className="mb-1 bg-white text-blue-700 border-blue-200">
-                    Your Definition
+                    Definition
                   </Badge>
                   <h3 className="text-xl font-bold text-blue-900 text-center">{flashcard.word.word}</h3>
                 </div>
@@ -255,19 +255,11 @@ export function Flashcard({
             </CardHeader>
             <CardContent className="p-6 flex flex-col justify-between h-[calc(100%-90px)]">
               <div>
-                <p className="text-gray-700 italic text-center px-2">"{flashcard.definition?.studentDefinition || ''}"</p>
-                
-                {/* Show correct definition if available and showCorrectDefinition is true */}
-                {flashcard.definition?.correctDefinition && flashcard.definition?.showCorrectDefinition && (
-                  <div className="mt-3 pt-3 border-t border-gray-100">
-                    <Badge 
-                      variant="outline" 
-                      className={`mb-1 ${flashcard.definition?.isCorrect ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}
-                    >
-                      {flashcard.definition?.isCorrect ? 'Correct' : 'Correct Definition'}
-                    </Badge>
-                    <p className="text-gray-700 text-sm px-2">{flashcard.definition?.correctDefinition}</p>
-                  </div>
+                {/* Only show teacher's correct definition */}
+                {flashcard.definition?.correctDefinition ? (
+                  <p className="text-gray-700 text-center px-2">{flashcard.definition.correctDefinition}</p>
+                ) : (
+                  <p className="text-gray-500 italic text-center px-2">No definition available</p>
                 )}
               </div>
               
