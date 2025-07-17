@@ -257,20 +257,8 @@ export default function VocabularyCheckup() {
       });
     }
     
-    // Check if all words have been addressed (either defined or skipped)
-    const allAddressed = submissionData.list.words.every(
-      (word: any) => savedDefinitions.hasOwnProperty(word.id) || 
-      (submissionData.wordDefinitions?.some((def: any) => def.wordId === word.id))
-    );
-    
-    if (!allAddressed) {
-      toast({
-        title: "Cannot complete check-up",
-        description: "Please provide definitions for all words or skip the ones you don't know.",
-        variant: "destructive",
-      });
-      return;
-    }
+    // Students can now complete the test even if they haven't addressed all words
+    // This allows for partial submissions
     
     // Complete the submission
     await completeMutation.mutateAsync();
