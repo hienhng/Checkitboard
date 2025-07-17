@@ -193,16 +193,13 @@ export function FlashcardStudyMode({ cards, onSessionComplete }: FlashcardStudyM
                     </div>
                   ) : (
                     <div>
-                      <div className="text-lg text-gray-700 mb-4">
-                        "{currentCard.definition.studentDefinition}"
-                      </div>
-                      {currentCard.definition.showCorrectDefinition && 
-                       currentCard.definition.correctDefinition && (
-                        <div className="mt-4 pt-4 border-t border-gray-200">
-                          <Badge variant="outline" className="mb-2">Correct Definition</Badge>
-                          <div className="text-sm text-gray-600">
-                            {currentCard.definition.correctDefinition}
-                          </div>
+                      {currentCard.definition.correctDefinition ? (
+                        <div className="text-lg text-gray-700">
+                          {currentCard.definition.correctDefinition}
+                        </div>
+                      ) : (
+                        <div className="text-lg text-gray-500 italic">
+                          No definition provided by teacher
                         </div>
                       )}
                     </div>
