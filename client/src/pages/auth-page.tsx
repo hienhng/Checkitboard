@@ -24,9 +24,9 @@ export default function AuthPage() {
       <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(59,130,246,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(59,130,246,0.05)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
       
       {/* Floating Elements */}
-      <div className="absolute top-20 left-10 w-16 h-16 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full opacity-20 animate-pulse"></div>
-      <div className="absolute top-40 right-20 w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full opacity-30 animate-bounce"></div>
-      <div className="absolute bottom-32 left-20 w-12 h-12 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full opacity-25 animate-pulse delay-300"></div>
+      <div className="absolute top-20 left-10 w-16 h-16 bg-gradient-to-r from-blue-300 to-blue-500 rounded-full opacity-20 animate-pulse"></div>
+      <div className="absolute top-40 right-20 w-8 h-8 bg-gradient-to-r from-sky-300 to-blue-400 rounded-full opacity-30 animate-bounce"></div>
+      <div className="absolute bottom-32 left-20 w-12 h-12 bg-gradient-to-r from-blue-200 to-blue-400 rounded-full opacity-25 animate-pulse delay-300"></div>
 
       {/* Left Column - Auth Forms */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8 relative z-10">
@@ -34,10 +34,10 @@ export default function AuthPage() {
           <CardContent className="pt-10 px-8 pb-8">
             {/* Logo Section */}
             <div className="text-center mb-10">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl mb-4 shadow-lg">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-700 rounded-2xl mb-4 shadow-lg">
                 <GraduationCap className="h-8 w-8 text-white" />
               </div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
                 checkit
               </h1>
               <p className="mt-3 text-base text-slate-600 font-medium">Welcome to your learning journey</p>
@@ -70,14 +70,14 @@ export default function AuthPage() {
       </div>
 
       {/* Right Column - Hero Section */}
-      <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-blue-600 via-blue-700 to-purple-800 text-white relative overflow-hidden">
+      <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 text-white relative overflow-hidden">
         {/* Background Pattern for Right Side */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(255,255,255,0.1),transparent_70%)]"></div>
         <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(-45deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:30px_30px]"></div>
         
         {/* Floating Shapes */}
         <div className="absolute top-20 right-20 w-32 h-32 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-40 left-10 w-24 h-24 bg-purple-400/20 rounded-full blur-2xl animate-bounce"></div>
+        <div className="absolute bottom-40 left-10 w-24 h-24 bg-sky-300/20 rounded-full blur-2xl animate-bounce"></div>
         
         <div className="relative z-10 h-full flex flex-col justify-center max-w-xl mx-auto p-12">
           <div className="mb-8">
@@ -87,7 +87,7 @@ export default function AuthPage() {
             </div>
             <h2 className="text-5xl font-bold mb-6 leading-tight">
               Master Vocabulary Through 
-              <span className="bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent"> Smart Learning</span>
+              <span className="bg-gradient-to-r from-sky-200 to-white bg-clip-text text-transparent"> Smart Learning</span>
             </h2>
             <p className="text-xl text-blue-100 leading-relaxed">
               Join thousands of educators and students using our intelligent platform to enhance vocabulary learning through interactive passages and personalized assessments.
@@ -96,7 +96,7 @@ export default function AuthPage() {
 
           <div className="grid gap-6">
             <div className="flex items-start space-x-4 group">
-              <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-emerald-400 to-cyan-400 rounded-xl flex items-center justify-center transform transition-transform duration-300 group-hover:scale-110 shadow-lg">
+              <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-sky-400 to-blue-500 rounded-xl flex items-center justify-center transform transition-transform duration-300 group-hover:scale-110 shadow-lg">
                 <BookOpen className="h-6 w-6 text-white" />
               </div>
               <div>
@@ -106,7 +106,7 @@ export default function AuthPage() {
             </div>
 
             <div className="flex items-start space-x-4 group">
-              <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-purple-400 to-pink-400 rounded-xl flex items-center justify-center transform transition-transform duration-300 group-hover:scale-110 shadow-lg">
+              <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-blue-400 to-blue-600 rounded-xl flex items-center justify-center transform transition-transform duration-300 group-hover:scale-110 shadow-lg">
                 <CheckCircle className="h-6 w-6 text-white" />
               </div>
               <div>
@@ -116,7 +116,7 @@ export default function AuthPage() {
             </div>
 
             <div className="flex items-start space-x-4 group">
-              <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-orange-400 to-red-400 rounded-xl flex items-center justify-center transform transition-transform duration-300 group-hover:scale-110 shadow-lg">
+              <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-sky-300 to-blue-500 rounded-xl flex items-center justify-center transform transition-transform duration-300 group-hover:scale-110 shadow-lg">
                 <Brain className="h-6 w-6 text-white" />
               </div>
               <div>
@@ -126,7 +126,7 @@ export default function AuthPage() {
             </div>
 
             <div className="flex items-start space-x-4 group">
-              <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-cyan-400 to-blue-400 rounded-xl flex items-center justify-center transform transition-transform duration-300 group-hover:scale-110 shadow-lg">
+              <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-blue-300 to-blue-600 rounded-xl flex items-center justify-center transform transition-transform duration-300 group-hover:scale-110 shadow-lg">
                 <Users className="h-6 w-6 text-white" />
               </div>
               <div>
@@ -136,22 +136,7 @@ export default function AuthPage() {
             </div>
           </div>
 
-          <div className="mt-12 pt-8 border-t border-white/20">
-            <div className="flex items-center justify-center space-x-8 text-center">
-              <div>
-                <div className="text-3xl font-bold text-white">10K+</div>
-                <div className="text-blue-200 text-sm">Active Students</div>
-              </div>
-              <div>
-                <div className="text-3xl font-bold text-white">500+</div>
-                <div className="text-blue-200 text-sm">Educators</div>
-              </div>
-              <div>
-                <div className="text-3xl font-bold text-white">50K+</div>
-                <div className="text-blue-200 text-sm">Words Learned</div>
-              </div>
-            </div>
-          </div>
+          
         </div>
       </div>
     </div>
