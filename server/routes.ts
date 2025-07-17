@@ -2221,6 +2221,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate multiple choice questions for vocabulary words
+  app.post("/api/ai/multiple-choice", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "learner") {
+        return res.status(403).json({ message: "Only learners can use this feature" });
+      }
+
+      const schema = z.object({
+        word: z.string().min(1, "Word is required"),
+        correctDefinition: z.string().min(1, "Correct definition is required")
+      });
+
+      const validatedData = schema.parse(req.body);
+      
+      // Generate multiple choice options using AI
+      const { generateMultipleChoice } = await import("./ai");
+      const questionData = await generateMultipleChoice(validatedData.word, validatedData.correctDefinition);
+      
+      res.json(questionData);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+      console.error("Error generating multiple choice question:", error);
+      res.status(500).json({ message: "Error generating multiple choice question" });
+    }
+  });
+
   // Analyze passage to extract potential vocabulary words
   app.post("/api/ai/analyze-passage", async (req, res) => {
     try {

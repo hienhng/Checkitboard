@@ -464,3 +464,122 @@ export async function generatePassageFromWords(
 
   throw new Error("No AI service is available. Please configure GROQ_API_KEY, OPENAI_API_KEY, or HUGGINGFACE_API_KEY.");
 }
+
+/**
+ * Generate multiple choice questions with plausible distractors using available AI services (Groq preferred)
+ */
+export async function generateMultipleChoice(word: string, correctDefinition: string): Promise<{
+  word: string;
+  correctAnswer: string;
+  options: string[];
+}> {
+  // Try Groq first
+  if (groqService.isGroqConfigured()) {
+    try {
+      const prompt = `
+        Create a multiple choice question for the vocabulary word "${word}".
+        
+        The correct definition is: "${correctDefinition}"
+        
+        Generate 3 plausible but incorrect distractors (wrong definitions) that could confuse a student learning this word.
+        The distractors should be:
+        1. Similar in style and length to the correct definition
+        2. Plausible alternatives that might sound right
+        3. Different enough from the correct answer to test understanding
+        
+        Provide a JSON response with:
+        - word: the vocabulary word
+        - correctAnswer: the exact correct definition provided
+        - distractors: array of 3 incorrect but plausible definitions
+      `;
+
+      const response = await groqService.groq.chat.completions.create({
+        model: "llama-3.1-70b-versatile",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+      });
+
+      const content = response.choices[0].message.content;
+      if (!content) {
+        throw new Error("No content returned from Groq");
+      }
+
+      const questionData = JSON.parse(content);
+      
+      // Shuffle the options (correct answer + distractors)
+      const allOptions = [correctDefinition, ...questionData.distractors];
+      const shuffledOptions = allOptions.sort(() => Math.random() - 0.5);
+      
+      return {
+        word,
+        correctAnswer: correctDefinition,
+        options: shuffledOptions
+      };
+    } catch (error) {
+      console.warn("Groq failed, falling back to other providers:", error);
+    }
+  }
+
+  // Try OpenAI as fallback
+  if (openai) {
+    try {
+      const prompt = `
+        Create a multiple choice question for the vocabulary word "${word}".
+        
+        The correct definition is: "${correctDefinition}"
+        
+        Generate 3 plausible but incorrect distractors (wrong definitions) that could confuse a student learning this word.
+        The distractors should be:
+        1. Similar in style and length to the correct definition
+        2. Plausible alternatives that might sound right
+        3. Different enough from the correct answer to test understanding
+        
+        Provide a JSON response with:
+        - word: the vocabulary word
+        - correctAnswer: the exact correct definition provided
+        - distractors: array of 3 incorrect but plausible definitions
+      `;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+      });
+
+      const content = response.choices[0].message.content;
+      if (!content) {
+        throw new Error("No content returned from OpenAI");
+      }
+
+      const questionData = JSON.parse(content);
+      
+      // Shuffle the options (correct answer + distractors)
+      const allOptions = [correctDefinition, ...questionData.distractors];
+      const shuffledOptions = allOptions.sort(() => Math.random() - 0.5);
+      
+      return {
+        word,
+        correctAnswer: correctDefinition,
+        options: shuffledOptions
+      };
+    } catch (error) {
+      console.warn("OpenAI failed, using simple fallback:", error);
+    }
+  }
+
+  // Simple fallback with generic distractors
+  const genericDistractors = [
+    "A type of tool or equipment used in various activities",
+    "A concept related to human behavior and psychology",
+    "A process or method used to achieve specific outcomes"
+  ];
+  
+  const allOptions = [correctDefinition, ...genericDistractors];
+  const shuffledOptions = allOptions.sort(() => Math.random() - 0.5);
+  
+  return {
+    word,
+    correctAnswer: correctDefinition,
+    options: shuffledOptions
+  };
+}

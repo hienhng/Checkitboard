@@ -55,23 +55,52 @@ export function LearnMode({ cards, onSessionComplete }: LearnModeProps) {
   const currentCard = cards[currentIndex];
   const progress = ((currentIndex + 1) / cards.length) * 100;
 
-  // Generate multiple choice options
-  const generateOptions = () => {
-    if (!currentCard) return [];
-    
-    const correctAnswer = currentCard.definition.studentDefinition;
-    const otherCards = cards.filter(card => card.id !== currentCard.id);
-    const shuffledOthers = otherCards.sort(() => Math.random() - 0.5).slice(0, 3);
-    
-    const options = [
-      correctAnswer,
-      ...shuffledOthers.map(card => card.definition.studentDefinition)
-    ].sort(() => Math.random() - 0.5);
-    
-    return options;
+  // State for AI-generated multiple choice options
+  const [options, setOptions] = useState<string[]>([]);
+  const [isLoadingOptions, setIsLoadingOptions] = useState(true);
+
+  // Generate AI-powered multiple choice options for the current card
+  const generateAIOptions = async (card: typeof currentCard) => {
+    if (!card?.definition?.correctDefinition) {
+      // Fallback to simple options if no correct definition
+      setOptions([
+        "A general vocabulary term",
+        "A word with multiple meanings",
+        "An important concept to learn",
+        "A term used in academic contexts"
+      ]);
+      setIsLoadingOptions(false);
+      return;
+    }
+
+    try {
+      setIsLoadingOptions(true);
+      const response = await apiRequest("POST", "/api/ai/multiple-choice", {
+        word: card.word.word,
+        correctDefinition: card.definition.correctDefinition
+      });
+      const questionData = await response.json();
+      setOptions(questionData.options);
+    } catch (error) {
+      console.error("Error generating multiple choice options:", error);
+      // Fallback options
+      setOptions([
+        card.definition.correctDefinition,
+        "A type of tool or equipment used in various activities",
+        "A concept related to human behavior and psychology", 
+        "A process or method used to achieve specific outcomes"
+      ]);
+    } finally {
+      setIsLoadingOptions(false);
+    }
   };
 
-  const [options] = useState(() => generateOptions());
+  // Generate options when component mounts or current card changes
+  useEffect(() => {
+    if (currentCard) {
+      generateAIOptions(currentCard);
+    }
+  }, [currentCard]);
 
   // Mark card as learned mutation
   const markLearnedMutation = useMutation({
@@ -85,9 +114,10 @@ export function LearnMode({ cards, onSessionComplete }: LearnModeProps) {
   });
 
   const handleSubmitAnswer = () => {
+    const correctAnswer = currentCard.definition.correctDefinition;
     const isCorrect = questionType === "multiple-choice" 
-      ? selectedAnswer === currentCard.definition.studentDefinition
-      : writtenAnswer.toLowerCase().trim() === currentCard.definition.studentDefinition.toLowerCase().trim();
+      ? selectedAnswer === correctAnswer
+      : writtenAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
 
     setSessionStats(prev => ({
       ...prev,
@@ -111,6 +141,7 @@ export function LearnMode({ cards, onSessionComplete }: LearnModeProps) {
       setShowAnswer(false);
       setConfidence(3);
       setQuestionType(Math.random() > 0.5 ? "multiple-choice" : "written");
+      // Options will be regenerated automatically by useEffect
     } else {
       completeSession();
     }
@@ -186,18 +217,30 @@ export function LearnMode({ cards, onSessionComplete }: LearnModeProps) {
         
         <CardContent className="space-y-6">
           {questionType === "multiple-choice" ? (
-            <RadioGroup value={selectedAnswer} onValueChange={setSelectedAnswer}>
-              <div className="space-y-3">
-                {options.map((option, index) => (
-                  <div key={index} className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-gray-50">
-                    <RadioGroupItem value={option} id={`option-${index}`} />
-                    <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer">
-                      {option}
-                    </Label>
+            <div>
+              {isLoadingOptions ? (
+                <div className="space-y-3">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="p-3 rounded-lg border bg-gray-100 animate-pulse">
+                      <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <RadioGroup value={selectedAnswer} onValueChange={setSelectedAnswer}>
+                  <div className="space-y-3">
+                    {options.map((option, index) => (
+                      <div key={index} className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-gray-50">
+                        <RadioGroupItem value={option} id={`option-${index}`} />
+                        <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer">
+                          {option}
+                        </Label>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </RadioGroup>
+                </RadioGroup>
+              )}
+            </div>
           ) : (
             <div className="space-y-4">
               <Label htmlFor="written-answer">Type your answer:</Label>
@@ -246,8 +289,8 @@ export function LearnMode({ cards, onSessionComplete }: LearnModeProps) {
             >
               <div className="flex items-start space-x-3">
                 {(questionType === "multiple-choice" 
-                    ? selectedAnswer === currentCard.definition.studentDefinition
-                    : writtenAnswer.toLowerCase().trim() === currentCard.definition.studentDefinition.toLowerCase().trim()
+                    ? selectedAnswer === currentCard.definition.correctDefinition
+                    : writtenAnswer.toLowerCase().trim() === currentCard.definition.correctDefinition.toLowerCase().trim()
                   ) ? (
                   <CheckCircle className="h-6 w-6 text-green-500 flex-shrink-0 mt-0.5" />
                 ) : (
@@ -256,19 +299,13 @@ export function LearnMode({ cards, onSessionComplete }: LearnModeProps) {
                 <div className="flex-1">
                   <div className="font-medium text-gray-900 mb-2">
                     {(questionType === "multiple-choice" 
-                        ? selectedAnswer === currentCard.definition.studentDefinition
-                        : writtenAnswer.toLowerCase().trim() === currentCard.definition.studentDefinition.toLowerCase().trim()
+                        ? selectedAnswer === currentCard.definition.correctDefinition
+                        : writtenAnswer.toLowerCase().trim() === currentCard.definition.correctDefinition.toLowerCase().trim()
                       ) ? "Correct!" : "Not quite right"}
                   </div>
                   <div className="text-sm text-gray-600">
-                    <strong>Correct definition:</strong> {currentCard.definition.studentDefinition}
+                    <strong>Correct definition:</strong> {currentCard.definition.correctDefinition || "No definition provided"}
                   </div>
-                  {currentCard.definition.showCorrectDefinition && 
-                   currentCard.definition.correctDefinition && (
-                    <div className="text-sm text-gray-600 mt-2">
-                      <strong>Teacher's definition:</strong> {currentCard.definition.correctDefinition}
-                    </div>
-                  )}
                 </div>
               </div>
             </motion.div>
@@ -279,10 +316,10 @@ export function LearnMode({ cards, onSessionComplete }: LearnModeProps) {
             {!showAnswer ? (
               <Button 
                 onClick={handleSubmitAnswer}
-                disabled={questionType === "multiple-choice" ? !selectedAnswer : !writtenAnswer.trim()}
+                disabled={isLoadingOptions || (questionType === "multiple-choice" ? !selectedAnswer : !writtenAnswer.trim())}
                 className="px-8"
               >
-                Submit Answer
+                {isLoadingOptions ? "Loading..." : "Submit Answer"}
               </Button>
             ) : (
               <Button onClick={nextQuestion} className="px-8">
