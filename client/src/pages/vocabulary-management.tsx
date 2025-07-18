@@ -84,8 +84,14 @@ export default function VocabularyManagement() {
 
   // Mutation to publish/unpublish a vocabulary list
   const publishMutation = useMutation({
-    mutationFn: async ({ id, published }: { id: number; published: boolean }) => {
-      const res = await apiRequest("PATCH", `/api/vocabulary-lists/${id}`, { published });
+    mutationFn: async ({ id, published, classId }: { id: number; published: boolean; classId?: number }) => {
+      // Preserve the existing class assignment when publishing/unpublishing
+      const payload: any = { published };
+      if (classId !== undefined) {
+        payload.classId = classId;
+      }
+      
+      const res = await apiRequest("PATCH", `/api/vocabulary-lists/${id}`, payload);
       return res.json();
     },
     onSuccess: () => {
@@ -137,7 +143,15 @@ export default function VocabularyManagement() {
   };
 
   const handlePublishToggle = (id: number, currentPublished: boolean) => {
-    publishMutation.mutate({ id, published: !currentPublished });
+    // Find the list to get its current class assignment
+    const list = vocabularyLists.find(l => l.id === id);
+    const classId = list?.classId || list?.class?.id;
+    
+    publishMutation.mutate({ 
+      id, 
+      published: !currentPublished,
+      classId: classId 
+    });
   };
 
   // Handle edit action
