@@ -327,6 +327,8 @@ export class DatabaseStorage {
           submittedAt: true,
           gradedAt: true,
           isRedo: true,
+          isDiscarded: true,
+          discardReason: true,
           createdAt: true
         }
       });
@@ -350,6 +352,8 @@ export class DatabaseStorage {
           submittedAt: true,
           gradedAt: true,
           isRedo: true,
+          isDiscarded: true,
+          discardReason: true,
           createdAt: true
         }
       });
