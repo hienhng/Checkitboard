@@ -234,7 +234,7 @@ export const resetPasswordSchema = z.object({
 export const insertVocabularyListSchema = createInsertSchema(vocabularyLists, {
   title: (schema) => schema.min(3, "Title must be at least 3 characters"),
   passage: (schema) => schema.min(10, "Passage must be at least 10 characters"),
-}).omit({ id: true, createdAt: true, published: true });
+}).omit({ id: true, createdAt: true });
 
 export const insertVocabularyWordSchema = createInsertSchema(vocabularyWords, {
   word: (schema) => schema.min(1, "Word cannot be empty"),

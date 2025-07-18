@@ -84,8 +84,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         educatorId: req.user.id,
         // If dueDate is provided, ensure it's a valid date object
-        dueDate: req.body.dueDate ? new Date(req.body.dueDate) : undefined
+        dueDate: req.body.dueDate ? new Date(req.body.dueDate) : undefined,
+        // Explicitly include classId if provided
+        classId: req.body.classId || null
       };
+
+      console.log("Creating vocabulary list with data:", {
+        title: requestData.title,
+        classId: requestData.classId,
+        published: requestData.published
+      });
 
       const validatedData = insertVocabularyListSchema.parse(requestData);
 

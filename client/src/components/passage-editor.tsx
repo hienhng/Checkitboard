@@ -237,7 +237,8 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
       passage,
       words: selectedWords,
       dueDate: dueDate,
-      classId: classId
+      classId: classId,
+      published: false
     });
   };
 
