@@ -36,16 +36,16 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
   const passageRef = useRef<HTMLDivElement>(null);
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
 
-  // Schema for form validation - now requiring at least one class
+  // Schema for form validation - requiring a single class
   const formSchema = z.object({
-    classIds: z.array(z.number()).min(1, "At least one class must be selected"),
+    classId: z.number().min(1, "Please select a class"),
   });
 
   // Form for class selection
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      classIds: [],
+      classId: 0,
     }
   });
 
@@ -56,7 +56,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
     words: string[];
     dueDate?: Date;
     published?: boolean;
-    classIds: number[];
+    classId: number;
   };
 
   // Mutation to create a new vocabulary list
@@ -219,25 +219,25 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
     }
 
     // Validate class selection
-    const result = await form.trigger("classIds");
+    const result = await form.trigger("classId");
     if (!result) {
       toast({
         title: "Class selection required",
-        description: "Please select at least one class to assign this vocabulary list.",
+        description: "Please select a class to assign this vocabulary list.",
         variant: "destructive",
       });
       return;
     }
 
-    // Get the class IDs from the form
-    const { classIds } = form.getValues();
+    // Get the class ID from the form
+    const { classId } = form.getValues();
 
     createListMutation.mutate({
       title,
       passage,
       words: selectedWords,
       dueDate: dueDate,
-      classIds: classIds
+      classId: classId
     });
   };
 
@@ -252,25 +252,25 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
     }
 
     // Validate class selection
-    const result = await form.trigger("classIds");
+    const result = await form.trigger("classId");
     if (!result) {
       toast({
         title: "Class selection required",
-        description: "Please select at least one class to assign this vocabulary list.",
+        description: "Please select a class to assign this vocabulary list.",
         variant: "destructive",
       });
       return;
     }
 
-    // Get the class IDs from the form
-    const { classIds } = form.getValues();
+    // Get the class ID from the form
+    const { classId } = form.getValues();
 
     createListMutation.mutate({
       title,
       passage,
       words: selectedWords,
       dueDate: dueDate,
-      classIds: classIds,
+      classId: classId,
       published: true
     });
   };
@@ -324,10 +324,10 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
 
           <ClassSelect
             formControl={form.control}
-            name="classIds"
-            label="Assign to Classes *"
-            description="Select one or more classes to assign this vocabulary list."
-            multiple={true}
+            name="classId"
+            label="Assign to Class *"
+            description="Select a class to assign this vocabulary list."
+            multiple={false}
             required={true}
           />
 
