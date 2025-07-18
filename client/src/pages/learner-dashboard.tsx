@@ -321,7 +321,7 @@ function LearnerDashboard() {
                                       )}
                                       {isGraded && !isDiscarded && (
                                         <Badge className="bg-green-100 text-green-800 text-xs">
-                                          {list.submission.score}% - Graded
+                                           Graded
                                         </Badge>
                                       )}
                                       {isCompleted && !isGraded && !isDiscarded && (
