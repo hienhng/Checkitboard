@@ -167,8 +167,16 @@ export default function ClassListsPage() {
                 <div className="flex justify-between items-center">
                   <CardTitle>{list.title}</CardTitle>
                   {list.submission ? (
-                    list.submission.completed ? (
-                      <Badge className="bg-green-100 text-green-800">Completed</Badge>
+                    list.submission.isDiscarded ? (
+                      <Badge className="bg-red-100 text-red-800">Abandoned</Badge>
+                    ) : list.submission.completed ? (
+                      list.submission.gradedAt ? (
+                        <Badge className="bg-green-100 text-green-800">
+                          {list.submission.score}% - Graded
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-yellow-100 text-yellow-800">Pending Grade</Badge>
+                      )
                     ) : (
                       <Badge variant="outline">In Progress</Badge>
                     )
@@ -205,7 +213,24 @@ export default function ClassListsPage() {
                 </div>
               </CardContent>
               <CardFooter className="border-t bg-muted/20">
-                {list.submission?.completed ? (
+                {list.submission?.isDiscarded ? (
+                  <div className="w-full">
+                    <Button 
+                      asChild 
+                      className="w-full mb-2"
+                      variant="outline"
+                    >
+                      <Link to={`/learner/vocabulary/${list.id}`}>
+                        View Words
+                      </Link>
+                    </Button>
+                    {list.submission.discardReason && (
+                      <p className="text-xs text-red-600 text-center italic">
+                        Reason: {list.submission.discardReason}
+                      </p>
+                    )}
+                  </div>
+                ) : list.submission?.completed ? (
                   <Button 
                     asChild 
                     className="w-full"

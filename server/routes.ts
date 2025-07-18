@@ -1607,24 +1607,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Get the student's submissions for these lists
         const studentSubmissions = await Promise.all(
           lists.map(async (list) => {
-            // Get latest submission - completed or not
-            const submission = await db.query.submissions.findFirst({
-              where: and(
-                eq(submissions.studentId, req.user!.id),
-                eq(submissions.listId, list.id)
-              ),
-              orderBy: [desc(submissions.createdAt)],
-              columns: {
-                id: true,
-                completed: true
-              }
-            });
+            // Get latest submission - completed or not, using the storage function that includes all fields
+            const submission = await storage.getSubmissionByStudentAndList(req.user!.id, list.id, false);
             
             return {
               ...list,
               submission: submission ? {
                 id: submission.id,
-                completed: submission.completed
+                completed: submission.completed,
+                score: submission.score,
+                submittedAt: submission.submittedAt,
+                gradedAt: submission.gradedAt,
+                isDiscarded: submission.isDiscarded || false,
+                discardReason: submission.discardReason || null
               } : null
             };
           })

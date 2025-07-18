@@ -190,7 +190,7 @@ function LearnerDashboard() {
                                     <p className="font-medium text-gray-900">{list.title}</p>
                                     {isDiscarded && (
                                       <Badge className="bg-red-100 text-red-800 text-xs">
-                                        Abandoned
+                                        Discarded
                                       </Badge>
                                     )}
                                     {isGraded && !isDiscarded && (
@@ -316,7 +316,7 @@ function LearnerDashboard() {
                                       <h4 className="font-medium text-neutral-dark">{list.title}</h4>
                                       {isDiscarded && (
                                         <Badge className="bg-red-100 text-red-800 text-xs">
-                                          Abandoned
+                                          Discarded
                                         </Badge>
                                       )}
                                       {isGraded && !isDiscarded && (
@@ -329,11 +329,7 @@ function LearnerDashboard() {
                                           Pending Grade
                                         </Badge>
                                       )}
-                                      {!isCompleted && (
-                                        <Badge className="bg-blue-100 text-blue-800 text-xs">
-                                          Not Started
-                                        </Badge>
-                                      )}
+                                      
                                     </div>
                                     <div className="space-y-1">
                                       <p className="text-sm text-gray-500">Due date: {formatDueDate(list.dueDate)}</p>
@@ -345,11 +341,7 @@ function LearnerDashboard() {
                                           Completed on: {new Date(list.submission.submittedAt).toLocaleDateString()}
                                         </p>
                                       )}
-                                      {isDiscarded && list.submission.discardReason && (
-                                        <p className="text-xs text-red-600 italic">
-                                          Reason: {list.submission.discardReason}
-                                        </p>
-                                      )}
+                                      
                                     </div>
                                   </div>
                                   <div className="text-gray-400 group-hover:text-primary transition-colors">
