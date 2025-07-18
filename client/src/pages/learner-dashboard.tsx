@@ -37,6 +37,11 @@ interface VocabularyList {
   submission?: {
     id: number;
     completed: boolean;
+    isDiscarded?: boolean;
+    discardReason?: string;
+    score?: number;
+    gradedAt?: string | Date;
+    submittedAt?: string | Date;
   };
   educator?: {
     id: number;
@@ -166,12 +171,14 @@ function LearnerDashboard() {
                         <div className="space-y-2">
                           {filteredVocabularyLists.map(list => {
                             const isCompleted = list.submission && list.submission.completed;
+                            const isDiscarded = list.submission && list.submission.isDiscarded;
                             const isGraded = isCompleted && list.submission.gradedAt;
                             
                             return (
                               <div 
                                 key={list.id} 
                                 className={`flex justify-between items-center p-3 rounded-md cursor-pointer transition-colors ${
+                                  isDiscarded ? 'bg-red-50 hover:bg-red-100' :
                                   isGraded ? 'bg-green-50 hover:bg-green-100' :
                                   isCompleted ? 'bg-yellow-50 hover:bg-yellow-100' :
                                   'bg-blue-50 hover:bg-blue-100'
@@ -181,12 +188,17 @@ function LearnerDashboard() {
                                 <div>
                                   <div className="flex items-center gap-2">
                                     <p className="font-medium text-gray-900">{list.title}</p>
-                                    {isGraded && (
+                                    {isDiscarded && (
+                                      <Badge className="bg-red-100 text-red-800 text-xs">
+                                        Abandoned
+                                      </Badge>
+                                    )}
+                                    {isGraded && !isDiscarded && (
                                       <Badge className="bg-green-100 text-green-800 text-xs">
                                         {list.submission.score}% - Graded
                                       </Badge>
                                     )}
-                                    {isCompleted && !isGraded && (
+                                    {isCompleted && !isGraded && !isDiscarded && (
                                       <Badge className="bg-yellow-100 text-yellow-800 text-xs">
                                         Pending
                                       </Badge>
@@ -285,12 +297,14 @@ function LearnerDashboard() {
                           <div className="space-y-2">
                             {filteredVocabularyLists.map(list => {
                               const isCompleted = list.submission && list.submission.completed;
+                              const isDiscarded = list.submission && list.submission.isDiscarded;
                               const isGraded = isCompleted && list.submission.gradedAt;
                               
                               return (
                                 <div 
                                   key={list.id} 
                                   className={`flex justify-between items-center mt-2 p-4 rounded-lg cursor-pointer transition-colors group ${
+                                    isDiscarded ? 'bg-red-50 hover:bg-red-100 border-red-200' :
                                     isGraded ? 'bg-green-50 hover:bg-green-100' :
                                     isCompleted ? 'bg-yellow-50 hover:bg-yellow-100' :
                                     'bg-white hover:bg-blue-100'
@@ -300,12 +314,17 @@ function LearnerDashboard() {
                                   <div className="flex-1">
                                     <div className="flex items-center gap-2 mb-1">
                                       <h4 className="font-medium text-neutral-dark">{list.title}</h4>
-                                      {isGraded && (
+                                      {isDiscarded && (
+                                        <Badge className="bg-red-100 text-red-800 text-xs">
+                                          Abandoned
+                                        </Badge>
+                                      )}
+                                      {isGraded && !isDiscarded && (
                                         <Badge className="bg-green-100 text-green-800 text-xs">
                                           {list.submission.score}% - Graded
                                         </Badge>
                                       )}
-                                      {isCompleted && !isGraded && (
+                                      {isCompleted && !isGraded && !isDiscarded && (
                                         <Badge className="bg-yellow-100 text-yellow-800 text-xs">
                                           Pending Grade
                                         </Badge>
@@ -324,6 +343,11 @@ function LearnerDashboard() {
                                       {isCompleted && (
                                         <p className="text-xs text-gray-500">
                                           Completed on: {new Date(list.submission.submittedAt).toLocaleDateString()}
+                                        </p>
+                                      )}
+                                      {isDiscarded && list.submission.discardReason && (
+                                        <p className="text-xs text-red-600 italic">
+                                          Reason: {list.submission.discardReason}
                                         </p>
                                       )}
                                     </div>

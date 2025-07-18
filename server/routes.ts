@@ -957,7 +957,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               completed: currentSubmission.completed || false,
               gradedAt: currentSubmission.gradedAt,
               score: currentSubmission.score,
-              submittedAt: currentSubmission.submittedAt
+              submittedAt: currentSubmission.submittedAt,
+              isDiscarded: currentSubmission.isDiscarded || false,
+              discardReason: currentSubmission.discardReason || null
             } : null,
             class: list.class ? {
               id: list.class.id,
@@ -1267,13 +1269,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "This submission is already completed" });
       }
 
-      // Update submission as completed, submitted, graded with 0% score
+      // Update submission as discarded with proper tracking
       const currentDate = new Date();
       const updatedSubmission = await storage.updateSubmission(submissionId, {
         completed: true,
         submittedAt: currentDate,
         gradedAt: currentDate,
-        score: 0
+        score: 0,
+        isDiscarded: true,
+        discardReason: discardReason
       });
       
       // Get full information about the list to use in notification
