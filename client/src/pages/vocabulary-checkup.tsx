@@ -63,6 +63,9 @@ export default function VocabularyCheckup() {
     enabled: submissionId > 0, // Only run query if we have a valid submission ID
   });
 
+  // Type guard for submission data to fix TypeScript issues
+  const submissionData = submission as any;
+
   // Get current word
   const currentWord = submissionData?.list?.words?.[currentWordIndex];
 
@@ -109,11 +112,6 @@ export default function VocabularyCheckup() {
       });
     },
   });
-
-
-
-  // Type guard for submission data to fix TypeScript issues
-  const submissionData = submission as any;
 
   // Mutation to submit a definition
   const definitionMutation = useMutation({
