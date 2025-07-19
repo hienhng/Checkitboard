@@ -179,6 +179,9 @@ Return only a JSON array of the words:
   }
 }
 
+// Export the groq client
+export { groq };
+
 /**
  * Generate a passage that includes all the provided vocabulary words using Groq
  */

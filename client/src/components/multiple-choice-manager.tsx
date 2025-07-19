@@ -15,7 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, HelpCircle } from "lucide-react";
+import { Plus, Edit, Trash2, HelpCircle, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const multipleChoiceSchema = z.object({
@@ -115,6 +115,32 @@ export function MultipleChoiceManager({ word }: MultipleChoiceManagerProps) {
     },
   });
 
+  const generateQuestionMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", `/api/ai/generate-question`, {
+        word: word.word,
+        definition: word.definition || "",
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      form.setValue("question", data.question);
+      form.setValue("optionA", data.optionA);
+      form.setValue("optionB", data.optionB);
+      form.setValue("optionC", data.optionC);
+      form.setValue("optionD", data.optionD);
+      form.setValue("correctAnswer", data.correctAnswer);
+      toast({ title: "AI question generated successfully" });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error generating question",
+        description: error.message || "Failed to generate AI question",
+        variant: "destructive",
+      });
+    },
+  });
+
   useEffect(() => {
     if (editingQuestion) {
       form.reset({
@@ -174,18 +200,55 @@ export function MultipleChoiceManager({ word }: MultipleChoiceManagerProps) {
           <h3 className="text-lg font-semibold">Multiple Choice Questions</h3>
           <Badge variant="outline">{questions.length} questions</Badge>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setEditingQuestion(null)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Question
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => {
+              setEditingQuestion(null);
+              setIsDialogOpen(true);
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Question
+          </Button>
+          
+          <Button 
+            onClick={() => {
+              setEditingQuestion(null);
+              setIsDialogOpen(true);
+              setTimeout(() => generateQuestionMutation.mutate(), 100);
+            }}
+            variant="outline"
+            className="border-purple-200 hover:bg-purple-50 hover:border-purple-300"
+            disabled={generateQuestionMutation.isPending}
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            {generateQuestionMutation.isPending ? "Generating..." : "Generate with AI"}
+          </Button>
+        </div>
+      </div>
+
+      <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
+        <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>
                 {editingQuestion ? "Edit" : "Create"} Multiple Choice Question for "{word.word}"
               </DialogTitle>
+              {!editingQuestion && (
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => generateQuestionMutation.mutate()}
+                    disabled={generateQuestionMutation.isPending}
+                    className="flex items-center gap-2"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    {generateQuestionMutation.isPending ? "Generating..." : "Generate with AI"}
+                  </Button>
+                </div>
+              )}
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -301,16 +364,35 @@ export function MultipleChoiceManager({ word }: MultipleChoiceManagerProps) {
                 </div>
               </form>
             </Form>
-          </DialogContent>
-        </Dialog>
-      </div>
+        </DialogContent>
+      </Dialog>
 
       {questions.length === 0 ? (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
             <HelpCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>No multiple choice questions created yet.</p>
-            <p className="text-sm">Add questions to help students test their understanding of this word.</p>
+            <p className="text-sm mb-4">Add questions to help students test their understanding of this word.</p>
+            <div className="flex gap-2 justify-center">
+              <Button 
+                onClick={() => setIsDialogOpen(true)} 
+                variant="outline"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create Manually
+              </Button>
+              <Button 
+                onClick={() => {
+                  setIsDialogOpen(true);
+                  setTimeout(() => generateQuestionMutation.mutate(), 100);
+                }}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+                disabled={generateQuestionMutation.isPending}
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                {generateQuestionMutation.isPending ? "Generating..." : "Generate with AI"}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ) : (

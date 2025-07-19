@@ -15,6 +15,7 @@ import {
   generateLearningStrategies,
   generatePassageFromWords
 } from "./ai";
+import { generateMultipleChoiceQuestion } from "./ai-questions";
 import { eq, and, desc, isNull, asc, not, inArray, sql } from "drizzle-orm";
 
 import { db, pool } from "../db";
@@ -2603,6 +2604,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.error("Error generating learning strategies:", error);
       res.status(500).json({ message: "Error generating learning strategies" });
+    }
+  });
+
+  // Generate AI multiple choice question
+  app.post("/api/ai/generate-question", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "educator") {
+        return res.status(403).json({ message: "Only educators can generate questions" });
+      }
+
+      const { word, definition } = req.body;
+      
+      if (!word) {
+        return res.status(400).json({ message: "Word is required" });
+      }
+
+      const question = await generateMultipleChoiceQuestion({ word, definition });
+      res.json(question);
+    } catch (error: any) {
+      console.error("Error generating question:", error);
+      res.status(500).json({ message: error.message || "Failed to generate question" });
     }
   });
   // #endregion
