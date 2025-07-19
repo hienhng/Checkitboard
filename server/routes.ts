@@ -603,13 +603,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/vocabulary-words/:wordId/multiple-choice", async (req, res) => {
     try {
       if (!req.isAuthenticated()) {
+        console.log("Multiple choice API: User not authenticated");
         return res.status(401).json({ message: "Not authenticated" });
       }
 
       const wordId = parseInt(req.params.wordId);
       if (isNaN(wordId)) {
+        console.log("Multiple choice API: Invalid word ID", req.params.wordId);
         return res.status(400).json({ message: "Invalid word ID" });
       }
+
+      console.log(`Multiple choice API: Fetching questions for word ${wordId} by user ${req.user.id} (${req.user.role})`);
 
       // Verify the word exists and user has permission to view it
       const word = await db.query.vocabularyWords.findFirst({
@@ -620,13 +624,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       if (!word) {
+        console.log("Multiple choice API: Word not found", wordId);
         return res.status(404).json({ message: "Vocabulary word not found" });
       }
+
+      console.log(`Multiple choice API: Found word "${word.word}" in list "${word.list.title}" (listId: ${word.list.id})`);
 
       // Check if user has access to this word (educator who owns it or student enrolled in the class)
       let hasAccess = false;
       if (req.user.role === "educator" && word.list.educatorId === req.user.id) {
         hasAccess = true;
+        console.log("Multiple choice API: Access granted - educator owns list");
       } else if (req.user.role === "learner" && word.list.classId) {
         // Check if student is enrolled in the class
         const enrollment = await db.query.studentClass.findFirst({
@@ -637,9 +645,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           )
         });
         hasAccess = !!enrollment;
+        console.log(`Multiple choice API: Access ${hasAccess ? 'granted' : 'denied'} - student enrollment check for class ${word.list.classId}`);
       }
 
       if (!hasAccess) {
+        console.log("Multiple choice API: Access denied for user", req.user.id);
         return res.status(403).json({ message: "You don't have permission to view questions for this word" });
       }
 
@@ -648,6 +658,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orderBy: asc(multipleChoiceQuestions.createdAt)
       });
 
+      console.log(`Multiple choice API: Found ${questions.length} questions for word ${wordId}`);
       res.json(questions);
     } catch (error) {
       console.error("Error fetching multiple choice questions:", error);

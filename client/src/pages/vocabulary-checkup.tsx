@@ -614,6 +614,11 @@ export default function VocabularyCheckup() {
                           <>
                             <div className="text-sm text-red-600 bg-red-50 p-2 rounded mb-4">
                               Error loading questions: {mcQuestionsError?.message || "Unknown error"}
+                              {mcQuestionsError?.message === "Failed to fetch" && (
+                                <div className="mt-2 text-xs">
+                                  Please refresh the page and log in again.
+                                </div>
+                              )}
                             </div>
                             <p className="text-sm text-gray-500 mb-2">
                               Write what you think this word means, or skip if you don't know.
