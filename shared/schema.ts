@@ -68,6 +68,29 @@ export const vocabularyWords = pgTable("vocabulary_words", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Multiple Choice Questions for vocabulary words
+export const multipleChoiceQuestions = pgTable("multiple_choice_questions", {
+  id: serial("id").primaryKey(),
+  wordId: integer("word_id").references(() => vocabularyWords.id).notNull(),
+  question: text("question").notNull(),
+  correctAnswer: text("correct_answer").notNull(),
+  optionA: text("option_a").notNull(),
+  optionB: text("option_b").notNull(),
+  optionC: text("option_c").notNull(),
+  optionD: text("option_d").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Student answers to multiple choice questions
+export const multipleChoiceAnswers = pgTable("multiple_choice_answers", {
+  id: serial("id").primaryKey(),
+  submissionId: integer("submission_id").references(() => submissions.id).notNull(),
+  questionId: integer("question_id").references(() => multipleChoiceQuestions.id).notNull(),
+  selectedAnswer: text("selected_answer").notNull(),
+  isCorrect: boolean("is_correct").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Student Submissions
 export const submissions = pgTable("submissions", {
   id: serial("id").primaryKey(),
@@ -157,6 +180,7 @@ export const vocabularyWordsRelations = relations(vocabularyWords, ({ one, many 
   }),
   definitions: many(wordDefinitions),
   flashcards: many(flashcards),
+  multipleChoiceQuestions: many(multipleChoiceQuestions),
 }));
 
 export const submissionsRelations = relations(submissions, ({ one, many }) => ({
@@ -169,6 +193,7 @@ export const submissionsRelations = relations(submissions, ({ one, many }) => ({
     references: [vocabularyLists.id],
   }),
   wordDefinitions: many(wordDefinitions),
+  multipleChoiceAnswers: many(multipleChoiceAnswers),
 }));
 
 export const wordDefinitionsRelations = relations(wordDefinitions, ({ one, many }) => ({
@@ -195,6 +220,25 @@ export const flashcardsRelations = relations(flashcards, ({ one }) => ({
   definition: one(wordDefinitions, {
     fields: [flashcards.definitionId],
     references: [wordDefinitions.id],
+  }),
+}));
+
+export const multipleChoiceQuestionsRelations = relations(multipleChoiceQuestions, ({ one, many }) => ({
+  word: one(vocabularyWords, {
+    fields: [multipleChoiceQuestions.wordId],
+    references: [vocabularyWords.id],
+  }),
+  answers: many(multipleChoiceAnswers),
+}));
+
+export const multipleChoiceAnswersRelations = relations(multipleChoiceAnswers, ({ one }) => ({
+  submission: one(submissions, {
+    fields: [multipleChoiceAnswers.submissionId],
+    references: [submissions.id],
+  }),
+  question: one(multipleChoiceQuestions, {
+    fields: [multipleChoiceAnswers.questionId],
+    references: [multipleChoiceQuestions.id],
   }),
 }));
 
@@ -265,6 +309,23 @@ export const insertClassSchema = createInsertSchema(classes, {
 
 export const insertStudentClassSchema = createInsertSchema(studentClass).omit({ id: true, createdAt: true, status: true });
 
+export const insertMultipleChoiceQuestionSchema = createInsertSchema(multipleChoiceQuestions, {
+  question: (schema) => schema.min(5, "Question must be at least 5 characters"),
+  correctAnswer: (schema) => schema.refine((val) => ["A", "B", "C", "D"].includes(val), {
+    message: "Correct answer must be A, B, C, or D",
+  }),
+  optionA: (schema) => schema.min(1, "Option A cannot be empty"),
+  optionB: (schema) => schema.min(1, "Option B cannot be empty"),
+  optionC: (schema) => schema.min(1, "Option C cannot be empty"),
+  optionD: (schema) => schema.min(1, "Option D cannot be empty"),
+}).omit({ id: true, createdAt: true });
+
+export const insertMultipleChoiceAnswerSchema = createInsertSchema(multipleChoiceAnswers, {
+  selectedAnswer: (schema) => schema.refine((val) => ["A", "B", "C", "D"].includes(val), {
+    message: "Selected answer must be A, B, C, or D",
+  }),
+}).omit({ id: true, createdAt: true, isCorrect: true });
+
 // Schema for join class request
 export const joinClassSchema = z.object({
   classCode: z.string().min(6, "Class code must be at least 6 characters"),
@@ -298,6 +359,10 @@ export type StudentClass = typeof studentClass.$inferSelect;
 export type InsertStudentClass = z.infer<typeof insertStudentClassSchema>;
 export type JoinClassRequest = z.infer<typeof joinClassSchema>;
 export type ClassRequestResponse = z.infer<typeof classRequestResponseSchema>;
+export type MultipleChoiceQuestion = typeof multipleChoiceQuestions.$inferSelect;
+export type InsertMultipleChoiceQuestion = z.infer<typeof insertMultipleChoiceQuestionSchema>;
+export type MultipleChoiceAnswer = typeof multipleChoiceAnswers.$inferSelect;
+export type InsertMultipleChoiceAnswer = z.infer<typeof insertMultipleChoiceAnswerSchema>;
 
 // Export select schemas
 export const selectUserSchema = createSelectSchema(users);
@@ -309,6 +374,8 @@ export const selectFlashcardSchema = createSelectSchema(flashcards);
 export const selectParentStudentSchema = createSelectSchema(parentStudent);
 export const selectClassSchema = createSelectSchema(classes);
 export const selectStudentClassSchema = createSelectSchema(studentClass);
+export const selectMultipleChoiceQuestionSchema = createSelectSchema(multipleChoiceQuestions);
+export const selectMultipleChoiceAnswerSchema = createSelectSchema(multipleChoiceAnswers);
 
 // Notifications table
 export const notifications = pgTable("notifications", {

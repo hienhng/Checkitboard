@@ -30,11 +30,15 @@ import {
   classRequestResponseSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  insertMultipleChoiceQuestionSchema,
+  insertMultipleChoiceAnswerSchema,
   vocabularyLists,
   vocabularyWords,
   submissions,
   wordDefinitions,
   flashcards,
+  multipleChoiceQuestions,
+  multipleChoiceAnswers,
   users,
   classes,
   studentClass,
@@ -358,7 +362,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         )
       `);
       
-      // 2. Delete flashcards related to words in this list
+      // 2. Delete multiple choice answers related to submissions for this list
+      await db.execute(sql`
+        DELETE FROM multiple_choice_answers 
+        WHERE submission_id IN (
+          SELECT id FROM submissions WHERE list_id = ${listId}
+        )
+      `);
+      
+      // 3. Delete multiple choice questions related to words in this list
+      await db.execute(sql`
+        DELETE FROM multiple_choice_questions 
+        WHERE word_id IN (
+          SELECT id FROM vocabulary_words WHERE list_id = ${listId}
+        )
+      `);
+      
+      // 4. Delete flashcards related to words in this list
       await db.execute(sql`
         DELETE FROM flashcards 
         WHERE word_id IN (
@@ -366,7 +386,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         )
       `);
       
-      // 3. Delete word definitions related to words in this list
+      // 5. Delete word definitions related to words in this list
       await db.execute(sql`
         DELETE FROM word_definitions 
         WHERE word_id IN (
@@ -374,17 +394,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         )
       `);
       
-      // 4. Delete submissions for this list
+      // 6. Delete submissions for this list
       await db.execute(sql`
         DELETE FROM submissions WHERE list_id = ${listId}
       `);
       
-      // 5. Delete vocabulary words in this list
+      // 7. Delete vocabulary words in this list
       await db.execute(sql`
         DELETE FROM vocabulary_words WHERE list_id = ${listId}
       `);
       
-      // 6. Finally delete the vocabulary list itself
+      // 8. Finally delete the vocabulary list itself
       await db.delete(vocabularyLists).where(eq(vocabularyLists.id, listId));
 
       res.json({ message: "Vocabulary list deleted successfully" });
@@ -527,6 +547,212 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.error("Error adding word to vocabulary list:", error);
       res.status(500).json({ message: "Error adding word to vocabulary list" });
+    }
+  });
+
+  // Create a multiple choice question for a vocabulary word
+  app.post("/api/vocabulary-words/:wordId/multiple-choice", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "educator") {
+        return res.status(403).json({ message: "Only educators can create multiple choice questions" });
+      }
+
+      const wordId = parseInt(req.params.wordId);
+      if (isNaN(wordId)) {
+        return res.status(400).json({ message: "Invalid word ID" });
+      }
+
+      // Verify the word exists and the educator has permission
+      const word = await db.query.vocabularyWords.findFirst({
+        where: eq(vocabularyWords.id, wordId),
+        with: {
+          list: true
+        }
+      });
+
+      if (!word) {
+        return res.status(404).json({ message: "Vocabulary word not found" });
+      }
+
+      if (word.list.educatorId !== req.user.id) {
+        return res.status(403).json({ message: "You don't have permission to create questions for this word" });
+      }
+
+      const validatedData = insertMultipleChoiceQuestionSchema.parse({
+        ...req.body,
+        wordId,
+      });
+
+      const [question] = await db.insert(multipleChoiceQuestions).values(validatedData).returning();
+      res.status(201).json(question);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+      console.error("Error creating multiple choice question:", error);
+      res.status(500).json({ message: "Error creating multiple choice question" });
+    }
+  });
+
+  // Get multiple choice questions for a vocabulary word
+  app.get("/api/vocabulary-words/:wordId/multiple-choice", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const wordId = parseInt(req.params.wordId);
+      if (isNaN(wordId)) {
+        return res.status(400).json({ message: "Invalid word ID" });
+      }
+
+      // Verify the word exists and user has permission to view it
+      const word = await db.query.vocabularyWords.findFirst({
+        where: eq(vocabularyWords.id, wordId),
+        with: {
+          list: true
+        }
+      });
+
+      if (!word) {
+        return res.status(404).json({ message: "Vocabulary word not found" });
+      }
+
+      // Check if user has access to this word (educator who owns it or student enrolled in the class)
+      let hasAccess = false;
+      if (req.user.role === "educator" && word.list.educatorId === req.user.id) {
+        hasAccess = true;
+      } else if (req.user.role === "learner" && word.list.classId) {
+        // Check if student is enrolled in the class
+        const enrollment = await db.query.studentClass.findFirst({
+          where: and(
+            eq(studentClass.studentId, req.user.id),
+            eq(studentClass.classId, word.list.classId),
+            eq(studentClass.status, "approved")
+          )
+        });
+        hasAccess = !!enrollment;
+      }
+
+      if (!hasAccess) {
+        return res.status(403).json({ message: "You don't have permission to view questions for this word" });
+      }
+
+      const questions = await db.query.multipleChoiceQuestions.findMany({
+        where: eq(multipleChoiceQuestions.wordId, wordId),
+        orderBy: asc(multipleChoiceQuestions.createdAt)
+      });
+
+      res.json(questions);
+    } catch (error) {
+      console.error("Error fetching multiple choice questions:", error);
+      res.status(500).json({ message: "Error fetching multiple choice questions" });
+    }
+  });
+
+  // Update a multiple choice question
+  app.patch("/api/multiple-choice/:questionId", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "educator") {
+        return res.status(403).json({ message: "Only educators can update multiple choice questions" });
+      }
+
+      const questionId = parseInt(req.params.questionId);
+      if (isNaN(questionId)) {
+        return res.status(400).json({ message: "Invalid question ID" });
+      }
+
+      // Verify the question exists and the educator has permission
+      const question = await db.query.multipleChoiceQuestions.findFirst({
+        where: eq(multipleChoiceQuestions.id, questionId),
+        with: {
+          word: {
+            with: {
+              list: true
+            }
+          }
+        }
+      });
+
+      if (!question) {
+        return res.status(404).json({ message: "Multiple choice question not found" });
+      }
+
+      if (question.word.list.educatorId !== req.user.id) {
+        return res.status(403).json({ message: "You don't have permission to update this question" });
+      }
+
+      const validatedData = insertMultipleChoiceQuestionSchema.partial().parse(req.body);
+      const [updatedQuestion] = await db
+        .update(multipleChoiceQuestions)
+        .set(validatedData)
+        .where(eq(multipleChoiceQuestions.id, questionId))
+        .returning();
+
+      res.json(updatedQuestion);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+      console.error("Error updating multiple choice question:", error);
+      res.status(500).json({ message: "Error updating multiple choice question" });
+    }
+  });
+
+  // Delete a multiple choice question
+  app.delete("/api/multiple-choice/:questionId", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "educator") {
+        return res.status(403).json({ message: "Only educators can delete multiple choice questions" });
+      }
+
+      const questionId = parseInt(req.params.questionId);
+      if (isNaN(questionId)) {
+        return res.status(400).json({ message: "Invalid question ID" });
+      }
+
+      // Verify the question exists and the educator has permission
+      const question = await db.query.multipleChoiceQuestions.findFirst({
+        where: eq(multipleChoiceQuestions.id, questionId),
+        with: {
+          word: {
+            with: {
+              list: true
+            }
+          }
+        }
+      });
+
+      if (!question) {
+        return res.status(404).json({ message: "Multiple choice question not found" });
+      }
+
+      if (question.word.list.educatorId !== req.user.id) {
+        return res.status(403).json({ message: "You don't have permission to delete this question" });
+      }
+
+      // Delete any answers to this question first
+      await db.delete(multipleChoiceAnswers).where(eq(multipleChoiceAnswers.questionId, questionId));
+      
+      // Delete the question
+      await db.delete(multipleChoiceQuestions).where(eq(multipleChoiceQuestions.id, questionId));
+
+      res.json({ message: "Multiple choice question deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting multiple choice question:", error);
+      res.status(500).json({ message: "Error deleting multiple choice question" });
     }
   });
 

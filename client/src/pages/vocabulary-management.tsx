@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils";
@@ -23,12 +24,15 @@ import {
   School,
   Trash2,
   Filter,
-  Edit
+  Edit,
+  Eye,
+  HelpCircle
 } from "lucide-react";
 
 export default function VocabularyManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
   const [selectedClass, setSelectedClass] = useState<string>("all");
   const [selectedLists, setSelectedLists] = useState<number[]>([]);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -307,6 +311,15 @@ export default function VocabularyManagement() {
                       </div>
                     </div>
                     <div className="ml-4 flex-shrink-0 flex items-center space-x-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => navigate(`/educator/vocabulary/${list.id}`)}
+                        className="flex items-center"
+                      >
+                        <Eye className="mr-1 h-3 w-3" />
+                        View
+                      </Button>
                       <Button 
                         variant="outline" 
                         size="sm"
