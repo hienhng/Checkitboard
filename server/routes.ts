@@ -1027,6 +1027,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           correctDefinition: z.string().optional(),
           showCorrectDefinition: z.boolean().optional(),
         })),
+        multipleChoiceAnswers: z.array(z.object({
+          answerId: z.number(),
+          isCorrect: z.boolean(),
+          addToFlashcards: z.boolean().optional(),
+        })).optional(),
         score: z.number().min(0).max(100),
       });
 
@@ -1051,6 +1056,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
               wordId: definition.wordId,
               definitionId: definition.id,
             });
+          }
+        }
+      }
+
+      // Update multiple choice answers if provided
+      if (validatedData.multipleChoiceAnswers) {
+        for (const mcAnswer of validatedData.multipleChoiceAnswers) {
+          await storage.gradeMultipleChoiceAnswer(
+            mcAnswer.answerId,
+            mcAnswer.isCorrect
+          );
+
+          // If adding to flashcards, create a flashcard
+          if (mcAnswer.addToFlashcards) {
+            const answer = await storage.getMultipleChoiceAnswer(mcAnswer.answerId);
+            if (answer) {
+              await storage.createFlashcard({
+                studentId: submission.studentId,
+                wordId: answer.question.wordId,
+                definitionId: null, // MC answers don't have definition IDs
+              });
+            }
           }
         }
       }

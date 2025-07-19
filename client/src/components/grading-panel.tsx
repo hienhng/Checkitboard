@@ -49,8 +49,14 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
       correctDefinition: string;
       showCorrectDefinition: boolean;
     }[];
+    multipleChoiceAnswers: {
+      answerId: number;
+      isCorrect: boolean;
+      addToFlashcards: boolean;
+    }[];
   }>({
     definitions: [],
+    multipleChoiceAnswers: [],
   });
   const [loadingAI, setLoadingAI] = useState<{ [key: number]: boolean }>({});
   const [aiGradingLoading, setAiGradingLoading] = useState(false);
@@ -117,6 +123,7 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
     onSuccess: (results) => {
       // Apply AI grading results
       setGradingData(prev => ({
+        ...prev,
         definitions: prev.definitions.map(def => {
           const result = results.find(r => r.definitionId === def.definitionId);
           if (result) {
@@ -148,32 +155,41 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
 
   // Set up initial grading data when submission is loaded
   useEffect(() => {
-    if (submission?.wordDefinitions) {
-      const definitions = submission.wordDefinitions.map((def) => {
+    if (submission?.wordDefinitions || submission?.multipleChoiceAnswers) {
+      const definitions = submission.wordDefinitions?.map((def) => {
         // Get word definition from vocab list if available, or create an empty one
         const wordDef = def.word.definition || '';
         
         return {
           definitionId: def.id,
-          isCorrect: false, // Default to incorrect
-          addToFlashcards: true, // Default to adding to flashcards if incorrect
-          correctDefinition: def.correctDefinition || wordDef, // Use existing or word definition
-          showCorrectDefinition: true, // Default to showing correct definition
+          isCorrect: def.isCorrect ?? false,
+          addToFlashcards: def.addedToFlashcards ?? true,
+          correctDefinition: def.correctDefinition || wordDef,
+          showCorrectDefinition: def.showCorrectDefinition ?? true,
         };
-      });
-      setGradingData({ definitions });
+      }) || [];
+
+      const multipleChoiceAnswers = submission.multipleChoiceAnswers?.map((answer) => ({
+        answerId: answer.id,
+        isCorrect: answer.isCorrect ?? false,
+        addToFlashcards: false,
+      })) || [];
+      
+      setGradingData({ definitions, multipleChoiceAnswers });
     }
   }, [submission]);
 
   // Update score whenever grading data changes
   useEffect(() => {
-    if (gradingData.definitions.length > 0 && submission?.wordDefinitions) {
-      const correctCount = gradingData.definitions.filter((def) => def.isCorrect).length;
-      const totalCount = gradingData.definitions.length;
-      const calculatedScore = Math.round((correctCount / totalCount) * 100);
+    const totalQuestions = gradingData.definitions.length + gradingData.multipleChoiceAnswers.length;
+    if (totalQuestions > 0) {
+      const correctDefinitions = gradingData.definitions.filter((def) => def.isCorrect).length;
+      const correctMCAnswers = gradingData.multipleChoiceAnswers.filter((mc) => mc.isCorrect).length;
+      const totalCorrect = correctDefinitions + correctMCAnswers;
+      const calculatedScore = Math.round((totalCorrect / totalQuestions) * 100);
       setScore(calculatedScore);
     }
-  }, [gradingData, submission]);
+  }, [gradingData]);
 
   // Mutation to submit grading
   const gradeMutation = useMutation({
@@ -184,6 +200,11 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
         addToFlashcards: boolean;
         correctDefinition: string;
         showCorrectDefinition: boolean;
+      }[];
+      multipleChoiceAnswers?: {
+        answerId: number;
+        isCorrect: boolean;
+        addToFlashcards: boolean;
       }[];
       score: number;
     }) => {
@@ -232,6 +253,7 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
 
   const handleToggleCorrect = (definitionId: number, isCorrect: boolean) => {
     setGradingData((prev) => ({
+      ...prev,
       definitions: prev.definitions.map((def) =>
         def.definitionId === definitionId
           ? { ...def, isCorrect }
@@ -240,8 +262,20 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
     }));
   };
 
+  const handleToggleMultipleChoiceCorrect = (answerId: number, isCorrect: boolean) => {
+    setGradingData((prev) => ({
+      ...prev,
+      multipleChoiceAnswers: prev.multipleChoiceAnswers.map((answer) =>
+        answer.answerId === answerId
+          ? { ...answer, isCorrect }
+          : answer
+      ),
+    }));
+  };
+
   const handleToggleFlashcard = (definitionId: number, addToFlashcards: boolean) => {
     setGradingData((prev) => ({
+      ...prev,
       definitions: prev.definitions.map((def) =>
         def.definitionId === definitionId
           ? { ...def, addToFlashcards }
@@ -250,8 +284,20 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
     }));
   };
 
+  const handleToggleMultipleChoiceFlashcard = (answerId: number, addToFlashcards: boolean) => {
+    setGradingData((prev) => ({
+      ...prev,
+      multipleChoiceAnswers: prev.multipleChoiceAnswers.map((answer) =>
+        answer.answerId === answerId
+          ? { ...answer, addToFlashcards }
+          : answer
+      ),
+    }));
+  };
+
   const handleCorrectDefinitionChange = (definitionId: number, correctDefinition: string) => {
     setGradingData((prev) => ({
+      ...prev,
       definitions: prev.definitions.map((def) =>
         def.definitionId === definitionId
           ? { ...def, correctDefinition }
@@ -262,6 +308,7 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
   
   const handleToggleShowCorrection = (definitionId: number, showCorrectDefinition: boolean) => {
     setGradingData((prev) => ({
+      ...prev,
       definitions: prev.definitions.map((def) =>
         def.definitionId === definitionId
           ? { ...def, showCorrectDefinition }
@@ -316,6 +363,7 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
 
     gradeMutation.mutate({
       definitions: gradingData.definitions,
+      multipleChoiceAnswers: gradingData.multipleChoiceAnswers.length > 0 ? gradingData.multipleChoiceAnswers : undefined,
       score,
     });
   };
@@ -540,6 +588,122 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
               ))}
             </div>
           </div>
+
+          {/* Multiple Choice Questions Section */}
+          {submission.multipleChoiceAnswers && submission.multipleChoiceAnswers.length > 0 && (
+            <div className="mt-8">
+              <h4 className="text-sm font-medium text-neutral-dark mb-4">Multiple Choice Questions:</h4>
+              <div className="space-y-4">
+                {submission.multipleChoiceAnswers.map((answer) => {
+                  const question = answer.question;
+                  const isCorrect = gradingData.multipleChoiceAnswers.find(mc => mc.answerId === answer.id)?.isCorrect ?? false;
+                  const addToFlashcards = gradingData.multipleChoiceAnswers.find(mc => mc.answerId === answer.id)?.addToFlashcards ?? false;
+                  
+                  return (
+                    <Card key={answer.id} className="shadow-sm">
+                      <CardHeader className="py-3 px-4">
+                        <div className="flex justify-between items-center">
+                          <CardTitle className="text-md">{question.word.word}</CardTitle>
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className={`
+                                ${isCorrect 
+                                  ? 'bg-green-100 text-green-700 border-green-200 hover:bg-green-200' 
+                                  : 'bg-white hover:bg-green-50 text-gray-700'}
+                              `}
+                              onClick={() => handleToggleMultipleChoiceCorrect(answer.id, true)}
+                            >
+                              <Check className="h-4 w-4 mr-1" />
+                              Correct
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className={`
+                                ${!isCorrect 
+                                  ? 'bg-red-100 text-red-700 border-red-200 hover:bg-red-200' 
+                                  : 'bg-white hover:bg-red-50 text-gray-700'}
+                              `}
+                              onClick={() => handleToggleMultipleChoiceCorrect(answer.id, false)}
+                            >
+                              <X className="h-4 w-4 mr-1" />
+                              Incorrect
+                            </Button>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="py-3 px-4 border-t border-gray-200">
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-sm font-medium text-gray-700 mb-2">Question:</p>
+                            <p className="text-sm text-gray-800">{question.question}</p>
+                          </div>
+                          
+                          <div>
+                            <p className="text-sm font-medium text-gray-700 mb-2">Answer Options:</p>
+                            <div className="space-y-1 ml-4">
+                              {[
+                                { label: 'A', text: question.optionA },
+                                { label: 'B', text: question.optionB },
+                                { label: 'C', text: question.optionC },
+                                { label: 'D', text: question.optionD }
+                              ].map((option) => (
+                                <div key={option.label} className={`flex items-center space-x-2 ${
+                                  answer.selectedAnswer === option.label ? 'font-medium text-blue-700' : 'text-gray-600'
+                                } ${
+                                  question.correctAnswer === option.label ? 'bg-green-50 rounded px-2 py-1' : ''
+                                }`}>
+                                  <span className="text-sm font-mono">{option.label})</span>
+                                  <span className="text-sm">{option.text}</span>
+                                  {answer.selectedAnswer === option.label && (
+                                    <Badge variant="outline" className="text-xs">Student's Choice</Badge>
+                                  )}
+                                  {question.correctAnswer === option.label && (
+                                    <Badge variant="outline" className="text-xs bg-green-100 text-green-700">Correct Answer</Badge>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          
+                          <div className="pt-2 border-t border-gray-100">
+                            <div className="flex items-center justify-between">
+                              <div className="text-sm">
+                                <span className="font-medium">Student selected:</span> 
+                                <span className={`ml-1 font-mono ${
+                                  answer.selectedAnswer === question.correctAnswer ? 'text-green-600' : 'text-red-600'
+                                }`}>
+                                  {answer.selectedAnswer}
+                                </span>
+                                <span className="mx-2">|</span>
+                                <span className="font-medium">Correct answer:</span> 
+                                <span className="ml-1 font-mono text-green-600">{question.correctAnswer}</span>
+                              </div>
+                              
+                              {!isCorrect && (
+                                <div className="flex items-center space-x-2">
+                                  <Switch
+                                    id={`flashcard-mc-${answer.id}`}
+                                    checked={addToFlashcards}
+                                    onCheckedChange={(checked) => handleToggleMultipleChoiceFlashcard(answer.id, checked)}
+                                  />
+                                  <Label htmlFor={`flashcard-mc-${answer.id}`} className="text-sm cursor-pointer">
+                                    Add to flashcards
+                                  </Label>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
       

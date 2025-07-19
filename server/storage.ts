@@ -11,6 +11,7 @@ import {
   studentClass,
   notifications,
   fullscreenExits,
+  multipleChoiceAnswers,
   InsertUser,
   InsertVocabularyList,
   InsertVocabularyWord,
@@ -310,6 +311,15 @@ export class DatabaseStorage {
             word: true,
           },
         },
+        multipleChoiceAnswers: {
+          with: {
+            question: {
+              with: {
+                word: true,
+              },
+            },
+          },
+        },
       },
     });
   }
@@ -547,6 +557,29 @@ export class DatabaseStorage {
       .where(eq(wordDefinitions.id, id))
       .returning();
     return updatedDefinition;
+  }
+
+  // Grade a multiple choice answer
+  async gradeMultipleChoiceAnswer(answerId: number, isCorrect: boolean) {
+    const [updatedAnswer] = await db.update(multipleChoiceAnswers)
+      .set({ isCorrect })
+      .where(eq(multipleChoiceAnswers.id, answerId))
+      .returning();
+    return updatedAnswer;
+  }
+
+  // Get a multiple choice answer with question details
+  async getMultipleChoiceAnswer(answerId: number) {
+    return await db.query.multipleChoiceAnswers.findFirst({
+      where: eq(multipleChoiceAnswers.id, answerId),
+      with: {
+        question: {
+          columns: {
+            wordId: true,
+          },
+        },
+      },
+    });
   }
 
   // Flashcard methods
