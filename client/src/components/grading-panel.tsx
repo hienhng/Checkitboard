@@ -646,43 +646,67 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
                           
                           <div>
                             <p className="text-sm font-medium text-gray-700 mb-2">Answer Options:</p>
-                            <div className="space-y-1 ml-4">
+                            <div className="space-y-2 ml-4">
                               {[
                                 { label: 'A', text: question.optionA },
                                 { label: 'B', text: question.optionB },
                                 { label: 'C', text: question.optionC },
                                 { label: 'D', text: question.optionD }
                               ].map((option) => (
-                                <div key={option.label} className={`flex items-center space-x-2 ${
-                                  answer.selectedAnswer === option.label ? 'font-medium text-blue-700' : 'text-gray-600'
-                                } ${
-                                  question.correctAnswer === option.label ? 'bg-green-50 rounded px-2 py-1' : ''
+                                <div key={option.label} className={`flex items-center space-x-3 p-2 rounded-md border ${
+                                  answer.selectedAnswer === option.label 
+                                    ? 'border-blue-300 bg-blue-50 font-medium text-blue-800' 
+                                    : question.correctAnswer === option.label
+                                    ? 'border-green-300 bg-green-50 text-green-800'
+                                    : 'border-gray-200 bg-gray-50 text-gray-700'
                                 }`}>
-                                  <span className="text-sm font-mono">{option.label})</span>
-                                  <span className="text-sm">{option.text}</span>
-                                  {answer.selectedAnswer === option.label && (
-                                    <Badge variant="outline" className="text-xs">Student's Choice</Badge>
-                                  )}
-                                  {question.correctAnswer === option.label && (
-                                    <Badge variant="outline" className="text-xs bg-green-100 text-green-700">Correct Answer</Badge>
-                                  )}
+                                  <span className="text-sm font-mono font-bold">{option.label})</span>
+                                  <span className="text-sm flex-1">{option.text}</span>
+                                  <div className="flex space-x-1">
+                                    {answer.selectedAnswer === option.label && (
+                                      <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-300">
+                                        Student Selected
+                                      </Badge>
+                                    )}
+                                    {question.correctAnswer === option.label && (
+                                      <Badge variant="outline" className="text-xs bg-green-100 text-green-700 border-green-300">
+                                        Correct Answer
+                                      </Badge>
+                                    )}
+                                  </div>
                                 </div>
                               ))}
                             </div>
                           </div>
                           
-                          <div className="pt-2 border-t border-gray-100">
+                          <div className="pt-3 border-t border-gray-200">
                             <div className="flex items-center justify-between">
-                              <div className="text-sm">
-                                <span className="font-medium">Student selected:</span> 
-                                <span className={`ml-1 font-mono ${
-                                  answer.selectedAnswer === question.correctAnswer ? 'text-green-600' : 'text-red-600'
-                                }`}>
-                                  {answer.selectedAnswer}
-                                </span>
-                                <span className="mx-2">|</span>
-                                <span className="font-medium">Correct answer:</span> 
-                                <span className="ml-1 font-mono text-green-600">{question.correctAnswer}</span>
+                              <div className="bg-gray-50 px-3 py-2 rounded-md">
+                                <div className="flex items-center space-x-4 text-sm">
+                                  <div className="flex items-center space-x-1">
+                                    <span className="font-medium text-gray-700">Student selected:</span> 
+                                    <span className={`font-mono font-bold px-2 py-1 rounded ${
+                                      answer.selectedAnswer === question.correctAnswer 
+                                        ? 'bg-green-100 text-green-800' 
+                                        : 'bg-red-100 text-red-800'
+                                    }`}>
+                                      {answer.selectedAnswer}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center space-x-1">
+                                    <span className="font-medium text-gray-700">Correct answer:</span> 
+                                    <span className="font-mono font-bold px-2 py-1 rounded bg-green-100 text-green-800">
+                                      {question.correctAnswer}
+                                    </span>
+                                  </div>
+                                  <div className={`px-2 py-1 rounded text-xs font-medium ${
+                                    answer.selectedAnswer === question.correctAnswer
+                                      ? 'bg-green-100 text-green-800'
+                                      : 'bg-red-100 text-red-800'
+                                  }`}>
+                                    {answer.selectedAnswer === question.correctAnswer ? '✓ Correct' : '✗ Incorrect'}
+                                  </div>
+                                </div>
                               </div>
                               
                               {!isCorrect && (
