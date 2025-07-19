@@ -32,8 +32,8 @@ export default function VocabularyDetails() {
     queryKey: ["/api/vocabulary-lists", listId],
     queryFn: async () => {
       if (!listId) return null;
-      const response = await apiRequest(`/api/vocabulary-lists/${listId}`);
-      return response;
+      const response = await apiRequest("GET", `/api/vocabulary-lists/${listId}`);
+      return response.json();
     },
     enabled: !!listId
   });
@@ -61,7 +61,7 @@ export default function VocabularyDetails() {
         <div className="container max-w-6xl mx-auto py-8 text-center">
           <h1 className="text-2xl font-bold mb-4">Vocabulary List Not Found</h1>
           <p className="text-muted-foreground mb-6">The vocabulary list you're looking for doesn't exist or you don't have access to it.</p>
-          <Button onClick={() => navigate("/educator/vocabulary")}>Return to Vocabulary Management</Button>
+          <Button onClick={() => navigate("/educator/assignments")}>Return to Vocabulary Management</Button>
         </div>
       </div>
     );
@@ -72,7 +72,7 @@ export default function VocabularyDetails() {
       <Navbar />
       <div className="container max-w-6xl mx-auto py-8">
         <div className="mb-6">
-          <Button variant="ghost" onClick={() => navigate("/educator/vocabulary")} className="mb-4">
+          <Button variant="ghost" onClick={() => navigate("/educator/assignments")} className="mb-4">
             <ChevronLeft className="mr-2 h-4 w-4" />
             Back to Vocabulary Management
           </Button>

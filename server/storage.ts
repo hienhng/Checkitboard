@@ -117,6 +117,12 @@ export class DatabaseStorage {
             email: true,
           },
         },
+        class: {
+          columns: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
   }

@@ -57,11 +57,10 @@ export function MultipleChoiceManager({ word }: MultipleChoiceManagerProps) {
   });
 
   const createQuestionMutation = useMutation({
-    mutationFn: (data: MultipleChoiceFormData) =>
-      apiRequest(`/api/vocabulary-words/${word.id}/multiple-choice`, {
-        method: "POST",
-        body: JSON.stringify(data),
-      }),
+    mutationFn: async (data: MultipleChoiceFormData) => {
+      const response = await apiRequest("POST", `/api/vocabulary-words/${word.id}/multiple-choice`, data);
+      return response.json();
+    },
     onSuccess: () => {
       toast({ title: "Multiple choice question created successfully" });
       queryClient.invalidateQueries({ queryKey: [`/api/vocabulary-words/${word.id}/multiple-choice`] });
@@ -78,11 +77,10 @@ export function MultipleChoiceManager({ word }: MultipleChoiceManagerProps) {
   });
 
   const updateQuestionMutation = useMutation({
-    mutationFn: ({ questionId, data }: { questionId: number; data: Partial<MultipleChoiceFormData> }) =>
-      apiRequest(`/api/multiple-choice/${questionId}`, {
-        method: "PATCH",
-        body: JSON.stringify(data),
-      }),
+    mutationFn: async ({ questionId, data }: { questionId: number; data: Partial<MultipleChoiceFormData> }) => {
+      const response = await apiRequest("PATCH", `/api/multiple-choice/${questionId}`, data);
+      return response.json();
+    },
     onSuccess: () => {
       toast({ title: "Question updated successfully" });
       queryClient.invalidateQueries({ queryKey: [`/api/vocabulary-words/${word.id}/multiple-choice`] });
@@ -100,8 +98,10 @@ export function MultipleChoiceManager({ word }: MultipleChoiceManagerProps) {
   });
 
   const deleteQuestionMutation = useMutation({
-    mutationFn: (questionId: number) =>
-      apiRequest(`/api/multiple-choice/${questionId}`, { method: "DELETE" }),
+    mutationFn: async (questionId: number) => {
+      const response = await apiRequest("DELETE", `/api/multiple-choice/${questionId}`);
+      return response.json();
+    },
     onSuccess: () => {
       toast({ title: "Question deleted successfully" });
       queryClient.invalidateQueries({ queryKey: [`/api/vocabulary-words/${word.id}/multiple-choice`] });
