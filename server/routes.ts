@@ -2631,6 +2631,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: error.message || "Failed to generate question" });
     }
   });
+
+  // Submit multiple choice answer for a question (learner)
+  app.post("/api/submissions/:submissionId/multiple-choice-answer", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "learner") {
+        return res.status(403).json({ message: "Only learners can submit answers" });
+      }
+
+      const submissionId = parseInt(req.params.submissionId);
+      const { questionId, selectedAnswer } = req.body;
+
+      if (isNaN(submissionId) || !questionId || !selectedAnswer) {
+        return res.status(400).json({ message: "Valid submission ID, question ID, and selected answer are required" });
+      }
+
+      // Verify the submission belongs to the current user
+      const submission = await db.query.submissions.findFirst({
+        where: eq(submissions.id, submissionId)
+      });
+
+      if (!submission) {
+        return res.status(404).json({ message: "Submission not found" });
+      }
+
+      if (submission.studentId !== req.user.id) {
+        return res.status(403).json({ message: "You don't have permission to submit answers for this submission" });
+      }
+
+      if (submission.completed) {
+        return res.status(400).json({ message: "Cannot submit answers for a completed submission" });
+      }
+
+      // Get the question to validate and check correctness
+      const question = await db.query.multipleChoiceQuestions.findFirst({
+        where: eq(multipleChoiceQuestions.id, questionId)
+      });
+
+      if (!question) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+
+      const isCorrect = question.correctAnswer === selectedAnswer;
+
+      // Check if an answer already exists for this question and submission
+      const existingAnswer = await db.query.multipleChoiceAnswers.findFirst({
+        where: and(
+          eq(multipleChoiceAnswers.submissionId, submissionId),
+          eq(multipleChoiceAnswers.questionId, questionId)
+        )
+      });
+
+      let answerRecord;
+      if (existingAnswer) {
+        // Update existing answer
+        [answerRecord] = await db.update(multipleChoiceAnswers)
+          .set({
+            selectedAnswer,
+            isCorrect
+          })
+          .where(eq(multipleChoiceAnswers.id, existingAnswer.id))
+          .returning();
+      } else {
+        // Create new answer
+        [answerRecord] = await db.insert(multipleChoiceAnswers)
+          .values({
+            submissionId,
+            questionId,
+            selectedAnswer,
+            isCorrect
+          })
+          .returning();
+      }
+
+      res.status(201).json(answerRecord);
+    } catch (error) {
+      console.error("Error saving multiple choice answer:", error);
+      res.status(500).json({ message: "Error saving multiple choice answer" });
+    }
+  });
   // #endregion
 
   // #region Notification Routes
