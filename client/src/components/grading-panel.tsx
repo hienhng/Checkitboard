@@ -181,10 +181,13 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
 
   // Update score whenever grading data changes
   useEffect(() => {
-    const totalQuestions = gradingData.definitions.length + gradingData.multipleChoiceAnswers.length;
+    const definitionsLength = gradingData.definitions?.length || 0;
+    const mcAnswersLength = gradingData.multipleChoiceAnswers?.length || 0;
+    const totalQuestions = definitionsLength + mcAnswersLength;
+    
     if (totalQuestions > 0) {
-      const correctDefinitions = gradingData.definitions.filter((def) => def.isCorrect).length;
-      const correctMCAnswers = gradingData.multipleChoiceAnswers.filter((mc) => mc.isCorrect).length;
+      const correctDefinitions = gradingData.definitions?.filter((def) => def.isCorrect).length || 0;
+      const correctMCAnswers = gradingData.multipleChoiceAnswers?.filter((mc) => mc.isCorrect).length || 0;
       const totalCorrect = correctDefinitions + correctMCAnswers;
       const calculatedScore = Math.round((totalCorrect / totalQuestions) * 100);
       setScore(calculatedScore);
@@ -265,7 +268,7 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
   const handleToggleMultipleChoiceCorrect = (answerId: number, isCorrect: boolean) => {
     setGradingData((prev) => ({
       ...prev,
-      multipleChoiceAnswers: prev.multipleChoiceAnswers.map((answer) =>
+      multipleChoiceAnswers: (prev.multipleChoiceAnswers || []).map((answer) =>
         answer.answerId === answerId
           ? { ...answer, isCorrect }
           : answer
@@ -287,7 +290,7 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
   const handleToggleMultipleChoiceFlashcard = (answerId: number, addToFlashcards: boolean) => {
     setGradingData((prev) => ({
       ...prev,
-      multipleChoiceAnswers: prev.multipleChoiceAnswers.map((answer) =>
+      multipleChoiceAnswers: (prev.multipleChoiceAnswers || []).map((answer) =>
         answer.answerId === answerId
           ? { ...answer, addToFlashcards }
           : answer
@@ -363,7 +366,7 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
 
     gradeMutation.mutate({
       definitions: gradingData.definitions,
-      multipleChoiceAnswers: gradingData.multipleChoiceAnswers.length > 0 ? gradingData.multipleChoiceAnswers : undefined,
+      multipleChoiceAnswers: (gradingData.multipleChoiceAnswers?.length || 0) > 0 ? gradingData.multipleChoiceAnswers : undefined,
       score,
     });
   };
