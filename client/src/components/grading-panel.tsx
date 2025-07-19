@@ -257,7 +257,7 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
   const handleToggleCorrect = (definitionId: number, isCorrect: boolean) => {
     setGradingData((prev) => ({
       ...prev,
-      definitions: prev.definitions.map((def) =>
+      definitions: (prev.definitions || []).map((def) =>
         def.definitionId === definitionId
           ? { ...def, isCorrect }
           : def
@@ -279,7 +279,7 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
   const handleToggleFlashcard = (definitionId: number, addToFlashcards: boolean) => {
     setGradingData((prev) => ({
       ...prev,
-      definitions: prev.definitions.map((def) =>
+      definitions: (prev.definitions || []).map((def) =>
         def.definitionId === definitionId
           ? { ...def, addToFlashcards }
           : def
@@ -301,7 +301,7 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
   const handleCorrectDefinitionChange = (definitionId: number, correctDefinition: string) => {
     setGradingData((prev) => ({
       ...prev,
-      definitions: prev.definitions.map((def) =>
+      definitions: (prev.definitions || []).map((def) =>
         def.definitionId === definitionId
           ? { ...def, correctDefinition }
           : def
@@ -312,7 +312,7 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
   const handleToggleShowCorrection = (definitionId: number, showCorrectDefinition: boolean) => {
     setGradingData((prev) => ({
       ...prev,
-      definitions: prev.definitions.map((def) =>
+      definitions: (prev.definitions || []).map((def) =>
         def.definitionId === definitionId
           ? { ...def, showCorrectDefinition }
           : def
@@ -424,25 +424,26 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
                 <Progress value={score} className="h-2" />
                 <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
                   <span>
-                    {gradingData.definitions.filter(d => d.isCorrect).length}/
-                    {gradingData.definitions.length} correct
+                    {gradingData.definitions?.filter(d => d.isCorrect).length || 0}/
+                    {gradingData.definitions?.length || 0} correct
                   </span>
                   <div className="flex items-center space-x-2">
                     <Button
                       variant="link"
                       className="p-0 h-auto text-xs"
                       onClick={() => {
-                        const allCorrect = gradingData.definitions.every(d => d.isCorrect);
+                        const allCorrect = gradingData.definitions?.every(d => d.isCorrect) || false;
                         setGradingData(prev => ({
-                          definitions: prev.definitions.map(def => ({
+                          ...prev,
+                          definitions: prev.definitions?.map(def => ({
                             ...def,
                             isCorrect: !allCorrect,
                             addToFlashcards: allCorrect
-                          }))
+                          })) || []
                         }));
                       }}
                     >
-                      {gradingData.definitions.every(d => d.isCorrect) ? "Mark all incorrect" : "Mark all correct"}
+                      {gradingData.definitions?.every(d => d.isCorrect) ? "Mark all incorrect" : "Mark all correct"}
                     </Button>
                     <div className="text-gray-300">|</div>
                     <Button
@@ -488,7 +489,7 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
                           variant="outline"
                           size="sm"
                           className={`
-                            ${gradingData.definitions.find(d => d.definitionId === definition.id)?.isCorrect 
+                            ${gradingData.definitions?.find(d => d.definitionId === definition.id)?.isCorrect 
                               ? 'bg-green-100 text-green-700 border-green-200 hover:bg-green-200' 
                               : 'bg-white hover:bg-green-50 text-gray-700'}
                           `}
@@ -501,7 +502,7 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
                           variant="outline"
                           size="sm"
                           className={`
-                            ${!gradingData.definitions.find(d => d.definitionId === definition.id)?.isCorrect 
+                            ${!gradingData.definitions?.find(d => d.definitionId === definition.id)?.isCorrect 
                               ? 'bg-red-100 text-red-700 border-red-200 hover:bg-red-200' 
                               : 'bg-white hover:bg-red-50 text-gray-700'}
                           `}
@@ -544,17 +545,17 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
                           <div className="mt-1">
                             <Input
                               id={`correct-def-${definition.id}`}
-                              value={gradingData.definitions.find(d => d.definitionId === definition.id)?.correctDefinition || ''}
+                              value={gradingData.definitions?.find(d => d.definitionId === definition.id)?.correctDefinition || ''}
                               onChange={(e) => handleCorrectDefinitionChange(definition.id, e.target.value)}
                               className={`text-sm ${
-                                !gradingData.definitions.find(d => d.definitionId === definition.id)?.correctDefinition?.trim()
+                                !gradingData.definitions?.find(d => d.definitionId === definition.id)?.correctDefinition?.trim()
                                   ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
                                   : ''
                               }`}
                               placeholder="Provide the correct definition... (required)"
                               required
                             />
-                            {!gradingData.definitions.find(d => d.definitionId === definition.id)?.correctDefinition?.trim() && (
+                            {!gradingData.definitions?.find(d => d.definitionId === definition.id)?.correctDefinition?.trim() && (
                               <p className="text-xs text-red-500 mt-1">Correct definition is required</p>
                             )}
                           </div>
@@ -562,7 +563,7 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
                             <div className="flex items-center space-x-2">
                               <Switch
                                 id={`show-def-${definition.id}`}
-                                checked={gradingData.definitions.find(d => d.definitionId === definition.id)?.showCorrectDefinition || false}
+                                checked={gradingData.definitions?.find(d => d.definitionId === definition.id)?.showCorrectDefinition || false}
                                 onCheckedChange={(checked) => handleToggleShowCorrection(definition.id, checked)}
                               />
                               <Label htmlFor={`show-def-${definition.id}`} className="text-sm cursor-pointer">
@@ -572,12 +573,12 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
                           </div>
                         </div>
                       
-                      {!gradingData.definitions.find(d => d.definitionId === definition.id)?.isCorrect && (
+                      {!gradingData.definitions?.find(d => d.definitionId === definition.id)?.isCorrect && (
                         <div className="flex items-center justify-between pt-2">
                           <div className="flex items-center space-x-2">
                             <Switch
                               id={`flashcard-${definition.id}`}
-                              checked={gradingData.definitions.find(d => d.definitionId === definition.id)?.addToFlashcards || false}
+                              checked={gradingData.definitions?.find(d => d.definitionId === definition.id)?.addToFlashcards || false}
                               onCheckedChange={(checked) => handleToggleFlashcard(definition.id, checked)}
                             />
                             <Label htmlFor={`flashcard-${definition.id}`} className="text-sm cursor-pointer">
@@ -601,8 +602,8 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
               <div className="space-y-4">
                 {submission.multipleChoiceAnswers.map((answer) => {
                   const question = answer.question;
-                  const isCorrect = gradingData.multipleChoiceAnswers.find(mc => mc.answerId === answer.id)?.isCorrect ?? false;
-                  const addToFlashcards = gradingData.multipleChoiceAnswers.find(mc => mc.answerId === answer.id)?.addToFlashcards ?? false;
+                  const isCorrect = gradingData.multipleChoiceAnswers?.find(mc => mc.answerId === answer.id)?.isCorrect ?? false;
+                  const addToFlashcards = gradingData.multipleChoiceAnswers?.find(mc => mc.answerId === answer.id)?.addToFlashcards ?? false;
                   
                   return (
                     <Card key={answer.id} className="shadow-sm">
