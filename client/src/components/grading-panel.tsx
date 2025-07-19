@@ -172,7 +172,7 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
       const multipleChoiceAnswers = submission.multipleChoiceAnswers?.map((answer) => ({
         answerId: answer.id,
         isCorrect: answer.isCorrect ?? false,
-        addToFlashcards: false,
+        addToFlashcards: answer.addedToFlashcards ?? false,
       })) || [];
       
       setGradingData({ definitions, multipleChoiceAnswers });
@@ -378,6 +378,8 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
   if (!submission) {
     return <div className="p-6 text-center">Submission not found.</div>;
   }
+
+
 
   return (
     <div className="px-4 py-5 sm:p-6">
