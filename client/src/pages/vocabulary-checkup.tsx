@@ -70,11 +70,25 @@ export default function VocabularyCheckup() {
   const currentWord = submissionData?.list?.words?.[currentWordIndex];
 
   // Get multiple choice questions for current word
-  const { data: multipleChoiceQuestions } = useQuery({
+  const { data: multipleChoiceQuestions, isLoading: mcQuestionsLoading, error: mcQuestionsError } = useQuery({
     queryKey: [`/api/vocabulary-words/${currentWord?.id}/multiple-choice`],
     queryFn: getQueryFn({ on401: "returnNull" }),
     enabled: !!currentWord?.id,
+    retry: 1,
+    staleTime: 0, // Always refetch to ensure fresh data
   });
+
+  // Debug logging for multiple choice questions
+  useEffect(() => {
+    console.log("Multiple Choice Debug:", {
+      currentWordId: currentWord?.id,
+      currentWord: currentWord?.word,
+      multipleChoiceQuestions,
+      mcQuestionsLoading,
+      mcQuestionsError,
+      hasMultipleChoiceQuestions: multipleChoiceQuestions && multipleChoiceQuestions.length > 0
+    });
+  }, [currentWord, multipleChoiceQuestions, mcQuestionsLoading, mcQuestionsError]);
 
   console.log("Frontend debug:", { submissionId, submission, isLoading, error });
   
@@ -240,6 +254,17 @@ export default function VocabularyCheckup() {
   }, [currentWordIndex, savedDefinitions, submissionData?.list?.words]);
 
   const hasMultipleChoiceQuestions = multipleChoiceQuestions && multipleChoiceQuestions.length > 0;
+
+  console.log("MCQS Debug - Current State:", {
+    currentWordIndex,
+    currentWordId: currentWord?.id,
+    currentWordText: currentWord?.word,
+    mcQuestionsArray: multipleChoiceQuestions,
+    mcQuestionsLength: multipleChoiceQuestions?.length,
+    hasMultipleChoiceQuestions,
+    mcQuestionsLoading,
+    mcQuestionsError: mcQuestionsError?.message
+  });
 
   const handleNext = async () => {
     if (!submissionData?.list?.words) return;
@@ -525,7 +550,12 @@ export default function VocabularyCheckup() {
                           {currentWord.word}
                         </label>
                         
-                        {hasMultipleChoiceQuestions ? (
+                        {mcQuestionsLoading ? (
+                          <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+                            <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                            Loading questions...
+                          </div>
+                        ) : hasMultipleChoiceQuestions ? (
                           <>
                             <p className="text-sm text-gray-500 mb-4">
                               Choose the best answer for each question about this word.
@@ -579,6 +609,15 @@ export default function VocabularyCheckup() {
                                 </div>
                               ))}
                             </div>
+                          </>
+                        ) : mcQuestionsError ? (
+                          <>
+                            <div className="text-sm text-red-600 bg-red-50 p-2 rounded mb-4">
+                              Error loading questions: {mcQuestionsError?.message || "Unknown error"}
+                            </div>
+                            <p className="text-sm text-gray-500 mb-2">
+                              Write what you think this word means, or skip if you don't know.
+                            </p>
                           </>
                         ) : (
                           <>
