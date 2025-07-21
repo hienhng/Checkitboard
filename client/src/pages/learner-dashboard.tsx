@@ -568,7 +568,7 @@ function LearnerDashboard() {
                           <div className="w-full flex justify-between items-center">
                             <CardTitle className="text-xl flex items-center">
                               <StickyNote className="mr-2 h-5 w-5" />
-                              Sticky Notes Board
+                              My Canvas
                             </CardTitle>
                             <Badge variant="secondary" className="bg-white/20 text-white">
                               {stickyNotes?.length || 0} notes
