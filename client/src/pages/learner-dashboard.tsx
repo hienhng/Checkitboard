@@ -15,7 +15,11 @@ import {
   Eye,
   Brain,
   Search,
-  Users
+  Users,
+  StickyNote,
+  BookMarked,
+  ArrowRight,
+  Plus
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getQueryFn, apiRequest } from "@/lib/queryClient";
@@ -99,6 +103,18 @@ function LearnerDashboard() {
   // Fetch the student's classes
   const { data: classes = [], isLoading: classesLoading } = useQuery<any[]>({
     queryKey: ["/api/learner/classes"],
+    queryFn: getQueryFn({ on401: "throw" }),
+  });
+
+  // Fetch personalized explore words for glossary preview
+  const { data: exploreData } = useQuery<any>({
+    queryKey: ["/api/explore/words"],
+    queryFn: getQueryFn({ on401: "throw" }),
+  });
+
+  // Fetch sticky notes for preview
+  const { data: stickyNotes } = useQuery<any[]>({
+    queryKey: ["/api/sticky-notes"],
     queryFn: getQueryFn({ on401: "throw" }),
   });
 
@@ -446,6 +462,176 @@ function LearnerDashboard() {
                         )}
                       </CardContent>
                     </Card>
+
+                    {/* Glossary and Sticky Notes Preview - Side by Side */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Personalized Glossary Preview */}
+                      <Card className="overflow-hidden">
+                        <CardHeader className="bg-gradient-to-r from-indigo-500 to-purple-600 p-4 pb-4 text-center text-white">
+                          <div className="w-full flex justify-between items-center">
+                            <CardTitle className="text-xl flex items-center">
+                              <BookMarked className="mr-2 h-5 w-5" />
+                              Personalized Glossary
+                            </CardTitle>
+                            <Badge variant="secondary" className="bg-white/20 text-white">
+                              {exploreData?.words?.length || 0} words
+                            </Badge>
+                          </div>
+                          <CardDescription className="text-indigo-100 mt-2">
+                            {exploreData?.personalized 
+                              ? "Words to review from your tests" 
+                              : "Vocabulary from your completed tests"
+                            }
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-4">
+                          {exploreData?.words?.length > 0 ? (
+                            <div className="space-y-3">
+                              {exploreData.words.slice(0, 4).map((word: any, index: number) => (
+                                <div key={index} className="flex items-start justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <h4 className="font-semibold text-indigo-600 dark:text-indigo-400 truncate">
+                                        {word.word}
+                                      </h4>
+                                      {word.isCorrect === false && (
+                                        <Badge variant="destructive" className="text-xs">
+                                          Review
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
+                                      {word.definition}
+                                    </p>
+                                    {word.listTitle && (
+                                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        From: {word.listTitle}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                              
+                              {exploreData.words.length > 4 && (
+                                <div className="text-center pt-2">
+                                  <p className="text-sm text-gray-500 mb-3">
+                                    Showing 4 of {exploreData.words.length} personalized words
+                                  </p>
+                                </div>
+                              )}
+                              
+                              <div className="text-center pt-2">
+                                <Button 
+                                  variant="outline"
+                                  className="w-full"
+                                  onClick={() => navigate('/explore')}
+                                >
+                                  <Brain className="mr-2 h-4 w-4" />
+                                  Explore All Words
+                                  <ArrowRight className="ml-2 h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-center py-6">
+                              <BookMarked className="mx-auto h-12 w-12 text-gray-300 mb-3" />
+                              <p className="text-sm text-gray-500 mb-3">
+                                Complete vocabulary tests to see personalized word suggestions here!
+                              </p>
+                              <Button 
+                                variant="outline"
+                                onClick={() => navigate('/explore')}
+                              >
+                                <Brain className="mr-2 h-4 w-4" />
+                                Explore Vocabulary
+                              </Button>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      {/* Sticky Notes Board Preview */}
+                      <Card className="overflow-hidden">
+                        <CardHeader className="bg-gradient-to-r from-yellow-400 to-orange-500 p-4 pb-4 text-center text-white">
+                          <div className="w-full flex justify-between items-center">
+                            <CardTitle className="text-xl flex items-center">
+                              <StickyNote className="mr-2 h-5 w-5" />
+                              Sticky Notes Board
+                            </CardTitle>
+                            <Badge variant="secondary" className="bg-white/20 text-white">
+                              {stickyNotes?.length || 0} notes
+                            </Badge>
+                          </div>
+                          <CardDescription className="text-yellow-100 mt-2">
+                            Your saved vocabulary words for quick review
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-4">
+                          {stickyNotes && stickyNotes.length > 0 ? (
+                            <div className="space-y-3">
+                              <div className="grid grid-cols-2 gap-2 max-h-64 overflow-hidden">
+                                {stickyNotes.slice(0, 6).map((note: any, index: number) => (
+                                  <div
+                                    key={note.id}
+                                    className={`p-3 rounded-lg border-2 shadow-sm transform rotate-${index % 2 === 0 ? '1' : '-1'} hover:rotate-0 transition-transform duration-200 cursor-pointer
+                                      ${index % 4 === 0 ? 'bg-yellow-200 border-yellow-300 text-yellow-900' :
+                                        index % 4 === 1 ? 'bg-pink-200 border-pink-300 text-pink-900' :
+                                        index % 4 === 2 ? 'bg-blue-200 border-blue-300 text-blue-900' :
+                                        'bg-green-200 border-green-300 text-green-900'}`}
+                                  >
+                                    <div className="text-sm font-semibold mb-1 truncate">
+                                      {note.word}
+                                    </div>
+                                    <div className="text-xs opacity-80 line-clamp-2">
+                                      {note.definition}
+                                    </div>
+                                    {note.learned && (
+                                      <div className="flex justify-end mt-1">
+                                        <CheckCircle className="h-3 w-3 text-green-600" />
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                              
+                              {stickyNotes && stickyNotes.length > 6 && (
+                                <div className="text-center pt-2">
+                                  <p className="text-sm text-gray-500 mb-3">
+                                    Showing 6 of {stickyNotes.length} sticky notes
+                                  </p>
+                                </div>
+                              )}
+                              
+                              <div className="text-center pt-2">
+                                <Button 
+                                  variant="outline"
+                                  className="w-full"
+                                  onClick={() => navigate('/sticky-notes')}
+                                >
+                                  <StickyNote className="mr-2 h-4 w-4" />
+                                  Open Cork Board
+                                  <ArrowRight className="ml-2 h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-center py-6">
+                              <StickyNote className="mx-auto h-12 w-12 text-gray-300 mb-3" />
+                              <p className="text-sm text-gray-500 mb-3">
+                                No sticky notes yet. Add vocabulary words to your board for quick review!
+                              </p>
+                              <Button 
+                                variant="outline"
+                                onClick={() => navigate('/sticky-notes')}
+                              >
+                                <Plus className="mr-2 h-4 w-4" />
+                                Create First Note
+                              </Button>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
                   </div>
                 </TabsContent>
                 

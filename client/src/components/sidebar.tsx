@@ -85,9 +85,9 @@ export function Sidebar() {
        
       ]
     : [
-        { href: "/learner/dashboard", label: "Dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
-        { href: "/explore", label: "Explore", icon: <BookOpen className="h-5 w-5" /> },
-        { href: "/sticky-notes", label: "Sticky Notes", icon: <StickyNote className="h-5 w-5" /> },
+        { href: "/learner/dashboard", label: "My Dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
+        { href: "/explore", label: "Glossary", icon: <BookOpen className="h-5 w-5" /> },
+        { href: "/sticky-notes", label: "My Canvas", icon: <StickyNote className="h-5 w-5" /> },
         { href: "/learner/flashcards", label: "Flashcards", icon: <Brain className="h-5 w-5" /> },
         { href: "/learner/analysis", label: "Analysis", icon: <ChartNoAxesCombinedIcon className="h-5 w-5" /> },
       ];
