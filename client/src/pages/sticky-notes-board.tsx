@@ -1,0 +1,502 @@
+import { useState, useRef, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger,
+  DialogFooter
+} from "@/components/ui/dialog";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { Search, Edit, Trash2, CheckCircle, Circle, StickyNote as StickyNoteIcon, BookOpen, Filter, Move, GripVertical } from "lucide-react";
+import { StickyNote } from "@shared/schema";
+import { cn } from "@/lib/utils";
+
+
+
+interface StickyNoteWithPosition extends StickyNote {
+  x?: number;
+  y?: number;
+}
+
+interface DragState {
+  isDragging: boolean;
+  noteId: number | null;
+  startX: number;
+  startY: number;
+  currentX: number;
+  currentY: number;
+}
+
+const STICKY_NOTE_COLORS = [
+  'bg-yellow-200 border-yellow-300 text-yellow-900',
+  'bg-pink-200 border-pink-300 text-pink-900', 
+  'bg-blue-200 border-blue-300 text-blue-900',
+  'bg-green-200 border-green-300 text-green-900',
+  'bg-purple-200 border-purple-300 text-purple-900',
+  'bg-orange-200 border-orange-300 text-orange-900',
+  'bg-red-200 border-red-300 text-red-900',
+  'bg-indigo-200 border-indigo-300 text-indigo-900'
+];
+
+// Generate random position within board boundaries
+const getRandomPosition = (boardWidth: number, boardHeight: number, index: number) => {
+  // Use index as seed for consistent positioning
+  const seedX = (index * 123) % 1000;
+  const seedY = (index * 456) % 1000;
+  
+  return {
+    x: Math.max(20, Math.min(boardWidth - 220, (seedX / 1000) * (boardWidth - 240) + 20)),
+    y: Math.max(20, Math.min(boardHeight - 180, (seedY / 1000) * (boardHeight - 200) + 20))
+  };
+};
+
+export default function StickyNotesBoard() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [showLearnedFilter, setShowLearnedFilter] = useState<"all" | "learned" | "learning">("all");
+  const [editingNote, setEditingNote] = useState<StickyNote | null>(null);
+  const [userNotes, setUserNotes] = useState("");
+  const [dragState, setDragState] = useState<DragState>({
+    isDragging: false,
+    noteId: null,
+    startX: 0,
+    startY: 0,
+    currentX: 0,
+    currentY: 0
+  });
+  const [notePositions, setNotePositions] = useState<Record<number, { x: number; y: number }>>({});
+  const boardRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+
+  const { data: stickyNotes = [], isLoading } = useQuery<StickyNote[]>({
+    queryKey: ["/api/sticky-notes"],
+  });
+
+  const deleteNoteMutation = useMutation({
+    mutationFn: (noteId: number) => apiRequest("DELETE", `/api/sticky-notes/${noteId}`),
+    onSuccess: () => {
+      toast({
+        title: "Note Deleted",
+        description: "Your sticky note has been removed.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/sticky-notes"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete note",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const updateNoteMutation = useMutation({
+    mutationFn: ({ noteId, updates }: { noteId: number; updates: Partial<StickyNote> }) =>
+      apiRequest("PATCH", `/api/sticky-notes/${noteId}`, updates),
+    onSuccess: () => {
+      toast({
+        title: "Note Updated",
+        description: "Your changes have been saved.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/sticky-notes"] });
+      setEditingNote(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update note",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const markAsLearnedMutation = useMutation({
+    mutationFn: ({ noteId, isLearned }: { noteId: number; isLearned: boolean }) =>
+      apiRequest("PATCH", `/api/sticky-notes/${noteId}`, { isLearned }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sticky-notes"] });
+    }
+  });
+
+  // Initialize random positions for notes
+  useEffect(() => {
+    if (stickyNotes.length > 0 && boardRef.current) {
+      const boardRect = boardRef.current.getBoundingClientRect();
+      const newPositions: Record<number, { x: number; y: number }> = {};
+      
+      stickyNotes.forEach((note, index) => {
+        if (!notePositions[note.id]) {
+          const position = getRandomPosition(boardRect.width, boardRect.height, index);
+          newPositions[note.id] = position;
+        }
+      });
+      
+      if (Object.keys(newPositions).length > 0) {
+        setNotePositions(prev => ({ ...prev, ...newPositions }));
+      }
+    }
+  }, [stickyNotes]);
+
+  const filteredNotes = stickyNotes.filter((note) => {
+    const matchesSearch = note.word.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         note.definition.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === "all" || note.category === selectedCategory;
+    const matchesLearned = showLearnedFilter === "all" || 
+                          (showLearnedFilter === "learned" && note.isLearned) ||
+                          (showLearnedFilter === "learning" && !note.isLearned);
+    return matchesSearch && matchesCategory && matchesLearned;
+  });
+
+  const categories = ["all", ...Array.from(new Set(stickyNotes.map((n) => n.category)))];
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case 'easy': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+      case 'medium': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+      case 'hard': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
+    }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent, noteId: number) => {
+    if (e.target instanceof HTMLElement && (
+      e.target.closest('button') || 
+      e.target.closest('[role="dialog"]') ||
+      e.target.closest('select')
+    )) {
+      return; // Don't start drag if clicking on interactive elements
+    }
+
+    e.preventDefault();
+    const rect = boardRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    setDragState({
+      isDragging: true,
+      noteId,
+      startX: e.clientX - rect.left,
+      startY: e.clientY - rect.top,
+      currentX: e.clientX - rect.left,
+      currentY: e.clientY - rect.top
+    });
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!dragState.isDragging || !boardRef.current) return;
+
+      const rect = boardRef.current.getBoundingClientRect();
+      const x = Math.max(0, Math.min(rect.width - 200, e.clientX - rect.left - 100));
+      const y = Math.max(0, Math.min(rect.height - 150, e.clientY - rect.top - 75));
+
+      setDragState(prev => ({
+        ...prev,
+        currentX: e.clientX - rect.left,
+        currentY: e.clientY - rect.top
+      }));
+
+      if (dragState.noteId) {
+        setNotePositions(prev => ({
+          ...prev,
+          [dragState.noteId!]: { x, y }
+        }));
+      }
+    };
+
+    const handleMouseUp = () => {
+      setDragState({
+        isDragging: false,
+        noteId: null,
+        startX: 0,
+        startY: 0,
+        currentX: 0,
+        currentY: 0
+      });
+    };
+
+    if (dragState.isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [dragState]);
+
+  const handleUpdateNote = (updates: Partial<StickyNote>) => {
+    if (!editingNote) return;
+    
+    updateNoteMutation.mutate({
+      noteId: editingNote.id,
+      updates
+    });
+  };
+
+  const learnedCount = stickyNotes.filter((n) => n.isLearned).length;
+  const totalCount = stickyNotes.length;
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto p-6 max-w-7xl">
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <StickyNoteIcon className="h-12 w-12 mx-auto mb-4 text-gray-400 animate-pulse" />
+            <p className="text-gray-600 dark:text-gray-400">Loading your sticky notes...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-screen flex flex-col bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700">
+      {/* Header */}
+      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 p-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <StickyNoteIcon className="h-8 w-8 text-yellow-600" />
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Sticky Notes</h1>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {totalCount} total • {learnedCount} learned • {totalCount - learnedCount} learning
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Search and Filter Controls */}
+          <div className="flex flex-wrap gap-4">
+            <div className="relative min-w-64">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                type="text"
+                placeholder="Search words or definitions..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filter by category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map(category => (
+                  <SelectItem key={category} value={category}>
+                    {category === "all" ? "All Categories" : category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={showLearnedFilter} onValueChange={(value: "all" | "learned" | "learning") => setShowLearnedFilter(value)}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Notes</SelectItem>
+                <SelectItem value="learning">Learning</SelectItem>
+                <SelectItem value="learned">Learned</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+
+      {/* Sticky Notes Board */}
+      <div className="flex-1 relative overflow-hidden">
+        <div 
+          ref={boardRef}
+          className="absolute inset-0 bg-gradient-to-br from-amber-50/50 via-yellow-50/30 to-orange-50/50 dark:from-gray-800/50 dark:via-gray-700/30 dark:to-gray-600/50"
+          style={{
+            backgroundImage: `
+              radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.3) 2px, transparent 2px),
+              radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.2) 1px, transparent 1px)
+            `,
+            backgroundSize: '50px 50px, 30px 30px'
+          }}
+        >
+          {/* Cork Board Pattern */}
+          <div className="absolute inset-0 opacity-30">
+            <div className="absolute inset-0" style={{
+              backgroundImage: `
+                linear-gradient(90deg, rgba(139, 69, 19, 0.1) 1px, transparent 1px),
+                linear-gradient(0deg, rgba(139, 69, 19, 0.1) 1px, transparent 1px)
+              `,
+              backgroundSize: '20px 20px'
+            }} />
+          </div>
+
+          {filteredNotes.length === 0 ? (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center p-8">
+                <StickyNoteIcon className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">No Sticky Notes Found</h3>
+                <p className="text-gray-500 dark:text-gray-500">
+                  {stickyNotes.length === 0 
+                    ? "Visit the Explore page to discover and add new vocabulary words!"
+                    : "Try adjusting your search or filters to find your notes."
+                  }
+                </p>
+              </div>
+            </div>
+          ) : (
+            filteredNotes.map((note, index) => {
+              const position = notePositions[note.id] || { x: 0, y: 0 };
+              const colorClass = STICKY_NOTE_COLORS[index % STICKY_NOTE_COLORS.length];
+              const isDragging = dragState.isDragging && dragState.noteId === note.id;
+              
+              return (
+                <div
+                  key={note.id}
+                  className={cn(
+                    "absolute w-48 min-h-36 p-4 rounded-lg border-2 shadow-lg cursor-move transform transition-all duration-200 hover:shadow-xl hover:scale-105",
+                    colorClass,
+                    isDragging && "scale-110 shadow-2xl z-50",
+                    note.isLearned && "opacity-75"
+                  )}
+                  style={{
+                    left: position.x,
+                    top: position.y,
+                    transform: isDragging 
+                      ? `scale(1.1) rotate(${Math.sin(index) * 3}deg)`
+                      : `rotate(${Math.sin(index) * 2}deg)`,
+                    zIndex: isDragging ? 1000 : note.isLearned ? 1 : 10
+                  }}
+                  onMouseDown={(e) => handleMouseDown(e, note.id)}
+                >
+                  {/* Pin */}
+                  <div className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full shadow-md border-2 border-red-600"></div>
+                  
+                  {/* Drag Handle */}
+                  <div className="absolute top-1 right-6">
+                    <GripVertical className="h-3 w-3 text-gray-600 opacity-50" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-bold text-lg truncate">{note.word}</h3>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          markAsLearnedMutation.mutate({
+                            noteId: note.id,
+                            isLearned: !note.isLearned
+                          });
+                        }}
+                        className="p-1 h-6 w-6"
+                      >
+                        {note.isLearned ? (
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <Circle className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+
+                    <p className="text-sm leading-relaxed line-clamp-3">{note.definition}</p>
+                    
+                    {note.example && (
+                      <p className="text-xs italic opacity-75 line-clamp-2">"{note.example}"</p>
+                    )}
+
+                    <div className="flex items-center justify-between pt-2">
+                      <div className="flex gap-1">
+                        <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
+                          {note.category}
+                        </Badge>
+                        <Badge className={cn("text-xs px-1.5 py-0.5", getDifficultyColor(note.difficulty))}>
+                          {note.difficulty}
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex gap-1">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="p-1 h-6 w-6"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingNote(note);
+                                setUserNotes(note.userNotes || "");
+                              }}
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-md">
+                            <DialogHeader>
+                              <DialogTitle>Edit Notes for "{note.word}"</DialogTitle>
+                              <DialogDescription>
+                                Add your personal notes and thoughts about this word.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <Textarea
+                              value={userNotes}
+                              onChange={(e) => setUserNotes(e.target.value)}
+                              placeholder="Add your personal notes here..."
+                              className="min-h-24"
+                            />
+                            <DialogFooter>
+                              <Button 
+                                onClick={() => handleUpdateNote({ userNotes })}
+                                disabled={updateNoteMutation.isPending}
+                              >
+                                Save Notes
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                        
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="p-1 h-6 w-6 text-red-600 hover:text-red-700"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteNoteMutation.mutate(note.id);
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {note.userNotes && (
+                      <div className="pt-2 border-t border-gray-300/50">
+                        <p className="text-xs text-gray-700 line-clamp-2">{note.userNotes}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
