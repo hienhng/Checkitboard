@@ -186,9 +186,11 @@ export default function StickyNotesBoard() {
     if (e.target instanceof HTMLElement && (
       e.target.closest('button') || 
       e.target.closest('[role="dialog"]') ||
+      e.target.closest('[data-radix-popper-content-wrapper]') ||
       e.target.closest('select') ||
       e.target.closest('input') ||
-      e.target.closest('textarea')
+      e.target.closest('textarea') ||
+      e.target.closest('[data-radix-dialog-content]')
     )) {
       return;
     }
@@ -481,7 +483,12 @@ export default function StickyNotesBoard() {
                               <Edit className="h-3 w-3" />
                             </Button>
                           </DialogTrigger>
-                          <DialogContent className="sm:max-w-lg">
+                          <DialogContent 
+                            className="sm:max-w-lg"
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onMouseMove={(e) => e.stopPropagation()}
+                            onMouseUp={(e) => e.stopPropagation()}
+                          >
                             <DialogHeader>
                               <DialogTitle>Customize "{note.word}"</DialogTitle>
                               <DialogDescription>
@@ -538,6 +545,8 @@ export default function StickyNotesBoard() {
                                   onChange={(e) => setUserNotes(e.target.value)}
                                   placeholder="Add your personal notes here..."
                                   className="min-h-20"
+                                  onMouseDown={(e) => e.stopPropagation()}
+                                  onFocus={(e) => e.stopPropagation()}
                                 />
                               </div>
 
