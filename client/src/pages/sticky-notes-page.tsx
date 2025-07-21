@@ -46,7 +46,7 @@ export default function StickyNotesPage() {
   });
 
   const deleteNoteMutation = useMutation({
-    mutationFn: (noteId: number) => apiRequest(`/api/sticky-notes/${noteId}`, "DELETE"),
+    mutationFn: (noteId: number) => apiRequest("DELETE", `/api/sticky-notes/${noteId}`),
     onSuccess: () => {
       toast({
         title: "Note Deleted",
@@ -65,7 +65,7 @@ export default function StickyNotesPage() {
 
   const updateNoteMutation = useMutation({
     mutationFn: ({ noteId, updates }: { noteId: number; updates: Partial<StickyNote> }) =>
-      apiRequest(`/api/sticky-notes/${noteId}`, "PATCH", updates),
+      apiRequest("PATCH", `/api/sticky-notes/${noteId}`, updates),
     onSuccess: () => {
       toast({
         title: "Note Updated",
@@ -86,7 +86,7 @@ export default function StickyNotesPage() {
 
   const markAsLearnedMutation = useMutation({
     mutationFn: ({ noteId, isLearned }: { noteId: number; isLearned: boolean }) =>
-      apiRequest(`/api/sticky-notes/${noteId}`, "PATCH", { isLearned }),
+      apiRequest("PATCH", `/api/sticky-notes/${noteId}`, { isLearned }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sticky-notes"] });
     },
