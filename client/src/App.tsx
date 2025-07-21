@@ -25,6 +25,8 @@ import LearnerAnalysis from "@/pages/learner-analysis";
 import EducatorStatisticsPage from "@/pages/educator-statistics-page";
 import VocabularyManagement from "@/pages/vocabulary-management";
 import VocabularyDetails from "@/pages/vocabulary-details";
+import ExplorePage from "@/pages/explore-page";
+import StickyNotesPage from "@/pages/sticky-notes-page";
 import { SettingsPage } from "@/pages/settings";
 import { Layout } from "@/components/layout";
 import { EmailVerificationGuard, withEmailVerification } from "@/components/email-verification-guard";
@@ -61,6 +63,8 @@ function Router() {
             <ProtectedRoute path="/learner/flashcards" component={withEmailVerification(FlashcardsPage)} />
             <ProtectedRoute path="/learner/class/:classId" component={withEmailVerification(ClassListsPage)} />
             <ProtectedRoute path="/learner/analysis" component={withEmailVerification(LearnerAnalysis)} />
+            <ProtectedRoute path="/explore" component={withEmailVerification(ExplorePage)} />
+            <ProtectedRoute path="/sticky-notes" component={withEmailVerification(StickyNotesPage)} />
             <ProtectedRoute path="/settings" component={SettingsPage} />
           </EmailVerificationGuard>
         </Layout>

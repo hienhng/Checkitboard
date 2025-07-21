@@ -33,6 +33,8 @@ import {
   resetPasswordSchema,
   insertMultipleChoiceQuestionSchema,
   insertMultipleChoiceAnswerSchema,
+  insertStickyNoteSchema,
+  updateStickyNoteSchema,
   vocabularyLists,
   vocabularyWords,
   submissions,
@@ -40,6 +42,7 @@ import {
   flashcards,
   multipleChoiceQuestions,
   multipleChoiceAnswers,
+  stickyNotes,
   users,
   classes,
   studentClass,
@@ -3496,6 +3499,161 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error getting AI status:", error);
       res.status(500).json({ message: "Error getting AI status" });
+    }
+  });
+
+  // #endregion
+
+  // #region Sticky Notes Routes
+
+  // Get all sticky notes for a student
+  app.get("/api/sticky-notes", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "learner") {
+        return res.status(403).json({ message: "Only learners can access sticky notes" });
+      }
+
+      const notes = await db.query.stickyNotes.findMany({
+        where: eq(stickyNotes.studentId, req.user.id),
+        orderBy: desc(stickyNotes.updatedAt),
+      });
+
+      res.json(notes);
+    } catch (error) {
+      console.error("Error fetching sticky notes:", error);
+      res.status(500).json({ message: "Error fetching sticky notes" });
+    }
+  });
+
+  // Create a new sticky note
+  app.post("/api/sticky-notes", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "learner") {
+        return res.status(403).json({ message: "Only learners can create sticky notes" });
+      }
+
+      const validatedData = insertStickyNoteSchema.parse({
+        ...req.body,
+        studentId: req.user.id,
+      });
+
+      // Check if word already exists in user's sticky notes
+      const existingNote = await db.query.stickyNotes.findFirst({
+        where: and(
+          eq(stickyNotes.studentId, req.user.id),
+          eq(stickyNotes.word, validatedData.word)
+        ),
+      });
+
+      if (existingNote) {
+        return res.status(409).json({ message: "Word already exists in your sticky notes" });
+      }
+
+      const [newNote] = await db.insert(stickyNotes)
+        .values(validatedData)
+        .returning();
+
+      res.status(201).json(newNote);
+    } catch (error) {
+      console.error("Error creating sticky note:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+      res.status(500).json({ message: "Error creating sticky note" });
+    }
+  });
+
+  // Update a sticky note
+  app.patch("/api/sticky-notes/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "learner") {
+        return res.status(403).json({ message: "Only learners can update sticky notes" });
+      }
+
+      const noteId = parseInt(req.params.id);
+      if (isNaN(noteId)) {
+        return res.status(400).json({ message: "Invalid note ID" });
+      }
+
+      // Verify note exists and belongs to user
+      const existingNote = await db.query.stickyNotes.findFirst({
+        where: and(
+          eq(stickyNotes.id, noteId),
+          eq(stickyNotes.studentId, req.user.id)
+        ),
+      });
+
+      if (!existingNote) {
+        return res.status(404).json({ message: "Sticky note not found" });
+      }
+
+      const validatedData = updateStickyNoteSchema.parse(req.body);
+
+      const [updatedNote] = await db.update(stickyNotes)
+        .set({
+          ...validatedData,
+          updatedAt: new Date(),
+        })
+        .where(eq(stickyNotes.id, noteId))
+        .returning();
+
+      res.json(updatedNote);
+    } catch (error) {
+      console.error("Error updating sticky note:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+      res.status(500).json({ message: "Error updating sticky note" });
+    }
+  });
+
+  // Delete a sticky note
+  app.delete("/api/sticky-notes/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "learner") {
+        return res.status(403).json({ message: "Only learners can delete sticky notes" });
+      }
+
+      const noteId = parseInt(req.params.id);
+      if (isNaN(noteId)) {
+        return res.status(400).json({ message: "Invalid note ID" });
+      }
+
+      // Verify note exists and belongs to user
+      const existingNote = await db.query.stickyNotes.findFirst({
+        where: and(
+          eq(stickyNotes.id, noteId),
+          eq(stickyNotes.studentId, req.user.id)
+        ),
+      });
+
+      if (!existingNote) {
+        return res.status(404).json({ message: "Sticky note not found" });
+      }
+
+      await db.delete(stickyNotes)
+        .where(eq(stickyNotes.id, noteId));
+
+      res.json({ message: "Sticky note deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting sticky note:", error);
+      res.status(500).json({ message: "Error deleting sticky note" });
     }
   });
 

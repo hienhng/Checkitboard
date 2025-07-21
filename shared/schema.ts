@@ -129,11 +129,27 @@ export const flashcards = pgTable("flashcards", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Sticky Notes for student vocabulary review
+export const stickyNotes = pgTable("sticky_notes", {
+  id: serial("id").primaryKey(),
+  studentId: integer("student_id").references(() => users.id).notNull(),
+  word: text("word").notNull(),
+  definition: text("definition").notNull(),
+  example: text("example"),
+  category: text("category").notNull(),
+  difficulty: text("difficulty", { enum: ["easy", "medium", "hard"] }).notNull(),
+  userNotes: text("user_notes"),
+  isLearned: boolean("is_learned").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Relationships definitions
 export const usersRelations = relations(users, ({ many }) => ({
   vocabularyLists: many(vocabularyLists),
   submissions: many(submissions),
   flashcards: many(flashcards),
+  stickyNotes: many(stickyNotes),
   createdClasses: many(classes, { relationName: 'educator' }),
   enrolledClasses: many(studentClass, { relationName: 'student' }),
 }));
@@ -249,6 +265,13 @@ export const parentStudentRelations = relations(parentStudent, ({ one }) => ({
   }),
 }));
 
+export const stickyNotesRelations = relations(stickyNotes, ({ one }) => ({
+  student: one(users, {
+    fields: [stickyNotes.studentId],
+    references: [users.id],
+  }),
+}));
+
 // Validation schemas
 export const insertUserSchema = createInsertSchema(users, {
   email: (schema) => schema.email("Please enter a valid email"),
@@ -307,6 +330,18 @@ export const insertClassSchema = createInsertSchema(classes, {
   classCode: (schema) => schema.min(6, "Class code must be at least 6 characters"),
 }).omit({ id: true, createdAt: true, active: true });
 
+export const insertStickyNoteSchema = createInsertSchema(stickyNotes, {
+  word: (schema) => schema.min(1, "Word cannot be empty"),
+  definition: (schema) => schema.min(1, "Definition cannot be empty"),
+  category: (schema) => schema.min(1, "Category cannot be empty"),
+}).omit({ id: true, createdAt: true, updatedAt: true });
+
+export const updateStickyNoteSchema = createInsertSchema(stickyNotes, {
+  word: (schema) => schema.min(1, "Word cannot be empty").optional(),
+  definition: (schema) => schema.min(1, "Definition cannot be empty").optional(),
+  category: (schema) => schema.min(1, "Category cannot be empty").optional(),
+}).omit({ id: true, studentId: true, createdAt: true, updatedAt: true }).partial();
+
 export const insertStudentClassSchema = createInsertSchema(studentClass).omit({ id: true, createdAt: true, status: true });
 
 export const insertMultipleChoiceQuestionSchema = createInsertSchema(multipleChoiceQuestions, {
@@ -363,6 +398,9 @@ export type MultipleChoiceQuestion = typeof multipleChoiceQuestions.$inferSelect
 export type InsertMultipleChoiceQuestion = z.infer<typeof insertMultipleChoiceQuestionSchema>;
 export type MultipleChoiceAnswer = typeof multipleChoiceAnswers.$inferSelect;
 export type InsertMultipleChoiceAnswer = z.infer<typeof insertMultipleChoiceAnswerSchema>;
+export type StickyNote = typeof stickyNotes.$inferSelect;
+export type InsertStickyNote = z.infer<typeof insertStickyNoteSchema>;
+export type UpdateStickyNote = z.infer<typeof updateStickyNoteSchema>;
 
 // Export select schemas
 export const selectUserSchema = createSelectSchema(users);
@@ -376,6 +414,7 @@ export const selectClassSchema = createSelectSchema(classes);
 export const selectStudentClassSchema = createSelectSchema(studentClass);
 export const selectMultipleChoiceQuestionSchema = createSelectSchema(multipleChoiceQuestions);
 export const selectMultipleChoiceAnswerSchema = createSelectSchema(multipleChoiceAnswers);
+export const selectStickyNoteSchema = createSelectSchema(stickyNotes);
 
 // Notifications table
 export const notifications = pgTable("notifications", {
