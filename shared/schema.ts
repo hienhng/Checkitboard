@@ -139,6 +139,8 @@ export const stickyNotes = pgTable("sticky_notes", {
   category: text("category").notNull(),
   difficulty: text("difficulty", { enum: ["easy", "medium", "hard"] }).notNull(),
   userNotes: text("user_notes"),
+  emoji: text("emoji").default("📝"),
+  color: text("color", { enum: ["yellow", "pink", "blue", "green", "purple", "orange", "red", "indigo"] }).default("yellow"),
   isLearned: boolean("is_learned").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

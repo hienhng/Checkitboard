@@ -40,7 +40,7 @@ export default function ExplorePage() {
   const addToStickyNotesMutation = useMutation({
     mutationFn: (word: ExploreWord) => apiRequest("POST", "/api/sticky-notes", {
       word: word.word,
-      definition: word.definition,
+      definition: word.definition || "Definition not available",
       example: word.example || "No example provided",
       category: word.category || "General",
       difficulty: word.difficulty || "medium"

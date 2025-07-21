@@ -31,6 +31,18 @@ import { JoinClass } from "@/components/join-class";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ReactNode } from "react";
 
+// Sticky note color constants
+const STICKY_NOTE_COLORS = {
+  yellow: 'bg-yellow-200 border-yellow-300 text-yellow-900',
+  pink: 'bg-pink-200 border-pink-300 text-pink-900', 
+  blue: 'bg-blue-200 border-blue-300 text-blue-900',
+  green: 'bg-green-200 border-green-300 text-green-900',
+  purple: 'bg-purple-200 border-purple-300 text-purple-900',
+  orange: 'bg-orange-200 border-orange-300 text-orange-900',
+  red: 'bg-red-200 border-red-300 text-red-900',
+  indigo: 'bg-indigo-200 border-indigo-300 text-indigo-900'
+};
+
 // Define interfaces for the data structures
 interface VocabularyList {
   id: number;
@@ -570,28 +582,36 @@ function LearnerDashboard() {
                           {stickyNotes && stickyNotes.length > 0 ? (
                             <div className="space-y-3">
                               <div className="grid grid-cols-2 gap-2 max-h-64 overflow-hidden">
-                                {stickyNotes.slice(0, 6).map((note: any, index: number) => (
-                                  <div
-                                    key={note.id}
-                                    className={`p-3 rounded-lg border-2 shadow-sm transform rotate-${index % 2 === 0 ? '1' : '-1'} hover:rotate-0 transition-transform duration-200 cursor-pointer
-                                      ${index % 4 === 0 ? 'bg-yellow-200 border-yellow-300 text-yellow-900' :
-                                        index % 4 === 1 ? 'bg-pink-200 border-pink-300 text-pink-900' :
-                                        index % 4 === 2 ? 'bg-blue-200 border-blue-300 text-blue-900' :
-                                        'bg-green-200 border-green-300 text-green-900'}`}
-                                  >
-                                    <div className="text-sm font-semibold mb-1 truncate">
-                                      {note.word}
-                                    </div>
-                                    <div className="text-xs opacity-80 line-clamp-2">
-                                      {note.definition}
-                                    </div>
-                                    {note.learned && (
-                                      <div className="flex justify-end mt-1">
-                                        <CheckCircle className="h-3 w-3 text-green-600" />
+                                {stickyNotes.slice(0, 6).map((note: any, index: number) => {
+                                  const colorClass = note.color && STICKY_NOTE_COLORS[note.color] 
+                                    ? STICKY_NOTE_COLORS[note.color]
+                                    : (index % 4 === 0 ? 'bg-yellow-200 border-yellow-300 text-yellow-900' :
+                                       index % 4 === 1 ? 'bg-pink-200 border-pink-300 text-pink-900' :
+                                       index % 4 === 2 ? 'bg-blue-200 border-blue-300 text-blue-900' :
+                                       'bg-green-200 border-green-300 text-green-900');
+                                  
+                                  return (
+                                    <div
+                                      key={note.id}
+                                      className={`p-3 rounded-lg border-2 shadow-sm transform rotate-${index % 2 === 0 ? '1' : '-1'} hover:rotate-0 transition-transform duration-200 cursor-pointer ${colorClass}`}
+                                    >
+                                      <div className="flex items-center justify-between mb-1">
+                                        <div className="text-sm font-semibold truncate">
+                                          {note.word}
+                                        </div>
+                                        <span className="text-lg">{note.emoji || '📝'}</span>
                                       </div>
-                                    )}
-                                  </div>
-                                ))}
+                                      <div className="text-xs opacity-80 line-clamp-2">
+                                        {note.definition}
+                                      </div>
+                                      {note.isLearned && (
+                                        <div className="flex justify-end mt-1">
+                                          <CheckCircle className="h-3 w-3 text-green-600" />
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
                               </div>
                               
                               {stickyNotes && stickyNotes.length > 6 && (

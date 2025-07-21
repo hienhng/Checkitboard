@@ -42,15 +42,21 @@ interface DragState {
   currentY: number;
 }
 
-const STICKY_NOTE_COLORS = [
-  'bg-yellow-200 border-yellow-300 text-yellow-900',
-  'bg-pink-200 border-pink-300 text-pink-900', 
-  'bg-blue-200 border-blue-300 text-blue-900',
-  'bg-green-200 border-green-300 text-green-900',
-  'bg-purple-200 border-purple-300 text-purple-900',
-  'bg-orange-200 border-orange-300 text-orange-900',
-  'bg-red-200 border-red-300 text-red-900',
-  'bg-indigo-200 border-indigo-300 text-indigo-900'
+const STICKY_NOTE_COLORS = {
+  yellow: 'bg-yellow-200 border-yellow-300 text-yellow-900',
+  pink: 'bg-pink-200 border-pink-300 text-pink-900', 
+  blue: 'bg-blue-200 border-blue-300 text-blue-900',
+  green: 'bg-green-200 border-green-300 text-green-900',
+  purple: 'bg-purple-200 border-purple-300 text-purple-900',
+  orange: 'bg-orange-200 border-orange-300 text-orange-900',
+  red: 'bg-red-200 border-red-300 text-red-900',
+  indigo: 'bg-indigo-200 border-indigo-300 text-indigo-900'
+};
+
+const EMOJI_OPTIONS = [
+  '📝', '📚', '💡', '⭐', '🎯', '📖', '✨', '🧠', 
+  '🔥', '💪', '🚀', '👍', '📌', '🔖', '💫', '🌟',
+  '📋', '📓', '🖊️', '✏️', '🖇️', '📎', '🗂️', '🎓'
 ];
 
 // Generate random position within board boundaries
@@ -71,6 +77,8 @@ export default function StickyNotesBoard() {
   const [showLearnedFilter, setShowLearnedFilter] = useState<"all" | "learned" | "learning">("all");
   const [editingNote, setEditingNote] = useState<StickyNote | null>(null);
   const [userNotes, setUserNotes] = useState("");
+  const [selectedEmoji, setSelectedEmoji] = useState("📝");
+  const [selectedColor, setSelectedColor] = useState("yellow");
   const [dragState, setDragState] = useState<DragState>({
     isDragging: false,
     noteId: null,
@@ -376,7 +384,9 @@ export default function StickyNotesBoard() {
           ) : (
             filteredNotes.map((note, index) => {
               const position = notePositions[note.id] || { x: 0, y: 0 };
-              const colorClass = STICKY_NOTE_COLORS[index % STICKY_NOTE_COLORS.length];
+              const colorClass = note.color && STICKY_NOTE_COLORS[note.color] 
+                ? STICKY_NOTE_COLORS[note.color]
+                : STICKY_NOTE_COLORS[Object.keys(STICKY_NOTE_COLORS)[index % Object.keys(STICKY_NOTE_COLORS).length]];
               const isDragging = dragState.isDragging && dragState.noteId === note.id;
               
               return (
@@ -409,7 +419,10 @@ export default function StickyNotesBoard() {
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-bold text-lg truncate">{note.word}</h3>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl">{note.emoji || '📝'}</span>
+                        <h3 className="font-bold text-lg truncate">{note.word}</h3>
+                      </div>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -457,30 +470,96 @@ export default function StickyNotesBoard() {
                                 e.stopPropagation();
                                 setEditingNote(note);
                                 setUserNotes(note.userNotes || "");
+                                setSelectedEmoji(note.emoji || "📝");
+                                setSelectedColor(note.color || "yellow");
                               }}
                             >
                               <Edit className="h-3 w-3" />
                             </Button>
                           </DialogTrigger>
-                          <DialogContent className="sm:max-w-md">
+                          <DialogContent className="sm:max-w-lg">
                             <DialogHeader>
-                              <DialogTitle>Edit Notes for "{note.word}"</DialogTitle>
+                              <DialogTitle>Customize "{note.word}"</DialogTitle>
                               <DialogDescription>
-                                Add your personal notes and thoughts about this word.
+                                Personalize your sticky note with emojis, colors, and notes.
                               </DialogDescription>
                             </DialogHeader>
-                            <Textarea
-                              value={userNotes}
-                              onChange={(e) => setUserNotes(e.target.value)}
-                              placeholder="Add your personal notes here..."
-                              className="min-h-24"
-                            />
+                            
+                            <div className="space-y-4">
+                              {/* Emoji Picker */}
+                              <div>
+                                <label className="text-sm font-medium mb-2 block">Choose an Emoji</label>
+                                <div className="grid grid-cols-8 gap-2 p-3 border rounded-lg bg-gray-50 dark:bg-gray-800 max-h-32 overflow-y-auto">
+                                  {EMOJI_OPTIONS.map((emoji, index) => (
+                                    <button
+                                      key={index}
+                                      type="button"
+                                      className={`text-2xl p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${
+                                        selectedEmoji === emoji ? 'bg-blue-100 dark:bg-blue-900' : ''
+                                      }`}
+                                      onClick={() => setSelectedEmoji(emoji)}
+                                    >
+                                      {emoji}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Color Picker */}
+                              <div>
+                                <label className="text-sm font-medium mb-2 block">Choose a Color</label>
+                                <div className="grid grid-cols-4 gap-2">
+                                  {Object.entries(STICKY_NOTE_COLORS).map(([colorName, colorClass]) => (
+                                    <button
+                                      key={colorName}
+                                      type="button"
+                                      className={`p-3 rounded-lg border-2 transition-all duration-200 ${colorClass} ${
+                                        selectedColor === colorName 
+                                          ? 'ring-2 ring-blue-500 ring-offset-2' 
+                                          : 'hover:scale-105'
+                                      }`}
+                                      onClick={() => setSelectedColor(colorName)}
+                                    >
+                                      <div className="text-xs font-medium capitalize">{colorName}</div>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Personal Notes */}
+                              <div>
+                                <label className="text-sm font-medium mb-2 block">Personal Notes</label>
+                                <Textarea
+                                  value={userNotes}
+                                  onChange={(e) => setUserNotes(e.target.value)}
+                                  placeholder="Add your personal notes here..."
+                                  className="min-h-20"
+                                />
+                              </div>
+
+                              {/* Preview */}
+                              <div>
+                                <label className="text-sm font-medium mb-2 block">Preview</label>
+                                <div className={`p-3 rounded-lg border-2 ${STICKY_NOTE_COLORS[selectedColor]} max-w-48`}>
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-xl">{selectedEmoji}</span>
+                                    <div className="font-bold text-sm truncate">{note.word}</div>
+                                  </div>
+                                  <div className="text-xs opacity-80 line-clamp-2">{note.definition}</div>
+                                </div>
+                              </div>
+                            </div>
+                            
                             <DialogFooter>
                               <Button 
-                                onClick={() => handleUpdateNote({ userNotes })}
+                                onClick={() => handleUpdateNote({ 
+                                  userNotes, 
+                                  emoji: selectedEmoji, 
+                                  color: selectedColor 
+                                })}
                                 disabled={updateNoteMutation.isPending}
                               >
-                                Save Notes
+                                Save Changes
                               </Button>
                             </DialogFooter>
                           </DialogContent>
