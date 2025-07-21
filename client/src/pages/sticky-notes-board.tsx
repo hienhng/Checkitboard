@@ -444,6 +444,10 @@ export default function StickyNotesBoard() {
                     </div>
 
                     <p className="text-sm leading-relaxed line-clamp-3">{note.definition}</p>
+                    <div className="flex items-center gap-1 mt-1">
+                      <div className="w-1 h-1 bg-blue-400 rounded-full"></div>
+                      <span className="text-xs text-blue-600 font-medium">AI-generated</span>
+                    </div>
                     
                     {note.example && (
                       <p className="text-xs italic opacity-75 line-clamp-2">"{note.example}"</p>

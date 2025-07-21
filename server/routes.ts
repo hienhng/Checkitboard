@@ -13,8 +13,10 @@ import {
   gradeDefinition,
   generateExampleSentences,
   generateLearningStrategies,
-  generatePassageFromWords
+  generatePassageFromWords,
+  generateSingleDefinition
 } from "./ai";
+import * as ai from "./ai";
 import { generateMultipleChoiceQuestion } from "./ai-questions";
 import { eq, and, desc, isNull, asc, not, inArray, sql } from "drizzle-orm";
 
@@ -3605,22 +3607,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Only learners can create sticky notes" });
       }
 
-      const validatedData = insertStickyNoteSchema.parse({
-        ...req.body,
-        studentId: req.user.id,
-      });
-
       // Check if word already exists in user's sticky notes
       const existingNote = await db.query.stickyNotes.findFirst({
         where: and(
           eq(stickyNotes.studentId, req.user.id),
-          eq(stickyNotes.word, validatedData.word)
+          eq(stickyNotes.word, req.body.word)
         ),
       });
 
       if (existingNote) {
         return res.status(409).json({ message: "Word already exists in your sticky notes" });
       }
+
+      // Generate AI definition for the word (inherent feature)
+      let aiDefinition = "Definition not available";
+      try {
+        aiDefinition = await ai.generateSingleDefinition(req.body.word);
+      } catch (error) {
+        console.warn("Failed to generate AI definition:", error);
+      }
+
+      const validatedData = insertStickyNoteSchema.parse({
+        ...req.body,
+        studentId: req.user.id,
+        definition: aiDefinition, // Always use AI-generated definition
+      });
 
       const [newNote] = await db.insert(stickyNotes)
         .values(validatedData)

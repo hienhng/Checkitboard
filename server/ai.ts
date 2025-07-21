@@ -101,6 +101,19 @@ export async function generateDefinitions(words: string[]): Promise<Record<strin
 }
 
 /**
+ * Generate definition for a single word using available AI services (Groq preferred)
+ */
+export async function generateSingleDefinition(word: string): Promise<string> {
+  try {
+    const definitions = await generateDefinitions([word]);
+    return definitions[word] || "Definition not available";
+  } catch (error) {
+    console.error("Error generating single definition:", error);
+    return "Definition not available";
+  }
+}
+
+/**
  * Analyze a passage and extract potential vocabulary words using available AI services (Groq preferred)
  */
 export async function analyzePassage(passage: string, count: number = 10): Promise<string[]> {
