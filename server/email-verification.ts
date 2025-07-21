@@ -39,7 +39,7 @@ function createTransporter() {
   }
   
   // Fallback to direct Gmail configuration
-  return nodemailer.createTransporter({
+  return nodemailer.createTransport({
     service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER,
@@ -137,9 +137,18 @@ export async function sendVerificationEmail({
   verificationToken,
 }: EmailVerificationParams): Promise<void> {
   try {
+    console.log(`Starting email verification process for ${email}`);
+    
+    // Check email credentials first
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_APP_PASSWORD) {
+      throw new Error('Email credentials not configured. EMAIL_USER and EMAIL_APP_PASSWORD must be set.');
+    }
+    
     const transporter = createTransporter();
     const verificationUrl = getVerificationUrl(verificationToken);
     const htmlContent = generateVerificationEmailTemplate({ name, verificationUrl });
+    
+    console.log(`Verification URL generated: ${verificationUrl}`);
     
     const mailOptions = {
       from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
@@ -160,11 +169,18 @@ export async function sendVerificationEmail({
       `,
     };
 
-    await transporter.sendMail(mailOptions);
-    console.log(`Verification email sent successfully to ${email}`);
+    console.log(`Attempting to send email from ${mailOptions.from} to ${email}`);
+    
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`Verification email sent successfully to ${email}. Message ID: ${info.messageId}`);
   } catch (error) {
     console.error('Error sending verification email:', error);
-    throw new Error('Failed to send verification email. Please check your email configuration.');
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      response: error.response
+    });
+    throw new Error(`Failed to send verification email: ${error.message}`);
   }
 }
 
