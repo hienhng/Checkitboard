@@ -5,129 +5,82 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Plus, BookOpen, Lightbulb } from "lucide-react";
+import { Search, Plus, BookOpen, Lightbulb, Brain, Target, TrendingUp, AlertCircle } from "lucide-react";
 
 interface ExploreWord {
   word: string;
   definition: string;
-  example: string;
-  difficulty: 'easy' | 'medium' | 'hard';
-  category: string;
+  example?: string;
+  difficulty?: 'easy' | 'medium' | 'hard';
+  category?: string;
+  listTitle?: string;
+  submissionId?: number;
+  isCorrect?: boolean;
 }
 
-// Sample vocabulary words for exploration
-const exploreWords: ExploreWord[] = [
-  {
-    word: "serendipity",
-    definition: "The occurrence and development of events by chance in a happy or beneficial way",
-    example: "Finding the perfect book at the library by serendipity changed her perspective on life.",
-    difficulty: "hard",
-    category: "Abstract"
-  },
-  {
-    word: "ubiquitous",
-    definition: "Present, appearing, or found everywhere",
-    example: "Smartphones have become ubiquitous in modern society.",
-    difficulty: "medium",
-    category: "Descriptive"
-  },
-  {
-    word: "ephemeral",
-    definition: "Lasting for a very short time",
-    example: "The beauty of cherry blossoms is ephemeral, lasting only a few weeks.",
-    difficulty: "hard",
-    category: "Time"
-  },
-  {
-    word: "resilient",
-    definition: "Able to withstand or recover quickly from difficult conditions",
-    example: "The resilient community rebuilt after the natural disaster.",
-    difficulty: "medium",
-    category: "Character"
-  },
-  {
-    word: "eloquent",
-    definition: "Fluent or persuasive in speaking or writing",
-    example: "Her eloquent speech moved the audience to tears.",
-    difficulty: "medium",
-    category: "Communication"
-  },
-  {
-    word: "ambiguous",
-    definition: "Open to more than one interpretation; having a double meaning",
-    example: "The politician's ambiguous statement left voters confused about his position.",
-    difficulty: "medium",
-    category: "Clarity"
-  },
-  {
-    word: "meticulous",
-    definition: "Showing great attention to detail; very careful and precise",
-    example: "The scientist's meticulous research led to a groundbreaking discovery.",
-    difficulty: "medium",
-    category: "Work Style"
-  },
-  {
-    word: "innovative",
-    definition: "Featuring new methods; advanced and original",
-    example: "The company's innovative approach to sustainable energy impressed investors.",
-    difficulty: "easy",
-    category: "Technology"
-  },
-  {
-    word: "pragmatic",
-    definition: "Dealing with things sensibly and realistically",
-    example: "She took a pragmatic approach to solving the budget crisis.",
-    difficulty: "medium",
-    category: "Approach"
-  },
-  {
-    word: "profound",
-    definition: "Very great or intense; showing great knowledge or insight",
-    example: "The professor's lecture had a profound impact on the students' understanding.",
-    difficulty: "medium",
-    category: "Impact"
-  }
-];
+interface ExploreWordsResponse {
+  words: ExploreWord[];
+  personalized: boolean;
+  message: string;
+}
 
 export default function ExplorePage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedDifficulty, setSelectedDifficulty] = useState("all");
   const { toast } = useToast();
 
+  // Fetch personalized words based on student's incorrect answers
+  const { data: exploreData, isLoading } = useQuery<ExploreWordsResponse>({
+    queryKey: ["/api/explore/words"],
+  });
+
   const addToStickyNotesMutation = useMutation({
-    mutationFn: (word: ExploreWord) => 
-      apiRequest("POST", "/api/sticky-notes", {
-        word: word.word,
-        definition: word.definition,
-        example: word.example,
-        category: word.category,
-        difficulty: word.difficulty
-      }),
+    mutationFn: (word: ExploreWord) => apiRequest("POST", "/api/sticky-notes", {
+      word: word.word,
+      definition: word.definition,
+      example: word.example || "No example provided",
+      category: word.category || "General",
+      difficulty: word.difficulty || "medium"
+    }),
     onSuccess: () => {
       toast({
-        title: "Word Added!",
-        description: "Word has been added to your sticky notes for review.",
+        title: "Added to Sticky Notes!",
+        description: "The word has been saved to your collection for study.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/sticky-notes"] });
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to add word to sticky notes",
-        variant: "destructive",
-      });
+      if (error.message?.includes("already exists")) {
+        toast({
+          title: "Already Added",
+          description: "This word is already in your sticky notes collection.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to add word to sticky notes",
+          variant: "destructive",
+        });
+      }
     }
   });
 
-  const filteredWords = exploreWords.filter(word => {
+  const words = exploreData?.words || [];
+  
+  const filteredWords = words.filter((word) => {
     const matchesSearch = word.word.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          word.definition.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || word.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    const matchesCategory = selectedCategory === "all" || (word.category || "General") === selectedCategory;
+    const matchesDifficulty = selectedDifficulty === "all" || (word.difficulty || "medium") === selectedDifficulty;
+    return matchesSearch && matchesCategory && matchesDifficulty;
   });
 
-  const categories = ["all", ...Array.from(new Set(exploreWords.map(w => w.category)))];
+  const categories = ["all", ...Array.from(new Set(words.map((word) => word.category || "General")))];
+  const difficulties = ["all", "easy", "medium", "hard"];
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -138,23 +91,65 @@ export default function ExplorePage() {
     }
   };
 
+  const handleAddToStickyNotes = (word: ExploreWord) => {
+    addToStickyNotesMutation.mutate(word);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto p-6 max-w-6xl">
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <Brain className="h-12 w-12 mx-auto mb-4 text-primary animate-pulse" />
+            <p className="text-gray-600 dark:text-gray-400">Loading personalized vocabulary...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto p-6 max-w-6xl">
+      {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-4">
-          <BookOpen className="h-8 w-8 text-blue-600" />
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Explore Vocabulary</h1>
+          <div className="p-2 bg-primary/10 rounded-lg">
+            <Lightbulb className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Explore Vocabulary</h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              {exploreData?.personalized 
+                ? "Personalized words based on your recent test performance"
+                : "Discover new vocabulary words to expand your knowledge"
+              }
+            </p>
+          </div>
         </div>
-        <p className="text-gray-600 dark:text-gray-400 text-lg">
-          Discover new words and add them to your sticky notes for later review
-        </p>
+        
+        {/* Personalization Alert */}
+        {exploreData && (
+          <Alert className={exploreData.personalized ? "border-blue-200 bg-blue-50 dark:bg-blue-950" : "border-green-200 bg-green-50 dark:bg-green-950"}>
+            <div className="flex items-center gap-2">
+              {exploreData.personalized ? (
+                <Target className="h-4 w-4 text-blue-600" />
+              ) : (
+                <TrendingUp className="h-4 w-4 text-green-600" />
+              )}
+              <AlertDescription className={exploreData.personalized ? "text-blue-800 dark:text-blue-200" : "text-green-800 dark:text-green-200"}>
+                {exploreData.message}
+              </AlertDescription>
+            </div>
+          </Alert>
+        )}
       </div>
 
-      {/* Search and Filter Controls */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
+      {/* Search and Filters */}
+      <div className="mb-6 flex flex-wrap gap-4">
+        <div className="relative min-w-64">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
+            type="text"
             placeholder="Search words or definitions..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -162,10 +157,10 @@ export default function ExplorePage() {
           />
         </div>
         
-        <select
-          value={selectedCategory}
+        <select 
+          value={selectedCategory} 
           onChange={(e) => setSelectedCategory(e.target.value)}
-          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-sm"
         >
           {categories.map(category => (
             <option key={category} value={category}>
@@ -173,72 +168,93 @@ export default function ExplorePage() {
             </option>
           ))}
         </select>
+
+        <select 
+          value={selectedDifficulty} 
+          onChange={(e) => setSelectedDifficulty(e.target.value)}
+          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-sm"
+        >
+          {difficulties.map(difficulty => (
+            <option key={difficulty} value={difficulty}>
+              {difficulty === "all" ? "All Difficulties" : difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Results Count */}
+      <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+        Showing {filteredWords.length} of {words.length} words
       </div>
 
       {/* Words Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredWords.map((word, index) => (
-          <Card key={index} className="hover:shadow-lg transition-shadow duration-200 border-l-4 border-l-blue-500">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                  {word.word}
-                </CardTitle>
-                <Badge className={getDifficultyColor(word.difficulty)}>
-                  {word.difficulty}
-                </Badge>
-              </div>
-              <Badge variant="outline" className="w-fit">
-                {word.category}
-              </Badge>
-            </CardHeader>
-            
-            <CardContent className="space-y-4">
-              <div>
-                <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Definition:</h4>
-                <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
-                  {word.definition}
-                </p>
-              </div>
-              
-              <div>
-                <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Example:</h4>
-                <p className="text-gray-600 dark:text-gray-400 text-sm italic leading-relaxed">
-                  "{word.example}"
-                </p>
-              </div>
-              
-              <Button
-                onClick={() => addToStickyNotesMutation.mutate(word)}
-                disabled={addToStickyNotesMutation.isPending}
-                className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                {addToStickyNotesMutation.isPending ? (
-                  <div className="flex items-center gap-2">
-                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-                    Adding...
+      {filteredWords.length === 0 ? (
+        <div className="text-center py-12">
+          <BookOpen className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+          <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">No Words Found</h3>
+          <p className="text-gray-500 dark:text-gray-500">
+            {words.length === 0 
+              ? "Complete some vocabulary tests to see personalized word suggestions here!"
+              : "Try adjusting your search or filters to find more words."
+            }
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredWords.map((word, index) => (
+            <Card key={`${word.word}-${index}`} className="relative hover:shadow-lg transition-shadow duration-200">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <CardTitle className="text-xl mb-2 text-primary">{word.word}</CardTitle>
+                    <div className="flex gap-2 mb-2">
+                      <Badge variant="secondary" className="text-xs">
+                        {word.category || "General"}
+                      </Badge>
+                      <Badge className={`text-xs ${getDifficultyColor(word.difficulty || "medium")}`}>
+                        {word.difficulty || "medium"}
+                      </Badge>
+                    </div>
+                    {word.listTitle && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                        From: {word.listTitle}
+                      </p>
+                    )}
                   </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <Plus className="h-4 w-4" />
-                    Add to Sticky Notes
+                  {exploreData?.personalized && word.isCorrect === false && (
+                    <div className="flex-shrink-0">
+                      <Badge variant="destructive" className="text-xs">
+                        Review
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <CardDescription className="mb-3 text-sm leading-relaxed">
+                  {word.definition}
+                </CardDescription>
+                
+                {word.example && (
+                  <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <p className="text-sm italic text-gray-700 dark:text-gray-300">
+                      "{word.example}"
+                    </p>
                   </div>
                 )}
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
 
-      {filteredWords.length === 0 && (
-        <div className="text-center py-12">
-          <Lightbulb className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-            No words found
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400">
-            Try adjusting your search or category filter
-          </p>
+                <Button
+                  onClick={() => handleAddToStickyNotes(word)}
+                  disabled={addToStickyNotesMutation.isPending}
+                  size="sm"
+                  className="w-full"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  {addToStickyNotesMutation.isPending ? "Adding..." : "Add to Sticky Notes"}
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
     </div>

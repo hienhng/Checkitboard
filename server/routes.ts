@@ -3504,6 +3504,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // #endregion
 
+  // #region Explore Routes
+  // Get personalized vocabulary words for exploration based on incorrect answers
+  app.get("/api/explore/words", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "learner") {
+        return res.status(403).json({ message: "Only learners can access explore words" });
+      }
+
+      // Get words that the student got wrong (not marked as correct)
+      const incorrectWords = await db.select({
+        word: vocabularyWords.word,
+        definition: vocabularyWords.definition,
+        listTitle: vocabularyLists.title,
+        submissionId: wordDefinitions.submissionId,
+        isCorrect: wordDefinitions.isCorrect
+      })
+      .from(wordDefinitions)
+      .innerJoin(vocabularyWords, eq(wordDefinitions.wordId, vocabularyWords.id))
+      .innerJoin(vocabularyLists, eq(vocabularyWords.listId, vocabularyLists.id))
+      .innerJoin(submissions, eq(wordDefinitions.submissionId, submissions.id))
+      .where(and(
+        eq(submissions.studentId, req.user.id),
+        eq(wordDefinitions.isCorrect, false)
+      ))
+      .orderBy(desc(wordDefinitions.createdAt))
+      .limit(20);
+
+      // If no incorrect words, get a few random words from completed tests for general exploration
+      if (incorrectWords.length === 0) {
+        const fallbackWords = await db.select({
+          word: vocabularyWords.word,
+          definition: vocabularyWords.definition,
+          listTitle: vocabularyLists.title,
+          submissionId: sql<number>`NULL`.as('submissionId'),
+          isCorrect: sql<boolean>`NULL`.as('isCorrect')
+        })
+        .from(vocabularyWords)
+        .innerJoin(vocabularyLists, eq(vocabularyWords.listId, vocabularyLists.id))
+        .innerJoin(submissions, eq(vocabularyLists.id, submissions.listId))
+        .where(eq(submissions.studentId, req.user.id))
+        .orderBy(sql`RANDOM()`)
+        .limit(10);
+
+        return res.json({
+          words: fallbackWords,
+          personalized: false,
+          message: "Great job! No incorrect words found. Here are some words to explore from your completed tests."
+        });
+      }
+
+      res.json({
+        words: incorrectWords,
+        personalized: true,
+        message: `Found ${incorrectWords.length} words to review based on your recent tests.`
+      });
+    } catch (error) {
+      console.error("Error fetching explore words:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // #region Sticky Notes Routes
 
   // Get all sticky notes for a student
