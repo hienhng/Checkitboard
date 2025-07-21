@@ -174,23 +174,30 @@ export default function StickyNotesBoard() {
   };
 
   const handleMouseDown = (e: React.MouseEvent, noteId: number) => {
+    // Don't start drag if clicking on interactive elements
     if (e.target instanceof HTMLElement && (
       e.target.closest('button') || 
       e.target.closest('[role="dialog"]') ||
-      e.target.closest('select')
+      e.target.closest('select') ||
+      e.target.closest('input') ||
+      e.target.closest('textarea')
     )) {
-      return; // Don't start drag if clicking on interactive elements
+      return;
     }
 
     e.preventDefault();
+    e.stopPropagation();
+    
     const rect = boardRef.current?.getBoundingClientRect();
     if (!rect) return;
+
+    const currentPosition = notePositions[noteId] || { x: 0, y: 0 };
 
     setDragState({
       isDragging: true,
       noteId,
-      startX: e.clientX - rect.left,
-      startY: e.clientY - rect.top,
+      startX: e.clientX - rect.left - currentPosition.x,
+      startY: e.clientY - rect.top - currentPosition.y,
       currentX: e.clientX - rect.left,
       currentY: e.clientY - rect.top
     });
@@ -198,27 +205,29 @@ export default function StickyNotesBoard() {
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!dragState.isDragging || !boardRef.current) return;
+      if (!dragState.isDragging || !boardRef.current || !dragState.noteId) return;
 
+      e.preventDefault();
       const rect = boardRef.current.getBoundingClientRect();
-      const x = Math.max(0, Math.min(rect.width - 200, e.clientX - rect.left - 100));
-      const y = Math.max(0, Math.min(rect.height - 150, e.clientY - rect.top - 75));
+      
+      // Calculate new position based on mouse position minus offset
+      const newX = Math.max(10, Math.min(rect.width - 210, e.clientX - rect.left - dragState.startX));
+      const newY = Math.max(10, Math.min(rect.height - 170, e.clientY - rect.top - dragState.startY));
+
+      setNotePositions(prev => ({
+        ...prev,
+        [dragState.noteId!]: { x: newX, y: newY }
+      }));
 
       setDragState(prev => ({
         ...prev,
         currentX: e.clientX - rect.left,
         currentY: e.clientY - rect.top
       }));
-
-      if (dragState.noteId) {
-        setNotePositions(prev => ({
-          ...prev,
-          [dragState.noteId!]: { x, y }
-        }));
-      }
     };
 
-    const handleMouseUp = () => {
+    const handleMouseUp = (e: MouseEvent) => {
+      e.preventDefault();
       setDragState({
         isDragging: false,
         noteId: null,
@@ -230,13 +239,17 @@ export default function StickyNotesBoard() {
     };
 
     if (dragState.isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('mousemove', handleMouseMove, { passive: false });
+      document.addEventListener('mouseup', handleMouseUp, { passive: false });
+      document.body.style.cursor = 'grabbing';
+      document.body.style.userSelect = 'none';
     }
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
     };
   }, [dragState]);
 
@@ -326,7 +339,7 @@ export default function StickyNotesBoard() {
       <div className="flex-1 relative overflow-hidden">
         <div 
           ref={boardRef}
-          className="absolute inset-0 bg-gradient-to-br from-amber-50/50 via-yellow-50/30 to-orange-50/50 dark:from-gray-800/50 dark:via-gray-700/30 dark:to-gray-600/50"
+          className="absolute inset-0 bg-gradient-to-br from-amber-50/50 via-yellow-50/30 to-orange-50/50 dark:from-gray-800/50 dark:via-gray-700/30 dark:to-gray-600/50 overflow-hidden"
           style={{
             backgroundImage: `
               radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.3) 2px, transparent 2px),
@@ -334,6 +347,7 @@ export default function StickyNotesBoard() {
             `,
             backgroundSize: '50px 50px, 30px 30px'
           }}
+          onMouseDown={(e) => e.preventDefault()}
         >
           {/* Cork Board Pattern */}
           <div className="absolute inset-0 opacity-30">
@@ -369,9 +383,9 @@ export default function StickyNotesBoard() {
                 <div
                   key={note.id}
                   className={cn(
-                    "absolute w-48 min-h-36 p-4 rounded-lg border-2 shadow-lg cursor-move transform transition-all duration-200 hover:shadow-xl hover:scale-105",
+                    "absolute w-48 min-h-36 p-4 rounded-lg border-2 shadow-lg transform transition-all duration-200 select-none",
                     colorClass,
-                    isDragging && "scale-110 shadow-2xl z-50",
+                    isDragging ? "scale-110 shadow-2xl cursor-grabbing" : "cursor-grab hover:shadow-xl hover:scale-105",
                     note.isLearned && "opacity-75"
                   )}
                   style={{
@@ -380,7 +394,8 @@ export default function StickyNotesBoard() {
                     transform: isDragging 
                       ? `scale(1.1) rotate(${Math.sin(index) * 3}deg)`
                       : `rotate(${Math.sin(index) * 2}deg)`,
-                    zIndex: isDragging ? 1000 : note.isLearned ? 1 : 10
+                    zIndex: isDragging ? 1000 : note.isLearned ? 1 : 10,
+                    pointerEvents: 'auto'
                   }}
                   onMouseDown={(e) => handleMouseDown(e, note.id)}
                 >
