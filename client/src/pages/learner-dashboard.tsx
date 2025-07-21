@@ -622,7 +622,7 @@ function LearnerDashboard() {
                                 </div>
                               )}
                               
-                              <div className="text-center pt-2">
+                              <div className="text-center pt-6 mt-4">
                                 <Button 
                                   variant="outline"
                                   className="w-full"
