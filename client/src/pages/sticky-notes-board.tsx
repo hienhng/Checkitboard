@@ -59,15 +59,29 @@ const EMOJI_OPTIONS = [
   '📋', '📓', '🖊️', '✏️', '🖇️', '📎', '🗂️', '🎓'
 ];
 
-// Generate random position within board boundaries
-const getRandomPosition = (boardWidth: number, boardHeight: number, index: number) => {
-  // Use index as seed for consistent positioning
-  const seedX = (index * 123) % 1000;
-  const seedY = (index * 456) % 1000;
+// Generate organized grid position for first-time layout
+const getOrganizedPosition = (boardWidth: number, boardHeight: number, index: number) => {
+  const padding = 20;
+  const noteWidth = 192; // w-48 = 12rem = 192px
+  const noteHeight = 160; // including spacing
+  const spacing = 20;
+  
+  // Calculate how many notes can fit per row
+  const notesPerRow = Math.floor((boardWidth - padding * 2) / (noteWidth + spacing));
+  const row = Math.floor(index / notesPerRow);
+  const col = index % notesPerRow;
+  
+  // Calculate position with some slight randomization for natural look
+  const baseX = padding + col * (noteWidth + spacing);
+  const baseY = padding + row * (noteHeight + spacing);
+  
+  // Add small random offset for organic feeling (±10px)
+  const randomOffsetX = (Math.random() - 0.5) * 20;
+  const randomOffsetY = (Math.random() - 0.5) * 20;
   
   return {
-    x: Math.max(20, Math.min(boardWidth - 220, (seedX / 1000) * (boardWidth - 240) + 20)),
-    y: Math.max(20, Math.min(boardHeight - 180, (seedY / 1000) * (boardHeight - 200) + 20))
+    x: Math.max(padding, Math.min(boardWidth - noteWidth - padding, baseX + randomOffsetX)),
+    y: Math.max(padding, Math.min(boardHeight - noteHeight - padding, baseY + randomOffsetY))
   };
 };
 
@@ -147,18 +161,27 @@ export default function StickyNotesBoard() {
       const boardRect = boardRef.current.getBoundingClientRect();
       const newPositions: Record<number, { x: number; y: number }> = {};
       
+      // Check if any notes have saved positions (indicating they've been moved before)
+      const hasAnyPositions = stickyNotes.some((note: any) => 
+        note.positionX !== null && note.positionY !== null && note.positionX !== 0 && note.positionY !== 0
+      );
+      
       stickyNotes.forEach((note: any, index) => {
-        // Use database position if available, otherwise generate random position
-        if (note.positionX !== null && note.positionY !== null) {
+        // Use database position if available and note has been positioned before
+        if (note.positionX !== null && note.positionY !== null && note.positionX !== 0 && note.positionY !== 0) {
           newPositions[note.id] = { x: note.positionX, y: note.positionY };
         } else if (!notePositions[note.id]) {
-          const position = getRandomPosition(boardRect.width, boardRect.height, index);
+          // For first-time layout or notes without positions, use organized grid
+          const position = getOrganizedPosition(boardRect.width, boardRect.height, index);
           newPositions[note.id] = position;
-          // Save the generated position to database
-          updateNoteMutation.mutate({
-            noteId: note.id,
-            updates: { positionX: position.x, positionY: position.y },
-          });
+          
+          // Only save position if this is the first time setting it (not just refreshing)
+          if (!hasAnyPositions || (note.positionX === null || note.positionX === 0)) {
+            updateNoteMutation.mutate({
+              noteId: note.id,
+              updates: { positionX: position.x, positionY: position.y },
+            });
+          }
         }
       });
       
