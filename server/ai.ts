@@ -256,6 +256,99 @@ export async function gradeDefinition(
 }
 
 /**
+ * Generate contextual vocabulary suggestions based on words the student got wrong
+ */
+export async function generateContextualSuggestions(wrongWords: string[]): Promise<Array<{
+  word: string;
+  definition: string;
+  example: string;
+  category: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+}>> {
+  // Try Groq first
+  if (groqService.isGroqConfigured()) {
+    try {
+      return await groqService.generateContextualSuggestions(wrongWords);
+    } catch (error) {
+      console.warn("Groq failed for contextual suggestions, falling back to other providers:", error);
+    }
+  }
+
+  // Try OpenAI as fallback
+  if (openai) {
+    try {
+      const prompt = `
+        Based on these vocabulary words the student got wrong: ${wrongWords.join(', ')}
+        
+        Generate 6-8 related vocabulary words that would help the student learn similar concepts.
+        Focus on:
+        - Synonyms and antonyms of the wrong words
+        - Words with similar difficulty levels
+        - Words from related topics or categories
+        - Words that share roots or linguistic connections
+        
+        For each word, provide:
+        - word: the vocabulary word
+        - definition: clear, concise definition
+        - example: example sentence showing usage
+        - category: one of [Academic, Science, Literature, History, Arts, Daily Life, Technology]
+        - difficulty: one of [easy, medium, hard]
+        
+        Return a JSON array of objects with these fields. Choose words that build naturally on what the student is already learning.
+      `;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+      });
+
+      const content = response.choices[0].message.content;
+      if (!content) {
+        throw new Error("No content returned from OpenAI");
+      }
+
+      const result = JSON.parse(content);
+      return result.words || [];
+    } catch (error) {
+      console.warn("OpenAI failed for contextual suggestions:", error);
+    }
+  }
+
+  // Fallback suggestions based on common word relationships
+  const fallbackSuggestions = [];
+  const academicWords = ["comprehend", "analyze", "synthesize", "evaluate"];
+  const dailyWords = ["persevere", "collaborate", "communicate", "adapt"];
+  
+  // Add some contextual words based on wrong words
+  if (wrongWords.some(w => w.toLowerCase().includes('understand') || w.toLowerCase().includes('know'))) {
+    fallbackSuggestions.push({
+      word: "comprehend",
+      definition: "To understand something fully",
+      example: "It took time for her to comprehend the complex theory.",
+      category: "Academic",
+      difficulty: "medium" as const
+    });
+  }
+  
+  // Fill with general suggestions if needed
+  const remainingSlots = Math.max(0, 4 - fallbackSuggestions.length);
+  for (let i = 0; i < remainingSlots; i++) {
+    const words = i % 2 === 0 ? academicWords : dailyWords;
+    const word = words[i % words.length];
+    fallbackSuggestions.push({
+      word: word,
+      definition: `Definition for ${word}`,
+      example: `Example sentence with ${word}.`,
+      category: i % 2 === 0 ? "Academic" : "Daily Life",
+      difficulty: "medium" as const
+    });
+  }
+
+  return fallbackSuggestions.slice(0, 6);
+}
+
+/**
  * Generate smart vocabulary suggestions for students to expand their learning
  */
 export async function generateVocabularySuggestions(): Promise<Array<{

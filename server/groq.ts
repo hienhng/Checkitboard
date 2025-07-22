@@ -422,6 +422,84 @@ Return valid JSON in this format:
 /**
  * Generate personalized learning strategies based on student performance using Groq
  */
+export async function generateContextualSuggestions(wrongWords: string[]): Promise<Array<{
+  word: string;
+  definition: string;
+  example: string;
+  category: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+}>> {
+  try {
+    if (!groq) {
+      throw new Error("Groq API key is not configured");
+    }
+
+    const prompt = `Based on these vocabulary words the student got wrong: ${wrongWords.join(', ')}
+
+Generate 6-8 related vocabulary words that would help the student learn similar concepts and improve their understanding.
+
+Focus on providing:
+- Synonyms and antonyms of the wrong words
+- Words with similar difficulty levels and complexity
+- Words from related topics, categories, or semantic fields
+- Words that share linguistic roots or connections
+- Words that would naturally extend the student's learning
+
+For each word, provide:
+- word: the vocabulary word
+- definition: clear, concise definition
+- example: example sentence showing usage
+- category: one of [Academic, Science, Literature, History, Arts, Daily Life, Technology]
+- difficulty: one of [easy, medium, hard]
+
+Respond with valid JSON only in this format:
+{
+  "words": [
+    {
+      "word": "example",
+      "definition": "definition here",
+      "example": "example sentence here",
+      "category": "Academic", 
+      "difficulty": "medium"
+    }
+  ]
+}`;
+
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: "You are an educational vocabulary specialist that generates contextually relevant vocabulary words based on student performance. Focus on building vocabulary systematically through related words. Always respond with valid JSON only."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      model: DEFAULT_MODEL,
+      temperature: 0.7,
+      max_tokens: 1200,
+    });
+
+    const content = completion.choices[0]?.message?.content;
+    if (content) {
+      try {
+        const result = JSON.parse(content);
+        if (Array.isArray(result.words)) {
+          return result.words;
+        }
+      } catch (parseError) {
+        console.warn("Failed to parse contextual suggestions from Groq");
+      }
+    }
+    
+    throw new Error("No valid contextual suggestions received from Groq");
+  } catch (error: any) {
+    console.error("Error generating contextual suggestions with Groq:", error);
+    throw error;
+  }
+}
+
 export async function generateVocabularySuggestions(): Promise<Array<{
   word: string;
   definition: string;

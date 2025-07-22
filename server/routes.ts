@@ -3553,22 +3553,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .orderBy(sql`RANDOM()`)
         .limit(10);
 
-        // Add smart vocabulary suggestions using AI
-        const { generateVocabularySuggestions } = await import("./ai");
+        // Add smart vocabulary suggestions using AI, including context from wrong words
+        const { generateVocabularySuggestions, generateContextualSuggestions } = await import("./ai");
         let aiSuggestions: any[] = [];
         
         try {
-          const suggestions = await generateVocabularySuggestions();
-          aiSuggestions = suggestions.map((word: any) => ({
-            word: word.word,
-            definition: word.definition,
-            example: word.example,
-            category: word.category || "General",
-            difficulty: word.difficulty || "medium",
-            listTitle: "AI Suggestions",
-            submissionId: null,
-            isCorrect: null
-          }));
+          // If we have some incorrect words, generate contextual suggestions based on them
+          if (incorrectWords.length > 0) {
+            const wrongWords = incorrectWords.map(w => w.word);
+            const contextualSuggestions = await generateContextualSuggestions(wrongWords);
+            aiSuggestions = contextualSuggestions.map((word: any) => ({
+              word: word.word,
+              definition: word.definition,
+              example: word.example,
+              category: word.category || "General",
+              difficulty: word.difficulty || "medium",
+              listTitle: "AI Suggestions",
+              submissionId: null,
+              isCorrect: null
+            }));
+          } else {
+            // If no wrong words, generate general vocabulary suggestions
+            const suggestions = await generateVocabularySuggestions();
+            aiSuggestions = suggestions.map((word: any) => ({
+              word: word.word,
+              definition: word.definition,
+              example: word.example,
+              category: word.category || "General",
+              difficulty: word.difficulty || "medium",
+              listTitle: "AI Suggestions",
+              submissionId: null,
+              isCorrect: null
+            }));
+          }
         } catch (error) {
           console.error("Error generating AI vocabulary suggestions:", error);
         }
@@ -3578,7 +3595,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const message = incorrectWords.length === 0 
           ? "Great job! No incorrect words found. Here are some suggested words to expand your vocabulary."
-          : `Found ${incorrectWords.length} words to review. Here are additional vocabulary suggestions to help you grow!`;
+          : `Found ${incorrectWords.length} words to review. Here are related words and synonyms to deepen your understanding!`;
 
         // If we have some incorrect words, include them too
         const finalWords = incorrectWords.length > 0 

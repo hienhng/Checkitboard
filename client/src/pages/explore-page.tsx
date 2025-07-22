@@ -272,7 +272,10 @@ export default function ExplorePage() {
                           variant="outline"
                           className="text-xs bg-gradient-to-r from-blue-50 to-purple-50 text-blue-700 border-blue-200"
                         >
-                          ✨ AI Suggested
+                          {exploreData?.personalized && exploreData.words.some(w => w.isCorrect === false) 
+                            ? "🔗 Related Word" 
+                            : "✨ AI Suggested"
+                          }
                         </Badge>
                       )}
                     </div>
