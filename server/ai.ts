@@ -256,6 +256,93 @@ export async function gradeDefinition(
 }
 
 /**
+ * Generate smart vocabulary suggestions for students to expand their learning
+ */
+export async function generateVocabularySuggestions(): Promise<Array<{
+  word: string;
+  definition: string;
+  example: string;
+  category: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+}>> {
+  // Try Groq first
+  if (groqService.isGroqConfigured()) {
+    try {
+      return await groqService.generateVocabularySuggestions();
+    } catch (error) {
+      console.warn("Groq failed for vocabulary suggestions, falling back to other providers:", error);
+    }
+  }
+
+  // Try OpenAI as fallback
+  if (openai) {
+    try {
+      const prompt = `
+        Generate 8 high-quality vocabulary words that would be beneficial for students to learn.
+        Focus on commonly used academic and everyday words that expand vocabulary effectively.
+        
+        For each word, provide:
+        - word: the vocabulary word
+        - definition: clear, concise definition
+        - example: example sentence showing usage
+        - category: one of [Academic, Science, Literature, History, Arts, Daily Life, Technology]
+        - difficulty: one of [easy, medium, hard]
+        
+        Return a JSON array of objects with these fields. Choose words that are educational and appropriate for vocabulary building.
+      `;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+      });
+
+      const content = response.choices[0].message.content;
+      if (!content) {
+        throw new Error("No content returned from OpenAI");
+      }
+
+      const result = JSON.parse(content);
+      return result.words || [];
+    } catch (error) {
+      console.warn("OpenAI failed for vocabulary suggestions:", error);
+    }
+  }
+
+  // Fallback suggestions if AI services are unavailable
+  return [
+    {
+      word: "eloquent",
+      definition: "Having or showing the ability to use language clearly and effectively",
+      example: "The professor gave an eloquent speech about the importance of education.",
+      category: "Academic",
+      difficulty: "medium" as const
+    },
+    {
+      word: "resilient",
+      definition: "Able to recover quickly from difficult conditions",
+      example: "Despite facing many challenges, she remained resilient and optimistic.",
+      category: "Daily Life",
+      difficulty: "medium" as const
+    },
+    {
+      word: "innovative",
+      definition: "Introducing new ideas; original and creative in thinking",
+      example: "The company's innovative approach revolutionized the industry.",
+      category: "Technology",
+      difficulty: "medium" as const
+    },
+    {
+      word: "meticulous",
+      definition: "Showing great attention to detail; very careful and precise",
+      example: "The scientist was meticulous in recording every observation.",
+      category: "Academic",
+      difficulty: "hard" as const
+    }
+  ];
+}
+
+/**
  * Generate example sentences for vocabulary words using available AI services (Groq preferred)
  */
 export async function generateExampleSentences(words: string[], count: number = 1): Promise<Record<string, string[]>> {

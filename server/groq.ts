@@ -422,6 +422,76 @@ Return valid JSON in this format:
 /**
  * Generate personalized learning strategies based on student performance using Groq
  */
+export async function generateVocabularySuggestions(): Promise<Array<{
+  word: string;
+  definition: string;
+  example: string;
+  category: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+}>> {
+  try {
+    if (!groq) {
+      throw new Error("Groq API key is not configured");
+    }
+
+    const prompt = `Generate 8 high-quality vocabulary words that would be beneficial for students to learn.
+Focus on commonly used academic and everyday words that expand vocabulary effectively.
+
+For each word, provide:
+- word: the vocabulary word
+- definition: clear, concise definition
+- example: example sentence showing usage
+- category: one of [Academic, Science, Literature, History, Arts, Daily Life, Technology]
+- difficulty: one of [easy, medium, hard]
+
+Respond with valid JSON only in this format:
+{
+  "words": [
+    {
+      "word": "example",
+      "definition": "definition here",
+      "example": "example sentence here",
+      "category": "Academic",
+      "difficulty": "medium"
+    }
+  ]
+}`;
+
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: "You are an educational vocabulary specialist that generates high-quality vocabulary words for students. Always respond with valid JSON only."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      model: DEFAULT_MODEL,
+      temperature: 0.7,
+      max_tokens: 1000,
+    });
+
+    const content = completion.choices[0]?.message?.content;
+    if (content) {
+      try {
+        const result = JSON.parse(content);
+        if (Array.isArray(result.words)) {
+          return result.words;
+        }
+      } catch (parseError) {
+        console.warn("Failed to parse vocabulary suggestions from Groq");
+      }
+    }
+    
+    throw new Error("No valid vocabulary suggestions received from Groq");
+  } catch (error: any) {
+    console.error("Error generating vocabulary suggestions with Groq:", error);
+    throw error;
+  }
+}
+
 export async function generateLearningStrategies(
   words: string[],
   studentPerformance: Record<string, boolean>

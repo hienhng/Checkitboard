@@ -214,6 +214,11 @@ export default function ExplorePage() {
                       <Badge className={`text-xs ${getDifficultyColor(word.difficulty || "medium")}`}>
                         {word.difficulty || "medium"}
                       </Badge>
+                      {word.listTitle === "AI Suggestions" && (
+                        <Badge variant="outline" className="text-xs bg-gradient-to-r from-blue-50 to-purple-50 text-blue-700 border-blue-200">
+                          ✨ AI Suggested
+                        </Badge>
+                      )}
                     </div>
                     {word.listTitle && (
                       <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
