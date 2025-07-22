@@ -147,6 +147,19 @@ export default function StickyNotesBoard() {
     }
   });
 
+  // Silent position update mutation (no toast notifications)
+  const updatePositionMutation = useMutation({
+    mutationFn: ({ noteId, updates }: { noteId: number; updates: Partial<StickyNote> }) =>
+      apiRequest("PATCH", `/api/sticky-notes/${noteId}`, updates),
+    onSuccess: () => {
+      // Silently update cache without showing toast
+      queryClient.invalidateQueries({ queryKey: ["/api/sticky-notes"] });
+    },
+    onError: () => {
+      // Silently fail position updates to avoid annoying users
+    }
+  });
+
   const markAsLearnedMutation = useMutation({
     mutationFn: ({ noteId, isLearned }: { noteId: number; isLearned: boolean }) =>
       apiRequest("PATCH", `/api/sticky-notes/${noteId}`, { isLearned }),
@@ -177,7 +190,7 @@ export default function StickyNotesBoard() {
           
           // Only save position if this is the first time setting it (not just refreshing)
           if (!hasAnyPositions || (note.positionX === null || note.positionX === 0)) {
-            updateNoteMutation.mutate({
+            updatePositionMutation.mutate({
               noteId: note.id,
               updates: { positionX: position.x, positionY: position.y },
             });
@@ -283,7 +296,7 @@ export default function StickyNotesBoard() {
       if (dragState.isDragging && dragState.noteId) {
         const finalPosition = notePositions[dragState.noteId];
         if (finalPosition) {
-          updateNoteMutation.mutate({
+          updatePositionMutation.mutate({
             noteId: dragState.noteId,
             updates: { positionX: finalPosition.x, positionY: finalPosition.y },
           });
