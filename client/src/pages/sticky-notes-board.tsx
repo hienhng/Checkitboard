@@ -221,13 +221,16 @@ export default function StickyNotesBoard() {
       e.target.closest('select') ||
       e.target.closest('input') ||
       e.target.closest('textarea') ||
-      e.target.closest('[data-radix-dialog-content]')
+      e.target.closest('[data-radix-dialog-content]') ||
+      e.target.closest('[data-radix-popover-content]') ||
+      e.target.closest('[aria-expanded="true"]')
     )) {
       return;
     }
 
     e.preventDefault();
     e.stopPropagation();
+    e.stopImmediatePropagation();
     
     const rect = boardRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -249,6 +252,9 @@ export default function StickyNotesBoard() {
       if (!dragState.isDragging || !boardRef.current || !dragState.noteId) return;
 
       e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      
       const rect = boardRef.current.getBoundingClientRect();
       
       // Calculate new position based on mouse position minus offset
@@ -268,7 +274,10 @@ export default function StickyNotesBoard() {
     };
 
     const handleMouseUp = (e: MouseEvent) => {
+      // Prevent any event propagation during drag end
       e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
       
       // Save final position to database when drag ends
       if (dragState.isDragging && dragState.noteId) {
@@ -291,18 +300,37 @@ export default function StickyNotesBoard() {
       });
     };
 
+    // Only add event listeners when dragging to prevent interference
     if (dragState.isDragging) {
-      document.addEventListener('mousemove', handleMouseMove, { passive: false });
-      document.addEventListener('mouseup', handleMouseUp, { passive: false });
+      document.addEventListener('mousemove', handleMouseMove, { 
+        passive: false, 
+        capture: true 
+      });
+      document.addEventListener('mouseup', handleMouseUp, { 
+        passive: false, 
+        capture: true 
+      });
+      
+      // Disable pointer events on everything except the board during drag
       document.body.style.cursor = 'grabbing';
       document.body.style.userSelect = 'none';
+      document.body.style.pointerEvents = 'none';
+      if (boardRef.current) {
+        boardRef.current.style.pointerEvents = 'auto';
+      }
     }
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('mousemove', handleMouseMove, { capture: true });
+      document.removeEventListener('mouseup', handleMouseUp, { capture: true });
+      
+      // Restore normal interaction
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
+      document.body.style.pointerEvents = '';
+      if (boardRef.current) {
+        boardRef.current.style.pointerEvents = '';
+      }
     };
   }, [dragState]);
 
