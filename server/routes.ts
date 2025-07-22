@@ -3537,82 +3537,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .orderBy(desc(wordDefinitions.createdAt))
       .limit(20);
 
-      // If no incorrect words or very few, provide smart vocabulary suggestions
-      if (incorrectWords.length < 5) {
-        const fallbackWords = await db.select({
-          word: vocabularyWords.word,
-          definition: vocabularyWords.definition,
-          listTitle: vocabularyLists.title,
-          submissionId: sql<number>`NULL`.as('submissionId'),
-          isCorrect: sql<boolean>`NULL`.as('isCorrect')
-        })
-        .from(vocabularyWords)
-        .innerJoin(vocabularyLists, eq(vocabularyWords.listId, vocabularyLists.id))
-        .innerJoin(submissions, eq(vocabularyLists.id, submissions.listId))
-        .where(eq(submissions.studentId, req.user.id))
-        .orderBy(sql`RANDOM()`)
-        .limit(10);
+      // Get some fallback words from completed tests for variety
+      const fallbackWords = await db.select({
+        word: vocabularyWords.word,
+        definition: vocabularyWords.definition,
+        listTitle: vocabularyLists.title,
+        submissionId: sql<number>`NULL`.as('submissionId'),
+        isCorrect: sql<boolean>`NULL`.as('isCorrect')
+      })
+      .from(vocabularyWords)
+      .innerJoin(vocabularyLists, eq(vocabularyWords.listId, vocabularyLists.id))
+      .innerJoin(submissions, eq(vocabularyLists.id, submissions.listId))
+      .where(eq(submissions.studentId, req.user.id))
+      .orderBy(sql`RANDOM()`)
+      .limit(5);
 
-        // Add smart vocabulary suggestions using AI, including context from wrong words
-        const { generateVocabularySuggestions, generateContextualSuggestions } = await import("./ai");
-        let aiSuggestions: any[] = [];
-        
-        try {
-          // If we have some incorrect words, generate contextual suggestions based on them
-          if (incorrectWords.length > 0) {
-            const wrongWords = incorrectWords.map(w => w.word);
-            const contextualSuggestions = await generateContextualSuggestions(wrongWords);
-            aiSuggestions = contextualSuggestions.map((word: any) => ({
-              word: word.word,
-              definition: word.definition,
-              example: word.example,
-              category: word.category || "General",
-              difficulty: word.difficulty || "medium",
-              listTitle: "AI Suggestions",
-              submissionId: null,
-              isCorrect: null
-            }));
-          } else {
-            // If no wrong words, generate general vocabulary suggestions
-            const suggestions = await generateVocabularySuggestions();
-            aiSuggestions = suggestions.map((word: any) => ({
-              word: word.word,
-              definition: word.definition,
-              example: word.example,
-              category: word.category || "General",
-              difficulty: word.difficulty || "medium",
-              listTitle: "AI Suggestions",
-              submissionId: null,
-              isCorrect: null
-            }));
-          }
-        } catch (error) {
-          console.error("Error generating AI vocabulary suggestions:", error);
+      // Always add smart vocabulary suggestions using AI
+      const { generateVocabularySuggestions, generateContextualSuggestions } = await import("./ai");
+      let aiSuggestions: any[] = [];
+      
+      try {
+        // If we have incorrect words, generate contextual suggestions based on them
+        if (incorrectWords.length > 0) {
+          const wrongWords = incorrectWords.map(w => w.word);
+          const contextualSuggestions = await generateContextualSuggestions(wrongWords);
+          aiSuggestions = contextualSuggestions.map((word: any) => ({
+            word: word.word,
+            definition: word.definition,
+            example: word.example,
+            category: word.category || "General",
+            difficulty: word.difficulty || "medium",
+            listTitle: "AI Suggestions",
+            submissionId: null,
+            isCorrect: null
+          }));
+        } else {
+          // If no wrong words, generate general vocabulary suggestions
+          const suggestions = await generateVocabularySuggestions();
+          aiSuggestions = suggestions.map((word: any) => ({
+            word: word.word,
+            definition: word.definition,
+            example: word.example,
+            category: word.category || "General",
+            difficulty: word.difficulty || "medium",
+            listTitle: "AI Suggestions",
+            submissionId: null,
+            isCorrect: null
+          }));
         }
-
-        // Combine fallback words and AI suggestions
-        const combinedWords = [...fallbackWords, ...aiSuggestions].slice(0, 15);
-
-        const message = incorrectWords.length === 0 
-          ? "Great job! No incorrect words found. Here are some suggested words to expand your vocabulary."
-          : `Found ${incorrectWords.length} words to review. Here are related words and synonyms to deepen your understanding!`;
-
-        // If we have some incorrect words, include them too
-        const finalWords = incorrectWords.length > 0 
-          ? [...incorrectWords, ...combinedWords].slice(0, 20)
-          : combinedWords;
-
-        return res.json({
-          words: finalWords,
-          personalized: incorrectWords.length > 0,
-          message
-        });
+      } catch (error) {
+        console.error("Error generating AI vocabulary suggestions:", error);
       }
 
+      // Combine all words: incorrect words + AI suggestions + fallback words
+      const combinedWords = [...fallbackWords, ...aiSuggestions].slice(0, 10);
+      const finalWords = [...incorrectWords, ...combinedWords].slice(0, 20);
+
+      const message = incorrectWords.length === 0 
+        ? "Great job! No incorrect words found. Here are some suggested words to expand your vocabulary."
+        : `Found ${incorrectWords.length} words to review. Here are related words and synonyms to deepen your understanding!`;
+
       res.json({
-        words: incorrectWords,
-        personalized: true,
-        message: `Found ${incorrectWords.length} words to review based on your recent tests.`
+        words: finalWords,
+        personalized: incorrectWords.length > 0,
+        message
       });
     } catch (error) {
       console.error("Error fetching explore words:", error);
