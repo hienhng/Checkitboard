@@ -141,16 +141,24 @@ export default function StickyNotesBoard() {
     }
   });
 
-  // Initialize random positions for notes
+  // Initialize positions from database or generate random positions for new notes
   useEffect(() => {
     if (stickyNotes.length > 0 && boardRef.current) {
       const boardRect = boardRef.current.getBoundingClientRect();
       const newPositions: Record<number, { x: number; y: number }> = {};
       
-      stickyNotes.forEach((note, index) => {
-        if (!notePositions[note.id]) {
+      stickyNotes.forEach((note: any, index) => {
+        // Use database position if available, otherwise generate random position
+        if (note.positionX !== null && note.positionY !== null) {
+          newPositions[note.id] = { x: note.positionX, y: note.positionY };
+        } else if (!notePositions[note.id]) {
           const position = getRandomPosition(boardRect.width, boardRect.height, index);
           newPositions[note.id] = position;
+          // Save the generated position to database
+          updateNoteMutation.mutate({
+            noteId: note.id,
+            updates: { positionX: position.x, positionY: position.y },
+          });
         }
       });
       
@@ -238,6 +246,18 @@ export default function StickyNotesBoard() {
 
     const handleMouseUp = (e: MouseEvent) => {
       e.preventDefault();
+      
+      // Save final position to database when drag ends
+      if (dragState.isDragging && dragState.noteId) {
+        const finalPosition = notePositions[dragState.noteId];
+        if (finalPosition) {
+          updateNoteMutation.mutate({
+            noteId: dragState.noteId,
+            updates: { positionX: finalPosition.x, positionY: finalPosition.y },
+          });
+        }
+      }
+      
       setDragState({
         isDragging: false,
         noteId: null,
@@ -386,9 +406,9 @@ export default function StickyNotesBoard() {
           ) : (
             filteredNotes.map((note, index) => {
               const position = notePositions[note.id] || { x: 0, y: 0 };
-              const colorClass = note.color && STICKY_NOTE_COLORS[note.color] 
-                ? STICKY_NOTE_COLORS[note.color]
-                : STICKY_NOTE_COLORS[Object.keys(STICKY_NOTE_COLORS)[index % Object.keys(STICKY_NOTE_COLORS).length]];
+              const colorClass = note.color && STICKY_NOTE_COLORS[note.color as keyof typeof STICKY_NOTE_COLORS] 
+                ? STICKY_NOTE_COLORS[note.color as keyof typeof STICKY_NOTE_COLORS]
+                : STICKY_NOTE_COLORS[Object.keys(STICKY_NOTE_COLORS)[index % Object.keys(STICKY_NOTE_COLORS).length] as keyof typeof STICKY_NOTE_COLORS];
               const isDragging = dragState.isDragging && dragState.noteId === note.id;
               
               return (
@@ -477,7 +497,7 @@ export default function StickyNotesBoard() {
                                 setEditingNote(note);
                                 setUserNotes(note.userNotes || "");
                                 setSelectedEmoji(note.emoji || "📝");
-                                setSelectedColor(note.color || "yellow");
+                                setSelectedColor((note.color as keyof typeof STICKY_NOTE_COLORS) || "yellow");
                               }}
                             >
                               <Edit className="h-3 w-3" />
@@ -553,7 +573,7 @@ export default function StickyNotesBoard() {
                               {/* Preview */}
                               <div>
                                 <label className="text-sm font-medium mb-2 block">Preview</label>
-                                <div className={`p-3 rounded-lg border-2 ${STICKY_NOTE_COLORS[selectedColor]} max-w-48`}>
+                                <div className={`p-3 rounded-lg border-2 ${STICKY_NOTE_COLORS[selectedColor as keyof typeof STICKY_NOTE_COLORS]} max-w-48`}>
                                   <div className="flex items-center gap-2 mb-1">
                                     <span className="text-xl">{selectedEmoji}</span>
                                     <div className="font-bold text-sm truncate">{note.word}</div>

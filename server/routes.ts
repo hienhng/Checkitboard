@@ -3675,13 +3675,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Sticky note not found" });
       }
 
-      const validatedData = updateStickyNoteSchema.parse(req.body);
+      // Handle position updates separately from other updates
+      const { positionX, positionY, ...otherUpdates } = req.body;
+      
+      let updateData: any = {
+        updatedAt: new Date()
+      };
+
+      // If position data is provided, include it
+      if (typeof positionX === 'number') {
+        updateData.positionX = positionX;
+      }
+      if (typeof positionY === 'number') {
+        updateData.positionY = positionY;
+      }
+
+      // If other updates are provided, validate them
+      if (Object.keys(otherUpdates).length > 0) {
+        const validatedData = updateStickyNoteSchema.parse(otherUpdates);
+        updateData = { ...updateData, ...validatedData };
+      }
 
       const [updatedNote] = await db.update(stickyNotes)
-        .set({
-          ...validatedData,
-          updatedAt: new Date(),
-        })
+        .set(updateData)
         .where(eq(stickyNotes.id, noteId))
         .returning();
 
