@@ -30,6 +30,48 @@ import {
 
 type StudyMode = "flashcards" | "learn" | "test" | "match" | "spell";
 
+// Component for mode description card
+const ModeDescriptionCard = ({ 
+  studyModes, 
+  activeMode, 
+  learningCards 
+}: { 
+  studyModes: any[], 
+  activeMode: StudyMode, 
+  learningCards: any[] 
+}) => {
+  const currentMode = studyModes.find(mode => mode.id === activeMode);
+  const IconComponent = currentMode?.icon || BookOpen;
+  
+  return (
+    <Card className="mb-6">
+      <CardContent className="p-4">
+        <div className="flex items-center space-x-3">
+          <IconComponent className="h-5 w-5 text-blue-600" />
+          <div>
+            <h3 className="font-medium">
+              {currentMode?.name}
+            </h3>
+            <p className="text-sm text-gray-600">
+              {currentMode?.description}
+            </p>
+          </div>
+          <div className="ml-auto flex items-center space-x-4 text-sm text-gray-500">
+            <div className="flex items-center space-x-1">
+              <Clock className="h-4 w-4" />
+              <span>~{currentMode?.estimatedTime}min</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <Target className="h-4 w-4" />
+              <span>{learningCards.length} cards</span>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 interface Flashcard {
   id: number;
   word: { word: string };
@@ -38,7 +80,7 @@ interface Flashcard {
     correctDefinition?: string;
     showCorrectDefinition?: boolean;
     isCorrect?: boolean;
-    submission: { list: { title: string } }
+    submission?: { list: { title: string } } | null
   };
   learned: boolean;
   difficulty?: number; // 1-5 scale
@@ -69,11 +111,11 @@ export default function FlashcardsPage() {
     queryFn: getQueryFn({ on401: "throw" }),
   });
 
-  const learningCards = (flashcards as Flashcard[] || []).filter(card => !card.learned);
-  const masteredCards = (flashcards as Flashcard[] || []).filter(card => card.learned);
+  const learningCards = Array.isArray(flashcards) ? (flashcards as Flashcard[]).filter(card => !card.learned) : [];
+  const masteredCards = Array.isArray(flashcards) ? (flashcards as Flashcard[]).filter(card => card.learned) : [];
 
   // Calculate overall progress
-  const totalCards = flashcards?.length || 0;
+  const totalCards = Array.isArray(flashcards) ? flashcards.length : 0;
   const masteredCount = masteredCards.length;
   const overallProgress = totalCards > 0 ? (masteredCount / totalCards) * 100 : 0;
 
@@ -148,35 +190,35 @@ export default function FlashcardsPage() {
       case "flashcards":
         return (
           <FlashcardStudyMode 
-            cards={learningCards} 
+            cards={learningCards as any} 
             onSessionComplete={(stats) => setCurrentSessionStats(stats)}
           />
         );
       case "learn":
         return (
           <LearnMode 
-            cards={learningCards} 
+            cards={learningCards as any} 
             onSessionComplete={(stats) => setCurrentSessionStats(stats)}
           />
         );
       case "test":
         return (
           <TestMode 
-            cards={learningCards} 
+            cards={learningCards as any} 
             onSessionComplete={(stats) => setCurrentSessionStats(stats)}
           />
         );
       case "match":
         return (
           <MatchMode 
-            cards={learningCards} 
+            cards={learningCards as any} 
             onSessionComplete={(stats) => setCurrentSessionStats(stats)}
           />
         );
       case "spell":
         return (
           <SpellMode 
-            cards={learningCards} 
+            cards={learningCards as any} 
             onSessionComplete={(stats) => setCurrentSessionStats(stats)}
           />
         );
@@ -269,36 +311,13 @@ export default function FlashcardsPage() {
               </div>
 
               {/* Mode Description */}
-              {learningCards.length > 0 && (
-                <Card className="mb-6">
-                  <CardContent className="p-4">
-                    <div className="flex items-center space-x-3">
-                      {React.createElement(
-                        studyModes.find(mode => mode.id === activeMode)?.icon || BookOpen, 
-                        { className: "h-5 w-5 text-blue-600" }
-                      )}
-                      <div>
-                        <h3 className="font-medium">
-                          {studyModes.find(mode => mode.id === activeMode)?.name}
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                          {studyModes.find(mode => mode.id === activeMode)?.description}
-                        </p>
-                      </div>
-                      <div className="ml-auto flex items-center space-x-4 text-sm text-gray-500">
-                        <div className="flex items-center space-x-1">
-                          <Clock className="h-4 w-4" />
-                          <span>~{studyModes.find(mode => mode.id === activeMode)?.estimatedTime}min</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Target className="h-4 w-4" />
-                          <span>{learningCards.length} cards</span>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+              {learningCards.length > 0 ? (
+                <ModeDescriptionCard 
+                  studyModes={studyModes} 
+                  activeMode={activeMode} 
+                  learningCards={learningCards} 
+                />
+              ) : null}
 
               {/* Study Mode Content */}
               <div className="mt-6">
