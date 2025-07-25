@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Edit, Trash2, CheckCircle, Circle, StickyNote as StickyNoteIcon, BookOpen, Filter, Move, GripVertical } from "lucide-react";
+import { Search, Edit, Trash2, CheckCircle, Circle, StickyNote as StickyNoteIcon, BookOpen, Filter, Move, GripVertical, Save } from "lucide-react";
 import { StickyNote } from "@shared/schema";
 import { cn } from "@/lib/utils";
 
@@ -106,6 +106,7 @@ export default function StickyNotesBoard() {
     const saved = sessionStorage.getItem('stickyNotePositions');
     return saved ? JSON.parse(saved) : {};
   });
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const boardRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   
@@ -153,7 +154,33 @@ export default function StickyNotesBoard() {
     }
   });
 
-  // Removed position update mutation - notes are not persisted
+  // Position update mutation for saving to database
+  const savePositionsMutation = useMutation({
+    mutationFn: async (positions: Array<{ noteId: number; x: number; y: number }>) => {
+      const promises = positions.map(({ noteId, x, y }) =>
+        apiRequest("PATCH", `/api/sticky-notes/${noteId}`, { 
+          positionX: Math.round(x), 
+          positionY: Math.round(y) 
+        })
+      );
+      return Promise.all(promises);
+    },
+    onSuccess: () => {
+      setHasUnsavedChanges(false);
+      toast({
+        title: "Positions Saved",
+        description: "Your sticky note positions have been saved successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/sticky-notes"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save positions",
+        variant: "destructive",
+      });
+    }
+  });
 
   const markAsLearnedMutation = useMutation({
     mutationFn: ({ noteId, isLearned }: { noteId: number; isLearned: boolean }) =>
@@ -163,7 +190,7 @@ export default function StickyNotesBoard() {
     }
   });
 
-  // Initialize positions using organized grid layout - session persistence only
+  // Initialize positions from database or session storage, fallback to grid layout
   useEffect(() => {
     if (stickyNotes.length > 0 && boardRef.current) {
       const boardRect = boardRef.current.getBoundingClientRect();
@@ -171,9 +198,13 @@ export default function StickyNotesBoard() {
       
       stickyNotes.forEach((note: any, index) => {
         if (!notePositions[note.id]) {
-          // Use organized grid layout for notes that don't have session positions yet
-          const position = getOrganizedPosition(boardRect.width, boardRect.height, index);
-          newPositions[note.id] = position;
+          // First try database positions, then session positions, then grid layout
+          if (note.positionX !== null && note.positionY !== null && note.positionX !== 0 && note.positionY !== 0) {
+            newPositions[note.id] = { x: note.positionX, y: note.positionY };
+          } else {
+            const position = getOrganizedPosition(boardRect.width, boardRect.height, index);
+            newPositions[note.id] = position;
+          }
         }
       });
       
@@ -257,6 +288,7 @@ export default function StickyNotesBoard() {
         [dragState.noteId!]: { x: newX, y: newY }
       };
       setNotePositions(newPositions);
+      setHasUnsavedChanges(true);
       
       // Save to sessionStorage for persistence across page navigations
       sessionStorage.setItem('stickyNotePositions', JSON.stringify(newPositions));
@@ -308,6 +340,30 @@ export default function StickyNotesBoard() {
     });
   };
 
+  const handleSavePositions = () => {
+    const positionsToSave = Object.entries(notePositions).map(([noteId, position]) => ({
+      noteId: parseInt(noteId),
+      x: position.x,
+      y: position.y
+    }));
+    
+    savePositionsMutation.mutate(positionsToSave);
+  };
+
+  // Warning before leaving page with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved position changes. Are you sure you want to leave?';
+        return 'You have unsaved position changes. Are you sure you want to leave?';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
   const learnedCount = stickyNotes.filter((n) => n.isLearned).length;
   const totalCount = stickyNotes.length;
 
@@ -338,6 +394,21 @@ export default function StickyNotesBoard() {
                   {totalCount} total • {learnedCount} learned • {totalCount - learnedCount} learning
                 </p>
               </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              {hasUnsavedChanges && (
+                <Badge variant="destructive" className="animate-pulse">
+                  Unsaved Changes
+                </Badge>
+              )}
+              <Button 
+                onClick={handleSavePositions}
+                disabled={!hasUnsavedChanges || savePositionsMutation.isPending}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {savePositionsMutation.isPending ? "Saving..." : "Save Positions"}
+              </Button>
             </div>
           </div>
 
