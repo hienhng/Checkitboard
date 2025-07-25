@@ -200,7 +200,7 @@ function LearnerDashboard() {
                           {filteredVocabularyLists.map(list => {
                             const isCompleted = list.submission && list.submission.completed;
                             const isDiscarded = list.submission && list.submission.isDiscarded;
-                            const isGraded = isCompleted && list.submission.gradedAt;
+                            const isGraded = isCompleted && list.submission?.gradedAt;
                             
                             return (
                               <div 
@@ -223,7 +223,7 @@ function LearnerDashboard() {
                                     )}
                                     {isGraded && !isDiscarded && (
                                       <Badge className="bg-green-100 text-green-800 text-xs">
-                                        {list.submission.score}% - Graded
+                                        {list.submission?.score}% - Graded
                                       </Badge>
                                     )}
                                     {isCompleted && !isGraded && !isDiscarded && (
@@ -326,7 +326,7 @@ function LearnerDashboard() {
                             {filteredVocabularyLists.map(list => {
                               const isCompleted = list.submission && list.submission.completed;
                               const isDiscarded = list.submission && list.submission.isDiscarded;
-                              const isGraded = isCompleted && list.submission.gradedAt;
+                              const isGraded = isCompleted && list.submission?.gradedAt;
                               
                               return (
                                 <div 
@@ -366,7 +366,7 @@ function LearnerDashboard() {
                                       )}
                                       {isCompleted && (
                                         <p className="text-xs text-gray-500">
-                                          Completed on: {new Date(list.submission.submittedAt).toLocaleDateString()}
+                                          Completed on: {list.submission?.submittedAt ? new Date(list.submission.submittedAt).toLocaleDateString() : 'Unknown Date'}
                                         </p>
                                       )}
                                       
@@ -437,7 +437,7 @@ function LearnerDashboard() {
                                             Click "Study All Cards" to practice
                                           </div>
                                           <div className="text-xs text-gray-400">
-                                            From: {card.definition.submission.list.title}
+                                            From: {card.definition?.submission?.list?.title || 'Unknown List'}
                                           </div>
                                         </div>
                                       </div>
