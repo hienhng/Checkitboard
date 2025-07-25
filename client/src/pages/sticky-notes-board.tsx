@@ -101,7 +101,11 @@ export default function StickyNotesBoard() {
     currentX: 0,
     currentY: 0
   });
-  const [notePositions, setNotePositions] = useState<Record<number, { x: number; y: number }>>({});
+  // Load positions from sessionStorage on component mount
+  const [notePositions, setNotePositions] = useState<Record<number, { x: number; y: number }>>(() => {
+    const saved = sessionStorage.getItem('stickyNotePositions');
+    return saved ? JSON.parse(saved) : {};
+  });
   const boardRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   
@@ -174,7 +178,11 @@ export default function StickyNotesBoard() {
       });
       
       if (Object.keys(newPositions).length > 0) {
-        setNotePositions(prev => ({ ...prev, ...newPositions }));
+        const updatedPositions = { ...notePositions, ...newPositions };
+        setNotePositions(updatedPositions);
+        
+        // Save initial positions to sessionStorage
+        sessionStorage.setItem('stickyNotePositions', JSON.stringify(updatedPositions));
       }
     }
   }, [stickyNotes]);
@@ -244,10 +252,14 @@ export default function StickyNotesBoard() {
       const newX = Math.max(10, Math.min(rect.width - 210, e.clientX - rect.left - dragState.startX));
       const newY = Math.max(10, Math.min(rect.height - 170, e.clientY - rect.top - dragState.startY));
 
-      setNotePositions(prev => ({
-        ...prev,
+      const newPositions = {
+        ...notePositions,
         [dragState.noteId!]: { x: newX, y: newY }
-      }));
+      };
+      setNotePositions(newPositions);
+      
+      // Save to sessionStorage for persistence across page navigations
+      sessionStorage.setItem('stickyNotePositions', JSON.stringify(newPositions));
 
       // Positions maintained in session state only - no database persistence
 
