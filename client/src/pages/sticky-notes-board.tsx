@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -104,6 +104,23 @@ export default function StickyNotesBoard() {
   const [notePositions, setNotePositions] = useState<Record<number, { x: number; y: number }>>({});
   const boardRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  
+  // Throttle position saving to avoid too many database calls
+  const throttledSavePosition = useCallback(
+    (() => {
+      let timeoutId: NodeJS.Timeout | null = null;
+      return (noteId: number, x: number, y: number) => {
+        if (timeoutId) clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          updatePositionMutation.mutate({
+            noteId,
+            updates: { positionX: x, positionY: y },
+          });
+        }, 100); // Save after 100ms of no movement
+      };
+    })(),
+    []
+  );
 
   const { data: stickyNotes = [], isLoading } = useQuery<StickyNote[]>({
     queryKey: ["/api/sticky-notes"],
@@ -274,6 +291,9 @@ export default function StickyNotesBoard() {
         [dragState.noteId!]: { x: newX, y: newY }
       }));
 
+      // Save position with throttling during drag
+      throttledSavePosition(dragState.noteId, newX, newY);
+
       setDragState(prev => ({
         ...prev,
         currentX: e.clientX - rect.left,
@@ -284,17 +304,7 @@ export default function StickyNotesBoard() {
     const handleMouseUp = (e: MouseEvent) => {
       e.preventDefault();
       
-      // Save final position to database when drag ends
-      if (dragState.isDragging && dragState.noteId) {
-        const finalPosition = notePositions[dragState.noteId];
-        if (finalPosition) {
-          updatePositionMutation.mutate({
-            noteId: dragState.noteId,
-            updates: { positionX: finalPosition.x, positionY: finalPosition.y },
-          });
-        }
-      }
-      
+      // Position is already saved during dragging, just clean up drag state
       setDragState({
         isDragging: false,
         noteId: null,
