@@ -23,12 +23,12 @@ interface FlashcardStudyModeProps {
   cards: Array<{
     id: number;
     word: { word: string };
-    definition: { 
+    definition?: { 
       studentDefinition: string;
       correctDefinition?: string;
       showCorrectDefinition?: boolean;
       submission?: { list: { title: string } } | null
-    };
+    } | null;
     learned: boolean;
   }>;
   onSessionComplete?: (stats: any) => void;
@@ -61,7 +61,7 @@ export function FlashcardStudyMode({ cards, onSessionComplete }: FlashcardStudyM
   });
 
   const handleCardResponse = (isCorrect: boolean) => {
-    setStudiedCards(prev => new Set([...prev, currentCard.id]));
+    setStudiedCards(prev => new Set(Array.from(prev).concat(currentCard.id)));
     setSessionStats(prev => ({
       ...prev,
       [isCorrect ? 'correct' : 'incorrect']: prev[isCorrect ? 'correct' : 'incorrect'] + 1
@@ -137,7 +137,7 @@ export function FlashcardStudyMode({ cards, onSessionComplete }: FlashcardStudyM
             Card {currentIndex + 1} of {cards.length}
           </Badge>
           <div className="text-sm text-gray-500">
-            From: {currentCard.definition.submission?.list?.title || 'Unknown List'}
+            From: {currentCard.definition?.submission?.list?.title || 'Unknown List'}
           </div>
         </div>
         <div className="flex items-center space-x-2 text-sm text-gray-500">
@@ -187,15 +187,15 @@ export function FlashcardStudyMode({ cards, onSessionComplete }: FlashcardStudyM
                   {!isFlipped ? (
                     <div>
                       <h2 className="text-3xl font-bold text-gray-900 mb-4">
-                        {currentCard.word.word}
+                        {currentCard.word?.word || 'Unknown Word'}
                       </h2>
                       <p className="text-gray-500">Click to see definition</p>
                     </div>
                   ) : (
                     <div>
-                      {currentCard.definition.correctDefinition ? (
+                      {currentCard.definition?.correctDefinition ? (
                         <div className="text-lg text-gray-700">
-                          {currentCard.definition.correctDefinition}
+                          {currentCard.definition?.correctDefinition}
                         </div>
                       ) : (
                         <div className="text-lg text-gray-500 italic">
