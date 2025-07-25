@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -105,22 +105,7 @@ export default function StickyNotesBoard() {
   const boardRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   
-  // Throttle position saving to avoid too many database calls
-  const throttledSavePosition = useCallback(
-    (() => {
-      let timeoutId: NodeJS.Timeout | null = null;
-      return (noteId: number, x: number, y: number) => {
-        if (timeoutId) clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => {
-          updatePositionMutation.mutate({
-            noteId,
-            updates: { positionX: x, positionY: y },
-          });
-        }, 100); // Save after 100ms of no movement
-      };
-    })(),
-    []
-  );
+  // No position saving - notes are freely movable without persistence
 
   const { data: stickyNotes = [], isLoading } = useQuery<StickyNote[]>({
     queryKey: ["/api/sticky-notes"],
@@ -164,18 +149,7 @@ export default function StickyNotesBoard() {
     }
   });
 
-  // Silent position update mutation (no toast notifications)
-  const updatePositionMutation = useMutation({
-    mutationFn: ({ noteId, updates }: { noteId: number; updates: Partial<StickyNote> }) =>
-      apiRequest("PATCH", `/api/sticky-notes/${noteId}`, updates),
-    onSuccess: () => {
-      // Silently update cache without showing toast
-      queryClient.invalidateQueries({ queryKey: ["/api/sticky-notes"] });
-    },
-    onError: () => {
-      // Silently fail position updates to avoid annoying users
-    }
-  });
+  // Removed position update mutation - notes are not persisted
 
   const markAsLearnedMutation = useMutation({
     mutationFn: ({ noteId, isLearned }: { noteId: number; isLearned: boolean }) =>
@@ -185,33 +159,17 @@ export default function StickyNotesBoard() {
     }
   });
 
-  // Initialize positions from database or generate random positions for new notes
+  // Initialize positions using organized grid layout - no persistence
   useEffect(() => {
     if (stickyNotes.length > 0 && boardRef.current) {
       const boardRect = boardRef.current.getBoundingClientRect();
       const newPositions: Record<number, { x: number; y: number }> = {};
       
-      // Check if any notes have saved positions (indicating they've been moved before)
-      const hasAnyPositions = stickyNotes.some((note: any) => 
-        note.positionX !== null && note.positionY !== null && note.positionX !== 0 && note.positionY !== 0
-      );
-      
       stickyNotes.forEach((note: any, index) => {
-        // Use database position if available and note has been positioned before
-        if (note.positionX !== null && note.positionY !== null && note.positionX !== 0 && note.positionY !== 0) {
-          newPositions[note.id] = { x: note.positionX, y: note.positionY };
-        } else if (!notePositions[note.id]) {
-          // For first-time layout or notes without positions, use organized grid
+        if (!notePositions[note.id]) {
+          // Always use organized grid layout for fresh positioning
           const position = getOrganizedPosition(boardRect.width, boardRect.height, index);
           newPositions[note.id] = position;
-          
-          // Only save position if this is the first time setting it (not just refreshing)
-          if (!hasAnyPositions || (note.positionX === null || note.positionX === 0)) {
-            updatePositionMutation.mutate({
-              noteId: note.id,
-              updates: { positionX: position.x, positionY: position.y },
-            });
-          }
         }
       });
       
@@ -291,8 +249,7 @@ export default function StickyNotesBoard() {
         [dragState.noteId!]: { x: newX, y: newY }
       }));
 
-      // Save position with throttling during drag
-      throttledSavePosition(dragState.noteId, newX, newY);
+      // No position saving - just update local state
 
       setDragState(prev => ({
         ...prev,
@@ -304,7 +261,7 @@ export default function StickyNotesBoard() {
     const handleMouseUp = (e: MouseEvent) => {
       e.preventDefault();
       
-      // Position is already saved during dragging, just clean up drag state
+      // Just clean up drag state - no position saving
       setDragState({
         isDragging: false,
         noteId: null,
