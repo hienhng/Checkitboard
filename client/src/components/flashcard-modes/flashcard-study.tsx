@@ -27,7 +27,7 @@ interface FlashcardStudyModeProps {
       studentDefinition: string;
       correctDefinition?: string;
       showCorrectDefinition?: boolean;
-      submission: { list: { title: string } }
+      submission?: { list: { title: string } } | null
     };
     learned: boolean;
   }>;
@@ -137,7 +137,7 @@ export function FlashcardStudyMode({ cards, onSessionComplete }: FlashcardStudyM
             Card {currentIndex + 1} of {cards.length}
           </Badge>
           <div className="text-sm text-gray-500">
-            From: {currentCard.definition.submission.list.title}
+            From: {currentCard.definition.submission?.list?.title || 'Unknown List'}
           </div>
         </div>
         <div className="flex items-center space-x-2 text-sm text-gray-500">

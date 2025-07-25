@@ -19,11 +19,11 @@ interface FlashcardProps {
       correctDefinition?: string;
       showCorrectDefinition?: boolean;
       isCorrect?: boolean;
-      submission: {
+      submission?: {
         list: {
           title: string;
         };
-      };
+      } | null;
     };
     learned: boolean;
   };
