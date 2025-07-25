@@ -165,11 +165,25 @@ export default function VocabularyCheckup() {
       return res.json();
     },
     onSuccess: () => {
+      // Exit fullscreen if currently in fullscreen mode
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {
+          // Fallback for older browsers
+          if ((document as any).webkitExitFullscreen) {
+            (document as any).webkitExitFullscreen();
+          }
+        });
+      }
+      
       toast({
         title: "Check-up completed",
         description: "Your vocabulary check-up has been submitted for grading.",
       });
-      navigate("/learner/dashboard");
+      
+      // Small delay to ensure fullscreen exit completes, then refresh and navigate
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     },
     onError: (error: Error) => {
       toast({
@@ -191,12 +205,26 @@ export default function VocabularyCheckup() {
       return res.json();
     },
     onSuccess: () => {
+      // Exit fullscreen if currently in fullscreen mode
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {
+          // Fallback for older browsers
+          if ((document as any).webkitExitFullscreen) {
+            (document as any).webkitExitFullscreen();
+          }
+        });
+      }
+      
       toast({
         title: "Check-up discarded",
         description: "Your vocabulary check-up has been discarded with a 0% score.",
         variant: "destructive"
       });
-      navigate("/learner/dashboard");
+      
+      // Small delay to ensure fullscreen exit completes, then refresh and navigate
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     },
     onError: (error: Error) => {
       toast({
