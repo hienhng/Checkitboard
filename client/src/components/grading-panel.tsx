@@ -517,8 +517,21 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
                   <CardContent className="py-3 px-4 border-t border-gray-200">
                     <div className="flex flex-col space-y-2">
                       <div>
-                        <p className="text-sm font-medium text-gray-700">Student's definition:</p>
-                        <p className="text-sm italic text-gray-600">"{definition.studentDefinition}"</p>
+                        <div className="flex items-start justify-between mb-1">
+                          <p className="text-sm font-medium text-gray-700">Student's definition:</p>
+                          {(!definition.studentDefinition || definition.studentDefinition.trim() === '') && (
+                            <div className="flex items-center gap-1 bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs">
+                              <span className="font-medium">Auto-graded: Wrong</span>
+                              <span title="Skipped words are automatically marked as incorrect">ⓘ</span>
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-sm italic text-gray-600">
+                          {definition.studentDefinition ? 
+                            `"${definition.studentDefinition}"` : 
+                            <span className="text-gray-400">No definition provided (skipped)</span>
+                          }
+                        </p>
                       </div>
                       
                       <div className="mt-4 space-y-4 pt-2 border-t border-gray-100">

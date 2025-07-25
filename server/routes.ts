@@ -1042,8 +1042,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validatedData = gradeSchema.parse(req.body);
 
+      // Get all word definitions for this submission to check for skipped words
+      const submissionWithDetails = await storage.getSubmissionWithDefinitions(submissionId);
+      
+      // Auto-grade skipped words as wrong
+      const processedDefinitions = validatedData.definitions.map(def => {
+        // Find the actual definition data to check if it was skipped
+        const actualDefinition = submissionWithDetails?.wordDefinitions?.find(
+          wd => wd.id === def.definitionId
+        );
+        
+        // If student definition is null, empty, or just whitespace, automatically mark as wrong
+        const isSkipped = !actualDefinition?.studentDefinition || 
+                         actualDefinition.studentDefinition.trim() === '';
+        
+        if (isSkipped) {
+          return {
+            ...def,
+            isCorrect: false,
+            addToFlashcards: true // Automatically add skipped words to flashcards
+          };
+        }
+        
+        return def;
+      });
+
       // Update each definition
-      for (const def of validatedData.definitions) {
+      for (const def of processedDefinitions) {
         await storage.gradeWordDefinition(
           def.definitionId, 
           def.isCorrect, 
@@ -1109,7 +1134,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (parentLinks.length > 0) {
         const vocabList = await storage.getVocabularyList(submission.listId);
-        const incorrectDefinitions = validatedData.definitions.filter(d => !d.isCorrect);
+        const incorrectDefinitions = processedDefinitions.filter(d => !d.isCorrect);
         
         // Get the actual word texts for incorrect definitions
         const incorrectWords = [];
