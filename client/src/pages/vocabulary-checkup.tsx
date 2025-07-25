@@ -86,7 +86,7 @@ export default function VocabularyCheckup() {
       multipleChoiceQuestions,
       mcQuestionsLoading,
       mcQuestionsError,
-      hasMultipleChoiceQuestions: multipleChoiceQuestions && multipleChoiceQuestions.length > 0
+      hasMultipleChoiceQuestions: Array.isArray(multipleChoiceQuestions) && multipleChoiceQuestions.length > 0
     });
   }, [currentWord, multipleChoiceQuestions, mcQuestionsLoading, mcQuestionsError]);
 
@@ -281,14 +281,14 @@ export default function VocabularyCheckup() {
     }
   }, [currentWordIndex, savedDefinitions, submissionData?.list?.words]);
 
-  const hasMultipleChoiceQuestions = multipleChoiceQuestions && multipleChoiceQuestions.length > 0;
+  const hasMultipleChoiceQuestions = Array.isArray(multipleChoiceQuestions) && multipleChoiceQuestions.length > 0;
 
   console.log("MCQS Debug - Current State:", {
     currentWordIndex,
     currentWordId: currentWord?.id,
     currentWordText: currentWord?.word,
     mcQuestionsArray: multipleChoiceQuestions,
-    mcQuestionsLength: multipleChoiceQuestions?.length,
+    mcQuestionsLength: Array.isArray(multipleChoiceQuestions) ? multipleChoiceQuestions.length : 0,
     hasMultipleChoiceQuestions,
     mcQuestionsLoading,
     mcQuestionsError: mcQuestionsError?.message
@@ -302,7 +302,7 @@ export default function VocabularyCheckup() {
     // Handle multiple choice questions
     if (hasMultipleChoiceQuestions) {
       // Save all multiple choice answers for this word
-      for (const question of multipleChoiceQuestions) {
+      for (const question of (multipleChoiceQuestions || [])) {
         const selectedAnswer = selectedMultipleChoiceAnswers[question.id];
         if (selectedAnswer) {
           await multipleChoiceAnswerMutation.mutateAsync({
@@ -316,7 +316,7 @@ export default function VocabularyCheckup() {
       if (definition !== savedDefinitions[currentWord.id]) {
         await definitionMutation.mutateAsync({ 
           wordId: currentWord.id, 
-          studentDefinition: definition || null
+          studentDefinition: definition || ""
         });
       }
     }
@@ -359,7 +359,7 @@ export default function VocabularyCheckup() {
     // Save the final answer(s)
     if (hasMultipleChoiceQuestions) {
       // Save all multiple choice answers for this word
-      for (const question of multipleChoiceQuestions) {
+      for (const question of (multipleChoiceQuestions || [])) {
         const selectedAnswer = selectedMultipleChoiceAnswers[question.id];
         if (selectedAnswer) {
           await multipleChoiceAnswerMutation.mutateAsync({
@@ -373,7 +373,7 @@ export default function VocabularyCheckup() {
       if (definition !== savedDefinitions[currentWord.id]) {
         await definitionMutation.mutateAsync({ 
           wordId: currentWord.id, 
-          studentDefinition: definition || null
+          studentDefinition: definition || ""
         });
       }
     }
@@ -734,7 +734,7 @@ export default function VocabularyCheckup() {
                                 const isSkipped = savedDefinitions.hasOwnProperty(wordId) && !savedDefinitions[wordId];
                                 
                                 // Check for multiple choice answers for this word
-                                const hasMultipleChoiceAnswers = multipleChoiceQuestions && multipleChoiceQuestions.some((q: MultipleChoiceQuestion) => 
+                                const hasMultipleChoiceAnswers = Array.isArray(multipleChoiceQuestions) && multipleChoiceQuestions.some((q: MultipleChoiceQuestion) => 
                                   selectedMultipleChoiceAnswers[q.id]
                                 );
                                 
