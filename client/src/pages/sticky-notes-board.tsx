@@ -105,7 +105,7 @@ export default function StickyNotesBoard() {
   const boardRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   
-  // No position saving - notes are freely movable without persistence
+  // Notes maintain positions during session but reset on page refresh
 
   const { data: stickyNotes = [], isLoading } = useQuery<StickyNote[]>({
     queryKey: ["/api/sticky-notes"],
@@ -159,7 +159,7 @@ export default function StickyNotesBoard() {
     }
   });
 
-  // Initialize positions using organized grid layout - no persistence
+  // Initialize positions using organized grid layout - session persistence only
   useEffect(() => {
     if (stickyNotes.length > 0 && boardRef.current) {
       const boardRect = boardRef.current.getBoundingClientRect();
@@ -167,7 +167,7 @@ export default function StickyNotesBoard() {
       
       stickyNotes.forEach((note: any, index) => {
         if (!notePositions[note.id]) {
-          // Always use organized grid layout for fresh positioning
+          // Use organized grid layout for notes that don't have session positions yet
           const position = getOrganizedPosition(boardRect.width, boardRect.height, index);
           newPositions[note.id] = position;
         }
@@ -249,7 +249,7 @@ export default function StickyNotesBoard() {
         [dragState.noteId!]: { x: newX, y: newY }
       }));
 
-      // No position saving - just update local state
+      // Positions maintained in session state only - no database persistence
 
       setDragState(prev => ({
         ...prev,
@@ -261,7 +261,7 @@ export default function StickyNotesBoard() {
     const handleMouseUp = (e: MouseEvent) => {
       e.preventDefault();
       
-      // Just clean up drag state - no position saving
+      // Clean up drag state - positions remain in session memory
       setDragState({
         isDragging: false,
         noteId: null,
