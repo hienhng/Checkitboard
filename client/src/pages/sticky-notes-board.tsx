@@ -61,28 +61,24 @@ const EMOJI_OPTIONS = [
 
 // Generate organized grid position for first-time layout
 const getOrganizedPosition = (boardWidth: number, boardHeight: number, index: number) => {
-  const padding = 40;
+  const padding = 20;
   const noteWidth = 192; // w-48 = 12rem = 192px
   const noteHeight = 160; // including spacing
-  const spacing = 60; // Much larger spacing between notes
+  const spacing = 30; // Horizontal spacing between notes
+  const verticalSpacing = 40; // Vertical spacing between rows
   
-  // Use only 70% of board width to leave some free space
-  const usableWidth = boardWidth * 0.7;
-  const notesPerRow = Math.max(2, Math.floor((usableWidth - padding * 2) / (noteWidth + spacing)));
+  // Calculate how many notes can fit horizontally across the full width
+  const notesPerRow = Math.floor((boardWidth - padding * 2) / (noteWidth + spacing));
   const row = Math.floor(index / notesPerRow);
   const col = index % notesPerRow;
   
-  // Calculate position with larger spacing
+  // Calculate position - spread horizontally first, then move to next row
   const baseX = padding + col * (noteWidth + spacing);
-  const baseY = padding + row * (noteHeight + spacing);
-  
-  // Add small random offset for organic feeling (±15px)
-  const randomOffsetX = (Math.random() - 0.5) * 30;
-  const randomOffsetY = (Math.random() - 0.5) * 30;
+  const baseY = padding + row * (noteHeight + verticalSpacing);
   
   return {
-    x: Math.max(padding, Math.min(boardWidth - noteWidth - padding, baseX + randomOffsetX)),
-    y: Math.max(padding, Math.min(boardHeight - noteHeight - padding, baseY + randomOffsetY))
+    x: Math.max(padding, Math.min(boardWidth - noteWidth - padding, baseX)),
+    y: Math.max(padding, baseY)
   };
 };
 
