@@ -144,6 +144,7 @@ export const stickyNotes = pgTable("sticky_notes", {
   positionX: integer("position_x").default(0),
   positionY: integer("position_y").default(0),
   isLearned: boolean("is_learned").default(false).notNull(),
+  isCustom: boolean("is_custom").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

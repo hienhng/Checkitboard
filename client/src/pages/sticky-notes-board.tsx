@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Edit, Trash2, CheckCircle, Circle, StickyNote as StickyNoteIcon, BookOpen, Filter, Move, GripVertical, LayoutGrid, Brush, Paintbrush } from "lucide-react";
+import { Search, Edit, Trash2, CheckCircle, Circle, StickyNote as StickyNoteIcon, BookOpen, Filter, Move, GripVertical, LayoutGrid, Brush, Paintbrush, Plus, Sparkles, Wand2 } from "lucide-react";
 import { StickyNote } from "@shared/schema";
 import { cn } from "@/lib/utils";
 
@@ -96,6 +96,12 @@ export default function StickyNotesBoard() {
   const [userNotes, setUserNotes] = useState("");
   const [selectedEmoji, setSelectedEmoji] = useState("📝");
   const [selectedColor, setSelectedColor] = useState("yellow");
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [customWord, setCustomWord] = useState("");
+  const [customDefinition, setCustomDefinition] = useState("");
+  const [isGeneratingDefinition, setIsGeneratingDefinition] = useState(false);
+  const [createEmoji, setCreateEmoji] = useState("📝");
+  const [createColor, setCreateColor] = useState("yellow");
   const [dragState, setDragState] = useState<DragState>({
     isDragging: false,
     noteId: null,
@@ -180,6 +186,51 @@ export default function StickyNotesBoard() {
       apiRequest("PATCH", `/api/sticky-notes/${noteId}`, { isLearned }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sticky-notes"] });
+    }
+  });
+
+  const createCustomNoteMutation = useMutation({
+    mutationFn: (noteData: any) =>
+      apiRequest("POST", "/api/sticky-notes/custom", noteData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sticky-notes"] });
+      setShowCreateDialog(false);
+      setCustomWord("");
+      setCustomDefinition("");
+      setCreateEmoji("📝");
+      setCreateColor("yellow");
+      toast({
+        title: "Custom Note Created",
+        description: "Your custom vocabulary note has been added to the board."
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create custom note",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const generateDefinitionMutation = useMutation({
+    mutationFn: (word: string) =>
+      apiRequest("POST", "/api/ai/generate-definition", { word }),
+    onSuccess: (data: any) => {
+      setCustomDefinition(data.definition);
+      setIsGeneratingDefinition(false);
+      toast({
+        title: "Definition Generated",
+        description: "AI has generated a definition for your word."
+      });
+    },
+    onError: (error: any) => {
+      setIsGeneratingDefinition(false);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate definition",
+        variant: "destructive",
+      });
     }
   });
 
@@ -424,6 +475,138 @@ export default function StickyNotesBoard() {
               <Paintbrush className="h-4 w-4 mr-2" />
               Clean
             </Button>
+
+            <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+              <DialogTrigger asChild>
+                <Button 
+                  variant="default"
+                  className="bg-green-500 hover:bg-green-600 text-white"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Custom Note
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Create Custom Vocabulary Note</DialogTitle>
+                  <DialogDescription>
+                    Add your own vocabulary word and definition to your sticky notes board.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Word</label>
+                    <Input
+                      placeholder="Enter your vocabulary word..."
+                      value={customWord}
+                      onChange={(e) => setCustomWord(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Definition</label>
+                    <div className="space-y-2">
+                      <Textarea
+                        placeholder="Enter the definition or generate one with AI..."
+                        value={customDefinition}
+                        onChange={(e) => setCustomDefinition(e.target.value)}
+                        rows={3}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          if (customWord.trim()) {
+                            setIsGeneratingDefinition(true);
+                            generateDefinitionMutation.mutate(customWord.trim());
+                          }
+                        }}
+                        disabled={!customWord.trim() || isGeneratingDefinition}
+                        className="w-full"
+                      >
+                        {isGeneratingDefinition ? (
+                          <>
+                            <Wand2 className="h-4 w-4 mr-2 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="h-4 w-4 mr-2" />
+                            Generate Definition with AI
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Emoji</label>
+                      <Select value={createEmoji} onValueChange={setCreateEmoji}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {EMOJI_OPTIONS.map(emoji => (
+                            <SelectItem key={emoji} value={emoji}>
+                              {emoji} {emoji}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Color</label>
+                      <Select value={createColor} onValueChange={setCreateColor}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.keys(STICKY_NOTE_COLORS).map(color => (
+                            <SelectItem key={color} value={color}>
+                              <div className="flex items-center gap-2">
+                                <div className={`w-4 h-4 rounded border ${STICKY_NOTE_COLORS[color as keyof typeof STICKY_NOTE_COLORS]}`} />
+                                {color.charAt(0).toUpperCase() + color.slice(1)}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowCreateDialog(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      if (customWord.trim() && customDefinition.trim()) {
+                        createCustomNoteMutation.mutate({
+                          word: customWord.trim(),
+                          definition: customDefinition.trim(),
+                          category: "Custom",
+                          difficulty: "medium",
+                          emoji: createEmoji,
+                          color: createColor,
+                          isCustom: true
+                        });
+                      }
+                    }}
+                    disabled={!customWord.trim() || !customDefinition.trim() || createCustomNoteMutation.isPending}
+                  >
+                    {createCustomNoteMutation.isPending ? "Creating..." : "Create Note"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </div>

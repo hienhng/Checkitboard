@@ -3529,6 +3529,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI definition generation endpoint
+  app.post("/api/ai/generate-definition", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "learner") {
+        return res.status(403).json({ message: "Only learners can generate definitions" });
+      }
+
+      const { word } = req.body;
+      if (!word || typeof word !== 'string') {
+        return res.status(400).json({ message: "Word is required" });
+      }
+
+      const { generateSingleDefinition } = await import("./ai");
+      const definition = await generateSingleDefinition(word.trim());
+
+      res.json({ definition });
+    } catch (error) {
+      console.error("Error generating definition:", error);
+      res.status(500).json({ 
+        message: "Failed to generate definition", 
+        error: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+
+  // Create custom sticky note
+  app.post("/api/sticky-notes/custom", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "learner") {
+        return res.status(403).json({ message: "Only learners can create custom notes" });
+      }
+
+      const noteData = {
+        ...req.body,
+        studentId: req.user.id,
+        isCustom: true
+      };
+
+      const validatedData = insertStickyNoteSchema.parse(noteData);
+      const newNote = await storage.createStickyNote(validatedData);
+
+      res.status(201).json(newNote);
+    } catch (error) {
+      console.error("Error creating custom sticky note:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ 
+        message: "Failed to create custom note",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   // #endregion
 
   // #region Explore Routes

@@ -12,6 +12,7 @@ import {
   notifications,
   fullscreenExits,
   multipleChoiceAnswers,
+  stickyNotes,
   InsertUser,
   InsertVocabularyList,
   InsertVocabularyWord,
@@ -23,6 +24,7 @@ import {
   InsertStudentClass,
   InsertNotification,
   InsertFullscreenExit,
+  InsertStickyNote,
 } from "@shared/schema";
 import { eq, and, desc, isNull, asc, count, sql, or, inArray } from "drizzle-orm";
 export class DatabaseStorage {
@@ -1073,6 +1075,32 @@ export class DatabaseStorage {
     return true;
   }
   
+  // Sticky Notes Methods
+  async createStickyNote(noteData: InsertStickyNote) {
+    const [newNote] = await db.insert(stickyNotes).values(noteData).returning();
+    return newNote;
+  }
+
+  async getStickyNotesByStudent(studentId: number) {
+    return await db.query.stickyNotes.findMany({
+      where: eq(stickyNotes.studentId, studentId),
+      orderBy: [desc(stickyNotes.createdAt)]
+    });
+  }
+
+  async updateStickyNote(id: number, updates: Partial<InsertStickyNote>) {
+    const [updatedNote] = await db.update(stickyNotes)
+      .set(updates)
+      .where(eq(stickyNotes.id, id))
+      .returning();
+    return updatedNote;
+  }
+
+  async deleteStickyNote(id: number) {
+    await db.delete(stickyNotes).where(eq(stickyNotes.id, id));
+    return true;
+  }
+
   // Fullscreen Exit Event Methods
   async createFullscreenExit(exitData: InsertFullscreenExit) {
     // Convert timestamp string to Date object if it exists
