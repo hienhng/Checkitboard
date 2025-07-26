@@ -61,23 +61,24 @@ const EMOJI_OPTIONS = [
 
 // Generate organized grid position for first-time layout
 const getOrganizedPosition = (boardWidth: number, boardHeight: number, index: number) => {
-  const padding = 20;
+  const padding = 40;
   const noteWidth = 192; // w-48 = 12rem = 192px
   const noteHeight = 160; // including spacing
-  const spacing = 20;
+  const spacing = 60; // Much larger spacing between notes
   
-  // Calculate how many notes can fit per row
-  const notesPerRow = Math.floor((boardWidth - padding * 2) / (noteWidth + spacing));
+  // Use only 50% of board width to leave lots of free space
+  const usableWidth = boardWidth * 0.5;
+  const notesPerRow = Math.max(1, Math.floor((usableWidth - padding * 2) / (noteWidth + spacing)));
   const row = Math.floor(index / notesPerRow);
   const col = index % notesPerRow;
   
-  // Calculate position with some slight randomization for natural look
+  // Calculate position with larger spacing
   const baseX = padding + col * (noteWidth + spacing);
   const baseY = padding + row * (noteHeight + spacing);
   
-  // Add small random offset for organic feeling (±10px)
-  const randomOffsetX = (Math.random() - 0.5) * 20;
-  const randomOffsetY = (Math.random() - 0.5) * 20;
+  // Add small random offset for organic feeling (±15px)
+  const randomOffsetX = (Math.random() - 0.5) * 30;
+  const randomOffsetY = (Math.random() - 0.5) * 30;
   
   return {
     x: Math.max(padding, Math.min(boardWidth - noteWidth - padding, baseX + randomOffsetX)),
@@ -281,9 +282,11 @@ export default function StickyNotesBoard() {
       
       const rect = boardRef.current.getBoundingClientRect();
       
-      // Calculate new position based on mouse position minus offset
-      const newX = Math.max(10, Math.min(rect.width - 210, e.clientX - rect.left - dragState.startX));
-      const newY = Math.max(10, Math.min(rect.height - 170, e.clientY - rect.top - dragState.startY));
+      // Calculate new position based on mouse position minus offset - allow full board area
+      const boardWidth = rect.width * 2; // Account for 2x larger board
+      const boardHeight = rect.height * 2;
+      const newX = Math.max(10, Math.min(boardWidth - 210, e.clientX - rect.left - dragState.startX));
+      const newY = Math.max(10, Math.min(boardHeight - 170, e.clientY - rect.top - dragState.startY));
 
       const newPositions = {
         ...notePositions,
@@ -427,8 +430,10 @@ export default function StickyNotesBoard() {
       <div className="flex-1 relative overflow-hidden">
         <div 
           ref={boardRef}
-          className="absolute inset-0 bg-gradient-to-br from-amber-50/50 via-yellow-50/30 to-orange-50/50 dark:from-gray-800/50 dark:via-gray-700/30 dark:to-gray-600/50 overflow-hidden"
+          className="absolute inset-0 bg-gradient-to-br from-amber-50/50 via-yellow-50/30 to-orange-50/50 dark:from-gray-800/50 dark:via-gray-700/30 dark:to-gray-600/50 overflow-auto"
           style={{
+            width: '200vw', // Make board 2x wider
+            height: '200vh', // Make board 2x taller
             backgroundImage: `
               radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.3) 2px, transparent 2px),
               radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.2) 1px, transparent 1px)
