@@ -66,9 +66,9 @@ const getOrganizedPosition = (boardWidth: number, boardHeight: number, index: nu
   const noteHeight = 160; // including spacing
   const spacing = 60; // Much larger spacing between notes
   
-  // Use only 50% of board width to leave lots of free space
-  const usableWidth = boardWidth * 0.5;
-  const notesPerRow = Math.max(1, Math.floor((usableWidth - padding * 2) / (noteWidth + spacing)));
+  // Use only 70% of board width to leave some free space
+  const usableWidth = boardWidth * 0.7;
+  const notesPerRow = Math.max(2, Math.floor((usableWidth - padding * 2) / (noteWidth + spacing)));
   const row = Math.floor(index / notesPerRow);
   const col = index % notesPerRow;
   
@@ -283,8 +283,8 @@ export default function StickyNotesBoard() {
       const rect = boardRef.current.getBoundingClientRect();
       
       // Calculate new position based on mouse position minus offset - allow full board area
-      const boardWidth = rect.width * 2; // Account for 2x larger board
-      const boardHeight = rect.height * 2;
+      const boardWidth = rect.width; // Use full width
+      const boardHeight = rect.height * 5; // Account for 5x taller board
       const newX = Math.max(10, Math.min(boardWidth - 210, e.clientX - rect.left - dragState.startX));
       const newY = Math.max(10, Math.min(boardHeight - 170, e.clientY - rect.top - dragState.startY));
 
@@ -432,8 +432,9 @@ export default function StickyNotesBoard() {
           ref={boardRef}
           className="absolute inset-0 bg-gradient-to-br from-amber-50/50 via-yellow-50/30 to-orange-50/50 dark:from-gray-800/50 dark:via-gray-700/30 dark:to-gray-600/50 overflow-auto"
           style={{
-            width: '200vw', // Make board 2x wider
-            height: '200vh', // Make board 2x taller
+            width: '100%',
+            height: '500vh', // Make board 5x taller for much more vertical space
+            minHeight: '500vh',
             backgroundImage: `
               radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.3) 2px, transparent 2px),
               radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.2) 1px, transparent 1px)
