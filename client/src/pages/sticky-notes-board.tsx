@@ -423,10 +423,10 @@ export default function StickyNotesBoard() {
       </div>
 
       {/* Sticky Notes Board */}
-      <div className="flex-1 relative overflow-hidden">
+      <div className="flex-1 relative overflow-auto">
         <div 
           ref={boardRef}
-          className="absolute inset-0 bg-gradient-to-br from-amber-50/50 via-yellow-50/30 to-orange-50/50 dark:from-gray-800/50 dark:via-gray-700/30 dark:to-gray-600/50 overflow-auto"
+          className="relative bg-gradient-to-br from-amber-50/50 via-yellow-50/30 to-orange-50/50 dark:from-gray-800/50 dark:via-gray-700/30 dark:to-gray-600/50"
           style={{
             width: '100%',
             height: '2000vh', // Make board extremely long for unlimited scrolling
@@ -451,7 +451,7 @@ export default function StickyNotesBoard() {
           </div>
 
           {filteredNotes.length === 0 ? (
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div className="flex items-center justify-center" style={{ minHeight: '50vh' }}>
               <div className="text-center p-8">
                 <StickyNoteIcon className="h-16 w-16 mx-auto mb-4 text-gray-400" />
                 <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">No Sticky Notes Found</h3>
