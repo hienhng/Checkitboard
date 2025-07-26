@@ -274,7 +274,9 @@ export default function StickyNotesBoard() {
     }
   };
 
-  const filteredNotes = stickyNotes.filter((note) => {
+  const filteredNotes = (stickyNotes || []).filter((note) => {
+    if (!note || !note.word || !note.definition) return false;
+    
     const matchesSearch = note.word.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          note.definition.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === "all" || note.category === selectedCategory;
@@ -284,7 +286,7 @@ export default function StickyNotesBoard() {
     return matchesSearch && matchesCategory && matchesLearned;
   });
 
-  const categories = ["all", ...Array.from(new Set(stickyNotes.map((n) => n.category)))];
+  const categories = ["all", ...Array.from(new Set((stickyNotes || []).map((n) => n?.category).filter(Boolean)))];
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -397,8 +399,8 @@ export default function StickyNotesBoard() {
     });
   };
 
-  const learnedCount = stickyNotes.filter((n) => n.isLearned).length;
-  const totalCount = stickyNotes.length;
+  const learnedCount = (stickyNotes || []).filter((n) => n?.isLearned).length;
+  const totalCount = (stickyNotes || []).length;
 
   if (isLoading) {
     return (
@@ -517,12 +519,12 @@ export default function StickyNotesBoard() {
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          if (customWord.trim()) {
+                          if (customWord?.trim()) {
                             setIsGeneratingDefinition(true);
                             generateDefinitionMutation.mutate(customWord.trim());
                           }
                         }}
-                        disabled={!customWord.trim() || isGeneratingDefinition}
+                        disabled={!customWord?.trim() || isGeneratingDefinition}
                         className="w-full"
                       >
                         {isGeneratingDefinition ? (
@@ -588,7 +590,7 @@ export default function StickyNotesBoard() {
                   <Button
                     type="button"
                     onClick={() => {
-                      if (customWord.trim() && customDefinition.trim()) {
+                      if (customWord?.trim() && customDefinition?.trim()) {
                         createCustomNoteMutation.mutate({
                           word: customWord.trim(),
                           definition: customDefinition.trim(),
@@ -600,7 +602,7 @@ export default function StickyNotesBoard() {
                         });
                       }
                     }}
-                    disabled={!customWord.trim() || !customDefinition.trim() || createCustomNoteMutation.isPending}
+                    disabled={!customWord?.trim() || !customDefinition?.trim() || createCustomNoteMutation.isPending}
                   >
                     {createCustomNoteMutation.isPending ? "Creating..." : "Create Note"}
                   </Button>

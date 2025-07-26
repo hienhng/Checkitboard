@@ -485,15 +485,18 @@ Respond with valid JSON only in this format:
     if (content) {
       try {
         const result = JSON.parse(content);
-        if (Array.isArray(result.words)) {
+        if (Array.isArray(result.words) && result.words.length > 0) {
           return result.words;
+        } else if (Array.isArray(result) && result.length > 0) {
+          return result;
         }
       } catch (parseError) {
-        console.warn("Failed to parse contextual suggestions from Groq");
+        console.warn("Failed to parse contextual suggestions from Groq, content:", content);
       }
     }
     
-    throw new Error("No valid contextual suggestions received from Groq");
+    // Return empty array instead of throwing error to allow fallback to work
+    return [];
   } catch (error: any) {
     console.error("Error generating contextual suggestions with Groq:", error);
     throw error;
