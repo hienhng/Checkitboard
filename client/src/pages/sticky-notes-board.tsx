@@ -280,7 +280,7 @@ export default function StickyNotesBoard() {
       
       // Calculate new position based on mouse position minus offset - allow full board area
       const boardWidth = rect.width; // Use full width
-      const boardHeight = rect.height * 5; // Account for 5x taller board
+      const boardHeight = rect.height * 20; // Account for extremely long board
       const newX = Math.max(10, Math.min(boardWidth - 210, e.clientX - rect.left - dragState.startX));
       const newY = Math.max(10, Math.min(boardHeight - 170, e.clientY - rect.top - dragState.startY));
 
@@ -429,8 +429,8 @@ export default function StickyNotesBoard() {
           className="absolute inset-0 bg-gradient-to-br from-amber-50/50 via-yellow-50/30 to-orange-50/50 dark:from-gray-800/50 dark:via-gray-700/30 dark:to-gray-600/50 overflow-auto"
           style={{
             width: '100%',
-            height: '500vh', // Make board 5x taller for much more vertical space
-            minHeight: '500vh',
+            height: '2000vh', // Make board extremely long for unlimited scrolling
+            minHeight: '2000vh',
             backgroundImage: `
               radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.3) 2px, transparent 2px),
               radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.2) 1px, transparent 1px)
