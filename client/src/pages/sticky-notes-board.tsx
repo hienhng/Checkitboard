@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Edit, Trash2, CheckCircle, Circle, StickyNote as StickyNoteIcon, BookOpen, Filter, Move, GripVertical } from "lucide-react";
+import { Search, Edit, Trash2, CheckCircle, Circle, StickyNote as StickyNoteIcon, BookOpen, Filter, Move, GripVertical, LayoutGrid } from "lucide-react";
 import { StickyNote } from "@shared/schema";
 import { cn } from "@/lib/utils";
 
@@ -109,7 +109,24 @@ export default function StickyNotesBoard() {
   const boardRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   
-  // Notes maintain positions during session but reset on page refresh
+  // Load positions from localStorage on page load
+  useEffect(() => {
+    const savedPositions = localStorage.getItem('stickyNotePositions');
+    if (savedPositions) {
+      try {
+        setNotePositions(JSON.parse(savedPositions));
+      } catch (error) {
+        console.error('Failed to parse saved positions:', error);
+      }
+    }
+  }, []);
+
+  // Save positions to localStorage whenever they change
+  useEffect(() => {
+    if (Object.keys(notePositions).length > 0) {
+      localStorage.setItem('stickyNotePositions', JSON.stringify(notePositions));
+    }
+  }, [notePositions]);
 
   const { data: stickyNotes = [], isLoading } = useQuery<StickyNote[]>({
     queryKey: ["/api/sticky-notes"],
@@ -163,7 +180,7 @@ export default function StickyNotesBoard() {
     }
   });
 
-  // Initialize positions using organized grid layout - session persistence only
+  // Initialize positions using organized grid layout for new notes
   useEffect(() => {
     if (stickyNotes.length > 0 && boardRef.current) {
       const boardRect = boardRef.current.getBoundingClientRect();
@@ -171,21 +188,37 @@ export default function StickyNotesBoard() {
       
       stickyNotes.forEach((note: any, index) => {
         if (!notePositions[note.id]) {
-          // Use organized grid layout for notes that don't have session positions yet
+          // Use organized grid layout for notes that don't have saved positions
           const position = getOrganizedPosition(boardRect.width, boardRect.height, index);
           newPositions[note.id] = position;
         }
       });
       
       if (Object.keys(newPositions).length > 0) {
-        const updatedPositions = { ...notePositions, ...newPositions };
-        setNotePositions(updatedPositions);
-        
-        // Save initial positions to sessionStorage
-        sessionStorage.setItem('stickyNotePositions', JSON.stringify(updatedPositions));
+        setNotePositions(prev => ({ ...prev, ...newPositions }));
       }
     }
   }, [stickyNotes]);
+
+  // Function to clean/reorganize all notes to organized grid
+  const cleanOrganizeNotes = () => {
+    if (boardRef.current) {
+      const boardRect = boardRef.current.getBoundingClientRect();
+      const newPositions: Record<number, { x: number; y: number }> = {};
+      
+      filteredNotes.forEach((note: any, index) => {
+        const position = getOrganizedPosition(boardRect.width, boardRect.height, index);
+        newPositions[note.id] = position;
+      });
+      
+      setNotePositions(prev => ({ ...prev, ...newPositions }));
+      
+      toast({
+        title: "Notes Organized",
+        description: "All sticky notes have been arranged in a clean grid layout.",
+      });
+    }
+  };
 
   const filteredNotes = stickyNotes.filter((note) => {
     const matchesSearch = note.word.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -377,6 +410,15 @@ export default function StickyNotesBoard() {
                 <SelectItem value="learned">Learned</SelectItem>
               </SelectContent>
             </Select>
+            
+            <Button 
+              onClick={cleanOrganizeNotes}
+              variant="outline"
+              className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+            >
+              <LayoutGrid className="h-4 w-4 mr-2" />
+              Clean
+            </Button>
           </div>
         </div>
       </div>
@@ -604,7 +646,7 @@ export default function StickyNotesBoard() {
                                 onClick={() => handleUpdateNote({ 
                                   userNotes, 
                                   emoji: selectedEmoji, 
-                                  color: selectedColor 
+                                  color: selectedColor as "yellow" | "pink" | "blue" | "green" | "purple" | "orange" | "red" | "indigo"
                                 })}
                                 disabled={updateNoteMutation.isPending}
                               >
