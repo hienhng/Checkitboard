@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Edit, Trash2, CheckCircle, Circle, StickyNote as StickyNoteIcon, BookOpen, Filter, Move, GripVertical, LayoutGrid } from "lucide-react";
+import { Search, Edit, Trash2, CheckCircle, Circle, StickyNote as StickyNoteIcon, BookOpen, Filter, Move, GripVertical, LayoutGrid, Brush, Paintbrush } from "lucide-react";
 import { StickyNote } from "@shared/schema";
 import { cn } from "@/lib/utils";
 
@@ -217,8 +217,8 @@ export default function StickyNotesBoard() {
       setNotePositions(prev => ({ ...prev, ...newPositions }));
       
       toast({
-        title: "Notes Organized",
-        description: "All sticky notes have been arranged in a clean grid layout.",
+        title: "Board Cleaned",
+        description: "All sticky notes have been arranged for better learning."
       });
     }
   };
@@ -418,10 +418,10 @@ export default function StickyNotesBoard() {
             
             <Button 
               onClick={cleanOrganizeNotes}
-              variant="outline"
-              className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+              variant="default"
+              className="bg-gray-100 hover:bg-blue-500 text-black hover:text-white border border-gray-200 hover:border-blue-600"
             >
-              <LayoutGrid className="h-4 w-4 mr-2" />
+              <Paintbrush className="h-4 w-4 mr-2" />
               Clean
             </Button>
           </div>
