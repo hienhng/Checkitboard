@@ -484,14 +484,28 @@ Respond with valid JSON only in this format:
     const content = completion.choices[0]?.message?.content;
     if (content) {
       try {
-        const result = JSON.parse(content);
+        // Try parsing the content directly first
+        let result = JSON.parse(content);
         if (Array.isArray(result.words) && result.words.length > 0) {
           return result.words;
         } else if (Array.isArray(result) && result.length > 0) {
           return result;
         }
       } catch (parseError) {
-        console.warn("Failed to parse contextual suggestions from Groq, content:", content);
+        // If direct parsing fails, try to extract JSON from the content
+        try {
+          const jsonMatch = content.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const result = JSON.parse(jsonMatch[0]);
+            if (Array.isArray(result.words) && result.words.length > 0) {
+              return result.words;
+            } else if (Array.isArray(result) && result.length > 0) {
+              return result;
+            }
+          }
+        } catch (secondParseError) {
+          console.warn("Failed to parse contextual suggestions from Groq after JSON extraction, content:", content);
+        }
       }
     }
     

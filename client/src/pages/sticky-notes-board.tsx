@@ -217,14 +217,24 @@ export default function StickyNotesBoard() {
     mutationFn: (word: string) =>
       apiRequest("POST", "/api/ai/generate-definition", { word }),
     onSuccess: (data: any) => {
-      setCustomDefinition(data.definition);
+      console.log("AI definition response:", data);
+      if (data && data.definition) {
+        setCustomDefinition(data.definition);
+        toast({
+          title: "Definition Generated",
+          description: "AI has generated a definition for your word."
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "No definition received from AI",
+          variant: "destructive",
+        });
+      }
       setIsGeneratingDefinition(false);
-      toast({
-        title: "Definition Generated",
-        description: "AI has generated a definition for your word."
-      });
     },
     onError: (error: any) => {
+      console.error("AI definition error:", error);
       setIsGeneratingDefinition(false);
       toast({
         title: "Error",
