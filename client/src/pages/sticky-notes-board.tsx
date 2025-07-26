@@ -64,16 +64,22 @@ const getOrganizedPosition = (boardWidth: number, boardHeight: number, index: nu
   const padding = 20;
   const noteWidth = 192; // w-48 = 12rem = 192px
   const noteHeight = 160; // including spacing
-  const spacing = 30; // Horizontal spacing between notes
+  const spacing = 25; // Horizontal spacing between notes
   const verticalSpacing = 40; // Vertical spacing between rows
   
-  // Calculate how many notes can fit horizontally across the full width
-  const notesPerRow = Math.floor((boardWidth - padding * 2) / (noteWidth + spacing));
+  // Calculate how many notes can fit horizontally, accounting for the last note not needing spacing
+  const availableWidth = boardWidth - padding * 2;
+  const notesPerRow = Math.floor((availableWidth + spacing) / (noteWidth + spacing));
   const row = Math.floor(index / notesPerRow);
   const col = index % notesPerRow;
   
-  // Calculate position - spread horizontally first, then move to next row
-  const baseX = padding + col * (noteWidth + spacing);
+  // Calculate total width used by all notes in a row
+  const totalNotesWidth = notesPerRow * noteWidth + (notesPerRow - 1) * spacing;
+  const leftoverSpace = availableWidth - totalNotesWidth;
+  const extraSpacing = leftoverSpace / (notesPerRow + 1); // Distribute extra space evenly
+  
+  // Calculate position with distributed spacing
+  const baseX = padding + extraSpacing + col * (noteWidth + spacing + extraSpacing);
   const baseY = padding + row * (noteHeight + verticalSpacing);
   
   return {
