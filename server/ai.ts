@@ -105,8 +105,12 @@ export async function generateDefinitions(words: string[]): Promise<Record<strin
  */
 export async function generateSingleDefinition(word: string): Promise<string> {
   try {
+    console.log("Generating single definition for:", word);
     const definitions = await generateDefinitions([word]);
-    return definitions[word] || "Definition not available";
+    console.log("Generated definitions object:", definitions);
+    const definition = definitions[word];
+    console.log("Extracted definition:", definition);
+    return definition || "Definition not available";
   } catch (error) {
     console.error("Error generating single definition:", error);
     return "Definition not available";
