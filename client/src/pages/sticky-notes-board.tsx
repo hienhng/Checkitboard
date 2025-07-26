@@ -214,8 +214,10 @@ export default function StickyNotesBoard() {
   });
 
   const generateDefinitionMutation = useMutation({
-    mutationFn: (word: string) =>
-      apiRequest("POST", "/api/ai/generate-definition", { word }),
+    mutationFn: async (word: string) => {
+      const response = await apiRequest("POST", "/api/ai/generate-definition", { word });
+      return await response.json();
+    },
     onSuccess: (data: any) => {
       console.log("AI definition response:", data);
       if (data && data.definition) {
