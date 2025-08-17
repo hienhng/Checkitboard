@@ -149,14 +149,30 @@ export const stickyNotes = pgTable("sticky_notes", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Educator Settings for class management preferences
+export const educatorSettings = pgTable("educator_settings", {
+  id: serial("id").primaryKey(),
+  educatorId: integer("educator_id").references(() => users.id).notNull().unique(),
+  emailNotifications: boolean("email_notifications").default(true).notNull(),
+  autoApproveRequests: boolean("auto_approve_requests").default(false).notNull(),
+  allowStudentSelfEnroll: boolean("allow_student_self_enroll").default(true).notNull(),
+  defaultDueDate: integer("default_due_date").default(7).notNull(), // days
+  gradeVisibility: text("grade_visibility", { enum: ["immediate", "afterDue", "manual"] }).default("immediate").notNull(),
+  allowRedos: boolean("allow_redos").default(true).notNull(),
+  maxRedoAttempts: integer("max_redo_attempts").default(3).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Relationships definitions
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ one, many }) => ({
   vocabularyLists: many(vocabularyLists),
   submissions: many(submissions),
   flashcards: many(flashcards),
   stickyNotes: many(stickyNotes),
   createdClasses: many(classes, { relationName: 'educator' }),
   enrolledClasses: many(studentClass, { relationName: 'student' }),
+  educatorSettings: one(educatorSettings),
 }));
 
 export const classesRelations = relations(classes, ({ one, many }) => ({
@@ -277,6 +293,13 @@ export const stickyNotesRelations = relations(stickyNotes, ({ one }) => ({
   }),
 }));
 
+export const educatorSettingsRelations = relations(educatorSettings, ({ one }) => ({
+  educator: one(users, {
+    fields: [educatorSettings.educatorId],
+    references: [users.id],
+  }),
+}));
+
 // Validation schemas
 export const insertUserSchema = createInsertSchema(users, {
   email: (schema) => schema.email("Please enter a valid email"),
@@ -347,6 +370,16 @@ export const updateStickyNoteSchema = createInsertSchema(stickyNotes, {
   category: (schema) => schema.min(1, "Category cannot be empty").optional(),
 }).omit({ id: true, studentId: true, createdAt: true, updatedAt: true }).partial();
 
+export const insertEducatorSettingsSchema = createInsertSchema(educatorSettings, {
+  defaultDueDate: (schema) => schema.min(1).max(30),
+  maxRedoAttempts: (schema) => schema.min(1).max(10),
+}).omit({ id: true, createdAt: true, updatedAt: true });
+
+export const updateEducatorSettingsSchema = createInsertSchema(educatorSettings, {
+  defaultDueDate: (schema) => schema.min(1).max(30).optional(),
+  maxRedoAttempts: (schema) => schema.min(1).max(10).optional(),
+}).omit({ id: true, educatorId: true, createdAt: true, updatedAt: true }).partial();
+
 export const insertStudentClassSchema = createInsertSchema(studentClass).omit({ id: true, createdAt: true, status: true });
 
 export const insertMultipleChoiceQuestionSchema = createInsertSchema(multipleChoiceQuestions, {
@@ -406,6 +439,9 @@ export type InsertMultipleChoiceAnswer = z.infer<typeof insertMultipleChoiceAnsw
 export type StickyNote = typeof stickyNotes.$inferSelect;
 export type InsertStickyNote = z.infer<typeof insertStickyNoteSchema>;
 export type UpdateStickyNote = z.infer<typeof updateStickyNoteSchema>;
+export type EducatorSettings = typeof educatorSettings.$inferSelect;
+export type InsertEducatorSettings = z.infer<typeof insertEducatorSettingsSchema>;
+export type UpdateEducatorSettings = z.infer<typeof updateEducatorSettingsSchema>;
 
 // Export select schemas
 export const selectUserSchema = createSelectSchema(users);
@@ -420,6 +456,7 @@ export const selectStudentClassSchema = createSelectSchema(studentClass);
 export const selectMultipleChoiceQuestionSchema = createSelectSchema(multipleChoiceQuestions);
 export const selectMultipleChoiceAnswerSchema = createSelectSchema(multipleChoiceAnswers);
 export const selectStickyNoteSchema = createSelectSchema(stickyNotes);
+export const selectEducatorSettingsSchema = createSelectSchema(educatorSettings);
 
 // Notifications table
 export const notifications = pgTable("notifications", {

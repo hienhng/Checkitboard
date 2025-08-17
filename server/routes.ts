@@ -37,6 +37,8 @@ import {
   insertMultipleChoiceAnswerSchema,
   insertStickyNoteSchema,
   updateStickyNoteSchema,
+  insertEducatorSettingsSchema,
+  updateEducatorSettingsSchema,
   vocabularyLists,
   vocabularyWords,
   submissions,
@@ -48,6 +50,7 @@ import {
   users,
   classes,
   studentClass,
+  educatorSettings,
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -2251,6 +2254,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error removing student from class:", error);
       res.status(500).json({ message: "Error removing student from class" });
+    }
+  });
+
+  // Get educator settings
+  app.get("/api/educator/settings", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "educator") {
+        return res.status(403).json({ message: "Only educators can access settings" });
+      }
+
+      // Get or create educator settings
+      let settings = await db.query.educatorSettings.findFirst({
+        where: eq(educatorSettings.educatorId, req.user.id),
+      });
+
+      // If no settings exist, create default settings
+      if (!settings) {
+        const defaultSettings = {
+          educatorId: req.user.id,
+          emailNotifications: true,
+          autoApproveRequests: false,
+          allowStudentSelfEnroll: true,
+          defaultDueDate: 7,
+          gradeVisibility: "immediate" as const,
+          allowRedos: true,
+          maxRedoAttempts: 3,
+        };
+
+        const [newSettings] = await db
+          .insert(educatorSettings)
+          .values(defaultSettings)
+          .returning();
+        
+        settings = newSettings;
+      }
+
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching educator settings:", error);
+      res.status(500).json({ message: "Error fetching settings" });
+    }
+  });
+
+  // Update educator settings
+  app.patch("/api/educator/settings", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "educator") {
+        return res.status(403).json({ message: "Only educators can update settings" });
+      }
+
+      const validatedData = updateEducatorSettingsSchema.parse(req.body);
+
+      // Update or create settings
+      const existingSettings = await db.query.educatorSettings.findFirst({
+        where: eq(educatorSettings.educatorId, req.user.id),
+      });
+
+      let updatedSettings;
+
+      if (existingSettings) {
+        // Update existing settings
+        const [updated] = await db
+          .update(educatorSettings)
+          .set({
+            ...validatedData,
+            updatedAt: new Date(),
+          })
+          .where(eq(educatorSettings.educatorId, req.user.id))
+          .returning();
+        
+        updatedSettings = updated;
+      } else {
+        // Create new settings with provided values and defaults
+        const defaultSettings = {
+          educatorId: req.user.id,
+          emailNotifications: true,
+          autoApproveRequests: false,
+          allowStudentSelfEnroll: true,
+          defaultDueDate: 7,
+          gradeVisibility: "immediate" as const,
+          allowRedos: true,
+          maxRedoAttempts: 3,
+          ...validatedData,
+        };
+
+        const [created] = await db
+          .insert(educatorSettings)
+          .values(defaultSettings)
+          .returning();
+        
+        updatedSettings = created;
+      }
+
+      res.json(updatedSettings);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+      console.error("Error updating educator settings:", error);
+      res.status(500).json({ message: "Error updating settings" });
     }
   });
 
