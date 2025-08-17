@@ -1,4 +1,5 @@
 import { useState } from "react";
+import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,9 +39,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, Users, BookOpen, Settings, Copy, Check, Mail, FileText, TrendingUp } from "lucide-react";
+import { Plus, Users, BookOpen, Settings, Copy, Check, Mail, FileText, TrendingUp, Bell, GraduationCap } from "lucide-react";
 import { RequestApprovalButton } from "@/components/request-approval";
 
 const classSchema = z.object({
@@ -48,11 +52,309 @@ const classSchema = z.object({
   description: z.string().max(500, "Description must be less than 500 characters").optional(),
 });
 
+const classSettingsSchema = z.object({
+  emailNotifications: z.boolean().default(true),
+  autoApproveRequests: z.boolean().default(false),
+  allowStudentSelfEnroll: z.boolean().default(true),
+  defaultDueDate: z.number().min(1).max(30).default(7), // days
+  gradeVisibility: z.enum(["immediate", "afterDue", "manual"]).default("immediate"),
+  allowRedos: z.boolean().default(true),
+  maxRedoAttempts: z.number().min(1).max(10).default(3),
+});
+
 type ClassFormData = z.infer<typeof classSchema>;
+type ClassSettingsForm = z.infer<typeof classSettingsSchema>;
 
 interface CreateClassDialogProps {
   onClassCreated?: (classData: any) => void;
   trigger?: React.ReactNode;
+}
+
+// Class Settings Dialog Component
+function ClassSettingsDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Get class settings
+  const { data: classSettings } = useQuery({
+    queryKey: ["/api/educator/settings"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/educator/settings");
+      return response.json();
+    },
+  });
+
+  // Class Settings Form
+  const classSettingsForm = useForm<ClassSettingsForm>({
+    resolver: zodResolver(classSettingsSchema),
+    defaultValues: {
+      emailNotifications: classSettings?.emailNotifications ?? true,
+      autoApproveRequests: classSettings?.autoApproveRequests ?? false,
+      allowStudentSelfEnroll: classSettings?.allowStudentSelfEnroll ?? true,
+      defaultDueDate: classSettings?.defaultDueDate ?? 7,
+      gradeVisibility: classSettings?.gradeVisibility ?? "immediate",
+      allowRedos: classSettings?.allowRedos ?? true,
+      maxRedoAttempts: classSettings?.maxRedoAttempts ?? 3,
+    },
+  });
+
+  // Update form defaults when settings load
+  React.useEffect(() => {
+    if (classSettings) {
+      classSettingsForm.reset({
+        emailNotifications: classSettings.emailNotifications ?? true,
+        autoApproveRequests: classSettings.autoApproveRequests ?? false,
+        allowStudentSelfEnroll: classSettings.allowStudentSelfEnroll ?? true,
+        defaultDueDate: classSettings.defaultDueDate ?? 7,
+        gradeVisibility: classSettings.gradeVisibility ?? "immediate",
+        allowRedos: classSettings.allowRedos ?? true,
+        maxRedoAttempts: classSettings.maxRedoAttempts ?? 3,
+      });
+    }
+  }, [classSettings, classSettingsForm]);
+
+  // Update class settings mutation
+  const updateClassSettingsMutation = useMutation({
+    mutationFn: async (data: ClassSettingsForm) => {
+      const res = await apiRequest("PATCH", "/api/educator/settings", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Settings updated",
+        description: "Your class management settings have been updated successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/educator/settings"] });
+      onOpenChange(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error updating settings",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: ClassSettingsForm) => {
+    updateClassSettingsMutation.mutate(data);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <GraduationCap className="h-5 w-5" />
+            Class Management Settings
+          </DialogTitle>
+          <DialogDescription>
+            Configure default settings for your classes and teaching preferences
+          </DialogDescription>
+        </DialogHeader>
+        
+        <Form {...classSettingsForm}>
+          <form onSubmit={classSettingsForm.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Notification Settings */}
+            <div className="space-y-4">
+              <h4 className="text-lg font-semibold">Notification Preferences</h4>
+              
+              <FormField
+                control={classSettingsForm.control}
+                name="emailNotifications"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base flex items-center gap-2">
+                        <Bell className="h-4 w-4" />
+                        Email Notifications
+                      </FormLabel>
+                      <div className="text-sm text-muted-foreground">
+                        Receive email notifications for new submissions and join requests
+                      </div>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <Separator />
+
+            {/* Class Enrollment Settings */}
+            <div className="space-y-4">
+              <h4 className="text-lg font-semibold">Class Enrollment</h4>
+              
+              <FormField
+                control={classSettingsForm.control}
+                name="autoApproveRequests"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Auto-approve Join Requests</FormLabel>
+                      <div className="text-sm text-muted-foreground">
+                        Automatically approve student requests to join your classes
+                      </div>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={classSettingsForm.control}
+                name="allowStudentSelfEnroll"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Allow Self-Enrollment</FormLabel>
+                      <div className="text-sm text-muted-foreground">
+                        Allow students to join classes using class codes
+                      </div>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <Separator />
+
+            {/* Assignment Settings */}
+            <div className="space-y-4">
+              <h4 className="text-lg font-semibold">Assignment Defaults</h4>
+              
+              <FormField
+                control={classSettingsForm.control}
+                name="defaultDueDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Default Due Date (Days)</FormLabel>
+                    <FormControl>
+                      <div className="flex items-center space-x-2">
+                        <Input
+                          type="number"
+                          min={1}
+                          max={30}
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || 7)}
+                          className="w-24"
+                        />
+                        <span className="text-sm text-muted-foreground">days from assignment</span>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={classSettingsForm.control}
+                name="gradeVisibility"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Grade Visibility</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select when grades are visible" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="immediate">Immediate (after submission)</SelectItem>
+                        <SelectItem value="afterDue">After due date</SelectItem>
+                        <SelectItem value="manual">Manual release only</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <Separator />
+
+            {/* Redo Settings */}
+            <div className="space-y-4">
+              <h4 className="text-lg font-semibold">Redo Policies</h4>
+              
+              <FormField
+                control={classSettingsForm.control}
+                name="allowRedos"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Allow Retakes</FormLabel>
+                      <div className="text-sm text-muted-foreground">
+                        Allow students to retake vocabulary assessments
+                      </div>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {classSettingsForm.watch("allowRedos") && (
+                <FormField
+                  control={classSettingsForm.control}
+                  name="maxRedoAttempts"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Maximum Retake Attempts</FormLabel>
+                      <FormControl>
+                        <div className="flex items-center space-x-2">
+                          <Input
+                            type="number"
+                            min={1}
+                            max={10}
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value) || 3)}
+                            className="w-24"
+                          />
+                          <span className="text-sm text-muted-foreground">attempts per assignment</span>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+            </div>
+
+            <div className="pt-4">
+              <Button
+                type="submit"
+                disabled={updateClassSettingsMutation.isPending}
+                className="w-full"
+              >
+                {updateClassSettingsMutation.isPending ? "Saving Settings..." : "Save Settings"}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 export function CreateClassDialog({ onClassCreated, trigger }: CreateClassDialogProps) {
@@ -340,6 +642,7 @@ export function ClassManagement() {
   const { toast } = useToast();
   const [selectedClass, setSelectedClass] = useState<any>(null);
   const [showStudentDialog, setShowStudentDialog] = useState(false);
+  const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
 
   // Fetch educator's classes
   const { data: classes = [], isLoading, error } = useQuery<any[]>({
@@ -472,7 +775,12 @@ export function ClassManagement() {
                     <Users className="h-4 w-4 mr-1" />
                     Students
                   </Button>
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => setIsSettingsDialogOpen(true)}
+                  >
                     <Settings className="h-4 w-4 mr-1" />
                     Settings
                   </Button>
@@ -534,6 +842,12 @@ export function ClassManagement() {
           onOpenChange={setShowStudentDialog}
         />
       )}
+
+      {/* Class Settings Dialog */}
+      <ClassSettingsDialog
+        open={isSettingsDialogOpen}
+        onOpenChange={setIsSettingsDialogOpen}
+      />
     </div>
   );
 }
