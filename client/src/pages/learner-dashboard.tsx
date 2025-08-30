@@ -96,6 +96,7 @@ function LearnerDashboard() {
   
   // Search functionality
   const [searchQuery, setSearchQuery] = useState("");
+  const [showJoinClass, setShowJoinClass] = useState(false);
 
   // Fetch published vocabulary lists
   const { data: vocabularyLists, isLoading: listsLoading } = useQuery<VocabularyList[]>({
@@ -127,6 +128,12 @@ function LearnerDashboard() {
   // Fetch sticky notes for preview
   const { data: stickyNotes } = useQuery<any[]>({
     queryKey: ["/api/sticky-notes"],
+    queryFn: getQueryFn({ on401: "throw" }),
+  });
+
+  // Fetch study stats
+  const { data: studyStats } = useQuery<any>({
+    queryKey: ["/api/learner/study-stats"],
     queryFn: getQueryFn({ on401: "throw" }),
   });
 
@@ -614,7 +621,7 @@ function LearnerDashboard() {
                 Enter the class code provided by your educator to join a class.
               </DialogDescription>
             </DialogHeader>
-            <JoinClass onClose={() => setShowJoinClass(false)} />
+            <JoinClass />
           </DialogContent>
         </Dialog>
       </div>
