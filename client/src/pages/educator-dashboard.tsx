@@ -61,9 +61,6 @@ function EducatorDashboard() {
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/educator/classes");
       return response.json();
-    },
-    onError: (error) => {
-      console.error("Failed to fetch classes:", error);
     }
   });
 
@@ -139,68 +136,70 @@ function EducatorDashboard() {
 
 
   return (
-    <div className="flex flex-col min-h-screen bg-neutral-light">
-      <Navbar />
-      
-      {/* Main Content */}
-      <div className="flex-1">
-        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="px-4 py-5 sm:px-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-5xl text-neutral-dark"> Ready to <span className="text-black font-modak transition duration-100 ease-in-out hover:text-blue-500">checkit</span>
-                    <span className="text-black">?</span>
-                </h2>
-                
-                <p className="mt-1 max-w-2xl text-sm text-gray-500">
-                  Create and manage vocabulary lists, classes, and grade student submissions.
-                </p>
-              </div>
-              
-            </div>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="border-b border-border pb-8">
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-5xl font-bold text-foreground"> 
+              Ready to <span className="font-modak bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent transition-all duration-300">checkit</span>
+              <span className="text-foreground">?</span>
+            </h2>
+            <p className="mt-2 text-lg text-muted-foreground max-w-2xl">
+              Create and manage vocabulary lists, classes, and grade student submissions.
+            </p>
           </div>
+        </div>
+      </div>
           
           {/* Content */}
-          <div className="px-4 sm:px-6 lg:px-8">
+      <div className="space-y-6">
             {showCreateList ? (
-              <div className="bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200 mb-6">
-                <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
-                  <div>
-                    <h3 className="text-lg font-medium text-neutral-dark">Create New Vocabulary List</h3>
-                    <p className="mt-1 text-sm text-gray-500">
-                      Paste a reading passage and highlight words for your vocabulary list.
-                    </p>
+              <Card className="border-0 bg-gradient-to-br from-card to-card/80 shadow-2xl">
+                <CardHeader className="border-b border-border/20">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <CardTitle className="text-xl text-foreground">Create New Vocabulary List</CardTitle>
+                      <CardDescription className="mt-2 text-muted-foreground">
+                        Paste a reading passage and highlight words for your vocabulary list.
+                      </CardDescription>
+                    </div>
+                    <Button variant="outline" onClick={() => setShowCreateList(false)}>Return</Button>
                   </div>
-                  <Button variant="ghost" onClick={() => setShowCreateList(false)}>Return</Button>
-                </div>
-                <PassageEditor onSuccess={handleCreateSuccess} />
-              </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <PassageEditor onSuccess={handleCreateSuccess} />
+                </CardContent>
+              </Card>
             ) : showGrading && selectedSubmissionId ? (
-              <div className="bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200 mb-6">
-                <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
-                  <div>
-                    <h3 className="text-lg font-medium text-neutral-dark">Grade Submission</h3>
-                    <p className="mt-1 text-sm text-gray-500">
-                      Review student definitions and provide feedback.
-                    </p>
+              <Card className="border-0 bg-gradient-to-br from-card to-card/80 shadow-2xl">
+                <CardHeader className="border-b border-border/20">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <CardTitle className="text-xl text-foreground">Grade Submission</CardTitle>
+                      <CardDescription className="mt-2 text-muted-foreground">
+                        Review student definitions and provide feedback.
+                      </CardDescription>
+                    </div>
+                    <Button variant="outline" onClick={() => {
+                      setShowGrading(false);
+                      setSelectedSubmissionId(null);
+                    }}>Return</Button>
                   </div>
-                  <Button variant="ghost" onClick={() => {
-                    setShowGrading(false);
-                    setSelectedSubmissionId(null);
-                  }}>Return</Button>
-                </div>
-                <GradingPanel submissionId={selectedSubmissionId} onComplete={handleGradingComplete} />
-              </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <GradingPanel submissionId={selectedSubmissionId} onComplete={handleGradingComplete} />
+                </CardContent>
+              </Card>
             ) : (
               <>
-                <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab} className="mb-6">
-                  <TabsList>
-                    <TabsTrigger value="dashboard" className="flex items-center">
+                <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+                  <TabsList className="grid w-full grid-cols-2 bg-muted/50">
+                    <TabsTrigger value="dashboard" className="flex items-center data-[state=active]:bg-card data-[state=active]:shadow-sm">
                       <BookOpen className="mr-2 h-4 w-4" />
                       Dashboard
                     </TabsTrigger>
-                    <TabsTrigger value="classes" className="flex items-center">
+                    <TabsTrigger value="classes" className="flex items-center data-[state=active]:bg-card data-[state=active]:shadow-sm">
                       <School className="mr-2 h-4 w-4" />
                       Classes
                     </TabsTrigger>
@@ -210,7 +209,8 @@ function EducatorDashboard() {
                     <div className="mb-6 flex">
                       <Button 
                         onClick={() => setShowCreateList(true)}
-                        className="flex items-center"
+                        className="flex items-center bg-primary hover:bg-primary/90 shadow-lg"
+                        size="lg"
                       >
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Create New Draft
@@ -219,9 +219,9 @@ function EducatorDashboard() {
 
                     <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
                       {/* Quick Stats */}
-                      <Card>
+                      <Card className="border-0 bg-gradient-to-br from-card to-card/80 shadow-2xl">
                         <CardHeader>
-                          <CardTitle className="flex items-center">
+                          <CardTitle className="flex items-center text-foreground">
                             <BarChart className="mr-2 h-5 w-5 text-primary" />
                             Quick Overview
                           </CardTitle>
@@ -232,18 +232,18 @@ function EducatorDashboard() {
                         <CardContent>
                           <div className="space-y-4">
                             <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-600">Total Vocabulary Lists</span>
-                              <span className="font-semibold">{vocabularyLists.length}</span>
+                              <span className="text-sm text-muted-foreground">Total Vocabulary Lists</span>
+                              <span className="font-semibold text-foreground">{vocabularyLists.length}</span>
                             </div>
                             <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-600">Published Lists</span>
-                              <span className="font-semibold">{vocabularyLists.filter(list => list.published).length}</span>
+                              <span className="text-sm text-muted-foreground">Published Lists</span>
+                              <span className="font-semibold text-foreground">{vocabularyLists.filter(list => list.published).length}</span>
                             </div>
                             <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-600">Pending Submissions</span>
-                              <span className="font-semibold">{pendingSubmissions.length}</span>
+                              <span className="text-sm text-muted-foreground">Pending Submissions</span>
+                              <span className="font-semibold text-foreground">{pendingSubmissions.length}</span>
                             </div>
-                            <div className="pt-4 border-t">
+                            <div className="pt-4 border-t border-border">
                               <Link href="/educator/assignments">
                                 <Button variant="outline" className="w-full">
                                   <ClipboardList className="mr-2 h-4 w-4" />
@@ -256,53 +256,57 @@ function EducatorDashboard() {
                       </Card>
                       
                       {/* Pending Submissions */}
-                      <Card className="bg-blue-500">
-                        <CardHeader className="bg-blue-500 p-4 pb-4 text-center text-white rounded-t-lg">
-                          <CardTitle className="flex items-center">
-                            <Clock className="mr-2 h-5 w-5 text-primary text-white" />
+                      <Card className="border-0 bg-gradient-to-br from-orange-500/90 to-orange-600 shadow-2xl text-white">
+                        <CardHeader className="pb-4">
+                          <CardTitle className="flex items-center text-white">
+                            <Clock className="mr-2 h-5 w-5" />
                             Pending Submissions
                           </CardTitle>
-                          <CardDescription className="text-blue-100 text-left">
+                          <CardDescription className="text-orange-100">
                             Review and grade student submissions
                           </CardDescription>
                         </CardHeader>
-                        <CardContent className="bg-blue-500 rounded-b-lg">
+                        <CardContent>
                           {submissionsLoading ? (
-                            <div className="py-4 text-center text-sm text-white">Loading submissions...</div>
+                            <div className="py-4 text-center text-sm text-white/80">Loading submissions...</div>
                           ) : pendingSubmissions && pendingSubmissions.length > 0 ? (
-                            <div className="divide-y divide-gray-200">
+                            <div className="space-y-3">
                               {pendingSubmissions.map((submission) => (
-                                <div key={submission.id} className="py-4 flex justify-between items-center bg-blue-600 rounded-lg">
-                                  <div className="ml-2 mr-2 flex-1">
-                                    <h4 className=" text-sm font-medium text-white">
-                                      {submission.list.title}
-                                    </h4>
-                                    <div className="mt-1 flex items-center text-xs text-blue-100">
-                                      <CheckCircle className="mr-1 h-3.5 w-3.5" />
-                                      Student: {submission.student.name}
+                                <div key={submission.id} className="p-4 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20">
+                                  <div className="flex justify-between items-center">
+                                    <div className="flex-1">
+                                      <h4 className="text-sm font-medium text-white">
+                                        {submission.list.title}
+                                      </h4>
+                                      <div className="mt-1 flex items-center text-xs text-orange-100">
+                                        <CheckCircle className="mr-1 h-3.5 w-3.5" />
+                                        Student: {submission.student.name}
+                                      </div>
+                                      <div className="mt-1 flex items-center text-xs text-orange-100">
+                                        <Clock className="mr-1 h-3.5 w-3.5" />
+                                        Submitted: {formatDate(submission.submittedAt)}
+                                      </div>
                                     </div>
-                                    <div className="mt-1 flex items-center text-xs text-blue-100">
-                                      <Clock className="mr-1 h-3.5 w-3.5" />
-                                      Submitted: {formatDate(submission.submittedAt)}
+                                    <div className="ml-4 flex-shrink-0">
+                                      <Button 
+                                        size="sm"
+                                        variant="secondary"
+                                        className="bg-white text-orange-600 hover:bg-white/90"
+                                        onClick={() => {
+                                          setSelectedSubmissionId(submission.id);
+                                          setShowGrading(true);
+                                        }}
+                                      >
+                                        Grade
+                                        <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                                      </Button>
                                     </div>
-                                  </div>
-                                  <div className="ml-4 mr-2 flex-shrink-0">
-                                    <Button 
-                                      size="sm"
-                                      onClick={() => {
-                                        setSelectedSubmissionId(submission.id);
-                                        setShowGrading(true);
-                                      }}
-                                    >
-                                      Grade
-                                      <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                                    </Button>
                                   </div>
                                 </div>
                               ))}
                             </div>
                           ) : (
-                            <div className="py-4 text-center text-sm text-blue-100">
+                            <div className="py-4 text-center text-sm text-orange-100">
                               No pending submissions to grade. Reload the page if needed.
                             </div>
                           )}
@@ -317,8 +321,6 @@ function EducatorDashboard() {
                 </Tabs>
               </>
             )}
-          </div>
-        </div>
       </div>
     </div>
   );

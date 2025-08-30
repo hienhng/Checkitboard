@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NotificationCenter } from "@/components/notifications";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { 
   LogOut, 
   BookOpen, 
@@ -203,6 +204,7 @@ export function Sidebar() {
             
             <div className="flex flex-col items-center space-y-1">
               <NotificationCenter onOpenChange={setIsNotificationOpen} />
+              <ThemeToggle />
               
               <DropdownMenu onOpenChange={setIsDropdownOpen}>
                 <DropdownMenuTrigger asChild>
@@ -263,6 +265,7 @@ export function Sidebar() {
             
             <div className="flex items-center space-x-1">
               <NotificationCenter onOpenChange={setIsNotificationOpen} />
+              <ThemeToggle />
               
               <DropdownMenu onOpenChange={setIsDropdownOpen}>
                 <DropdownMenuTrigger asChild>

@@ -31,13 +31,13 @@ export default function HeroPage() {
     }
   }
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
+    <div className="min-h-screen bg-background">
       {/* Navigation */}
-      <nav className="relative z-50 bg-white/80 backdrop-blur-sm border-b border-slate-200/50">
+      <nav className="relative z-50 glass border-b border-border/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <span className="text-3xl font-modak bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+              <span className="text-3xl font-modak bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
                 checkit
               </span>
             </div>
@@ -45,7 +45,7 @@ export default function HeroPage() {
               <Button variant="ghost" asChild>
                 <Link to="/auth">Sign In</Link>
               </Button>
-              <Button asChild className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
+              <Button asChild className="gradient-primary hover:opacity-90 transition-opacity">
                 <Link to="/auth">Get Started</Link>
               </Button>
             </div>
@@ -56,22 +56,22 @@ export default function HeroPage() {
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-20 pb-32">
         {/* Background Elements */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(59,130,246,0.1),rgba(255,255,255,0))]"></div>
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:32px_32px]"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,hsl(var(--primary)/0.1),transparent)]"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border))_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border))_1px,transparent_1px)] bg-[size:32px_32px] opacity-50"></div>
         
         {/* Floating Elements */}
-        <div className="absolute top-20 left-10 w-20 h-20 bg-gradient-to-r from-blue-200 to-blue-400 rounded-full opacity-20 animate-pulse"></div>
-        <div className="absolute top-40 right-20 w-12 h-12 bg-gradient-to-r from-sky-200 to-blue-300 rounded-full opacity-30 animate-bounce"></div>
-        <div className="absolute bottom-40 left-20 w-16 h-16 bg-gradient-to-r from-blue-100 to-blue-300 rounded-full opacity-25 animate-pulse delay-300"></div>
+        <div className="absolute top-20 left-10 w-20 h-20 bg-gradient-to-r from-primary/20 to-primary/40 rounded-full opacity-20 animate-pulse"></div>
+        <div className="absolute top-40 right-20 w-12 h-12 bg-gradient-to-r from-primary/20 to-primary/30 rounded-full opacity-30 animate-bounce"></div>
+        <div className="absolute bottom-40 left-20 w-16 h-16 bg-gradient-to-r from-primary/10 to-primary/30 rounded-full opacity-25 animate-pulse delay-300"></div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <div className="inline-flex items-center px-4 py-2 bg-blue-50 border border-blue-200 rounded-full text-sm font-medium text-blue-700 mb-8">
+            <div className="inline-flex items-center px-4 py-2 bg-primary/10 border border-primary/20 rounded-full text-sm font-medium text-primary mb-8">
               <Sparkles className="h-4 w-4 mr-2" />
               AI-Powered Vocabulary Learning Platform
             </div>
             
-            <h1 className="text-5xl md:text-7xl font-bold text-slate-900 mb-8 leading-tight">
+            <h1 className="text-5xl md:text-7xl font-bold text-foreground mb-8 leading-tight">
               Master Vocabulary Through
               <span className="bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent block">
                 Smart Learning

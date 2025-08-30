@@ -153,19 +153,16 @@ function LearnerDashboard() {
   };
 
   return (
-    <>
-      <div className="flex flex-col min-h-screen bg-neutral-light">
-        <Navbar />
-        
-        {/* Main Content */}
-        <div className="flex-1">
-          <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-            {/* Header */}
-            <div className="px-4 py-5 sm:px-6">
-              <h2 className="text-5xl text-neutral-dark"> Wait a sec, <span className="text-black font-modak transition duration-100 ease-in-out hover:text-blue-500">checkit</span>
-                <span className="text-black"> out!</span>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="border-b border-border pb-8">
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-5xl font-bold text-foreground"> 
+              Wait a sec, <span className="font-modak bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent transition-all duration-300">checkit</span>
+                <span className="text-foreground"> out!</span>
               </h2> 
-              <p className="mt-1 max-w-2xl text-sm text-gray-500">
+              <p className="mt-2 text-lg text-muted-foreground max-w-2xl">
                 Complete vocabulary check-ups, join classes, and review your flashcards.
               </p>
               
@@ -184,7 +181,7 @@ function LearnerDashboard() {
                 
                 {/* Search Results Overlay */}
                 {searchQuery && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg border shadow-lg p-4 max-h-64 overflow-y-auto z-50">
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-card rounded-lg border border-border shadow-lg p-4 max-h-64 overflow-y-auto z-50">
                     <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
                       <Search className="mr-2 h-4 w-4" />
                       Search Results for "{searchQuery}"
@@ -287,11 +284,14 @@ function LearnerDashboard() {
                 )}
               </div>
             </div>
-            
-            {/* Content */}
-            <div className="px-4 sm:px-6 lg:px-8">
-              <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab}>
-                <TabsList>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="space-y-6">
+        <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab}>
+          <TabsList>
                   <TabsTrigger value="dashboard" className="flex items-center">
                     <BookOpen className="mr-2 h-4 w-4" />
                     Dashboard
@@ -702,12 +702,8 @@ function LearnerDashboard() {
                   </div>
                 </TabsContent>
               </Tabs>
-            </div>
-          </div>
-        </div>
       </div>
-
-    </>
+    </div>
   );
 }
 
