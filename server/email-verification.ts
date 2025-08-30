@@ -82,7 +82,7 @@ function generateVerificationEmailTemplate({
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Verify Your Email - Checkit</title>
+      <title>Verify Your Email - Lexible</title>
       <style>
         body { font-family: alacad, sans-serif; line-height: 1.6; color: #333; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -95,13 +95,13 @@ function generateVerificationEmailTemplate({
     <body>
       <div class="container">
         <div class="header">
-          <h1>Get ready to Checkit!</h1>
+          <h1>Get ready to Lexible!</h1>
         </div>
         <div class="content">
           <h2>Hi ${name}!</h2>
-          <p>Thank you for joining Checkit, the vocabulary learning platform that helps educators and learners succeed together.</p>
+          <p>Thank you for joining Lexible, the vocabulary learning platform that helps educators and learners succeed together.</p>
           
-          <p>To complete your registration and start using Checkit, please verify your email address by clicking the button below:</p>
+          <p>To complete your registration and start using Lexible, please verify your email address by clicking the button below:</p>
           
           <p style="text-align: center;">
             <a href="${verificationUrl}" class="button">Verify My Email</a>
@@ -114,12 +114,12 @@ function generateVerificationEmailTemplate({
           
           <p><strong>This verification link will expire in 24 hours.</strong></p>
           
-          <p>If you didn't create an account with Checkit, you can safely ignore this email.</p>
+          <p>If you didn't create an account with Lexible, you can safely ignore this email.</p>
           
-          <p>Welcome aboard!<br>The Checkit Team</p>
+          <p>Welcome aboard!<br>The Lexible Team</p>
         </div>
         <div class="footer">
-          <p>© 2025 Checkit. All rights reserved.</p>
+          <p>© 2025 Lexible. All rights reserved.</p>
           <p>This is an automated email. Please do not reply to this message.</p>
         </div>
       </div>
@@ -158,14 +158,14 @@ export async function sendVerificationEmail({
       text: `
         Hi ${name}!
         
-        Welcome to Checkit! Please verify your email address by visiting this link:
+        Welcome to Lexible! Please verify your email address by visiting this link:
         ${verificationUrl}
         
         This link will expire in 24 hours.
         
-        If you didn't create an account with Checkit, you can safely ignore this email.
+        If you didn't create an account with Lexible, you can safely ignore this email.
         
-        The Checkit Team
+        The Lexible Team
       `,
     };
 
@@ -243,11 +243,11 @@ export async function sendWelcomeEmail({
       <body>
         <div class="container">
           <div class="header">
-            <h1>🎉 Welcome to Checkit!</h1>
+            <h1>🎉 Welcome to Lexible!</h1>
           </div>
           <div class="content">
             <h2>Hi ${name}!</h2>
-            <p>Congratulations! Your email has been successfully verified and your Checkit account is now active.</p>
+            <p>Congratulations! Your email has been successfully verified and your Lexible account is now active.</p>
             
             ${roleSpecificContent}
             
@@ -257,10 +257,10 @@ export async function sendWelcomeEmail({
             
             <p>If you have any questions or need help getting started, don't hesitate to reach out to our support team.</p>
             
-            <p>Happy learning!<br>The Checkit Team</p>
+            <p>Happy learning!<br>The Lexible Team</p>
           </div>
           <div class="footer">
-            <p>© 2025 Checkit. All rights reserved.</p>
+            <p>© 2025 Lexible. All rights reserved.</p>
           </div>
         </div>
       </body>
@@ -270,17 +270,17 @@ export async function sendWelcomeEmail({
     const mailOptions = {
       from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
       to: email,
-      subject: `Welcome to Checkit, ${name}! 🎉`,
+      subject: `Welcome to Lexible, ${name}! 🎉`,
       html: htmlContent,
       text: `
         Hi ${name}!
         
-        Congratulations! Your email has been successfully verified and your Checkit account is now active.
+        Congratulations! Your email has been successfully verified and your Lexible account is now active.
         
         Visit your dashboard: ${dashboardUrl}
         
         Happy learning!
-        The Checkit Team
+        The Lexible Team
       `,
     };
 

@@ -7,7 +7,8 @@ export default {
     fontFamily: {
       sans: ["Afacad", "system-ui", "sans-serif"],
       serif: ["Afacad", "system-ui", "sans-serif"],
-      modak: ["Modak", "system-ui", "sans-serif"],
+      mono: ["JetBrains Mono", "monospace"],
+      brand: ["JetBrains Mono", "monospace"],
     },
     extend: {
       borderRadius: {

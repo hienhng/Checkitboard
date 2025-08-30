@@ -111,10 +111,10 @@ export function Sidebar() {
           >
             <Link to="/" className="flex items-center">
               <span className={cn(
-                "text-primary font-modak transition-all duration-300 ease-in-out text-3xl",
+                "text-primary font-brand font-semibold transition-all duration-300 ease-in-out text-3xl",
                 showToggleButton ? "opacity-0" : "opacity-100"
               )}>
-                C
+                L
               </span>
             </Link>
             {/* Toggle button appears on hover over "C" */}
@@ -134,8 +134,8 @@ export function Sidebar() {
           // Extended state: Left-aligned "checkit" with right-aligned toggle button
           <>
             <Link to="/" className="flex items-center">
-              <span className="text-primary font-modak text-4xl transition-all duration-300 ease-in-out">
-                checkit
+              <span className="text-primary font-brand font-semibold text-4xl transition-all duration-300 ease-in-out">
+                lexible
               </span>
             </Link>
             <Button

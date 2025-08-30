@@ -159,7 +159,7 @@ function LearnerDashboard() {
         <div className="flex justify-between items-center">
           <div>
             <h2 className="text-5xl font-bold text-foreground"> 
-              Wait a sec, <span className="font-modak bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent transition-all duration-300">checkit</span>
+              Wait a sec, <span className="font-brand font-semibold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent transition-all duration-300">lexible</span>
                 <span className="text-foreground"> out!</span>
               </h2> 
               <p className="mt-2 text-lg text-muted-foreground max-w-2xl">

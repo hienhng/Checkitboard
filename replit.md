@@ -1,8 +1,8 @@
-# Checkit - Vocabulary Learning Platform
+# Lexible - Vocabulary Learning Platform
 
 ## Overview
 
-Checkit is a comprehensive vocabulary learning application for educators and learners. It enables educators to create reading passages, highlight vocabulary words, and generate tests. Learners can take tests, receive feedback, and review words via flashcards. The platform also includes parent email notifications. The business vision is to provide an intuitive and powerful tool that enhances vocabulary acquisition and streamlines the teaching process, with market potential in educational technology.
+Lexible is a comprehensive vocabulary learning application for educators and learners. It enables educators to create reading passages, highlight vocabulary words, and generate tests. Learners can take tests, receive feedback, and review words via flashcards. The platform also includes parent email notifications. The business vision is to provide an intuitive and powerful tool that enhances vocabulary acquisition and streamlines the teaching process, with market potential in educational technology.
 
 ## User Preferences
 

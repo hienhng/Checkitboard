@@ -3045,7 +3045,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ 
         success: true,
-        message: "Email verified successfully! Welcome to Checkit!",
+        message: "Email verified successfully! Welcome to Lexible!",
         user: {
           id: user.id,
           email: user.email,
@@ -3251,7 +3251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create email content
       const emailContent = `
-        <h2>New Support Request from Checkit</h2>
+        <h2>New Support Request from Lexible</h2>
         <p><strong>From:</strong> ${req.user.name} (${req.user.email})</p>
         <p><strong>Role:</strong> ${req.user.role}</p>
         <p><strong>User ID:</strong> ${req.user.id}</p>
@@ -3261,7 +3261,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ${validatedData.message.replace(/\n/g, '<br>')}
         </div>
         <hr>
-        <p><small>This message was sent from the Checkit platform on ${new Date().toLocaleString()}.</small></p>
+        <p><small>This message was sent from the Lexible platform on ${new Date().toLocaleString()}.</small></p>
       `;
 
       // Use the same email transporter configuration from other email functions
@@ -3282,7 +3282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const mailOptions = {
         from: process.env.EMAIL_USER,
         to: 'giahienhn@gmail.com',
-        subject: `Checkit Support: ${validatedData.subject}`,
+        subject: `Lexible Support: ${validatedData.subject}`,
         html: emailContent,
         replyTo: req.user.email,
       };
@@ -3403,7 +3403,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await transporter.sendMail({
         from: process.env.EMAIL_USER,
         to: req.body.email || 'checkitdev1@gmail.com',
-        subject: 'Checkit Email Test',
+        subject: 'Lexible Email Test',
         html: '<h1>Email Test Successful!</h1><p>Your Gmail configuration is working properly.</p>',
       });
 

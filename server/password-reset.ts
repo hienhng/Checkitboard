@@ -76,7 +76,7 @@ function generatePasswordResetEmailTemplate({
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Password Reset - Checkit</title>
+      <title>Password Reset - Lexible</title>
       <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5; }
         .container { max-width: 600px; margin: 0 auto; background-color: white; }
@@ -94,12 +94,12 @@ function generatePasswordResetEmailTemplate({
     <body>
       <div class="container">
         <div class="header">
-          <h1 class="logo">Checkit</h1>
+          <h1 class="logo">Lexible</h1>
         </div>
         <div class="content">
           <h2 class="title">Password Reset Request</h2>
           <p class="text">Hello ${name},</p>
-          <p class="text">We received a request to reset your password for your Checkit account. If you made this request, click the button below to reset your password:</p>
+          <p class="text">We received a request to reset your password for your Lexible account. If you made this request, click the button below to reset your password:</p>
           
           <div style="text-align: center;">
             <a href="${resetUrl}" class="button">Reset My Password</a>
@@ -114,11 +114,11 @@ function generatePasswordResetEmailTemplate({
           
           <p class="text">If you're having trouble, please contact our support team.</p>
           
-          <p class="text">Best regards,<br>The Checkit Team</p>
+          <p class="text">Best regards,<br>The Lexible Team</p>
         </div>
         <div class="footer">
           <p>This is an automated message. Please do not reply to this email.</p>
-          <p>© ${new Date().getFullYear()} Checkit. All rights reserved.</p>
+          <p>© ${new Date().getFullYear()} Lexible. All rights reserved.</p>
         </div>
       </div>
     </body>
@@ -140,13 +140,13 @@ export async function sendPasswordResetEmail({
     const htmlContent = generatePasswordResetEmailTemplate({ name, resetToken });
     
     const mailOptions = {
-      from: `"Checkit" <${process.env.EMAIL_USER || process.env.SMTP_USER}>`,
+      from: `"Lexible" <${process.env.EMAIL_USER || process.env.SMTP_USER}>`,
       to: email,
-      subject: 'Reset Your Password - Checkit',
+      subject: 'Reset Your Password - Lexible',
       html: htmlContent,
       text: `Hello ${name},
 
-We received a request to reset your password for your Checkit account.
+We received a request to reset your password for your Lexible account.
 
 Reset your password by clicking this link: ${resetUrl}
 
@@ -155,7 +155,7 @@ This link will expire in 1 hour for security reasons.
 If you didn't request this password reset, you can safely ignore this email.
 
 Best regards,
-The Checkit Team`,
+The Lexible Team`,
     };
 
     await transporter.sendMail(mailOptions);
@@ -180,16 +180,16 @@ export async function sendPasswordResetConfirmationEmail({
     const transporter = createTransporter();
     
     const mailOptions = {
-      from: `"Checkit" <${process.env.EMAIL_USER || process.env.SMTP_USER}>`,
+      from: `"Lexible" <${process.env.EMAIL_USER || process.env.SMTP_USER}>`,
       to: email,
-      subject: 'Password Successfully Reset - Checkit',
+      subject: 'Password Successfully Reset - Lexible',
       html: `
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Password Reset Confirmation - Checkit</title>
+          <title>Password Reset Confirmation - Lexible</title>
           <style>
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5; }
             .container { max-width: 600px; margin: 0 auto; background-color: white; }
@@ -205,25 +205,25 @@ export async function sendPasswordResetConfirmationEmail({
         <body>
           <div class="container">
             <div class="header">
-              <h1 class="logo">Checkit</h1>
+              <h1 class="logo">Lexible</h1>
             </div>
             <div class="content">
               <h2 class="title">Password Successfully Reset</h2>
               <p class="text">Hello ${name},</p>
               
               <div class="success">
-                <strong>Success!</strong> Your password has been successfully reset for your Checkit account.
+                <strong>Success!</strong> Your password has been successfully reset for your Lexible account.
               </div>
               
               <p class="text">You can now log in with your new password. If you didn't make this change, please contact our support team immediately.</p>
               
               <p class="text">For your security, you've been logged out of all devices and will need to log in again.</p>
               
-              <p class="text">Best regards,<br>The Checkit Team</p>
+              <p class="text">Best regards,<br>The Lexible Team</p>
             </div>
             <div class="footer">
               <p>This is an automated message. Please do not reply to this email.</p>
-              <p>© ${new Date().getFullYear()} Checkit. All rights reserved.</p>
+              <p>© ${new Date().getFullYear()} Lexible. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -231,14 +231,14 @@ export async function sendPasswordResetConfirmationEmail({
       `,
       text: `Hello ${name},
 
-Your password has been successfully reset for your Checkit account.
+Your password has been successfully reset for your Lexible account.
 
 You can now log in with your new password. If you didn't make this change, please contact our support team immediately.
 
 For your security, you've been logged out of all devices and will need to log in again.
 
 Best regards,
-The Checkit Team`,
+The Lexible Team`,
     };
 
     await transporter.sendMail(mailOptions);
