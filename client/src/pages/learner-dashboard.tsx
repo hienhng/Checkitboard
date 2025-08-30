@@ -283,7 +283,6 @@ function LearnerDashboard() {
                   </div>
                 )}
               </div>
-            </div>
           </div>
         </div>
       </div>
