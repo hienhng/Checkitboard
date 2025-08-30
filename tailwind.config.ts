@@ -5,8 +5,8 @@ export default {
   content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"],
   theme: {
     fontFamily: {
-      sans: ["Inter", "system-ui", "sans-serif"],
-      serif: ["Inter", "system-ui", "sans-serif"],
+      sans: ["Poppins", "system-ui", "sans-serif"],
+      serif: ["Poppins", "system-ui", "sans-serif"],
       mono: ["JetBrains Mono", "monospace"],
       brand: ["JetBrains Mono", "monospace"],
     },
