@@ -528,7 +528,7 @@ function LearnerDashboard() {
                     <Button 
                       size="sm"
                       className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                      onClick={() => navigate('/learner/explore')}
+                      onClick={() => navigate('/explore')}
                     >
                       <StickyNote className="mr-2 h-4 w-4" />
                       Explore Words
