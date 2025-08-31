@@ -23,6 +23,7 @@ The application uses a full-stack TypeScript architecture with distinct client a
 - **Charts**: Recharts for data visualization
 - **Animations**: Framer Motion for smooth interactions
 - **Design Approach**: Modern, professional UI with comprehensive dark mode support, gradient backgrounds, animated elements, improved forms, and interactive components. Features CSS variables for theming, ThemeProvider for state management, and seamless light/dark mode switching. Complete modern redesign with gradient cards, improved typography, and consistent spacing across all components.
+- **Typography**: Poppins for main interface text, Zen Dots for "lexible" brand name throughout the website.
 
 ### Technical Implementations
 - **Frontend Build**: Vite
