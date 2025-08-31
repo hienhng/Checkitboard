@@ -88,27 +88,21 @@ export default function VocabularyManagement() {
 
   // Mutation to publish/unpublish a vocabulary list
   const publishMutation = useMutation({
-    mutationFn: async ({ id, published, classIds }: { id: number; published: boolean; classIds?: number[] }) => {
-      if (published && classIds && classIds.length > 0) {
-        // Publishing to multiple classes - create assignments
-        const payload = {
-          vocabularyListId: id,
-          classIds: classIds
-        };
-        
-        const res = await apiRequest("POST", "/api/vocabulary-assignments", payload);
-        if (!res.ok) {
-          throw new Error(`Failed to publish: ${res.status}`);
-        }
-        return res.json();
-      } else {
-        // Unpublishing - remove all assignments
-        const res = await apiRequest("PATCH", `/api/vocabulary-lists/${id}`, { published });
-        if (!res.ok) {
-          throw new Error(`Failed to unpublish: ${res.status}`);
-        }
-        return res.json();
+    mutationFn: async ({ id, published, classId }: { id: number; published: boolean; classId?: number }) => {
+      // Use the existing PATCH endpoint for vocabulary lists
+      const payload: any = { published };
+      if (published && classId) {
+        payload.classId = classId;
+      } else if (!published) {
+        // When unpublishing, remove class assignment
+        payload.classId = null;
       }
+      
+      const res = await apiRequest("PATCH", `/api/vocabulary-lists/${id}`, payload);
+      if (!res.ok) {
+        throw new Error(`Failed to ${published ? 'publish' : 'unpublish'}: ${res.status}`);
+      }
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/educator/vocabulary-lists"] });
@@ -178,20 +172,24 @@ export default function VocabularyManagement() {
 
   const handleConfirmPublish = () => {
     if (publishingList && selectedClassesForPublish.length > 0) {
+      // For now, use the first selected class
+      // TODO: Support multiple class assignment by creating copies
+      const classId = selectedClassesForPublish[0];
       publishMutation.mutate({
         id: publishingList.id,
         published: true,
-        classIds: selectedClassesForPublish
+        classId: classId
       });
     }
   };
 
   const handleClassSelection = (classId: number, checked: boolean) => {
-    setSelectedClassesForPublish(prev => 
-      checked 
-        ? [...prev, classId]
-        : prev.filter(id => id !== classId)
-    );
+    if (checked) {
+      // For single class assignment, replace the selection
+      setSelectedClassesForPublish([classId]);
+    } else {
+      setSelectedClassesForPublish([]);
+    }
   };
 
   // Handle edit action
@@ -395,7 +393,7 @@ export default function VocabularyManagement() {
           <DialogHeader>
             <DialogTitle>Publish to Classes</DialogTitle>
             <div className="text-sm text-muted-foreground">
-              Select which classes to publish "{publishingList?.title}" to
+              Select a class to publish "{publishingList?.title}" to
             </div>
           </DialogHeader>
           
@@ -409,9 +407,10 @@ export default function VocabularyManagement() {
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="text-sm font-medium">Select Classes:</div>
+                <div className="text-sm font-medium">Select Class:</div>
                 {(classes || []).map((cls: any) => (
-                  <div key={cls.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
+                  <div key={cls.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
+                       onClick={() => handleClassSelection(cls.id, !selectedClassesForPublish.includes(cls.id))}>
                     <Checkbox
                       id={`class-${cls.id}`}
                       checked={selectedClassesForPublish.includes(cls.id)}
@@ -451,7 +450,7 @@ export default function VocabularyManagement() {
               onClick={handleConfirmPublish}
               disabled={selectedClassesForPublish.length === 0 || publishMutation.isPending}
             >
-              {publishMutation.isPending ? "Publishing..." : `Publish to ${selectedClassesForPublish.length} Class${selectedClassesForPublish.length !== 1 ? 'es' : ''}`}
+              {publishMutation.isPending ? "Publishing..." : "Publish to Class"}
             </Button>
           </div>
         </DialogContent>
