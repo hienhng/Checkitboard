@@ -38,6 +38,9 @@ export default function VocabularyManagement() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [editingList, setEditingList] = useState<any>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [publishingList, setPublishingList] = useState<any>(null);
+  const [showPublishDialog, setShowPublishDialog] = useState(false);
+  const [selectedClassesForPublish, setSelectedClassesForPublish] = useState<number[]>([]);
 
   // Fetch educator's vocabulary lists
   const { data: vocabularyLists = [], isLoading: listsLoading } = useQuery<any[]>({
@@ -88,21 +91,30 @@ export default function VocabularyManagement() {
 
   // Mutation to publish/unpublish a vocabulary list
   const publishMutation = useMutation({
-    mutationFn: async ({ id, published, classId }: { id: number; published: boolean; classId?: number }) => {
-      // Preserve the existing class assignment when publishing/unpublishing
-      const payload: any = { published };
-      if (classId !== undefined) {
-        payload.classId = classId;
+    mutationFn: async ({ id, published, classIds }: { id: number; published: boolean; classIds?: number[] }) => {
+      if (published && classIds && classIds.length > 0) {
+        // Publishing to multiple classes - create assignments
+        const assignments = classIds.map(classId => ({
+          vocabularyListId: id,
+          classId: classId
+        }));
+        
+        const res = await apiRequest("POST", "/api/vocabulary-assignments", { assignments });
+        return res.json();
+      } else {
+        // Unpublishing - remove all assignments
+        const res = await apiRequest("PATCH", `/api/vocabulary-lists/${id}`, { published });
+        return res.json();
       }
-      
-      const res = await apiRequest("PATCH", `/api/vocabulary-lists/${id}`, payload);
-      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/educator/vocabulary-lists"] });
+      setShowPublishDialog(false);
+      setPublishingList(null);
+      setSelectedClassesForPublish([]);
       toast({
         title: "List updated",
-        description: "The vocabulary list status has been updated successfully.",
+        description: "The vocabulary list has been updated successfully.",
       });
     },
     onError: (error) => {
@@ -146,16 +158,37 @@ export default function VocabularyManagement() {
     }
   };
 
-  const handlePublishToggle = (id: number, currentPublished: boolean) => {
-    // Find the list to get its current class assignment
-    const list = vocabularyLists.find(l => l.id === id);
-    const classId = list?.classId || list?.class?.id;
-    
-    publishMutation.mutate({ 
-      id, 
-      published: !currentPublished,
-      classId: classId 
-    });
+  const handlePublishClick = (list: any) => {
+    if (list.published) {
+      // Direct unpublish for already published lists
+      publishMutation.mutate({ 
+        id: list.id, 
+        published: false
+      });
+    } else {
+      // Open class selection dialog for unpublished lists
+      setPublishingList(list);
+      setSelectedClassesForPublish([]);
+      setShowPublishDialog(true);
+    }
+  };
+
+  const handleConfirmPublish = () => {
+    if (publishingList && selectedClassesForPublish.length > 0) {
+      publishMutation.mutate({
+        id: publishingList.id,
+        published: true,
+        classIds: selectedClassesForPublish
+      });
+    }
+  };
+
+  const handleClassSelection = (classId: number, checked: boolean) => {
+    setSelectedClassesForPublish(prev => 
+      checked 
+        ? [...prev, classId]
+        : prev.filter(id => id !== classId)
+    );
   };
 
   // Handle edit action
@@ -333,7 +366,7 @@ export default function VocabularyManagement() {
                         variant={list.published ? "outline" : "default"} 
                         size="sm"
                         className={list.published ? "hover:bg-red-50 hover:text-red-600 hover:border-red-200" : ""}
-                        onClick={() => handlePublishToggle(list.id, list.published)}
+                        onClick={() => handlePublishClick(list)}
                       >
                         {list.published ? "Unpublish" : "Publish"}
                       </Button>
@@ -352,6 +385,74 @@ export default function VocabularyManagement() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Publish to Classes Dialog */}
+      <Dialog open={showPublishDialog} onOpenChange={setShowPublishDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Publish to Classes</DialogTitle>
+            <div className="text-sm text-muted-foreground">
+              Select which classes to publish "{publishingList?.title}" to
+            </div>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {classes.length === 0 ? (
+              <div className="text-center py-8">
+                <School className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
+                <p className="text-sm text-muted-foreground">
+                  No classes available. Create a class first to publish assignments.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="text-sm font-medium">Select Classes:</div>
+                {classes.map((cls: any) => (
+                  <div key={cls.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
+                    <Checkbox
+                      id={`class-${cls.id}`}
+                      checked={selectedClassesForPublish.includes(cls.id)}
+                      onCheckedChange={(checked) => handleClassSelection(cls.id, checked as boolean)}
+                    />
+                    <div className="flex-1">
+                      <label 
+                        htmlFor={`class-${cls.id}`}
+                        className="text-sm font-medium cursor-pointer"
+                      >
+                        {cls.name}
+                      </label>
+                      {cls.description && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {cls.description}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
+                        <span>{cls.students?.length || 0} students</span>
+                        <span>Code: {cls.classCode}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end space-x-2 pt-4 border-t">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowPublishDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleConfirmPublish}
+              disabled={selectedClassesForPublish.length === 0 || publishMutation.isPending}
+            >
+              {publishMutation.isPending ? "Publishing..." : `Publish to ${selectedClassesForPublish.length} Class${selectedClassesForPublish.length !== 1 ? 'es' : ''}`}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
