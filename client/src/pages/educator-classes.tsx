@@ -108,7 +108,7 @@ function EducatorClasses() {
           </Card>
         </div>
 
-        {/* Action Section */}
+        {/* Class Management Section */}
         <div className="mb-8">
           <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
             <CardHeader className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-t-lg p-6">
@@ -116,10 +116,10 @@ function EducatorClasses() {
                 <div>
                   <CardTitle className="text-2xl font-bold">
                     <School className="inline mr-3 h-6 w-6" />
-                    Classroom Management
+                    Class Management
                   </CardTitle>
                   <CardDescription className="text-green-100 text-base mt-2">
-                    Create and manage your educational communities
+                    Create and manage your educational communities with advanced administration tools
                   </CardDescription>
                 </div>
                 <CreateClassDialog 
@@ -136,6 +136,9 @@ function EducatorClasses() {
                 />
               </div>
             </CardHeader>
+            <CardContent className="p-0">
+              <ClassManagement />
+            </CardContent>
           </Card>
         </div>
 
@@ -238,27 +241,7 @@ function EducatorClasses() {
             </CardContent>
           </Card>
         )}
-
-        {/* Detailed Class Management Section */}
-        <div className="mt-12">
-          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
-            <CardHeader className="bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-t-lg p-6">
-              <CardTitle className="text-2xl font-bold">
-                <Settings className="inline mr-3 h-6 w-6" />
-                Advanced Management
-              </CardTitle>
-              <CardDescription className="text-slate-200 text-base mt-2">
-                Detailed class administration and student management tools
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              <ClassManagement />
-            </CardContent>
-          </Card>
-        </div>
       </div>
-
-
     </div>
   );
 }
