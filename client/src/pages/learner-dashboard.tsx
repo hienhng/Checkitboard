@@ -295,7 +295,7 @@ function LearnerDashboard() {
 
               {/* Flashcards Card */}
               <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
-                <CardHeader className="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-t-lg p-6">
+                <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-lg p-6">
                   <div className="flex justify-between items-center">
                     <CardTitle className="text-xl font-bold">
                       <Brain className="inline mr-3 h-5 w-5" />
@@ -312,7 +312,7 @@ function LearnerDashboard() {
                       })()
                     )}
                   </div>
-                  <CardDescription className="text-purple-100 text-sm mt-2">
+                  <CardDescription className="text-blue-100 text-sm mt-2">
                     Review words you got wrong
                   </CardDescription>
                 </CardHeader>
@@ -331,15 +331,15 @@ function LearnerDashboard() {
                         .filter(card => !card.learned)
                         .slice(0, 2)
                         .map(card => (
-                          <div key={card.id} className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+                          <div key={card.id} className="p-4 bg-gradient-to-r from-blue-50 to-sky-50 rounded-lg border border-blue-200">
                             <div className="flex justify-between items-start">
                               <div className="flex-1">
-                                <h4 className="font-bold text-lg text-purple-900 mb-1">{card.word.word}</h4>
-                                <p className="text-sm text-purple-600">
+                                <h4 className="font-bold text-lg text-blue-900 mb-1">{card.word.word}</h4>
+                                <p className="text-sm text-blue-600">
                                   {card.definition.correctDefinition || card.definition.studentDefinition}
                                 </p>
                               </div>
-                              <BookMarked className="h-5 w-5 text-purple-400" />
+                              <BookMarked className="h-5 w-5 text-blue-400" />
                             </div>
                           </div>
                         ))}
@@ -389,12 +389,12 @@ function LearnerDashboard() {
               </Card>
 
               {/* Quick Actions */}
-              <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200 shadow-lg">
+              <Card className="bg-gradient-to-br from-blue-50 to-sky-50 border-blue-200 shadow-lg">
                 <CardContent className="p-6 text-center">
                   <div className="space-y-2">
                     <Button 
                       size="sm"
-                      className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                      className="w-full bg-gradient-to-r from-blue-500 to-sky-500 hover:from-blue-600 hover:to-sky-600"
                       onClick={() => navigate('/explore')}
                     >
                       <StickyNote className="mr-2 h-4 w-4" />
@@ -417,7 +417,7 @@ function LearnerDashboard() {
 
           <TabsContent value="classes" className="space-y-6">
             <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
-              <CardHeader className="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-t-lg p-6">
+              <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-lg p-6">
                 <div className="flex justify-between items-center">
                   <CardTitle className="text-2xl font-bold">
                     <School className="inline mr-3 h-6 w-6" />
@@ -429,7 +429,7 @@ function LearnerDashboard() {
                     </Badge>
                   )}
                 </div>
-                <CardDescription className="text-purple-100 text-base mt-2">
+                <CardDescription className="text-blue-100 text-base mt-2">
                   Manage your class memberships and track progress
                 </CardDescription>
               </CardHeader>
@@ -445,7 +445,7 @@ function LearnerDashboard() {
                       <Card key={cls.id} className="border hover:shadow-md transition-shadow">
                         <CardHeader className="pb-3">
                           <CardTitle className="text-base font-semibold flex items-center">
-                            <School className="mr-2 h-4 w-4 text-purple-500" />
+                            <School className="mr-2 h-4 w-4 text-blue-500" />
                             <span>{cls.class?.name || cls.name}</span>
                           </CardTitle>
                           {cls.description && (
