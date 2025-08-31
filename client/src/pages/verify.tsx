@@ -117,13 +117,13 @@ function Verify() {
             Email Verified Successfully!
           </CardTitle>
           <CardDescription>
-            Welcome to Checkit! Your account has been activated.
+            Welcome to Lexible! Your account has been activated.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="text-center space-y-2">
             <p className="text-sm text-gray-600">
-              Your email address has been successfully verified. You can now log in to your Checkit account and start using all features.
+              Your email address has been successfully verified. You can now log in to your Lexible account and start using all features.
             </p>
             {userName && (
               <p className="text-sm font-medium text-gray-900">

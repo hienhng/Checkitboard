@@ -3997,6 +3997,167 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // #endregion
 
+  // #region Search API
+
+  // Global search endpoint
+  app.get("/api/search", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const { q } = req.query;
+      if (!q || typeof q !== "string" || q.length < 2) {
+        return res.json([]);
+      }
+
+      const query = q.trim().toLowerCase();
+      const results: any[] = [];
+
+      if (req.user.role === "educator") {
+        // Search vocabulary lists
+        const vocabularyResults = await db.query.vocabularyLists.findMany({
+          where: and(
+            eq(vocabularyLists.educatorId, req.user.id),
+            sql`LOWER(${vocabularyLists.title}) LIKE ${`%${query}%`}`
+          ),
+          with: {
+            class: true
+          },
+          limit: 10
+        });
+
+        vocabularyResults.forEach(list => {
+          results.push({
+            id: list.id,
+            title: list.title,
+            type: 'vocabulary_list',
+            description: list.class ? `Assigned to ${list.class.name}` : 'Not assigned',
+            url: `/educator/vocabulary/${list.id}`
+          });
+        });
+
+        // Search classes
+        const classResults = await db.query.classes.findMany({
+          where: and(
+            eq(classes.educatorId, req.user.id),
+            sql`LOWER(${classes.name}) LIKE ${`%${query}%`}`
+          ),
+          limit: 10
+        });
+
+        classResults.forEach(cls => {
+          results.push({
+            id: cls.id,
+            title: cls.name,
+            type: 'class',
+            description: cls.description || 'Class',
+            url: `/educator/classes`
+          });
+        });
+
+        // Search students in educator's classes
+        const studentResults = await db.query.users.findMany({
+          where: and(
+            eq(users.role, "learner"),
+            sql`LOWER(${users.name}) LIKE ${`%${query}%`}`
+          ),
+          with: {
+            studentClasses: {
+              with: {
+                class: {
+                  where: eq(classes.educatorId, req.user.id)
+                }
+              }
+            }
+          },
+          limit: 10
+        });
+
+        studentResults.forEach(student => {
+          if (student.studentClasses.length > 0) {
+            const classNames = student.studentClasses.map(sc => sc.class?.name).filter(Boolean).join(', ');
+            results.push({
+              id: student.id,
+              title: student.name,
+              type: 'student',
+              description: `Student in ${classNames}`,
+              url: `/educator/classes`
+            });
+          }
+        });
+
+      } else if (req.user.role === "learner") {
+        // Search vocabulary lists assigned to student
+        const studentClassIds = await db.query.studentClass.findMany({
+          where: eq(studentClass.studentId, req.user.id),
+          columns: { classId: true }
+        });
+
+        if (studentClassIds.length > 0) {
+          const classIds = studentClassIds.map(sc => sc.classId);
+          
+          const vocabularyResults = await db.query.vocabularyLists.findMany({
+            where: and(
+              eq(vocabularyLists.published, true),
+              inArray(vocabularyLists.classId, classIds),
+              sql`LOWER(${vocabularyLists.title}) LIKE ${`%${query}%`}`
+            ),
+            with: {
+              class: true
+            },
+            limit: 10
+          });
+
+          vocabularyResults.forEach(list => {
+            results.push({
+              id: list.id,
+              title: list.title,
+              type: 'vocabulary_list',
+              description: `From ${list.class?.name || 'Unknown class'}`,
+              url: `/learner/vocabulary/${list.id}`
+            });
+          });
+        }
+
+        // Search student's classes
+        const classResults = await db.query.classes.findMany({
+          where: and(
+            inArray(classes.id, studentClassIds.map(sc => sc.classId)),
+            sql`LOWER(${classes.name}) LIKE ${`%${query}%`}`
+          ),
+          limit: 10
+        });
+
+        classResults.forEach(cls => {
+          results.push({
+            id: cls.id,
+            title: cls.name,
+            type: 'class',
+            description: cls.description || 'Class',
+            url: `/learner/class/${cls.id}`
+          });
+        });
+      }
+
+      // Sort results by relevance (exact matches first, then partial matches)
+      results.sort((a, b) => {
+        const aExact = a.title.toLowerCase() === query;
+        const bExact = b.title.toLowerCase() === query;
+        if (aExact && !bExact) return -1;
+        if (!aExact && bExact) return 1;
+        return 0;
+      });
+
+      res.json(results.slice(0, 20)); // Limit to 20 results
+    } catch (error) {
+      console.error("Error performing search:", error);
+      res.status(500).json({ message: "Error performing search" });
+    }
+  });
+
+  // #endregion
+
   const httpServer = createServer(app);
   return httpServer;
 }

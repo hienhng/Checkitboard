@@ -19,6 +19,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NotificationCenter } from "@/components/notifications";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { GlobalSearch } from "@/components/global-search";
 import { 
   LogOut, 
   BookOpen, 
@@ -149,6 +150,13 @@ export function Sidebar() {
           </>
         )}
       </div>
+
+      {/* Search section */}
+      {!isCollapsed && (
+        <div className="p-3 border-b border-gray-100">
+          <GlobalSearch />
+        </div>
+      )}
 
       {/* Navigation links */}
       <div className="flex-1 p-3 overflow-y-auto overflow-x-hidden">
