@@ -520,6 +520,7 @@ interface StudentProgressDialogProps {
 }
 
 function StudentProgressDialog({ classData, open, onOpenChange }: StudentProgressDialogProps) {
+  const { toast } = useToast();
   const { data: studentProgress = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/classes", classData.id, "student-performance"],
     queryFn: async () => {
@@ -592,32 +593,59 @@ function StudentProgressDialog({ classData, open, onOpenChange }: StudentProgres
                   
                   {student.submissions && student.submissions.length > 0 ? (
                     <div className="mt-4 space-y-2">
-                      <h5 className="text-sm font-medium text-gray-700">Recent Submissions:</h5>
+                      <div className="flex items-center justify-between">
+                        <h5 className="text-sm font-medium text-gray-700">Recent Submissions:</h5>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-xs h-6"
+                          onClick={() => {
+                            // TODO: Navigate to detailed student progress page
+                            toast({
+                              title: "Coming Soon",
+                              description: "Detailed progress view will be available soon",
+                            });
+                          }}
+                        >
+                          View All
+                        </Button>
+                      </div>
                       <div className="space-y-2">
                         {student.submissions.slice(0, 3).map((submission: any) => (
-                          <div key={submission.id} className="flex items-center justify-between bg-gray-50 rounded p-2">
-                            <div>
+                          <div key={submission.id} className="flex items-center justify-between bg-gray-50 rounded p-3 hover:bg-gray-100 transition-colors">
+                            <div className="flex-1">
                               <p className="text-sm font-medium">{submission.listTitle}</p>
-                              <p className="text-xs text-gray-500">
-                                Submitted: {new Date(submission.submittedAt).toLocaleDateString()}
-                              </p>
+                              <div className="flex items-center gap-4 text-xs text-gray-500 mt-1">
+                                <span>Submitted: {new Date(submission.submittedAt).toLocaleDateString()}</span>
+                                {submission.gradedAt && (
+                                  <span>Graded: {new Date(submission.gradedAt).toLocaleDateString()}</span>
+                                )}
+                              </div>
                             </div>
-                            <div className="text-right">
+                            <div className="text-right ml-4">
                               <Badge variant={submission.score >= 70 ? "default" : submission.score >= 50 ? "secondary" : "destructive"}>
                                 {submission.score !== null ? `${submission.score}%` : 'Pending'}
                               </Badge>
-                              {submission.gradedAt && (
-                                <p className="text-xs text-gray-500 mt-1">
-                                  Graded: {new Date(submission.gradedAt).toLocaleDateString()}
-                                </p>
-                              )}
                             </div>
                           </div>
                         ))}
                         {student.submissions.length > 3 && (
-                          <p className="text-xs text-gray-500 text-center">
-                            ... and {student.submissions.length - 3} more submissions
-                          </p>
+                          <div className="text-center py-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="text-xs"
+                              onClick={() => {
+                                // TODO: Show all submissions for this student
+                                toast({
+                                  title: "Coming Soon",
+                                  description: "View all submissions feature will be available soon",
+                                });
+                              }}
+                            >
+                              View All {student.submissions.length} Submissions
+                            </Button>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -772,17 +800,15 @@ export function ClassManagement() {
                       setShowStudentDialog(true);
                     }}
                   >
-                    <Users className="h-4 w-4 mr-1" />
-                    Students
+                    <TrendingUp className="h-4 w-4 mr-1" />
+                    View Progress
                   </Button>
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="flex-1"
                     onClick={() => setIsSettingsDialogOpen(true)}
                   >
-                    <Settings className="h-4 w-4 mr-1" />
-                    Settings
+                    <Settings className="h-4 w-4" />
                   </Button>
                 </div>
               </CardContent>
