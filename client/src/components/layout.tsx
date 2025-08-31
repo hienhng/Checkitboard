@@ -37,8 +37,11 @@ function LayoutWithSidebar({ children }: LayoutProps) {
             ? collapsed 
               ? "ml-16" 
               : "ml-64" 
-            : ""
+            : "ml-0"
         }`}
+        style={{
+          marginLeft: !isMobile ? (collapsed ? '4rem' : '16rem') : '0'
+        }}
       >
         <main className="min-h-screen p-6">
           <div className="max-w-7xl mx-auto">
