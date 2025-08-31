@@ -24,6 +24,7 @@ import FlashcardsPage from "@/pages/flashcards-page";
 import ClassListsPage from "@/pages/class-lists-page";
 import LearnerAnalysis from "@/pages/learner-analysis";
 import EducatorStatisticsPage from "@/pages/educator-statistics-page";
+import EducatorClasses from "@/pages/educator-classes";
 import VocabularyManagement from "@/pages/vocabulary-management";
 import VocabularyDetails from "@/pages/vocabulary-details";
 import ExplorePage from "@/pages/explore-page";
@@ -57,6 +58,7 @@ function Router() {
             <ProtectedRoute path="/home" component={HomePage} />
             <ProtectedRoute path="/educator/dashboard" component={withEmailVerification(EducatorDashboard)} />
             <ProtectedRoute path="/educator/statistics" component={withEmailVerification(EducatorStatisticsPage)} />
+            <ProtectedRoute path="/educator/classes" component={withEmailVerification(EducatorClasses)} />
             <ProtectedRoute path="/educator/assignments" component={withEmailVerification(VocabularyManagement)} />
             <ProtectedRoute path="/educator/vocabulary/:listId" component={withEmailVerification(VocabularyDetails)} />
             <ProtectedRoute path="/learner/dashboard" component={withEmailVerification(LearnerDashboard)} />

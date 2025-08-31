@@ -95,7 +95,7 @@ function generateVerificationEmailTemplate({
     <body>
       <div class="container">
         <div class="header">
-          <h1>Get ready to Lexible!</h1>
+          <h1>One step away from learning..</h1>
         </div>
         <div class="content">
           <h2>Hi ${name}!</h2>

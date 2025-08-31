@@ -82,9 +82,9 @@ export function Sidebar() {
   const navLinks = isEducator
     ? [
         { href: "/educator/dashboard", label: "Dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
+        { href: "/educator/classes", label: "Classes", icon: <School className="h-5 w-5" /> },
         { href: "/educator/assignments", label: "Assignments", icon: <ClipboardList className="h-5 w-5" /> },
         { href: "/educator/statistics", label: "Statistics", icon: <BarChart className="h-5 w-5" /> },
-       
       ]
     : [
         { href: "/learner/dashboard", label: "My Dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },

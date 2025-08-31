@@ -24,13 +24,13 @@ import {
   Users,
   School
 } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { VocabularyList } from "@shared/schema";
 import { formatDate, formatDueDate } from "@/lib/utils";
 import { GradingPanel } from "@/components/grading-panel";
-import { CreateClassDialog, ClassManagement } from "@/components/class-management";
+
 import { RequestApprovalButton } from "@/components/request-approval";
 
 import { useToast } from "@/hooks/use-toast";
@@ -131,7 +131,7 @@ function EducatorDashboard() {
     });
   };
 
-  const [activeTab, setActiveTab] = useState("dashboard");
+
 
 
 
@@ -207,20 +207,7 @@ function EducatorDashboard() {
                 </CardContent>
               </Card>
             ) : (
-              <>
-                <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                  <TabsList className="grid w-full grid-cols-2 bg-muted/50">
-                    <TabsTrigger value="dashboard" className="flex items-center data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                      <BookOpen className="mr-2 h-4 w-4" />
-                      Dashboard
-                    </TabsTrigger>
-                    <TabsTrigger value="classes" className="flex items-center data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                      <School className="mr-2 h-4 w-4" />
-                      Classes
-                    </TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="dashboard" className="space-y-8">
+                <div className="space-y-8">
                     
                     {/* Quick Stats Overview */}
                     <div className="grid gap-6 md:grid-cols-4">
@@ -460,13 +447,7 @@ function EducatorDashboard() {
                         </CardContent>
                       </Card>
                     </div>
-                  </TabsContent>
-
-                  <TabsContent value="classes">
-                    <ClassManagement />
-                  </TabsContent>
-                </Tabs>
-              </>
+                </div>
             )}
       </div>
     </div>
