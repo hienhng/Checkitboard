@@ -57,9 +57,6 @@ export default function VocabularyManagement() {
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/educator/classes");
       return response.json();
-    },
-    onError: (error) => {
-      console.error("Failed to fetch classes:", error);
     }
   });
 
@@ -94,16 +91,22 @@ export default function VocabularyManagement() {
     mutationFn: async ({ id, published, classIds }: { id: number; published: boolean; classIds?: number[] }) => {
       if (published && classIds && classIds.length > 0) {
         // Publishing to multiple classes - create assignments
-        const assignments = classIds.map(classId => ({
+        const payload = {
           vocabularyListId: id,
-          classId: classId
-        }));
+          classIds: classIds
+        };
         
-        const res = await apiRequest("POST", "/api/vocabulary-assignments", { assignments });
+        const res = await apiRequest("POST", "/api/vocabulary-assignments", payload);
+        if (!res.ok) {
+          throw new Error(`Failed to publish: ${res.status}`);
+        }
         return res.json();
       } else {
         // Unpublishing - remove all assignments
         const res = await apiRequest("PATCH", `/api/vocabulary-lists/${id}`, { published });
+        if (!res.ok) {
+          throw new Error(`Failed to unpublish: ${res.status}`);
+        }
         return res.json();
       }
     },
@@ -397,7 +400,7 @@ export default function VocabularyManagement() {
           </DialogHeader>
           
           <div className="space-y-4 py-4">
-            {classes.length === 0 ? (
+            {!classes || classes.length === 0 ? (
               <div className="text-center py-8">
                 <School className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
                 <p className="text-sm text-muted-foreground">
@@ -407,7 +410,7 @@ export default function VocabularyManagement() {
             ) : (
               <div className="space-y-3">
                 <div className="text-sm font-medium">Select Classes:</div>
-                {classes.map((cls: any) => (
+                {(classes || []).map((cls: any) => (
                   <div key={cls.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
                     <Checkbox
                       id={`class-${cls.id}`}
