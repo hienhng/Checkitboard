@@ -94,8 +94,6 @@ function LearnerDashboard() {
 
   const [activeTab, setActiveTab] = useState("dashboard");
   
-  // Search functionality
-  const [searchQuery, setSearchQuery] = useState("");
   const [showJoinClass, setShowJoinClass] = useState(false);
 
   // Fetch published vocabulary lists
@@ -137,22 +135,7 @@ function LearnerDashboard() {
     queryFn: getQueryFn({ on401: "throw" }),
   });
 
-  // Filter functions for search
-  const filteredVocabularyLists = vocabularyLists?.filter(list => {
-    if (!searchQuery) return true; // Show all results when not searching
-    const searchTerm = searchQuery?.toLowerCase() || '';
-    const title = list?.title?.toLowerCase() || '';
-    const educatorName = list?.educator?.name?.toLowerCase() || '';
-    return title.includes(searchTerm) || educatorName.includes(searchTerm);
-  }) || [];
 
-  const filteredClasses = classes?.filter(cls => {
-    if (!searchQuery) return true; // Show all results when not searching
-    const searchTerm = searchQuery?.toLowerCase() || '';
-    const name = cls?.class?.name?.toLowerCase() || cls?.name?.toLowerCase() || '';
-    const description = cls?.description?.toLowerCase() || '';
-    return name.includes(searchTerm) || description.includes(searchTerm);
-  }) || [];
 
   // Start a new vocabulary check-up (navigate to preview page)
   const startCheckUp = (listId: number) => {
@@ -177,123 +160,7 @@ function LearnerDashboard() {
                 Master vocabulary through interactive learning, track your progress, and achieve your language goals.
               </p>
               
-              {/* Modern Search Bar */}
-              <div className="max-w-2xl mx-auto mt-8 relative">
-                <div className="relative">
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
-                  <Input
-                    type="text"
-                    placeholder="Search vocabulary lists, classes, or topics..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-12 pr-6 py-4 w-full text-lg rounded-xl border-0 bg-white/80 backdrop-blur-sm shadow-lg focus:shadow-xl transition-all duration-300"
-                  />
-                </div>
-                
-                {/* Search Results Overlay */}
-                {searchQuery && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-card rounded-lg border border-border shadow-lg p-4 max-h-64 overflow-y-auto z-50">
-                    <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                      <Search className="mr-2 h-4 w-4" />
-                      Search Results for "{searchQuery}"
-                    </h3>
-                    
-                    {/* Vocabulary Lists Results */}
-                    {filteredVocabularyLists.length > 0 && (
-                      <div className="mb-4">
-                        <h4 className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-2">
-                          Vocabulary Lists ({filteredVocabularyLists.length})
-                        </h4>
-                        <div className="space-y-2">
-                          {filteredVocabularyLists.map(list => {
-                            const isCompleted = list.submission && list.submission.completed;
-                            const isDiscarded = list.submission && list.submission.isDiscarded;
-                            const isGraded = isCompleted && list.submission?.gradedAt;
-                            
-                            return (
-                              <div 
-                                key={list.id} 
-                                className={`flex justify-between items-center p-3 rounded-md cursor-pointer transition-colors ${
-                                  isDiscarded ? 'bg-red-50 hover:bg-red-100' :
-                                  isGraded ? 'bg-green-50 hover:bg-green-100' :
-                                  isCompleted ? 'bg-yellow-50 hover:bg-yellow-100' :
-                                  'bg-blue-50 hover:bg-blue-100'
-                                }`}
-                                onClick={() => startCheckUp(list.id)}
-                              >
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <p className="font-medium text-gray-900">{list.title}</p>
-                                    {isDiscarded && (
-                                      <Badge className="bg-red-100 text-red-800 text-xs">
-                                        Discarded
-                                      </Badge>
-                                    )}
-                                    {isGraded && !isDiscarded && (
-                                      <Badge className="bg-green-100 text-green-800 text-xs">
-                                        {list.submission?.score}% - Graded
-                                      </Badge>
-                                    )}
-                                    {isCompleted && !isGraded && !isDiscarded && (
-                                      <Badge className="bg-yellow-100 text-yellow-800 text-xs">
-                                        Pending
-                                      </Badge>
-                                    )}
-                                    {!isCompleted && (
-                                      <Badge className="bg-blue-100 text-blue-800 text-xs">
-                                        Not Started
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <p className="text-sm text-gray-500">
-                                    By: {list.educator?.name} • Due: {formatDueDate(list.dueDate)}
-                                  </p>
-                                </div>
-                                <ChevronRight className="h-4 w-4 text-gray-400" />
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Classes Results */}
-                    {filteredClasses.length > 0 && (
-                      <div className="mb-4">
-                        <h4 className="text-xs font-semibold text-purple-600 uppercase tracking-wide mb-2">
-                          My Classes ({filteredClasses.length})
-                        </h4>
-                        <div className="space-y-2">
-                          {filteredClasses.map((cls) => (
-                            <div 
-                              key={cls.id} 
-                              className="p-3 bg-purple-50 rounded-md"
-                            >
-                              <p className="font-medium text-gray-900 flex items-center">
-                                <School className="mr-2 h-4 w-4 text-purple-500" />
-                                {cls.name}
-                              </p>
-                              {cls.description && (
-                                <p className="text-sm text-gray-500 mt-1">{cls.description}</p>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* No Results Message */}
-                    {filteredVocabularyLists.length === 0 && 
-                     filteredClasses.length === 0 && (
-                      <div className="text-center py-6 text-gray-500">
-                        <Search className="mx-auto h-12 w-12 text-gray-300 mb-3" />
-                        <p className="text-sm">No results found for "{searchQuery}"</p>
-                        <p className="text-xs text-gray-400 mt-1">Try searching for class names, vocabulary lists, or educator names</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+
             </div>
           </div>
         </div>
@@ -335,7 +202,7 @@ function LearnerDashboard() {
                     </CardTitle>
                     {vocabularyLists && vocabularyLists.length > 0 && (
                       <Badge className="bg-white/20 text-white border-white/30 px-3 py-1">
-                        {filteredVocabularyLists.length} lists
+                        {vocabularyLists.length} lists
                       </Badge>
                     )}
                   </div>
@@ -349,9 +216,9 @@ function LearnerDashboard() {
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                       <span className="ml-3 text-muted-foreground">Loading your vocabulary lists...</span>
                     </div>
-                  ) : filteredVocabularyLists && filteredVocabularyLists.length > 0 ? (
+                  ) : vocabularyLists && vocabularyLists.length > 0 ? (
                     <div className="space-y-4">
-                      {filteredVocabularyLists.map(list => {
+                      {vocabularyLists.map(list => {
                         const isCompleted = list.submission && list.submission.completed;
                         const isDiscarded = list.submission && list.submission.isDiscarded;
                         const isGraded = isCompleted && list.submission?.gradedAt;
@@ -558,7 +425,7 @@ function LearnerDashboard() {
                   </CardTitle>
                   {classes && classes.length > 0 && (
                     <Badge className="bg-white/20 text-white border-white/30 px-3 py-1">
-                      {filteredClasses.length} classes
+                      {classes.length} classes
                     </Badge>
                   )}
                 </div>
@@ -572,9 +439,9 @@ function LearnerDashboard() {
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                     <span className="ml-3 text-muted-foreground">Loading your classes...</span>
                   </div>
-                ) : filteredClasses && filteredClasses.length > 0 ? (
+                ) : classes && classes.length > 0 ? (
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {filteredClasses.map((cls) => (
+                    {classes.map((cls) => (
                       <Card key={cls.id} className="border hover:shadow-md transition-shadow">
                         <CardHeader className="pb-3">
                           <CardTitle className="text-base font-semibold flex items-center">
