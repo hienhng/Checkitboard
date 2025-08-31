@@ -136,111 +136,13 @@ function EducatorClasses() {
                 />
               </div>
             </CardHeader>
-            <CardContent className="p-0">
+            <CardContent className="p-6">
               <ClassManagement />
             </CardContent>
           </Card>
         </div>
 
-        {/* Classes Grid */}
-        {classesLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <span className="ml-3 text-muted-foreground">Loading classes...</span>
-          </div>
-        ) : classes.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {classes.map((classItem: any) => (
-              <Card key={classItem.id} className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors">
-                        <School className="h-5 w-5 text-green-600" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg text-foreground">{classItem.name}</CardTitle>
-                        <CardDescription className="text-sm text-muted-foreground">
-                          {classItem.description || "No description"}
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-blue-600" />
-                        <span className="text-sm font-medium text-blue-700">Students</span>
-                      </div>
-                      <span className="text-lg font-bold text-blue-800">
-                        {classItem.studentCount || 0}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <BookOpen className="h-4 w-4 text-purple-600" />
-                        <span className="text-sm font-medium text-purple-700">Assignments</span>
-                      </div>
-                      <span className="text-lg font-bold text-purple-800">
-                        {classItem.assignmentCount || 0}
-                      </span>
-                    </div>
 
-                    <div className="flex gap-2 pt-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1"
-                      >
-                        <Eye className="mr-2 h-4 w-4" />
-                        View
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1"
-                      >
-                        <UserPlus className="mr-2 h-4 w-4" />
-                        Students
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                      >
-                        <Settings className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
-            <CardContent className="p-12 text-center">
-              <School className="mx-auto h-16 w-16 text-muted-foreground/50 mb-6" />
-              <h3 className="text-xl font-semibold text-foreground mb-2">No Classes Yet</h3>
-              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                Create your first classroom to start organizing students and managing vocabulary assignments.
-              </p>
-              <CreateClassDialog 
-                onClassCreated={handleCreateSuccess}
-                trigger={
-                  <Button 
-                    className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
-                    size="lg"
-                  >
-                    <Plus className="mr-2 h-5 w-5" />
-                    Create Your First Class
-                  </Button>
-                }
-              />
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   );
