@@ -44,7 +44,13 @@ function LayoutWithSidebar({ children }: LayoutProps) {
         }}
       >
         <main className="min-h-screen p-6">
-          <div className="max-w-7xl mx-auto">
+          <div className={`mx-auto ${
+            !isMobile 
+              ? collapsed 
+                ? "max-w-full px-4" 
+                : "max-w-7xl" 
+              : "max-w-7xl"
+          }`}>
             {children}
           </div>
         </main>
