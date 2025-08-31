@@ -84,8 +84,8 @@ export default function HeroPage() {
                 <CheckCircle className="h-4 w-4 text-white" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-slate-800">94% Success Rate</p>
-                <p className="text-xs text-slate-600">Student improvement</p>
+                <p className="text-sm font-semibold text-slate-800">Auto Grading</p>
+                <p className="text-xs text-slate-600">Instant feedback</p>
               </div>
             </div>
           </div>
@@ -99,7 +99,7 @@ export default function HeroPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-slate-800">AI-Powered</p>
-                <p className="text-xs text-slate-600">Smart grading</p>
+                <p className="text-xs text-slate-600">Smart analysis</p>
               </div>
             </div>
           </div>
@@ -110,7 +110,7 @@ export default function HeroPage() {
             {/* Hero Badge */}
             <div className="inline-flex items-center px-6 py-3 bg-blue-50 border border-blue-200 rounded-full text-sm font-semibold text-blue-700 mb-8 shadow-sm">
               <Sparkles className="h-4 w-4 mr-2 text-blue-500" />
-              Trusted by 10,000+ educators worldwide
+              AI-Powered Vocabulary Learning Platform
             </div>
             
             {/* Main Headline */}
@@ -141,19 +141,19 @@ export default function HeroPage() {
               </Button>
             </div>
 
-            {/* Trust Indicators */}
+            {/* Feature Highlights */}
             <div className="flex flex-wrap items-center justify-center gap-8 text-slate-500 text-sm font-medium">
               <div className="flex items-center">
                 <Shield className="h-4 w-4 mr-2 text-green-500" />
-                100% Secure & Private
+                Secure & Private
               </div>
               <div className="flex items-center">
                 <Clock className="h-4 w-4 mr-2 text-blue-500" />
-                Setup in 5 Minutes
+                Quick Setup
               </div>
               <div className="flex items-center">
-                <Award className="h-4 w-4 mr-2 text-yellow-500" />
-                Award-Winning Platform
+                <Brain className="h-4 w-4 mr-2 text-blue-500" />
+                AI-Enhanced Learning
               </div>
             </div>
           </div>
@@ -291,134 +291,142 @@ export default function HeroPage() {
         </div>
       </section>
 
-      {/* Stats Section */}
+      {/* How It Works Section */}
       <section className="py-24 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-4">
-              Results That Speak for Themselves
+              How Lexible Works
             </h2>
             <p className="text-xl text-blue-100 max-w-3xl mx-auto">
-              Join thousands of educators who have transformed their vocabulary teaching with measurable results.
+              A simple 3-step process to transform vocabulary learning in your classroom.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             <div className="text-center">
-              <div className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-blue-200 to-white bg-clip-text text-transparent">
-                10K+
+              <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <BookOpen className="h-10 w-10 text-white" />
               </div>
-              <div className="text-xl font-semibold text-blue-100 mb-2">Active Educators</div>
-              <div className="text-blue-200 text-sm">Worldwide community</div>
+              <div className="text-2xl font-bold text-white mb-4">1. Create Passages</div>
+              <div className="text-blue-100 text-lg">Upload or write reading passages and highlight vocabulary words students need to learn</div>
             </div>
             <div className="text-center">
-              <div className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-blue-200 to-white bg-clip-text text-transparent">
-                94%
+              <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Users className="h-10 w-10 text-white" />
               </div>
-              <div className="text-xl font-semibold text-blue-100 mb-2">Success Rate</div>
-              <div className="text-blue-200 text-sm">Student improvement</div>
+              <div className="text-2xl font-bold text-white mb-4">2. Assign to Classes</div>
+              <div className="text-blue-100 text-lg">Publish assignments to your classes and track student progress in real-time</div>
             </div>
             <div className="text-center">
-              <div className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-blue-200 to-white bg-clip-text text-transparent">
-                2.5M
+              <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Brain className="h-10 w-10 text-white" />
               </div>
-              <div className="text-xl font-semibold text-blue-100 mb-2">Words Learned</div>
-              <div className="text-blue-200 text-sm">Monthly milestone</div>
-            </div>
-            <div className="text-center">
-              <div className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-blue-200 to-white bg-clip-text text-transparent">
-                50%
-              </div>
-              <div className="text-xl font-semibold text-blue-100 mb-2">Time Saved</div>
-              <div className="text-blue-200 text-sm">On grading tasks</div>
+              <div className="text-2xl font-bold text-white mb-4">3. AI Assessment</div>
+              <div className="text-blue-100 text-lg">Students complete tests, receive instant AI-powered feedback and adaptive flashcards</div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Testimonials Section */}
+      {/* Feature Details Section */}
       <section className="py-32 bg-gradient-to-br from-slate-50 to-blue-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-20">
             <div className="inline-flex items-center px-4 py-2 bg-blue-50 border border-blue-200 rounded-full text-sm font-semibold text-blue-700 mb-6">
-              <Star className="h-4 w-4 mr-2 text-yellow-500" />
-              Educator Reviews
+              <Target className="h-4 w-4 mr-2" />
+              Core Features
             </div>
             <h2 className="text-5xl md:text-6xl font-bold text-slate-900 mb-8 leading-tight">
-              Loved by Teachers
-              <span className="block text-blue-600">Across the Globe</span>
+              What Makes Lexible
+              <span className="block text-blue-600">Different</span>
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Testimonial 1 */}
-            <Card className="border-0 shadow-xl hover:shadow-2xl transition-shadow duration-300 bg-white">
-              <CardContent className="p-10">
-                <div className="flex items-center mb-6">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
-                  ))}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            {/* Feature 1 */}
+            <div>
+              <h3 className="text-3xl font-bold text-slate-900 mb-6">Interactive Reading Passages</h3>
+              <p className="text-xl text-slate-600 mb-8 leading-relaxed">
+                Transform any text into an interactive learning experience. Highlight vocabulary words directly within reading passages, 
+                and students can click for instant AI-generated definitions and context.
+              </p>
+              <div className="space-y-4">
+                <div className="flex items-center text-slate-700">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                  Highlight words directly in text
                 </div>
-                <p className="text-slate-700 mb-8 text-lg leading-relaxed italic">
-                  "This platform has revolutionized how I teach vocabulary. My students are more engaged and their retention has improved dramatically."
-                </p>
-                <div className="flex items-center">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                    S
-                  </div>
-                  <div className="ml-4">
-                    <div className="font-bold text-slate-900 text-lg">Sarah Johnson</div>
-                    <div className="text-slate-600">Middle School Teacher, Boston</div>
-                  </div>
+                <div className="flex items-center text-slate-700">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                  AI-generated definitions and examples
                 </div>
-              </CardContent>
-            </Card>
+                <div className="flex items-center text-slate-700">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                  Context-aware explanations
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-2xl p-8 shadow-xl">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6">
+                <div className="text-slate-800 text-lg leading-relaxed">
+                  "The <span className="bg-blue-200 px-2 py-1 rounded cursor-pointer">protagonist</span> faced many <span className="bg-blue-200 px-2 py-1 rounded cursor-pointer">obstacles</span> during their journey through the <span className="bg-blue-200 px-2 py-1 rounded cursor-pointer">treacherous</span> mountain pass."
+                </div>
+                <div className="mt-4 text-sm text-slate-600">
+                  Click highlighted words for definitions
+                </div>
+              </div>
+            </div>
 
-            {/* Testimonial 2 */}
-            <Card className="border-0 shadow-xl hover:shadow-2xl transition-shadow duration-300 bg-white">
-              <CardContent className="p-10">
-                <div className="flex items-center mb-6">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
-                  ))}
+            {/* Feature 2 */}
+            <div className="bg-white rounded-2xl p-8 shadow-xl lg:order-first">
+              <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="text-lg font-semibold text-slate-800">Student Progress</div>
+                  <div className="text-sm text-slate-600">Real-time</div>
                 </div>
-                <p className="text-slate-700 mb-8 text-lg leading-relaxed italic">
-                  "The AI-powered features save me hours of grading time while providing more detailed feedback to my students."
-                </p>
-                <div className="flex items-center">
-                  <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                    M
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-700">Emma Thompson</span>
+                    <div className="w-24 bg-gray-200 rounded-full h-2">
+                      <div className="bg-green-500 h-2 rounded-full" style={{width: '85%'}}></div>
+                    </div>
                   </div>
-                  <div className="ml-4">
-                    <div className="font-bold text-slate-900 text-lg">Michael Chen</div>
-                    <div className="text-slate-600">High School English, Seattle</div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-700">Marcus Johnson</span>
+                    <div className="w-24 bg-gray-200 rounded-full h-2">
+                      <div className="bg-blue-500 h-2 rounded-full" style={{width: '72%'}}></div>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Testimonial 3 */}
-            <Card className="border-0 shadow-xl hover:shadow-2xl transition-shadow duration-300 bg-white">
-              <CardContent className="p-10">
-                <div className="flex items-center mb-6">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
-                  ))}
-                </div>
-                <p className="text-slate-700 mb-8 text-lg leading-relaxed italic">
-                  "The progress tracking helps me identify exactly where each student needs support. It's incredibly valuable."
-                </p>
-                <div className="flex items-center">
-                  <div className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                    L
-                  </div>
-                  <div className="ml-4">
-                    <div className="font-bold text-slate-900 text-lg">Lisa Rodriguez</div>
-                    <div className="text-slate-600">Elementary Teacher, Miami</div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-700">Sarah Chen</span>
+                    <div className="w-24 bg-gray-200 rounded-full h-2">
+                      <div className="bg-yellow-500 h-2 rounded-full" style={{width: '91%'}}></div>
+                    </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-3xl font-bold text-slate-900 mb-6">Real-Time Progress Tracking</h3>
+              <p className="text-xl text-slate-600 mb-8 leading-relaxed">
+                Monitor student progress instantly. See which words students struggle with, track completion rates, 
+                and identify students who need additional support.
+              </p>
+              <div className="space-y-4">
+                <div className="flex items-center text-slate-700">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                  Live progress dashboard
+                </div>
+                <div className="flex items-center text-slate-700">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                  Individual student analytics
+                </div>
+                <div className="flex items-center text-slate-700">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                  Automated parent notifications
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -445,8 +453,8 @@ export default function HeroPage() {
             </h2>
             
             <p className="text-xl md:text-2xl text-blue-100 mb-16 max-w-4xl mx-auto leading-relaxed">
-              Join 10,000+ educators who have already transformed their classrooms. 
-              Setup takes just 5 minutes and comes with full support.
+              Start using AI-powered vocabulary learning today. 
+              Setup takes just minutes and you can begin creating engaging lessons immediately.
             </p>
           </div>
           
@@ -462,14 +470,14 @@ export default function HeroPage() {
             </Button>
           </div>
 
-          {/* Trust Indicators */}
+          {/* Platform Benefits */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             <div className="flex items-center justify-center">
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 flex items-center space-x-4">
                 <Shield className="h-8 w-8 text-green-300" />
                 <div className="text-left">
-                  <div className="font-semibold text-white">100% Secure</div>
-                  <div className="text-blue-200 text-sm">SOC 2 Compliant</div>
+                  <div className="font-semibold text-white">Secure Platform</div>
+                  <div className="text-blue-200 text-sm">Privacy focused</div>
                 </div>
               </div>
             </div>
@@ -477,17 +485,17 @@ export default function HeroPage() {
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 flex items-center space-x-4">
                 <Clock className="h-8 w-8 text-blue-300" />
                 <div className="text-left">
-                  <div className="font-semibold text-white">Quick Setup</div>
-                  <div className="text-blue-200 text-sm">Ready in 5 minutes</div>
+                  <div className="font-semibold text-white">Quick Start</div>
+                  <div className="text-blue-200 text-sm">Easy setup process</div>
                 </div>
               </div>
             </div>
             <div className="flex items-center justify-center">
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 flex items-center space-x-4">
-                <Award className="h-8 w-8 text-yellow-300" />
+                <Zap className="h-8 w-8 text-yellow-300" />
                 <div className="text-left">
-                  <div className="font-semibold text-white">Award Winner</div>
-                  <div className="text-blue-200 text-sm">EdTech Innovation</div>
+                  <div className="font-semibold text-white">AI-Enhanced</div>
+                  <div className="text-blue-200 text-sm">Smart technology</div>
                 </div>
               </div>
             </div>
@@ -511,7 +519,7 @@ export default function HeroPage() {
               </p>
               <div className="flex items-center text-slate-400 bg-slate-800 rounded-lg px-4 py-3 inline-flex">
                 <Globe className="h-5 w-5 mr-3 text-blue-400" />
-                <span className="font-medium">Serving 10,000+ educators worldwide</span>
+                <span className="font-medium">AI-powered vocabulary learning platform</span>
               </div>
             </div>
             
