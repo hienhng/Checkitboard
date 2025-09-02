@@ -295,7 +295,7 @@ function LearnerDashboard() {
 
               {/* Flashcards Card */}
               <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
-                <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-lg p-6">
+                <CardHeader className="bg-gradient-to-r from-purple-500 to-purple-700 text-white rounded-t-lg p-6">
                   <div className="flex justify-between items-center">
                     <CardTitle className="text-xl font-bold">
                       <Brain className="inline mr-3 h-5 w-5" />

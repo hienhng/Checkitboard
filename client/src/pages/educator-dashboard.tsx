@@ -153,11 +153,11 @@ function EducatorDashboard() {
           <div className="max-w-7xl mx-auto">
             <div className="text-center space-y-4">
               <h1 className="text-6xl font-bold text-foreground">
-                Ready to{" "}
+                Welcome to{" "}
                 <span className="font-brand font-semibold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
                   lexible
                 </span>
-                ?
+                
               </h1>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
                 Create engaging vocabulary experiences, manage classes, and track student progress with powerful insights.
