@@ -20,8 +20,8 @@ try {
   console.error("Error initializing Groq client:", error);
 }
 
-// Default model for text generation
-const DEFAULT_MODEL = "llama3-8b-8192";
+// Default model for text generation (updated to current supported model)
+const DEFAULT_MODEL = "llama-3.1-8b-instant";
 
 /**
  * Check if the Groq API key is configured
