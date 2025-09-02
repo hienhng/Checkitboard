@@ -58,8 +58,6 @@ export const vocabularyLists = pgTable("vocabulary_lists", {
   dueDate: timestamp("due_date"),
   // Assignment-specific settings
   gradeVisibility: text("grade_visibility", { enum: ["immediate", "afterDue", "manual"] }).default("immediate").notNull(),
-  allowRetakes: boolean("allow_retakes").default(true).notNull(),
-  maxRetakeAttempts: integer("max_retake_attempts").default(3).notNull(),
   timeLimit: integer("time_limit"), // in minutes, null means no time limit
   shuffleQuestions: boolean("shuffle_questions").default(false).notNull(),
   showCorrectAnswers: boolean("show_correct_answers").default(true).notNull(),

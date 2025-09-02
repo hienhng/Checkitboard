@@ -30,14 +30,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Settings, Clock, RefreshCw, Eye, CheckCircle } from "lucide-react";
+import { Settings, Clock, Eye, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
 const assignmentPropertiesSchema = z.object({
   gradeVisibility: z.enum(["immediate", "afterDue", "manual"]).default("immediate"),
-  allowRetakes: z.boolean().default(true),
-  maxRetakeAttempts: z.number().min(1).max(10).default(3),
   timeLimit: z.number().min(1).max(300).optional(), // minutes
   shuffleQuestions: z.boolean().default(false),
   showCorrectAnswers: z.boolean().default(true),
@@ -59,8 +57,6 @@ export function AssignmentProperties({ vocabularyList, trigger }: AssignmentProp
     resolver: zodResolver(assignmentPropertiesSchema),
     defaultValues: {
       gradeVisibility: vocabularyList?.gradeVisibility || "immediate",
-      allowRetakes: vocabularyList?.allowRetakes ?? true,
-      maxRetakeAttempts: vocabularyList?.maxRetakeAttempts || 3,
       timeLimit: vocabularyList?.timeLimit || undefined,
       shuffleQuestions: vocabularyList?.shuffleQuestions ?? false,
       showCorrectAnswers: vocabularyList?.showCorrectAnswers ?? true,
@@ -157,56 +153,7 @@ export function AssignmentProperties({ vocabularyList, trigger }: AssignmentProp
               )}
             />
 
-            {/* Allow Retakes */}
-            <FormField
-              control={form.control}
-              name="allowRetakes"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="flex items-center text-base">
-                      <RefreshCw className="mr-2 h-4 w-4" />
-                      Allow Retakes
-                    </FormLabel>
-                    <FormDescription>
-                      Students can retake this assignment if they score poorly
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
 
-            {/* Maximum Retake Attempts */}
-            {form.watch("allowRetakes") && (
-              <FormField
-                control={form.control}
-                name="maxRetakeAttempts"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Maximum Retake Attempts</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={1}
-                        max={10}
-                        {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Maximum number of times a student can retake this assignment (1-10)
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
 
             {/* Time Limit */}
             <FormField

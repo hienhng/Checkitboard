@@ -308,31 +308,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Check retake policy based on assignment properties
+      // Check for existing submissions
       const existingSubmission = await storage.getSubmissionByStudentAndList(req.user.id, listId, false);
       
       if (existingSubmission) {
-        // Check if retakes are allowed for this assignment
-        if (!list.allowRetakes) {
-          return res.status(400).json({ 
-            message: "Retakes are not allowed for this assignment.",
-            submissionId: existingSubmission.id,
-            exists: true
-          });
-        }
-
-        // Count completed submissions to check against maxRetakeAttempts
-        const completedSubmissions = await storage.getCompletedSubmissionCount(req.user.id, listId);
-        const maxAttempts = list.maxRetakeAttempts || 3;
-        
-        if (completedSubmissions >= maxAttempts) {
-          return res.status(400).json({ 
-            message: `You have reached the maximum number of attempts (${maxAttempts}) for this assignment.`,
-            submissionId: existingSubmission.id,
-            exists: true
-          });
-        }
-
         // If there's an incomplete submission, don't allow starting a new one
         if (!existingSubmission.completed) {
           return res.status(400).json({ 
@@ -570,8 +549,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Define schema for assignment properties
       const assignmentPropertiesSchema = z.object({
         gradeVisibility: z.enum(["immediate", "afterDue", "manual"]).optional(),
-        allowRetakes: z.boolean().optional(),
-        maxRetakeAttempts: z.number().min(1).max(10).optional(),
         timeLimit: z.number().min(1).max(300).optional().nullable(),
         shuffleQuestions: z.boolean().optional(),
         showCorrectAnswers: z.boolean().optional(),
