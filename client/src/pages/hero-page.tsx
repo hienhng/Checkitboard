@@ -46,9 +46,7 @@ export default function HeroPage() {
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <BookOpen className="h-6 w-6 text-white" />
-                </div>
+                
                 <span className="text-3xl font-brand font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
                   lexible
                 </span>
