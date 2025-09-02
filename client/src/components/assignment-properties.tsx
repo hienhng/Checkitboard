@@ -114,7 +114,7 @@ export function AssignmentProperties({ vocabularyList, trigger }: AssignmentProp
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center">
             <Settings className="mr-2 h-5 w-5" />
