@@ -57,9 +57,6 @@ const classSettingsSchema = z.object({
   autoApproveRequests: z.boolean().default(false),
   allowStudentSelfEnroll: z.boolean().default(true),
   defaultDueDate: z.number().min(1).max(30).default(7), // days
-  gradeVisibility: z.enum(["immediate", "afterDue", "manual"]).default("immediate"),
-  allowRedos: z.boolean().default(true),
-  maxRedoAttempts: z.number().min(1).max(10).default(3),
 });
 
 type ClassFormData = z.infer<typeof classSchema>;
@@ -92,9 +89,6 @@ function ClassSettingsDialog({ open, onOpenChange }: { open: boolean; onOpenChan
       autoApproveRequests: classSettings?.autoApproveRequests ?? false,
       allowStudentSelfEnroll: classSettings?.allowStudentSelfEnroll ?? true,
       defaultDueDate: classSettings?.defaultDueDate ?? 7,
-      gradeVisibility: classSettings?.gradeVisibility ?? "immediate",
-      allowRedos: classSettings?.allowRedos ?? true,
-      maxRedoAttempts: classSettings?.maxRedoAttempts ?? 3,
     },
   });
 
@@ -106,9 +100,6 @@ function ClassSettingsDialog({ open, onOpenChange }: { open: boolean; onOpenChan
         autoApproveRequests: classSettings.autoApproveRequests ?? false,
         allowStudentSelfEnroll: classSettings.allowStudentSelfEnroll ?? true,
         defaultDueDate: classSettings.defaultDueDate ?? 7,
-        gradeVisibility: classSettings.gradeVisibility ?? "immediate",
-        allowRedos: classSettings.allowRedos ?? true,
-        maxRedoAttempts: classSettings.maxRedoAttempts ?? 3,
       });
     }
   }, [classSettings, classSettingsForm]);

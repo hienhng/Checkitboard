@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EditVocabularyForm } from "@/components/edit-vocabulary-form";
+import { AssignmentProperties } from "@/components/assignment-properties";
 import {
   BookOpen,
   CalendarDays,
@@ -26,7 +27,8 @@ import {
   Filter,
   Edit,
   Eye,
-  HelpCircle
+  HelpCircle,
+  Settings
 } from "lucide-react";
 
 export default function VocabularyManagement() {
@@ -363,6 +365,15 @@ export default function VocabularyManagement() {
                         <Edit className="mr-1 h-3 w-3" />
                         Edit
                       </Button>
+                      <AssignmentProperties 
+                        vocabularyList={list}
+                        trigger={
+                          <Button variant="outline" size="sm" className="flex items-center">
+                            <Settings className="mr-1 h-3 w-3" />
+                            Properties
+                          </Button>
+                        }
+                      />
                       <Button 
                         variant={list.published ? "outline" : "default"} 
                         size="sm"

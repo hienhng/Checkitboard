@@ -517,6 +517,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update assignment properties for a vocabulary list
+  app.patch("/api/vocabulary-lists/:id/properties", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "educator") {
+        return res.status(403).json({ message: "Only educators can update assignment properties" });
+      }
+
+      const listId = parseInt(req.params.id);
+      if (isNaN(listId)) {
+        return res.status(400).json({ message: "Invalid list ID" });
+      }
+
+      const list = await storage.getVocabularyList(listId);
+      
+      if (!list) {
+        return res.status(404).json({ message: "Vocabulary list not found" });
+      }
+
+      if (list.educatorId !== req.user.id) {
+        return res.status(403).json({ message: "You don't have permission to update this list" });
+      }
+
+      // Define schema for assignment properties
+      const assignmentPropertiesSchema = z.object({
+        gradeVisibility: z.enum(["immediate", "afterDue", "manual"]).optional(),
+        allowRetakes: z.boolean().optional(),
+        maxRetakeAttempts: z.number().min(1).max(10).optional(),
+        timeLimit: z.number().min(1).max(300).optional().nullable(),
+        shuffleQuestions: z.boolean().optional(),
+        showCorrectAnswers: z.boolean().optional(),
+      });
+
+      const validatedData = assignmentPropertiesSchema.parse(req.body);
+      
+      // Convert timeLimit undefined to null for database
+      const processedData = {
+        ...validatedData,
+        timeLimit: validatedData.timeLimit || null,
+      };
+
+      const updatedList = await storage.updateVocabularyList(listId, processedData);
+      
+      res.json(updatedList);
+    } catch (error) {
+      console.error("Error updating assignment properties:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid assignment properties", 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ message: "Error updating assignment properties" });
+    }
+  });
+
   // Add word to vocabulary list
   app.post("/api/vocabulary-lists/:listId/words", async (req, res) => {
     try {
