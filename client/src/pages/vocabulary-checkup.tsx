@@ -235,9 +235,9 @@ export default function VocabularyCheckup() {
         description: "Your vocabulary check-up has been submitted for grading.",
       });
       
-      // Small delay to ensure fullscreen exit completes, then refresh and navigate
+      // Small delay to ensure fullscreen exit completes, then navigate to dashboard
       setTimeout(() => {
-        window.location.reload();
+        navigate("/learner/dashboard");
       }, 500);
     },
     onError: (error: Error) => {
@@ -276,9 +276,9 @@ export default function VocabularyCheckup() {
         variant: "destructive"
       });
       
-      // Small delay to ensure fullscreen exit completes, then refresh and navigate
+      // Small delay to ensure fullscreen exit completes, then navigate to dashboard
       setTimeout(() => {
-        window.location.reload();
+        navigate("/learner/dashboard");
       }, 500);
     },
     onError: (error: Error) => {
