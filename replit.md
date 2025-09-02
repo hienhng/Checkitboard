@@ -41,6 +41,7 @@ The application uses a full-stack TypeScript architecture with distinct client a
 - **Authentication**: Role-based access (educator/learner), email verification, password reset, session-based authentication.
 - **Vocabulary Management**: Passage editor with word highlighting, AI-powered vocabulary analysis, class management, vocabulary list creation and assignment.
 - **Assessment System**: Interactive check-up tests, real-time grading, fullscreen monitoring for test integrity, score tracking, AI auto-grading, and support for multiple-choice questions.
+- **Assignment Properties**: Individual assignment settings including grade visibility (immediate/after due date/manual), retake policies (allow/max attempts), time limits, question shuffling, and correct answer display. Settings moved from class-wide to assignment-specific configuration.
 - **Learning Tools**: Flashcard system for incorrect words, progress tracking, parent email notifications, intelligent sticky note customization (emojis, colors, persistent positioning), and AI-generated definitions for notes.
 - **AI Integration**: Support for multiple AI providers (Groq primary, OpenAI, Hugging Face) for definition generation, passage analysis, vocabulary extraction, contextual suggestions, and auto-grading. Comprehensive fallback mechanisms are implemented.
 - **Data Flow**: Supports distinct educator and learner workflows, including vocabulary list creation, assignment, student assessment, and progress tracking. Automated grading for skipped words is included.
@@ -50,7 +51,8 @@ The application uses a full-stack TypeScript architecture with distinct client a
 - **Microservices-oriented thinking**: Clear separation of client and server for scalability and maintainability.
 - **Modular Design**: Key components are broken down into logical units (Authentication, Vocabulary Management, Assessment, Learning Tools, AI Integration).
 - **AI Priority System**: Uses Groq as the primary AI provider for speed, with fallbacks to ensure robustness.
-- **Database Schema**: Includes `isCustom` field for user-created notes and `positionX`/`positionY` for persistent sticky note placement.
+- **Database Schema**: Includes `isCustom` field for user-created notes and `positionX`/`positionY` for persistent sticky note placement. Assignment-specific settings stored in vocabulary_lists table with fields for grade visibility, retake policies, time limits, and display preferences.
+- **Assignment Architecture**: Individual assignment properties replace class-wide defaults, allowing granular control over each vocabulary list's behavior and assessment rules.
 - **Security**: Robust session configuration and class membership validation to prevent unauthorized access.
 
 ## External Dependencies
