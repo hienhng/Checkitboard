@@ -368,7 +368,7 @@ export default function VocabularyCheckup() {
       }
     } else {
       // Save the current definition if it's changed (including empty string to represent skipped words)
-      if (definition !== savedDefinitions[currentWord.id]) {
+      if (currentWord && definition !== savedDefinitions[currentWord.id]) {
         await definitionMutation.mutateAsync({ 
           wordId: currentWord.id, 
           studentDefinition: definition || ""
@@ -531,6 +531,18 @@ export default function VocabularyCheckup() {
     );
   }
 
+  // Safety check for currentWord initialization
+  if (!currentWord || shuffledWords.length === 0) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-lg text-gray-500">Loading vocabulary words...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Safety checks for word data
   if (!submissionData.list?.words || submissionData.list.words.length === 0) {
     return (
@@ -598,10 +610,10 @@ export default function VocabularyCheckup() {
                 </h2>
                 <div className="prose max-w-none passage-container">
                   <div dangerouslySetInnerHTML={createMarkup(
-                    submissionData.list.passage.replace(
+                    currentWord ? submissionData.list.passage.replace(
                       new RegExp(`\\b${currentWord.word}\\b`, 'gi'), 
                       `<mark>${currentWord.word}</mark>`
-                    )
+                    ) : submissionData.list.passage
                   )} />
                 </div>
               </div>
@@ -647,7 +659,7 @@ export default function VocabularyCheckup() {
                     <div className="space-y-6">
                       <div>
                         <label className="block text-lg font-medium text-neutral-dark">
-                          {currentWord.word}
+                          {currentWord?.word || "Loading..."}
                         </label>
                         
                         {mcQuestionsLoading ? (
