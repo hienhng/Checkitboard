@@ -105,7 +105,7 @@ export function Sidebar() {
       )}>
         {isCollapsed ? (
           // Collapsed state: Show "C" with hover effect to reveal toggle button
-          <div 
+          (<div 
             className="relative flex items-center justify-center w-full"
             onMouseEnter={() => setShowToggleButton(true)}
             onMouseLeave={() => setShowToggleButton(false)}
@@ -130,10 +130,10 @@ export function Sidebar() {
             >
               <PanelLeftOpen className="h-4 w-4" />
             </Button>
-          </div>
+          </div>)
         ) : (
           // Extended state: Left-aligned "checkit" with right-aligned toggle button
-          <>
+          (<>
             <Link to="/" className="flex items-center">
               <span className="text-primary font-brand font-semibold text-4xl transition-all duration-300 ease-in-out">
                 lexible
@@ -147,7 +147,7 @@ export function Sidebar() {
             >
               <PanelLeftClose className="h-4 w-4" />
             </Button>
-          </>
+          </>)
         )}
       </div>
 
@@ -263,10 +263,7 @@ export function Sidebar() {
               <p className="text-xs text-gray-500 truncate">
                 {user.email}
               </p>
-              <div className={cn(
-                "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize mt-1",
-                isEducator ? "bg-primary/10 text-primary" : "bg-secondary/10 text-secondary"
-              )}>
+              <div className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize mt-1 text-secondary bg-[#1f66f4]">
                 {user.role}
               </div>
             </div>
