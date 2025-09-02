@@ -220,25 +220,27 @@ export default function VocabularyCheckup() {
       return res.json();
     },
     onSuccess: () => {
-      // Exit fullscreen if currently in fullscreen mode
-      if (document.fullscreenElement) {
-        document.exitFullscreen().catch(() => {
-          // Fallback for older browsers
-          if ((document as any).webkitExitFullscreen) {
-            (document as any).webkitExitFullscreen();
-          }
-        });
-      }
-      
       toast({
         title: "Check-up completed",
         description: "Your vocabulary check-up has been submitted for grading.",
       });
       
-      // Small delay to ensure fullscreen exit completes, then navigate to dashboard
+      // Navigate to dashboard first
+      navigate("/learner/dashboard");
+      
+      // Then exit fullscreen and reload page after navigation
       setTimeout(() => {
-        navigate("/learner/dashboard");
-      }, 500);
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch(() => {
+            // Fallback for older browsers
+            if ((document as any).webkitExitFullscreen) {
+              (document as any).webkitExitFullscreen();
+            }
+          });
+        }
+        // Reload page to refresh dashboard state
+        window.location.reload();
+      }, 1000);
     },
     onError: (error: Error) => {
       toast({
@@ -276,10 +278,22 @@ export default function VocabularyCheckup() {
         variant: "destructive"
       });
       
-      // Small delay to ensure fullscreen exit completes, then navigate to dashboard
+      // Navigate to dashboard first
+      navigate("/learner/dashboard");
+      
+      // Then exit fullscreen and reload page after navigation
       setTimeout(() => {
-        navigate("/learner/dashboard");
-      }, 500);
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch(() => {
+            // Fallback for older browsers
+            if ((document as any).webkitExitFullscreen) {
+              (document as any).webkitExitFullscreen();
+            }
+          });
+        }
+        // Reload page to refresh dashboard state
+        window.location.reload();
+      }, 1000);
     },
     onError: (error: Error) => {
       toast({
