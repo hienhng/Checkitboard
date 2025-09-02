@@ -308,23 +308,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Check if student already has ANY submission for this list (prevent retaking)
+      // Check retake policy based on assignment properties
       const existingSubmission = await storage.getSubmissionByStudentAndList(req.user.id, listId, false);
       
       if (existingSubmission) {
-        // Student already has a submission, don't allow starting a new one
-        return res.status(400).json({ 
-          message: "You have already started or completed this test. Each test can only be taken once.",
-          submissionId: existingSubmission.id,
-          exists: true
-        });
+        // Check if retakes are allowed for this assignment
+        if (!list.allowRetakes) {
+          return res.status(400).json({ 
+            message: "Retakes are not allowed for this assignment.",
+            submissionId: existingSubmission.id,
+            exists: true
+          });
+        }
+
+        // Count completed submissions to check against maxRetakeAttempts
+        const completedSubmissions = await storage.getCompletedSubmissionCount(req.user.id, listId);
+        const maxAttempts = list.maxRetakeAttempts || 3;
+        
+        if (completedSubmissions >= maxAttempts) {
+          return res.status(400).json({ 
+            message: `You have reached the maximum number of attempts (${maxAttempts}) for this assignment.`,
+            submissionId: existingSubmission.id,
+            exists: true
+          });
+        }
+
+        // If there's an incomplete submission, don't allow starting a new one
+        if (!existingSubmission.completed) {
+          return res.status(400).json({ 
+            message: "You have an incomplete submission for this test. Please complete it first.",
+            submissionId: existingSubmission.id,
+            exists: true
+          });
+        }
       }
 
-      // Create new submission
+      // Create new submission (mark as redo if student already has completed submissions)
+      const isRetake = existingSubmission && existingSubmission.completed;
       const submission = await storage.createSubmission({
         studentId: req.user.id,
         listId: listId,
-        isRedo: false,
+        isRedo: isRetake,
       });
 
       console.log("Created new submission:", submission.id);
@@ -1050,6 +1074,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Results not available" });
       }
 
+      // Check grade visibility settings
+      const list = submission.list;
+      const gradeVisibility = list?.gradeVisibility || "immediate";
+      
+      const shouldShowGrades = (() => {
+        switch (gradeVisibility) {
+          case "immediate":
+            return true;
+          case "afterDue":
+            // Show grades after due date
+            if (list?.dueDate) {
+              return new Date() > new Date(list.dueDate);
+            }
+            return true; // If no due date set, show immediately
+          case "manual":
+            // Show grades only if manually released (gradesReleased flag)
+            return list?.gradesReleased === true;
+          default:
+            return true;
+        }
+      })();
+
+      if (!shouldShowGrades) {
+        // Return submission but hide grade-related information
+        const submissionWithoutGrades = {
+          ...submission,
+          score: null,
+          wordDefinitions: submission.wordDefinitions?.map(def => ({
+            ...def,
+            isCorrect: null,
+            feedback: null,
+            gradedAt: null
+          }))
+        };
+        return res.json({
+          ...submissionWithoutGrades,
+          gradesHidden: true,
+          gradeVisibilityReason: gradeVisibility === "afterDue" 
+            ? `Grades will be available after ${new Date(list?.dueDate).toLocaleDateString()}`
+            : "Grades will be released manually by your instructor"
+        });
+      }
+
       res.json(submission);
     } catch (error) {
       console.error("Error fetching submission results:", error);
@@ -1309,15 +1376,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Always include the list, but attach submission status if it exists
           return {
             ...list,
-            submission: currentSubmission ? {
-              id: currentSubmission.id,
-              completed: currentSubmission.completed || false,
-              gradedAt: currentSubmission.gradedAt,
-              score: currentSubmission.score,
-              submittedAt: currentSubmission.submittedAt,
-              isDiscarded: currentSubmission.isDiscarded || false,
-              discardReason: currentSubmission.discardReason || null
-            } : null,
+            submission: currentSubmission ? (() => {
+              // Check grade visibility settings for this list
+              const gradeVisibility = list.gradeVisibility || "immediate";
+              const shouldShowScore = (() => {
+                switch (gradeVisibility) {
+                  case "immediate":
+                    return true;
+                  case "afterDue":
+                    if (list.dueDate) {
+                      return new Date() > new Date(list.dueDate);
+                    }
+                    return true; // If no due date set, show immediately
+                  case "manual":
+                    return list.gradesReleased === true;
+                  default:
+                    return true;
+                }
+              })();
+
+              return {
+                id: currentSubmission.id,
+                completed: currentSubmission.completed || false,
+                gradedAt: currentSubmission.gradedAt,
+                score: shouldShowScore ? currentSubmission.score : null,
+                submittedAt: currentSubmission.submittedAt,
+                isDiscarded: currentSubmission.isDiscarded || false,
+                discardReason: currentSubmission.discardReason || null,
+                gradesHidden: !shouldShowScore && currentSubmission.gradedAt
+              };
+            })() : null,
             class: list.class ? {
               id: list.class.id,
               name: list.class.name

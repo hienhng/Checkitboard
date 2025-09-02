@@ -500,6 +500,18 @@ export class DatabaseStorage {
     return allSubmissions.filter(submission => submission.gradedAt !== null);
   }
 
+  // Get count of completed submissions for a student and list (for retake limits)
+  async getCompletedSubmissionCount(studentId: number, listId: number): Promise<number> {
+    const result = await db.select({ count: sql`count(*)` })
+      .from(submissions)
+      .where(and(
+        eq(submissions.studentId, studentId),
+        eq(submissions.listId, listId),
+        eq(submissions.completed, true)
+      ));
+    return Number(result[0]?.count || 0);
+  }
+
   async createSubmission(submissionData: InsertSubmission) {
     // Create a properly typed object with only the fields we know exist in the database
     const validSubmissionData: typeof submissionData = {

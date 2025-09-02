@@ -43,6 +43,9 @@ export default function VocabularyCheckup() {
   const [isFullscreenActive, setIsFullscreenActive] = useState(false);
   const [navigationWarningOpen, setNavigationWarningOpen] = useState(false);
   const [showFullscreenWarning, setShowFullscreenWarning] = useState(false);
+  const [shuffledWords, setShuffledWords] = useState<any[]>([]);
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  const [timerStarted, setTimerStarted] = useState(false);
 
   // Fullscreen management
   const { isFullscreen, exitCount, enterFullscreen } = useFullscreen({
@@ -66,8 +69,60 @@ export default function VocabularyCheckup() {
   // Type guard for submission data to fix TypeScript issues
   const submissionData = submission as any;
 
-  // Get current word
-  const currentWord = submissionData?.list?.words?.[currentWordIndex];
+  // Shuffle words once when submission data loads, if shuffleQuestions is enabled
+  useEffect(() => {
+    if (submissionData?.list?.words && submissionData.list.words.length > 0) {
+      if (submissionData.list.shuffleQuestions && shuffledWords.length === 0) {
+        // Fisher-Yates shuffle algorithm
+        const words = [...submissionData.list.words];
+        for (let i = words.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [words[i], words[j]] = [words[j], words[i]];
+        }
+        setShuffledWords(words);
+      } else if (!submissionData.list.shuffleQuestions && shuffledWords.length === 0) {
+        // Use original order if shuffling is disabled
+        setShuffledWords([...submissionData.list.words]);
+      }
+    }
+  }, [submissionData?.list?.words, submissionData?.list?.shuffleQuestions]);
+
+  // Initialize timer based on assignment timeLimit
+  useEffect(() => {
+    if (submissionData?.list?.timeLimit && !timerStarted) {
+      const timeLimitInSeconds = submissionData.list.timeLimit * 60; // Convert minutes to seconds
+      setTimeRemaining(timeLimitInSeconds);
+      setTimerStarted(true);
+    }
+  }, [submissionData?.list?.timeLimit, timerStarted]);
+
+  // Timer countdown effect
+  useEffect(() => {
+    if (timeRemaining === null || timeRemaining <= 0) return;
+
+    const timer = setInterval(() => {
+      setTimeRemaining(prev => {
+        if (prev === null || prev <= 1) {
+          // Time's up! Auto-submit the test
+          handleComplete();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timeRemaining]);
+
+  // Get current word from shuffled array
+  const currentWord = shuffledWords[currentWordIndex];
+
+  // Format time remaining for display
+  const formatTimeRemaining = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
 
   // Get multiple choice questions for current word
   const { data: multipleChoiceQuestions, isLoading: mcQuestionsLoading, error: mcQuestionsError } = useQuery({
@@ -275,11 +330,11 @@ export default function VocabularyCheckup() {
 
   // Set the current definition when changing words
   useEffect(() => {
-    if (submissionData?.list?.words && submissionData.list.words[currentWordIndex]) {
-      const currentWordId = submissionData.list.words[currentWordIndex].id;
+    if (shuffledWords.length > 0 && shuffledWords[currentWordIndex]) {
+      const currentWordId = shuffledWords[currentWordIndex].id;
       setDefinition(savedDefinitions[currentWordId] || "");
     }
-  }, [currentWordIndex, savedDefinitions, submissionData?.list?.words]);
+  }, [currentWordIndex, savedDefinitions, shuffledWords]);
 
   const hasMultipleChoiceQuestions = Array.isArray(multipleChoiceQuestions) && multipleChoiceQuestions.length > 0;
 
@@ -295,9 +350,9 @@ export default function VocabularyCheckup() {
   });
 
   const handleNext = async () => {
-    if (!submissionData?.list?.words) return;
+    if (shuffledWords.length === 0) return;
     
-    const currentWord = submissionData.list.words[currentWordIndex];
+    const currentWord = shuffledWords[currentWordIndex];
     
     // Handle multiple choice questions
     if (hasMultipleChoiceQuestions) {
@@ -322,7 +377,7 @@ export default function VocabularyCheckup() {
     }
     
     // Move to the next word if not at the end
-    if (currentWordIndex < submissionData.list.words.length - 1) {
+    if (currentWordIndex < shuffledWords.length - 1) {
       setCurrentWordIndex(currentWordIndex + 1);
     }
   };
@@ -557,11 +612,28 @@ export default function VocabularyCheckup() {
               <div className="max-w-xl mx-auto">
                 <Card>
                   <CardHeader className="px-6 py-4 border-b border-gray-200 bg-blue-50">
-                    <div className="flex justify-between items-center">
-                      <CardTitle>Vocabulary Check-Up</CardTitle>
-                      <Badge className="bg-blue-100 text-blue-800">
-                        Word {currentWordIndex + 1} of {totalWords}
-                      </Badge>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle>Vocabulary Check-Up</CardTitle>
+                        <Badge className="bg-blue-100 text-blue-800 mt-2">
+                          Word {currentWordIndex + 1} of {totalWords}
+                        </Badge>
+                      </div>
+                      {timeRemaining !== null && (
+                        <div className={`text-right font-mono text-lg font-semibold ${
+                          timeRemaining <= 300 ? 'text-red-600' : 'text-blue-600'
+                        }`}>
+                          <div className="text-sm text-gray-500 font-normal">Time Remaining</div>
+                          <div className="flex items-center gap-1">
+                            ⏱️ {formatTimeRemaining(timeRemaining)}
+                          </div>
+                          {timeRemaining <= 300 && (
+                            <div className="text-xs text-red-500 font-normal animate-pulse">
+                              Hurry up! Less than 5 minutes left
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <CardDescription>
                       {hasMultipleChoiceQuestions 
