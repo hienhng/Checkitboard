@@ -35,7 +35,7 @@ export default function AuthPage() {
             {/* Logo Section */}
             <div className="text-center mb-10">
   
-              <h1 className="text-5xl font-brand font-light bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent tracking-wider">
+              <h1 className="text-5xl font-brand font-light bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent tracking-wide">
                 lexible
               </h1>
               <p className="mt-3 text-base text-slate-600 font-medium">Welcome to your learning journey</p>

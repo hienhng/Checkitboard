@@ -154,7 +154,7 @@ function EducatorDashboard() {
             <div className="text-center space-y-4">
               <h1 className="text-6xl font-bold text-foreground">
                 Welcome to{" "}
-                <span className="font-brand font-light bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent tracking-wider">
+                <span className="font-brand font-light bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent tracking-wide">
                   lexible
                 </span>
                 
