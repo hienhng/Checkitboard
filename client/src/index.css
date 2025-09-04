@@ -1,5 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Badeen+Display:wght@500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Badeen+Display&display=swap');
 
 /* Prevent text selection on sidebar hover area */
 .sidebar-hover-area {
@@ -139,11 +139,6 @@ body {
 }
 
 @layer components {
-  /* Font brand styling */
-  .font-brand {
-    font-weight: 500 !important;
-  }
-
   /* Modern glass effect */
   .glass {
     @apply bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50;
