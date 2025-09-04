@@ -47,7 +47,7 @@ export default function HeroPage() {
             <div className="flex items-center">
               <div className="flex items-center space-x-3">
                 
-                <span className="text-3xl font-brand font-light bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+                <span className="text-3xl font-brand font-light bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent tracking-wider">
                   lexible
                 </span>
               </div>
@@ -510,7 +510,7 @@ export default function HeroPage() {
                 <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
                   <BookOpen className="h-6 w-6 text-white" />
                 </div>
-                <span className="text-3xl font-brand font-light">lexible</span>
+                <span className="text-3xl font-brand font-light tracking-wider">lexible</span>
               </div>
               <p className="text-slate-400 mb-8 max-w-md text-lg leading-relaxed">
                 Empowering educators and students with intelligent vocabulary learning tools that make a real difference in academic success.
