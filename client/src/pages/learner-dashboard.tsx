@@ -152,7 +152,7 @@ function LearnerDashboard() {
             <div className="text-center space-y-4">
               <h1 className="text-6xl font-bold text-foreground">
                 Welcome to{" "}
-                <span className="font-brand font-light text-white bg-clip-text outline-blue-600 tracking-wide">
+                <span className="font-brand font-light text-blue-600 bg-clip-text outline-blue-600 tracking-wide">
                   lexible
                 </span>
               </h1>
