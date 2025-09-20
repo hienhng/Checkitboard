@@ -36,6 +36,13 @@ export default function TestPreview() {
     enabled: !!listId,
   });
 
+  // Get attempt information for this vocabulary list
+  const { data: attemptInfo } = useQuery({
+    queryKey: [`/api/vocabulary-lists/${listId}/attempts`],
+    queryFn: getQueryFn({ on401: "throw" }),
+    enabled: !!listId,
+  });
+
 
 
   console.log("TestPreview loaded", { listId, isLoading, hasData: !!vocabularyList });
@@ -274,10 +281,72 @@ export default function TestPreview() {
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                  <span>Each test can only be done once</span>
+                  <span>
+                    {attemptInfo?.allowRedos 
+                      ? attemptInfo.maxAttempts 
+                        ? `Maximum ${attemptInfo.maxAttempts} attempt${attemptInfo.maxAttempts > 1 ? 's' : ''} allowed`
+                        : "Multiple attempts allowed"
+                      : "Only one attempt allowed"
+                    }
+                  </span>
                 </div>
               </CardContent>
             </Card>
+
+            {/* Attempt Information */}
+            {attemptInfo && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Attempt Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-3 bg-gray-50 rounded-lg">
+                      <div className="text-2xl font-bold text-gray-900">
+                        {attemptInfo.attemptCount}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        Attempt{attemptInfo.attemptCount !== 1 ? 's' : ''} Used
+                      </div>
+                    </div>
+                    <div className="text-center p-3 bg-blue-50 rounded-lg">
+                      <div className="text-2xl font-bold text-blue-900">
+                        {attemptInfo.allowRedos
+                          ? attemptInfo.maxAttempts
+                            ? attemptInfo.remainingAttempts
+                            : "∞"
+                          : attemptInfo.attemptCount === 0 ? "1" : "0"
+                        }
+                      </div>
+                      <div className="text-sm text-blue-600">
+                        Attempt{(attemptInfo.remainingAttempts !== 1 && attemptInfo.allowRedos) ? 's' : ''} Left
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="text-sm text-gray-600 text-center">
+                    {attemptInfo.allowRedos 
+                      ? attemptInfo.maxAttempts
+                        ? `This assignment allows up to ${attemptInfo.maxAttempts} attempt${attemptInfo.maxAttempts > 1 ? 's' : ''}.`
+                        : "This assignment allows unlimited attempts."
+                      : "This assignment allows only one attempt."
+                    }
+                  </div>
+
+                  {!attemptInfo.canAttempt && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <div className="flex items-center gap-2 text-red-700 text-sm">
+                        <XCircle className="h-4 w-4" />
+                        <span>You have used all available attempts for this assignment.</span>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Conditional Section: Start Test, Pending Grade, or View Results */}
             {submissionData && submissionData.gradedAt ? (
@@ -457,9 +526,17 @@ export default function TestPreview() {
                   </div>
 
                   <div className="space-y-3">
+                    {attemptInfo && !attemptInfo.canAttempt && (
+                      <div className="p-3 bg-red-50 border border-red-200 rounded-lg mb-3">
+                        <div className="flex items-center gap-2 text-red-700 text-sm">
+                          <XCircle className="h-4 w-4" />
+                          <span>You have used all available attempts for this assignment.</span>
+                        </div>
+                      </div>
+                    )}
                     <Button 
                       onClick={handleStartTest}
-                      disabled={isStarting || startTestMutation.isPending}
+                      disabled={isStarting || startTestMutation.isPending || (attemptInfo && !attemptInfo.canAttempt)}
                       className="w-full"
                     >
                       {isStarting || startTestMutation.isPending ? (
@@ -470,7 +547,7 @@ export default function TestPreview() {
                       ) : (
                         <>
                           <Play className="h-4 w-4 mr-2" />
-                          Start Vocabulary Test
+                          {attemptInfo && !attemptInfo.canAttempt ? "No Attempts Remaining" : "Start Vocabulary Test"}
                         </>
                       )}
                     </Button>

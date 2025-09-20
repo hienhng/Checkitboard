@@ -61,6 +61,8 @@ export const vocabularyLists = pgTable("vocabulary_lists", {
   timeLimit: integer("time_limit"), // in minutes, null means no time limit
   shuffleQuestions: boolean("shuffle_questions").default(false).notNull(),
   showCorrectAnswers: boolean("show_correct_answers").default(true).notNull(),
+  allowRedos: boolean("allow_redos").default(true).notNull(),
+  maxRedoAttempts: integer("max_redo_attempts").default(3).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

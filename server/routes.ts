@@ -322,8 +322,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Check retake limits for completed submissions
+      const completedSubmissionsCount = await storage.getCompletedSubmissionCount(req.user.id, listId);
+      const isRetake = completedSubmissionsCount > 0;
+      
+      if (isRetake) {
+        // Check if retakes are allowed for this assignment
+        if (!list.allowRedos) {
+          return res.status(403).json({ 
+            message: "Retakes are not allowed for this assignment." 
+          });
+        }
+        
+        // Check if the student has exceeded the maximum retake attempts
+        if (completedSubmissionsCount >= list.maxRedoAttempts) {
+          return res.status(403).json({ 
+            message: `You have reached the maximum number of attempts (${list.maxRedoAttempts}) for this assignment.` 
+          });
+        }
+      }
+
       // Create new submission (mark as redo if student already has completed submissions)
-      const isRetake = existingSubmission && existingSubmission.completed;
       const submission = await storage.createSubmission({
         studentId: req.user.id,
         listId: listId,
@@ -335,6 +354,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error starting test:", error);
       res.status(500).json({ message: "Error starting test" });
+    }
+  });
+
+  // Get student's attempt information for a vocabulary list
+  app.get("/api/vocabulary-lists/:id/attempts", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "learner") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const listId = parseInt(req.params.id);
+      if (isNaN(listId)) {
+        return res.status(400).json({ message: "Invalid list ID" });
+      }
+
+      // Get the vocabulary list to check retake settings
+      const vocabularyList = await storage.getVocabularyList(listId);
+      if (!vocabularyList) {
+        return res.status(404).json({ message: "Vocabulary list not found" });
+      }
+
+      // Apply same access controls as start-test endpoint
+      if (!vocabularyList.published) {
+        return res.status(403).json({ message: "This test is not available" });
+      }
+
+      // If the list is assigned to a class, check if the student is enrolled in that class
+      if (vocabularyList.classId) {
+        const studentClasses = await storage.getClassesForStudent(req.user.id);
+        const isEnrolledInClass = studentClasses.some(
+          (enrollment: any) => enrollment.classId === vocabularyList.classId && enrollment.status === 'approved'
+        );
+        
+        if (!isEnrolledInClass) {
+          return res.status(403).json({ message: "Access denied - you are not enrolled in the required class" });
+        }
+      }
+
+      // Count completed submissions for this student and list
+      const completedSubmissions = await db.select({
+        count: sql<number>`count(*)`
+      })
+      .from(submissions)
+      .where(
+        and(
+          eq(submissions.studentId, req.user.id),
+          eq(submissions.listId, listId),
+          eq(submissions.completed, true)
+        )
+      );
+
+      const attemptCount = Number(completedSubmissions[0]?.count || 0);
+
+      // Calculate remaining attempts
+      let remainingAttempts = null;
+      if (vocabularyList.allowRedos && vocabularyList.maxRedoAttempts) {
+        remainingAttempts = vocabularyList.maxRedoAttempts - attemptCount;
+        if (remainingAttempts < 0) remainingAttempts = 0;
+      }
+
+      return res.json({
+        attemptCount,
+        maxAttempts: vocabularyList.maxRedoAttempts,
+        allowRedos: vocabularyList.allowRedos,
+        remainingAttempts,
+        canAttempt: !vocabularyList.allowRedos ? attemptCount === 0 : (vocabularyList.maxRedoAttempts ? attemptCount < vocabularyList.maxRedoAttempts : true)
+      });
+    } catch (error) {
+      console.error("Error getting attempt information:", error);
+      return res.status(500).json({ error: "Internal server error" });
     }
   });
 
@@ -552,6 +645,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         timeLimit: z.number().min(1).max(300).optional().nullable(),
         shuffleQuestions: z.boolean().optional(),
         showCorrectAnswers: z.boolean().optional(),
+        allowRedos: z.boolean().optional(),
+        maxRedoAttempts: z.number().min(1).max(10).optional(),
       });
 
       const validatedData = assignmentPropertiesSchema.parse(req.body);
@@ -1398,74 +1493,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create a new submission for a vocabulary list
-  app.post("/api/submissions", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Not authenticated" });
-      }
-
-      if (req.user.role !== "learner") {
-        return res.status(403).json({ message: "Only learners can submit vocabulary check-ups" });
-      }
-
-      // Directly create the submission data without going through schema validation
-      const submissionData = {
-        studentId: req.user.id,
-        listId: req.body.listId,
-        isRedo: req.body.isRedo === true
-      };
-
-      // Check if list exists and is published
-      const list = await storage.getVocabularyList(submissionData.listId);
-      if (!list) {
-        return res.status(404).json({ message: "Vocabulary list not found" });
-      }
-
-      // For class lists, we don't require them to be published
-      // Only enforce published=true for non-class lists
-      if (!list.classId && !list.published) {
-        return res.status(403).json({ message: "This vocabulary list is not published yet" });
-      }
-
-      // Check if student already has a submission for this list
-      const existingSubmission = await storage.getSubmissionByStudentAndList(
-        submissionData.studentId,
-        submissionData.listId
-      );
-
-      if (existingSubmission && !submissionData.isRedo) {
-        return res.status(400).json({ 
-          message: "You already have a submission for this list",
-          submissionId: existingSubmission.id
-        });
-      }
-
-      // Use direct SQL insertion to avoid issues with schema
-      const result = await pool.query(`
-        INSERT INTO submissions (student_id, list_id, is_redo, created_at)
-        VALUES ($1, $2, $3, NOW())
-        RETURNING id, student_id, list_id, is_redo, created_at
-      `, [submissionData.studentId, submissionData.listId, submissionData.isRedo]);
-      
-      // Format the response to match what the client expects
-      const submission = {
-        id: result.rows[0].id,
-        studentId: result.rows[0].student_id,
-        listId: result.rows[0].list_id,
-        isRedo: result.rows[0].is_redo,
-        createdAt: result.rows[0].created_at,
-        completed: false
-      };
-      res.status(201).json(submission);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ errors: error.errors });
-      }
-      console.error("Error creating submission:", error);
-      res.status(500).json({ message: "Error creating submission" });
-    }
-  });
+  // Legacy endpoint removed - use /api/vocabulary-lists/:id/start-test instead
+  // This endpoint was removed for security reasons to prevent bypassing retake limits
 
   // Add a definition to a submission
   app.post("/api/submissions/:submissionId/definitions", async (req, res) => {

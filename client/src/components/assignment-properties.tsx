@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Settings, Clock, Eye, CheckCircle } from "lucide-react";
+import { Settings, Clock, Eye, CheckCircle, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -39,6 +39,8 @@ const assignmentPropertiesSchema = z.object({
   timeLimit: z.number().min(1).max(300).optional(), // minutes
   shuffleQuestions: z.boolean().default(false),
   showCorrectAnswers: z.boolean().default(true),
+  allowRedos: z.boolean().default(true),
+  maxRedoAttempts: z.number().min(1).max(10).default(3),
 });
 
 type AssignmentPropertiesForm = z.infer<typeof assignmentPropertiesSchema>;
@@ -60,6 +62,8 @@ export function AssignmentProperties({ vocabularyList, trigger }: AssignmentProp
       timeLimit: vocabularyList?.timeLimit || undefined,
       shuffleQuestions: vocabularyList?.shuffleQuestions ?? false,
       showCorrectAnswers: vocabularyList?.showCorrectAnswers ?? true,
+      allowRedos: vocabularyList?.allowRedos ?? true,
+      maxRedoAttempts: vocabularyList?.maxRedoAttempts || 3,
     },
   });
 
@@ -229,6 +233,64 @@ export function AssignmentProperties({ vocabularyList, trigger }: AssignmentProp
                 </FormItem>
               )}
             />
+
+            {/* Allow Retakes */}
+            <FormField
+              control={form.control}
+              name="allowRedos"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="flex items-center text-base">
+                      <RotateCcw className="mr-2 h-4 w-4" />
+                      Allow Retakes
+                    </FormLabel>
+                    <FormDescription>
+                      Allow students to retake this assignment if they want to improve their score
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            {/* Max Retake Attempts */}
+            {form.watch("allowRedos") && (
+              <FormField
+                control={form.control}
+                name="maxRedoAttempts"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center">
+                      <RotateCcw className="mr-2 h-4 w-4" />
+                      Maximum Retake Attempts
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="3"
+                        min={1}
+                        max={10}
+                        {...field}
+                        onChange={(e) => {
+                          const value = e.target.value === "" ? undefined : parseInt(e.target.value);
+                          field.onChange(value);
+                        }}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Set the maximum number of times a student can retake this assignment (1-10)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <div className="flex justify-end space-x-2">
               <Button

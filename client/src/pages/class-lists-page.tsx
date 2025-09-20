@@ -19,28 +19,30 @@ export default function ClassListsPage() {
   // Start a new vocabulary check-up
   const startCheckUp = async (listId: number) => {
     try {
-      // First create a submission
-      const res = await apiRequest("POST", "/api/submissions", { listId });
+      // Create a submission using the secure endpoint
+      const res = await apiRequest("POST", `/api/vocabulary-lists/${listId}/start-test`);
       const data = await res.json();
       
       // Navigate to the check-up page with the submission ID
-      navigate(`/learner/checkup/${data.id}`);
+      navigate(`/learner/checkup/${data.submissionId}`);
     } catch (error: any) {
-      // If a submission already exists, we might get back the existing submission ID
-      if (error.message?.includes("already have a submission")) {
+      // Handle incomplete submission case
+      if (error.message?.includes("incomplete submission")) {
         try {
-          const data = JSON.parse(error.message);
-          if (data.submissionId) {
-            navigate(`/learner/checkup/${data.submissionId}`);
+          // Try to parse the error message to get the existing submission ID
+          const errorData = JSON.parse(error.message.replace("Error: ", ""));
+          if (errorData.submissionId) {
+            navigate(`/learner/checkup/${errorData.submissionId}`);
             return;
           }
         } catch {
-          // If we can't parse the error message, just show the error
+          // If we can't parse, proceed with showing the error
         }
       }
       
+      // Handle retake limit errors and other errors
       toast({
-        title: "Error starting check-up",
+        title: "Cannot start test",
         description: error.message,
         variant: "destructive",
       });
