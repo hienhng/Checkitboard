@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, BookOpen, Eye, Play, Users, Calendar, CheckCircle, XCircle, Award } from "lucide-react";
+import { Clock, BookOpen, Eye, Play, Users, Calendar, CheckCircle, XCircle, Award, RotateCcw } from "lucide-react";
 import { useState } from "react";
 
 export default function TestPreview() {
@@ -306,37 +306,37 @@ export default function TestPreview() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center p-3 bg-gray-50 rounded-lg">
                       <div className="text-2xl font-bold text-gray-900">
-                        {attemptInfo.attemptCount}
+                        {attemptInfo?.attemptCount || 0}
                       </div>
                       <div className="text-sm text-gray-600">
-                        Attempt{attemptInfo.attemptCount !== 1 ? 's' : ''} Used
+                        Attempt{(attemptInfo?.attemptCount || 0) !== 1 ? 's' : ''} Used
                       </div>
                     </div>
                     <div className="text-center p-3 bg-blue-50 rounded-lg">
                       <div className="text-2xl font-bold text-blue-900">
-                        {attemptInfo.allowRedos
-                          ? attemptInfo.maxAttempts
-                            ? attemptInfo.remainingAttempts
+                        {attemptInfo?.allowRedos
+                          ? attemptInfo?.maxAttempts
+                            ? attemptInfo?.remainingAttempts || 0
                             : "∞"
-                          : attemptInfo.attemptCount === 0 ? "1" : "0"
+                          : (attemptInfo?.attemptCount || 0) === 0 ? "1" : "0"
                         }
                       </div>
                       <div className="text-sm text-blue-600">
-                        Attempt{(attemptInfo.remainingAttempts !== 1 && attemptInfo.allowRedos) ? 's' : ''} Left
+                        Attempt{((attemptInfo?.remainingAttempts || 0) !== 1 && attemptInfo?.allowRedos) ? 's' : ''} Left
                       </div>
                     </div>
                   </div>
                   
                   <div className="text-sm text-gray-600 text-center">
-                    {attemptInfo.allowRedos 
-                      ? attemptInfo.maxAttempts
-                        ? `This assignment allows up to ${attemptInfo.maxAttempts} attempt${attemptInfo.maxAttempts > 1 ? 's' : ''}.`
+                    {attemptInfo?.allowRedos 
+                      ? attemptInfo?.maxAttempts
+                        ? `This assignment allows up to ${attemptInfo.maxAttempts} attempt${(attemptInfo.maxAttempts || 0) > 1 ? 's' : ''}.`
                         : "This assignment allows unlimited attempts."
                       : "This assignment allows only one attempt."
                     }
                   </div>
 
-                  {!attemptInfo.canAttempt && (
+                  {!attemptInfo?.canAttempt && (
                     <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
                       <div className="flex items-center gap-2 text-red-700 text-sm">
                         <XCircle className="h-4 w-4" />
@@ -349,7 +349,7 @@ export default function TestPreview() {
             )}
 
             {/* Conditional Section: Start Test, Pending Grade, or View Results */}
-            {submissionData && submissionData.gradedAt ? (
+            {submissionData && (submissionData as any)?.gradedAt ? (
               // Show Results Section - Test has been graded
               <Card className="border-green-200 bg-green-50">
                 <CardHeader>
@@ -361,19 +361,19 @@ export default function TestPreview() {
                 <CardContent className="space-y-4">
                   <div className="text-center">
                     <div className="text-3xl font-bold text-green-800 mb-2">
-                      {submissionData.score}%
+                      {(submissionData as any)?.score || 0}%
                     </div>
                     <p className="text-sm text-green-700 mb-4">
-                      Completed on {new Date(submissionData.gradedAt).toLocaleDateString()}
+                      Completed on {new Date((submissionData as any)?.gradedAt).toLocaleDateString()}
                     </p>
                   </div>
 
                   {/* Show word results */}
-                  {submissionData.definitions && submissionData.definitions.length > 0 && (
+                  {(submissionData as any)?.definitions && (submissionData as any)?.definitions.length > 0 && (
                     <div className="space-y-3">
                       <h4 className="font-medium text-gray-800">Word Results:</h4>
                       <div className="space-y-2 max-h-64 overflow-y-auto">
-                        {submissionData.definitions.map((def: any) => (
+                        {(submissionData as any)?.definitions.map((def: any) => (
                           <div key={def.id} className="flex items-center justify-between p-3 bg-white rounded-lg border">
                             <div className="flex-1">
                               <span className="font-medium">{def.word?.word}</span>
@@ -398,12 +398,35 @@ export default function TestPreview() {
 
                   <div className="space-y-3">
                     <Button 
-                      onClick={() => navigate(`/test-results/${submissionData.id}`)}
+                      onClick={() => navigate(`/test-results/${(submissionData as any)?.id}`)}
                       className="w-full"
                     >
                       <Award className="h-4 w-4 mr-2" />
                       View Detailed Results
                     </Button>
+                    
+                    {/* Show retake option if allowed and attempts remain */}
+                    {attemptInfo && (attemptInfo as any)?.canAttempt && (
+                      <Button 
+                        onClick={handleStartTest}
+                        disabled={isStarting || startTestMutation.isPending}
+                        className="w-full"
+                        variant="outline"
+                      >
+                        {isStarting || startTestMutation.isPending ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                            Starting Retake...
+                          </>
+                        ) : (
+                          <>
+                            <RotateCcw className="h-4 w-4 mr-2" />
+                            Retake Test ({(attemptInfo as any)?.remainingAttempts || 0} attempt{((attemptInfo as any)?.remainingAttempts || 0) !== 1 ? 's' : ''} left)
+                          </>
+                        )}
+                      </Button>
+                    )}
+                    
                     <Button 
                       onClick={() => navigate("/learner/dashboard")}
                       className="w-full"
@@ -414,8 +437,8 @@ export default function TestPreview() {
                   </div>
                 </CardContent>
               </Card>
-            ) : existingSubmission && existingSubmission.exists ? (
-              // Show Already Done Section - Any submission exists (completed, in progress, or graded)
+            ) : existingSubmission && (existingSubmission as any)?.exists && (!attemptInfo || !(attemptInfo as any)?.canAttempt) ? (
+              // Show Already Done Section - Only when submission exists AND retakes are not allowed or no attempts left
               <Card className="border-gray-200 bg-gray-50">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-gray-800">
@@ -429,19 +452,21 @@ export default function TestPreview() {
                       <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
                         <CheckCircle className="h-8 w-8 text-gray-600" />
                       </div>
-                      <h3 className="font-semibold text-gray-900 mb-2">Test Already Completed</h3>
+                      <h3 className="font-semibold text-gray-900 mb-2">Test Completed</h3>
                       <p className="text-sm text-gray-700 mb-4">
-                        {existingSubmission.completed && existingSubmission.gradedAt 
-                          ? "You have already completed and received results for this vocabulary test."
-                          : existingSubmission.completed 
+                        {(existingSubmission as any)?.completed && (existingSubmission as any)?.gradedAt 
+                          ? attemptInfo && !(attemptInfo as any)?.allowRedos
+                            ? "You have completed this vocabulary test. Retakes are not allowed for this assignment."
+                            : "You have used all available attempts for this assignment."
+                          : (existingSubmission as any)?.completed 
                           ? "You have completed this test and it's awaiting grading by your teacher."
-                          : "You have started this test but haven't finished it yet. Each test can only be taken once."
+                          : "You have started this test but haven't finished it yet."
                         }
                       </p>
-                      {existingSubmission.submittedAt && (
+                      {(existingSubmission as any)?.submittedAt && (
                         <p className="text-xs text-gray-600">
-                          {existingSubmission.completed 
-                            ? `Submitted on ${new Date(existingSubmission.submittedAt).toLocaleDateString()}`
+                          {(existingSubmission as any)?.completed 
+                            ? `Submitted on ${new Date((existingSubmission as any)?.submittedAt).toLocaleDateString()}`
                             : "Test in progress"
                           }
                         </p>
@@ -449,27 +474,10 @@ export default function TestPreview() {
                     </div>
                   </div>
 
-                  <div className="bg-gray-100 border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0">
-                        <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center">
-                          <span className="text-gray-600 text-xs font-bold">!</span>
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium text-gray-800 mb-1">One Test Per List</h4>
-                        <p className="text-sm text-gray-700">
-                          Each vocabulary test can only be taken once to ensure fair assessment. 
-                          Contact your teacher if you need a retake.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
                   <div className="space-y-3">
-                    {existingSubmission.completed && existingSubmission.gradedAt && (
+                    {(existingSubmission as any)?.completed && (existingSubmission as any)?.gradedAt && (
                       <Button 
-                        onClick={() => navigate(`/test-results/${existingSubmission.id}`)}
+                        onClick={() => navigate(`/test-results/${(existingSubmission as any)?.id}`)}
                         className="w-full"
                       >
                         <Award className="h-4 w-4 mr-2" />
@@ -526,7 +534,7 @@ export default function TestPreview() {
                   </div>
 
                   <div className="space-y-3">
-                    {attemptInfo && !attemptInfo.canAttempt && (
+                    {attemptInfo && !(attemptInfo as any)?.canAttempt && (
                       <div className="p-3 bg-red-50 border border-red-200 rounded-lg mb-3">
                         <div className="flex items-center gap-2 text-red-700 text-sm">
                           <XCircle className="h-4 w-4" />
@@ -536,7 +544,7 @@ export default function TestPreview() {
                     )}
                     <Button 
                       onClick={handleStartTest}
-                      disabled={isStarting || startTestMutation.isPending || (attemptInfo && !attemptInfo.canAttempt)}
+                      disabled={isStarting || startTestMutation.isPending || (attemptInfo && !(attemptInfo as any)?.canAttempt)}
                       className="w-full"
                     >
                       {isStarting || startTestMutation.isPending ? (
@@ -547,7 +555,7 @@ export default function TestPreview() {
                       ) : (
                         <>
                           <Play className="h-4 w-4 mr-2" />
-                          {attemptInfo && !attemptInfo.canAttempt ? "No Attempts Remaining" : "Start Vocabulary Test"}
+                          {attemptInfo && !(attemptInfo as any)?.canAttempt ? "No Attempts Remaining" : "Start Vocabulary Test"}
                         </>
                       )}
                     </Button>
