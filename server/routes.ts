@@ -651,13 +651,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validatedData = assignmentPropertiesSchema.parse(req.body);
       
+      console.log("Assignment properties update request:", {
+        listId,
+        requestBody: req.body,
+        validatedData
+      });
+      
       // Convert timeLimit undefined to null for database
       const processedData = {
         ...validatedData,
         timeLimit: validatedData.timeLimit || null,
       };
 
+      console.log("Processed data for database update:", processedData);
+
       const updatedList = await storage.updateVocabularyList(listId, processedData);
+      
+      console.log("Updated list result:", {
+        id: updatedList.id,
+        allowRedos: updatedList.allowRedos,
+        maxRedoAttempts: updatedList.maxRedoAttempts,
+        title: updatedList.title
+      });
       
       res.json(updatedList);
     } catch (error) {
