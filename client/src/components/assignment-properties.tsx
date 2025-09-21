@@ -69,10 +69,7 @@ export function AssignmentProperties({ vocabularyList, trigger }: AssignmentProp
 
   const updatePropertiesMutation = useMutation({
     mutationFn: async (data: AssignmentPropertiesForm) => {
-      const response = await apiRequest("PATCH", `/api/vocabulary-lists/${vocabularyList.id}/properties`, {
-        body: JSON.stringify(data),
-        headers: { "Content-Type": "application/json" },
-      });
+      const response = await apiRequest("PATCH", `/api/vocabulary-lists/${vocabularyList.id}/properties`, data);
       if (!response.ok) {
         throw new Error("Failed to update assignment properties");
       }
