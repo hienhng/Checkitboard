@@ -9,6 +9,7 @@ import { AlertCircle, Plus, Edit, HelpCircle, FileText, CheckCircle, XCircle } f
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { MultipleChoiceManager } from "@/components/multiple-choice-manager";
+import { InputFormManager } from "@/components/input-form-manager";
 import type { VocabularyWord } from "@shared/schema";
 
 interface VocabularyList {
@@ -202,17 +203,7 @@ export function QuestionsPane({ vocabularyList }: QuestionsPaneProps) {
               )}
               
               {selectedQuestionType[word.id] === "input-form" && (
-                <div className="text-center py-8">
-                  <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">Input Form Questions</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Input form question management coming soon...
-                  </p>
-                  <Button variant="outline" disabled>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Input Form Question
-                  </Button>
-                </div>
+                <InputFormManager word={word} />
               )}
             </div>
           </DialogContent>

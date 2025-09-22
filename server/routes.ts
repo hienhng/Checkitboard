@@ -997,6 +997,214 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create an input form question for a vocabulary word
+  app.post("/api/vocabulary-words/:wordId/input-form", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "educator") {
+        return res.status(403).json({ message: "Only educators can create input form questions" });
+      }
+
+      const wordId = parseInt(req.params.wordId);
+      if (isNaN(wordId)) {
+        return res.status(400).json({ message: "Invalid word ID" });
+      }
+
+      // Verify the word exists and the educator has permission
+      const word = await db.query.vocabularyWords.findFirst({
+        where: eq(vocabularyWords.id, wordId),
+        with: {
+          list: true
+        }
+      });
+
+      if (!word) {
+        return res.status(404).json({ message: "Vocabulary word not found" });
+      }
+
+      if (word.list.educatorId !== req.user.id) {
+        return res.status(403).json({ message: "You don't have permission to create questions for this word" });
+      }
+
+      const validatedData = insertInputFormQuestionSchema.parse({
+        ...req.body,
+        wordId,
+      });
+
+      const [question] = await db.insert(inputFormQuestions).values(validatedData).returning();
+      res.status(201).json(question);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+      console.error("Error creating input form question:", error);
+      res.status(500).json({ message: "Error creating input form question" });
+    }
+  });
+
+  // Get input form questions for a vocabulary word
+  app.get("/api/vocabulary-words/:wordId/input-form", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const wordId = parseInt(req.params.wordId);
+      if (isNaN(wordId)) {
+        return res.status(400).json({ message: "Invalid word ID" });
+      }
+
+      // Verify the word exists and the user has permission to access it
+      const word = await db.query.vocabularyWords.findFirst({
+        where: eq(vocabularyWords.id, wordId),
+        with: {
+          list: {
+            with: {
+              class: true
+            }
+          }
+        }
+      });
+
+      if (!word) {
+        return res.status(404).json({ message: "Vocabulary word not found" });
+      }
+
+      // Check permissions - educator owns list OR learner is in the class
+      let hasAccess = false;
+      if (req.user.role === "educator" && word.list.educatorId === req.user.id) {
+        hasAccess = true;
+      } else if (req.user.role === "learner" && word.list.class) {
+        const membership = await db.query.classMembers.findFirst({
+          where: and(
+            eq(classMembers.classId, word.list.class.id),
+            eq(classMembers.studentId, req.user.id)
+          )
+        });
+        hasAccess = !!membership;
+      }
+
+      if (!hasAccess) {
+        return res.status(403).json({ message: "You don't have permission to access questions for this word" });
+      }
+
+      const questions = await db.query.inputFormQuestions.findMany({
+        where: eq(inputFormQuestions.wordId, wordId),
+        orderBy: [inputFormQuestions.createdAt]
+      });
+
+      res.json(questions);
+    } catch (error) {
+      console.error("Error fetching input form questions:", error);
+      res.status(500).json({ message: "Error fetching input form questions" });
+    }
+  });
+
+  // Update an input form question
+  app.patch("/api/input-form/:questionId", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "educator") {
+        return res.status(403).json({ message: "Only educators can update input form questions" });
+      }
+
+      const questionId = parseInt(req.params.questionId);
+      if (isNaN(questionId)) {
+        return res.status(400).json({ message: "Invalid question ID" });
+      }
+
+      // Verify the question exists and the educator has permission
+      const question = await db.query.inputFormQuestions.findFirst({
+        where: eq(inputFormQuestions.id, questionId),
+        with: {
+          word: {
+            with: {
+              list: true
+            }
+          }
+        }
+      });
+
+      if (!question) {
+        return res.status(404).json({ message: "Input form question not found" });
+      }
+
+      if (question.word.list.educatorId !== req.user.id) {
+        return res.status(403).json({ message: "You don't have permission to update this question" });
+      }
+
+      const validatedData = insertInputFormQuestionSchema.partial().parse(req.body);
+      
+      const [updatedQuestion] = await db.update(inputFormQuestions)
+        .set(validatedData)
+        .where(eq(inputFormQuestions.id, questionId))
+        .returning();
+
+      res.json(updatedQuestion);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+      console.error("Error updating input form question:", error);
+      res.status(500).json({ message: "Error updating input form question" });
+    }
+  });
+
+  // Delete an input form question
+  app.delete("/api/input-form/:questionId", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "educator") {
+        return res.status(403).json({ message: "Only educators can delete input form questions" });
+      }
+
+      const questionId = parseInt(req.params.questionId);
+      if (isNaN(questionId)) {
+        return res.status(400).json({ message: "Invalid question ID" });
+      }
+
+      // Verify the question exists and the educator has permission
+      const question = await db.query.inputFormQuestions.findFirst({
+        where: eq(inputFormQuestions.id, questionId),
+        with: {
+          word: {
+            with: {
+              list: true
+            }
+          }
+        }
+      });
+
+      if (!question) {
+        return res.status(404).json({ message: "Input form question not found" });
+      }
+
+      if (question.word.list.educatorId !== req.user.id) {
+        return res.status(403).json({ message: "You don't have permission to delete this question" });
+      }
+
+      // Delete any answers to this question first
+      await db.delete(inputFormAnswers).where(eq(inputFormAnswers.questionId, questionId));
+      
+      // Delete the question
+      await db.delete(inputFormQuestions).where(eq(inputFormQuestions.id, questionId));
+
+      res.json({ message: "Input form question deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting input form question:", error);
+      res.status(500).json({ message: "Error deleting input form question" });
+    }
+  });
+
   // Get pending submissions for grading (educator)
   app.get("/api/educator/submissions", async (req, res) => {
     try {
