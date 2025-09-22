@@ -570,6 +570,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
         dueDate: req.body.dueDate ? new Date(req.body.dueDate) : undefined
       };
 
+      // If trying to publish the list, validate that all words have questions
+      if (requestData.published === true) {
+        const listWithWords = await storage.getVocabularyListWithWords(listId);
+        
+        if (!listWithWords || !listWithWords.words || listWithWords.words.length === 0) {
+          return res.status(400).json({ 
+            message: "Cannot publish a vocabulary list without words" 
+          });
+        }
+
+        // Check that all words have at least one question
+        const wordsWithoutQuestions = [];
+        
+        for (const word of listWithWords.words) {
+          // Count multiple choice questions
+          const multipleChoiceResults = await db.query.multipleChoiceQuestions.findMany({
+            where: eq(multipleChoiceQuestions.wordId, word.id)
+          });
+
+          // Count input form questions
+          const inputFormResults = await db.query.inputFormQuestions.findMany({
+            where: eq(inputFormQuestions.wordId, word.id)
+          });
+
+          const hasQuestions = multipleChoiceResults.length > 0 || inputFormResults.length > 0;
+          
+          if (!hasQuestions) {
+            wordsWithoutQuestions.push(word.word);
+          }
+        }
+
+        if (wordsWithoutQuestions.length > 0) {
+          return res.status(400).json({ 
+            message: `Cannot publish vocabulary list. The following words need questions: ${wordsWithoutQuestions.join(', ')}` 
+          });
+        }
+      }
+
       // First update the basic list details
       let updatedList = await storage.updateVocabularyList(listId, requestData);
       
