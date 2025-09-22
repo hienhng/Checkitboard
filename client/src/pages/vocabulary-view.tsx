@@ -10,12 +10,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { formatDate, createMarkup } from "@/lib/utils";
 import { ChevronLeft, BookOpen, Calendar, Eye, HelpCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { QuestionsPane } from "@/components/questions-pane";
-
-interface VocabularyWord {
-  id: number;
-  word: string;
-}
+import { QuestionsPane } from "@/components/questions-pane.tsx";
+import type { VocabularyWord } from "@shared/schema";
 
 interface Educator {
   id: number;
