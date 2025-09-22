@@ -88,12 +88,33 @@ export const multipleChoiceQuestions = pgTable("multiple_choice_questions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Input Form Questions for vocabulary words
+export const inputFormQuestions = pgTable("input_form_questions", {
+  id: serial("id").primaryKey(),
+  wordId: integer("word_id").references(() => vocabularyWords.id).notNull(),
+  question: text("question").notNull(),
+  correctAnswer: text("correct_answer").notNull(),
+  caseSensitive: boolean("case_sensitive").default(false).notNull(),
+  showAnswer: boolean("show_answer").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Student answers to multiple choice questions
 export const multipleChoiceAnswers = pgTable("multiple_choice_answers", {
   id: serial("id").primaryKey(),
   submissionId: integer("submission_id").references(() => submissions.id).notNull(),
   questionId: integer("question_id").references(() => multipleChoiceQuestions.id).notNull(),
   selectedAnswer: text("selected_answer").notNull(),
+  isCorrect: boolean("is_correct").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Student answers to input form questions
+export const inputFormAnswers = pgTable("input_form_answers", {
+  id: serial("id").primaryKey(),
+  submissionId: integer("submission_id").references(() => submissions.id).notNull(),
+  questionId: integer("question_id").references(() => inputFormQuestions.id).notNull(),
+  studentAnswer: text("student_answer").notNull(),
   isCorrect: boolean("is_correct").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -225,6 +246,7 @@ export const vocabularyWordsRelations = relations(vocabularyWords, ({ one, many 
   definitions: many(wordDefinitions),
   flashcards: many(flashcards),
   multipleChoiceQuestions: many(multipleChoiceQuestions),
+  inputFormQuestions: many(inputFormQuestions),
 }));
 
 export const submissionsRelations = relations(submissions, ({ one, many }) => ({
@@ -238,6 +260,7 @@ export const submissionsRelations = relations(submissions, ({ one, many }) => ({
   }),
   wordDefinitions: many(wordDefinitions),
   multipleChoiceAnswers: many(multipleChoiceAnswers),
+  inputFormAnswers: many(inputFormAnswers),
 }));
 
 export const wordDefinitionsRelations = relations(wordDefinitions, ({ one, many }) => ({
@@ -297,6 +320,25 @@ export const stickyNotesRelations = relations(stickyNotes, ({ one }) => ({
   student: one(users, {
     fields: [stickyNotes.studentId],
     references: [users.id],
+  }),
+}));
+
+export const inputFormQuestionsRelations = relations(inputFormQuestions, ({ one, many }) => ({
+  word: one(vocabularyWords, {
+    fields: [inputFormQuestions.wordId],
+    references: [vocabularyWords.id],
+  }),
+  answers: many(inputFormAnswers),
+}));
+
+export const inputFormAnswersRelations = relations(inputFormAnswers, ({ one }) => ({
+  submission: one(submissions, {
+    fields: [inputFormAnswers.submissionId],
+    references: [submissions.id],
+  }),
+  question: one(inputFormQuestions, {
+    fields: [inputFormAnswers.questionId],
+    references: [inputFormQuestions.id],
   }),
 }));
 
@@ -406,6 +448,15 @@ export const insertMultipleChoiceAnswerSchema = createInsertSchema(multipleChoic
   }),
 }).omit({ id: true, createdAt: true, isCorrect: true });
 
+export const insertInputFormQuestionSchema = createInsertSchema(inputFormQuestions, {
+  question: (schema) => schema.min(5, "Question must be at least 5 characters"),
+  correctAnswer: (schema) => schema.min(1, "Correct answer cannot be empty"),
+}).omit({ id: true, createdAt: true });
+
+export const insertInputFormAnswerSchema = createInsertSchema(inputFormAnswers, {
+  studentAnswer: (schema) => schema.min(1, "Answer cannot be empty"),
+}).omit({ id: true, createdAt: true, isCorrect: true });
+
 // Schema for join class request
 export const joinClassSchema = z.object({
   classCode: z.string().min(6, "Class code must be at least 6 characters"),
@@ -443,6 +494,10 @@ export type MultipleChoiceQuestion = typeof multipleChoiceQuestions.$inferSelect
 export type InsertMultipleChoiceQuestion = z.infer<typeof insertMultipleChoiceQuestionSchema>;
 export type MultipleChoiceAnswer = typeof multipleChoiceAnswers.$inferSelect;
 export type InsertMultipleChoiceAnswer = z.infer<typeof insertMultipleChoiceAnswerSchema>;
+export type InputFormQuestion = typeof inputFormQuestions.$inferSelect;
+export type InsertInputFormQuestion = z.infer<typeof insertInputFormQuestionSchema>;
+export type InputFormAnswer = typeof inputFormAnswers.$inferSelect;
+export type InsertInputFormAnswer = z.infer<typeof insertInputFormAnswerSchema>;
 export type StickyNote = typeof stickyNotes.$inferSelect;
 export type InsertStickyNote = z.infer<typeof insertStickyNoteSchema>;
 export type UpdateStickyNote = z.infer<typeof updateStickyNoteSchema>;
@@ -462,6 +517,8 @@ export const selectClassSchema = createSelectSchema(classes);
 export const selectStudentClassSchema = createSelectSchema(studentClass);
 export const selectMultipleChoiceQuestionSchema = createSelectSchema(multipleChoiceQuestions);
 export const selectMultipleChoiceAnswerSchema = createSelectSchema(multipleChoiceAnswers);
+export const selectInputFormQuestionSchema = createSelectSchema(inputFormQuestions);
+export const selectInputFormAnswerSchema = createSelectSchema(inputFormAnswers);
 export const selectStickyNoteSchema = createSelectSchema(stickyNotes);
 export const selectEducatorSettingsSchema = createSelectSchema(educatorSettings);
 
