@@ -5,10 +5,12 @@ import { Navbar } from "@/components/navbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest } from "@/lib/queryClient";
 import { formatDate, createMarkup } from "@/lib/utils";
-import { ChevronLeft, BookOpen, Calendar, ChevronRight } from "lucide-react";
+import { ChevronLeft, BookOpen, Calendar, Eye, HelpCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { QuestionsPane } from "@/components/questions-pane";
 
 interface VocabularyWord {
   id: number;
@@ -146,35 +148,56 @@ export default function VocabularyView() {
               </CardDescription>
             </CardHeader>
             
-            {list.passage && (
-              <CardContent className="border-t pt-4">
-                <h3 className="text-lg font-medium mb-2 flex items-center">
-                  <BookOpen className="mr-2 h-4 w-4" /> Reading Passage
-                </h3>
-                <div className="bg-muted/30 p-4 rounded-md text-sm leading-relaxed mb-6">
-                  <div dangerouslySetInnerHTML={createMarkup(list.passage)} />
-                </div>
-              </CardContent>
-            )}
-            
-            <CardContent className={list.passage ? "" : "border-t pt-4"}>
-              <h3 className="text-lg font-medium mb-3">Vocabulary Words ({list.words?.length || 0})</h3>
-              
-              {list.words && list.words.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                  {list.words.map((word: VocabularyWord, index: number) => (
-                    <Badge 
-                      key={word.id} 
-                      variant="outline"
-                      className="py-2 px-3 text-sm justify-center font-medium"
-                    >
-                      {word.word}
-                    </Badge>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground text-center py-4">No vocabulary words found in this list.</p>
-              )}
+            <CardContent>
+              <Tabs defaultValue="view" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="view" className="flex items-center">
+                    <Eye className="mr-2 h-4 w-4" />
+                    View
+                  </TabsTrigger>
+                  <TabsTrigger value="questions" className="flex items-center">
+                    <HelpCircle className="mr-2 h-4 w-4" />
+                    Questions
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="view" className="mt-6">
+                  {list.passage && (
+                    <div className="mb-6">
+                      <h3 className="text-lg font-medium mb-2 flex items-center">
+                        <BookOpen className="mr-2 h-4 w-4" /> Reading Passage
+                      </h3>
+                      <div className="bg-muted/30 p-4 rounded-md text-sm leading-relaxed">
+                        <div dangerouslySetInnerHTML={createMarkup(list.passage)} />
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div>
+                    <h3 className="text-lg font-medium mb-3">Vocabulary Words ({list.words?.length || 0})</h3>
+                    
+                    {list.words && list.words.length > 0 ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                        {list.words.map((word: VocabularyWord, index: number) => (
+                          <Badge 
+                            key={word.id} 
+                            variant="outline"
+                            className="py-2 px-3 text-sm justify-center font-medium"
+                          >
+                            {word.word}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-center py-4">No vocabulary words found in this list.</p>
+                    )}
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="questions" className="mt-6">
+                  <QuestionsPane vocabularyList={list} />
+                </TabsContent>
+              </Tabs>
             </CardContent>
             
             <CardFooter className="border-t bg-muted/20">

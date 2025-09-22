@@ -35,6 +35,8 @@ import {
   resetPasswordSchema,
   insertMultipleChoiceQuestionSchema,
   insertMultipleChoiceAnswerSchema,
+  insertInputFormQuestionSchema,
+  insertInputFormAnswerSchema,
   insertStickyNoteSchema,
   updateStickyNoteSchema,
   insertEducatorSettingsSchema,
@@ -46,6 +48,8 @@ import {
   flashcards,
   multipleChoiceQuestions,
   multipleChoiceAnswers,
+  inputFormQuestions,
+  inputFormAnswers,
   stickyNotes,
   users,
   classes,
@@ -610,6 +614,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating vocabulary list:", error);
       res.status(500).json({ message: "Error updating vocabulary list" });
+    }
+  });
+
+  // Get question status for all words in a vocabulary list
+  app.get("/api/vocabulary-lists/:listId/question-status", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "educator") {
+        return res.status(403).json({ message: "Only educators can view question status" });
+      }
+
+      const listId = parseInt(req.params.listId);
+      if (isNaN(listId)) {
+        return res.status(400).json({ message: "Invalid list ID" });
+      }
+
+      // Verify the list exists and the educator has permission
+      const list = await db.query.vocabularyLists.findFirst({
+        where: eq(vocabularyLists.id, listId),
+        with: {
+          words: true
+        }
+      });
+
+      if (!list) {
+        return res.status(404).json({ message: "Vocabulary list not found" });
+      }
+
+      if (list.educatorId !== req.user.id) {
+        return res.status(403).json({ message: "You don't have permission to view this list" });
+      }
+
+      // Get question counts for each word
+      const questionStatuses = await Promise.all(
+        list.words.map(async (word) => {
+          // Count multiple choice questions
+          const multipleChoiceResults = await db.query.multipleChoiceQuestions.findMany({
+            where: eq(multipleChoiceQuestions.wordId, word.id)
+          });
+
+          // Count input form questions
+          const inputFormResults = await db.query.inputFormQuestions.findMany({
+            where: eq(inputFormQuestions.wordId, word.id)
+          });
+
+          return {
+            wordId: word.id,
+            hasMultipleChoice: multipleChoiceResults.length > 0,
+            hasInputForm: inputFormResults.length > 0,
+            multipleChoiceCount: multipleChoiceResults.length,
+            inputFormCount: inputFormResults.length
+          };
+        })
+      );
+
+      res.json(questionStatuses);
+    } catch (error) {
+      console.error("Error fetching question status:", error);
+      res.status(500).json({ message: "Error fetching question status" });
     }
   });
 
