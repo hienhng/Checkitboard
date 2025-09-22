@@ -1,7 +1,7 @@
 import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/navbar";
-import { MultipleChoiceManager } from "@/components/multiple-choice-manager";
+import { QuestionsPane } from "@/components/questions-pane";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -184,21 +184,7 @@ export default function VocabularyDetails() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="space-y-6">
-                {list.words.map((word) => (
-                  <Card key={word.id}>
-                    <CardHeader>
-                      <CardTitle className="text-xl">{word.word}</CardTitle>
-                      {word.definition && (
-                        <p className="text-muted-foreground">{word.definition}</p>
-                      )}
-                    </CardHeader>
-                    <CardContent>
-                      <MultipleChoiceManager word={word} />
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              <QuestionsPane vocabularyList={list} />
             )}
           </TabsContent>
 
