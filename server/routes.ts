@@ -316,12 +316,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const existingSubmission = await storage.getSubmissionByStudentAndList(req.user.id, listId, false);
       
       if (existingSubmission) {
-        // If there's an incomplete submission, don't allow starting a new one
+        // If there's an incomplete submission, return it so student can continue
         if (!existingSubmission.completed) {
-          return res.status(400).json({ 
-            message: "You have an incomplete submission for this test. Please complete it first.",
+          return res.json({ 
             submissionId: existingSubmission.id,
-            exists: true
+            continued: true
           });
         }
       }
