@@ -20,7 +20,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 
 // Form validation schema
 const formSchema = z.object({
-  classId: z.number().min(1, "Please select a class"),
+  classId: z.number().optional(),
 });
 
 interface EditVocabularyFormProps {
@@ -159,17 +159,6 @@ export function EditVocabularyForm({ vocabularyList, classes, onSuccess, onCance
       return;
     }
 
-    // Validate class selection
-    const result = await form.trigger("classId");
-    if (!result) {
-      toast({
-        title: "Class selection required",
-        description: "Please select a class to assign this vocabulary list.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     const { classId } = form.getValues();
 
     updateMutation.mutate({
@@ -177,7 +166,7 @@ export function EditVocabularyForm({ vocabularyList, classes, onSuccess, onCance
       passage,
       words: selectedWords,
       dueDate,
-      classId,
+      classId: classId && classId > 0 ? classId : null,
     });
   };
 
