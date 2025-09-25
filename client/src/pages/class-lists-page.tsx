@@ -30,7 +30,9 @@ export default function ClassListsPage() {
       if (error.message?.includes("incomplete submission")) {
         try {
           // Try to parse the error message to get the existing submission ID
-          const errorData = JSON.parse(error.message.replace("Error: ", ""));
+          // Remove status code prefix (e.g., "400: ") and parse JSON
+          const jsonPart = error.message.replace(/^\d+:\s*/, "");
+          const errorData = JSON.parse(jsonPart);
           if (errorData.submissionId) {
             navigate(`/learner/checkup/${errorData.submissionId}`);
             return;
