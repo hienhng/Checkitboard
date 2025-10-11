@@ -1988,12 +1988,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "This submission is already completed" });
       }
 
-      // Students can complete submissions even if they skipped some words
-      // No longer requiring all words to have definitions
+      // Calculate score based on MC and input answers
+      const list = await storage.getVocabularyListWithWords(submission.listId);
+      
+      // Get all questions for this list
+      let totalQuestions = 0;
+      let correctAnswers = 0;
+
+      // Get all MC answers for this submission
+      const mcAnswers = await db.query.multipleChoiceAnswers.findMany({
+        where: eq(multipleChoiceAnswers.submissionId, submissionId)
+      });
+
+      // Get all input answers for this submission
+      const inputAnswers = await db.query.inputFormAnswers.findMany({
+        where: eq(inputFormAnswers.submissionId, submissionId)
+      });
+
+      // Count correct MC answers
+      for (const answer of mcAnswers) {
+        totalQuestions++;
+        if (answer.isCorrect) {
+          correctAnswers++;
+        }
+      }
+
+      // Count correct input answers
+      for (const answer of inputAnswers) {
+        totalQuestions++;
+        if (answer.isCorrect) {
+          correctAnswers++;
+        }
+      }
+
+      // Calculate percentage score
+      const score = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
 
       const updatedSubmission = await storage.updateSubmission(submissionId, {
         completed: true,
         submittedAt: new Date(),
+        gradedAt: new Date(), // Auto-graded
+        score: score,
       });
       
       // Get full information about the list to use in notification
