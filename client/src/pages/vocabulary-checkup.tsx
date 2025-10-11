@@ -2,29 +2,32 @@ import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
-import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { createMarkup } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, AlertTriangle, X, Maximize, HelpCircle } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle,
-  DialogFooter, 
-  DialogTrigger
-} from "@/components/ui/dialog";
-import { FullscreenMonitor } from "@/components/fullscreen-monitor";
-import { FullscreenWarning } from "@/components/fullscreen-warning";
-import { useFullscreen } from "@/hooks/use-fullscreen";
-import type { MultipleChoiceQuestion } from "@shared/schema";
+import { Clock, CheckCircle, AlertCircle, ChevronLeft, ChevronRight, Send } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+
+interface Question {
+  id: number;
+  type: 'multiple_choice' | 'input';
+  wordId: number;
+  word: string;
+  question: string;
+  correctAnswer: string;
+  // MC specific
+  optionA?: string;
+  optionB?: string;
+  optionC?: string;
+  optionD?: string;
+  // Input specific
+  caseSensitive?: boolean;
+}
 
 export default function VocabularyCheckup() {
   const { id } = useParams();
@@ -32,79 +35,47 @@ export default function VocabularyCheckup() {
   const { toast } = useToast();
   const submissionId = parseInt(id || "0");
   
-  console.log("VocabularyCheckup component mounted", { id, submissionId });
-  
-  const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const [definition, setDefinition] = useState("");
-  const [savedDefinitions, setSavedDefinitions] = useState<Record<number, string>>({});
-  const [selectedMultipleChoiceAnswers, setSelectedMultipleChoiceAnswers] = useState<Record<number, string>>({});
-  const [discardReason, setDiscardReason] = useState("");
-  const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
-  const [isFullscreenActive, setIsFullscreenActive] = useState(false);
-  const [navigationWarningOpen, setNavigationWarningOpen] = useState(false);
-  const [showFullscreenWarning, setShowFullscreenWarning] = useState(false);
-  const [shuffledWords, setShuffledWords] = useState<any[]>([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [answers, setAnswers] = useState<Record<number, string>>({});
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
-  const [timerStarted, setTimerStarted] = useState(false);
+  const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 
-  // Fullscreen management
-  const { isFullscreen, exitCount, enterFullscreen } = useFullscreen({
-    onExitFullscreen: () => {
-      setShowFullscreenWarning(true);
-    },
-    onEnterFullscreen: () => {
-      setShowFullscreenWarning(false);
-    },
-    trackExits: true,
-    submissionId: submissionId
-  });
-
-  // Get submission details with vocabulary list and words
-  const { data: submission, isLoading, error } = useQuery({
+  // Get submission details
+  const { data: submission, isLoading: submissionLoading } = useQuery({
     queryKey: [`/api/submissions/${submissionId}`],
-    queryFn: getQueryFn({ on401: "returnNull" }),
-    enabled: submissionId > 0, // Only run query if we have a valid submission ID
+    queryFn: getQueryFn({ on401: "throw" }),
+    enabled: submissionId > 0,
   });
 
-  // Type guard for submission data to fix TypeScript issues
   const submissionData = submission as any;
+  const listId = submissionData?.listId;
 
-  // Shuffle words once when submission data loads, if shuffleQuestions is enabled
+  // Get all questions for the vocabulary list
+  const { data: questionsData, isLoading: questionsLoading } = useQuery({
+    queryKey: [`/api/vocabulary-lists/${listId}/questions`],
+    queryFn: getQueryFn({ on401: "throw" }),
+    enabled: !!listId,
+  });
+
+  const questions = (questionsData as any)?.questions || [];
+  const listSettings = (questionsData as any)?.listSettings || {};
+  const currentQuestion = questions[currentQuestionIndex] as Question | undefined;
+
+  // Initialize timer
   useEffect(() => {
-    if (submissionData?.list?.words && submissionData.list.words.length > 0) {
-      if (submissionData.list.shuffleQuestions && shuffledWords.length === 0) {
-        // Fisher-Yates shuffle algorithm
-        const words = [...submissionData.list.words];
-        for (let i = words.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [words[i], words[j]] = [words[j], words[i]];
-        }
-        setShuffledWords(words);
-      } else if (!submissionData.list.shuffleQuestions && shuffledWords.length === 0) {
-        // Use original order if shuffling is disabled
-        setShuffledWords([...submissionData.list.words]);
-      }
+    if (listSettings.timeLimit && timeRemaining === null) {
+      setTimeRemaining(listSettings.timeLimit * 60);
     }
-  }, [submissionData?.list?.words, submissionData?.list?.shuffleQuestions]);
+  }, [listSettings.timeLimit]);
 
-  // Initialize timer based on assignment timeLimit
-  useEffect(() => {
-    if (submissionData?.list?.timeLimit && !timerStarted) {
-      const timeLimitInSeconds = submissionData.list.timeLimit * 60; // Convert minutes to seconds
-      setTimeRemaining(timeLimitInSeconds);
-      setTimerStarted(true);
-    }
-  }, [submissionData?.list?.timeLimit, timerStarted]);
-
-  // Timer countdown effect
+  // Timer countdown
   useEffect(() => {
     if (timeRemaining === null || timeRemaining <= 0) return;
 
     const timer = setInterval(() => {
       setTimeRemaining(prev => {
         if (prev === null || prev <= 1) {
-          // Time's up! Auto-submit the test
-          handleComplete();
+          handleSubmit();
           return 0;
         }
         return prev - 1;
@@ -114,845 +85,297 @@ export default function VocabularyCheckup() {
     return () => clearInterval(timer);
   }, [timeRemaining]);
 
-  // Get current word from shuffled array
-  const currentWord = shuffledWords[currentWordIndex];
-
-  // Format time remaining for display
-  const formatTimeRemaining = (seconds: number) => {
+  // Format time
+  const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    const secs = seconds % 60;
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Get multiple choice questions for current word
-  const { data: multipleChoiceQuestions, isLoading: mcQuestionsLoading, error: mcQuestionsError } = useQuery({
-    queryKey: [`/api/vocabulary-words/${currentWord?.id}/multiple-choice`],
-    queryFn: getQueryFn({ on401: "returnNull" }),
-    enabled: !!currentWord?.id,
-    retry: 1,
-    staleTime: 0, // Always refetch to ensure fresh data
-  });
-
-  // Debug logging for multiple choice questions
-  useEffect(() => {
-    console.log("Multiple Choice Debug:", {
-      currentWordId: currentWord?.id,
-      currentWord: currentWord?.word,
-      multipleChoiceQuestions,
-      mcQuestionsLoading,
-      mcQuestionsError,
-      hasMultipleChoiceQuestions: Array.isArray(multipleChoiceQuestions) && multipleChoiceQuestions.length > 0
-    });
-  }, [currentWord, multipleChoiceQuestions, mcQuestionsLoading, mcQuestionsError]);
-
-  console.log("Frontend debug:", { submissionId, submission, isLoading, error });
-  
-  // Additional debugging
-  useEffect(() => {
-    console.log("VocabularyCheckup effect running", { 
-      submissionId, 
-      isLoading, 
-      hasSubmission: !!submission,
-      error: error?.message 
-    });
-  }, [submissionId, isLoading, submission, error]);
-
-  // Multiple choice answer submission mutation
-  const multipleChoiceAnswerMutation = useMutation({
-    mutationFn: async ({ questionId, selectedAnswer }: { questionId: number, selectedAnswer: string }) => {
+  // Save MC answer
+  const saveMCAnswerMutation = useMutation({
+    mutationFn: async ({ questionId, selectedAnswer }: { questionId: number; selectedAnswer: string }) => {
       const response = await apiRequest("POST", `/api/submissions/${submissionId}/multiple-choice-answer`, {
         questionId,
         selectedAnswer,
       });
       return response.json();
     },
-    onSuccess: (data, { questionId, selectedAnswer }) => {
-      setSelectedMultipleChoiceAnswers(prev => ({
-        ...prev,
-        [questionId]: selectedAnswer
-      }));
+    onSuccess: () => {
       toast({ title: "Answer saved" });
     },
-    onError: (error: any) => {
-      toast({
-        title: "Error saving answer",
-        description: error.message || "Failed to save multiple choice answer",
-        variant: "destructive",
-      });
+    onError: () => {
+      toast({ title: "Error saving answer", variant: "destructive" });
     },
   });
 
-  // Mutation to submit a definition
-  const definitionMutation = useMutation({
-    mutationFn: async ({ wordId, studentDefinition }: { wordId: number; studentDefinition: string }) => {
-      const res = await apiRequest(
-        "POST", 
-        `/api/submissions/${submissionId}/definitions`, 
-        { wordId, studentDefinition }
-      );
-      return res.json();
-    },
-    onSuccess: (data) => {
-      // Update saved definitions
-      setSavedDefinitions(prev => ({
-        ...prev,
-        [data.wordId]: data.studentDefinition
-      }));
-      
-      toast({
-        title: "Definition saved",
-        description: "Your definition has been saved successfully.",
+  // Save input answer
+  const saveInputAnswerMutation = useMutation({
+    mutationFn: async ({ questionId, studentAnswer }: { questionId: number; studentAnswer: string }) => {
+      const response = await apiRequest("POST", `/api/submissions/${submissionId}/input-form-answer`, {
+        questionId,
+        studentAnswer,
       });
+      return response.json();
     },
-    onError: (error: Error) => {
-      toast({
-        title: "Error saving definition",
-        description: error.message,
-        variant: "destructive",
-      });
+    onSuccess: () => {
+      toast({ title: "Answer saved" });
+    },
+    onError: () => {
+      toast({ title: "Error saving answer", variant: "destructive" });
     },
   });
 
-  // Mutation to complete the submission
+  // Handle answer change
+  const handleAnswerChange = (answer: string) => {
+    if (!currentQuestion) return;
+    
+    setAnswers(prev => ({ ...prev, [currentQuestion.id]: answer }));
+
+    // Auto-save the answer
+    if (currentQuestion.type === 'multiple_choice') {
+      saveMCAnswerMutation.mutate({ questionId: currentQuestion.id, selectedAnswer: answer });
+    } else {
+      saveInputAnswerMutation.mutate({ questionId: currentQuestion.id, studentAnswer: answer });
+    }
+  };
+
+  // Complete submission
   const completeMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", `/api/submissions/${submissionId}/complete`);
-      return res.json();
+      const response = await apiRequest("POST", `/api/submissions/${submissionId}/complete`);
+      return response.json();
     },
     onSuccess: () => {
-      toast({
-        title: "Check-up completed",
-        description: "Your vocabulary check-up has been submitted for grading.",
-      });
-      
-      // Navigate to dashboard first
-      navigate("/learner/dashboard");
-      
-      // Then exit fullscreen and reload page after navigation
-      setTimeout(() => {
-        if (document.fullscreenElement) {
-          document.exitFullscreen().catch(() => {
-            // Fallback for older browsers
-            if ((document as any).webkitExitFullscreen) {
-              (document as any).webkitExitFullscreen();
-            }
-          });
-        }
-        // Reload page to refresh dashboard state
-        window.location.reload();
-      }, 1000);
+      toast({ title: "Test submitted successfully!" });
+      navigate(`/test-results/${submissionId}`);
     },
-    onError: (error: Error) => {
-      toast({
-        title: "Error completing check-up",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-  
-  // Mutation to discard the submission
-  const discardMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest(
-        "POST", 
-        `/api/submissions/${submissionId}/discard`, 
-        { discardReason }
-      );
-      return res.json();
-    },
-    onSuccess: () => {
-      // Exit fullscreen if currently in fullscreen mode
-      if (document.fullscreenElement) {
-        document.exitFullscreen().catch(() => {
-          // Fallback for older browsers
-          if ((document as any).webkitExitFullscreen) {
-            (document as any).webkitExitFullscreen();
-          }
-        });
-      }
-      
-      toast({
-        title: "Check-up discarded",
-        description: "Your vocabulary check-up has been discarded with a 0% score.",
-        variant: "destructive"
-      });
-      
-      // Navigate to dashboard first
-      navigate("/learner/dashboard");
-      
-      // Then exit fullscreen and reload page after navigation
-      setTimeout(() => {
-        if (document.fullscreenElement) {
-          document.exitFullscreen().catch(() => {
-            // Fallback for older browsers
-            if ((document as any).webkitExitFullscreen) {
-              (document as any).webkitExitFullscreen();
-            }
-          });
-        }
-        // Reload page to refresh dashboard state
-        window.location.reload();
-      }, 1000);
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error discarding check-up",
-        description: error.message,
-        variant: "destructive",
-      });
+    onError: () => {
+      toast({ title: "Error submitting test", variant: "destructive" });
     },
   });
 
-  // Mutation to end test with zero score when navigating away
-  const endTestWithZeroMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest(
-        "POST", 
-        `/api/submissions/${submissionId}/discard`, 
-        { discardReason: "Student navigated away from test" }
-      );
-      return res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Test ended with 0% score",
-        description: "You left the test and received a score of 0%.",
-        variant: "destructive"
-      });
-      navigate("/learner/dashboard");
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error ending test",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+  const handleSubmit = () => {
+    completeMutation.mutate();
+  };
 
-  // Load any existing definitions when the submission data is loaded
-  useEffect(() => {
-    if (submissionData?.wordDefinitions?.length) {
-      const defMap: Record<number, string> = {};
-      submissionData.wordDefinitions.forEach((def: any) => {
-        defMap[def.wordId] = def.studentDefinition;
-      });
-      setSavedDefinitions(defMap);
-    }
-  }, [submissionData]);
-
-  // Set the current definition when changing words
-  useEffect(() => {
-    if (shuffledWords.length > 0 && shuffledWords[currentWordIndex]) {
-      const currentWordId = shuffledWords[currentWordIndex].id;
-      setDefinition(savedDefinitions[currentWordId] || "");
-    }
-  }, [currentWordIndex, savedDefinitions, shuffledWords]);
-
-  const hasMultipleChoiceQuestions = Array.isArray(multipleChoiceQuestions) && multipleChoiceQuestions.length > 0;
-
-  console.log("MCQS Debug - Current State:", {
-    currentWordIndex,
-    currentWordId: currentWord?.id,
-    currentWordText: currentWord?.word,
-    mcQuestionsArray: multipleChoiceQuestions,
-    mcQuestionsLength: Array.isArray(multipleChoiceQuestions) ? multipleChoiceQuestions.length : 0,
-    hasMultipleChoiceQuestions,
-    mcQuestionsLoading,
-    mcQuestionsError: mcQuestionsError?.message
-  });
-
-  const handleNext = async () => {
-    if (shuffledWords.length === 0) return;
-    
-    const currentWord = shuffledWords[currentWordIndex];
-    
-    // Handle multiple choice questions
-    if (hasMultipleChoiceQuestions) {
-      // Save all multiple choice answers for this word
-      for (const question of (multipleChoiceQuestions || [])) {
-        const selectedAnswer = selectedMultipleChoiceAnswers[question.id];
-        if (selectedAnswer) {
-          await multipleChoiceAnswerMutation.mutateAsync({
-            questionId: question.id,
-            selectedAnswer
-          });
-        }
-      }
-    } else {
-      // Save the current definition if it's changed (including empty string to represent skipped words)
-      if (currentWord && definition !== savedDefinitions[currentWord.id]) {
-        await definitionMutation.mutateAsync({ 
-          wordId: currentWord.id, 
-          studentDefinition: definition || ""
-        });
-      }
-    }
-    
-    // Move to the next word if not at the end
-    if (currentWordIndex < shuffledWords.length - 1) {
-      setCurrentWordIndex(currentWordIndex + 1);
+  // Navigation
+  const goToNext = () => {
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1);
     }
   };
 
-  const handlePrevious = () => {
-    if (currentWordIndex > 0) {
-      setCurrentWordIndex(currentWordIndex - 1);
+  const goToPrevious = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(prev => prev - 1);
     }
   };
 
-  const handleDiscardSubmission = async () => {
-    if (!discardReason.trim()) {
-      toast({
-        title: "Discard reason required",
-        description: "Please provide a reason for discarding the test.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    try {
-      await discardMutation.mutateAsync();
-      setDiscardDialogOpen(false);
-    } catch (error) {
-      // Error is handled in the mutation
-    }
-  };
+  // Calculate progress
+  const answeredCount = Object.keys(answers).length;
+  const progress = questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
 
-  const handleComplete = async () => {
-    if (!submissionData?.list?.words) return;
-    
-    const currentWord = submissionData.list.words[currentWordIndex];
-    
-    // Save the final answer(s)
-    if (hasMultipleChoiceQuestions) {
-      // Save all multiple choice answers for this word
-      for (const question of (multipleChoiceQuestions || [])) {
-        const selectedAnswer = selectedMultipleChoiceAnswers[question.id];
-        if (selectedAnswer) {
-          await multipleChoiceAnswerMutation.mutateAsync({
-            questionId: question.id,
-            selectedAnswer
-          });
-        }
-      }
-    } else {
-      // Save the current definition if it's changed (including empty definitions)
-      if (definition !== savedDefinitions[currentWord.id]) {
-        await definitionMutation.mutateAsync({ 
-          wordId: currentWord.id, 
-          studentDefinition: definition || ""
-        });
-      }
-    }
-    
-    // Students can now complete the test even if they haven't addressed all words
-    // This allows for partial submissions
-    
-    // Complete the submission
-    await completeMutation.mutateAsync();
-  };
-
-
-  
-  // Start fullscreen mode when check-up begins
-  useEffect(() => {
-    // Only activate fullscreen when we have a valid submission
-    if (submissionData && !submissionData.completed) {
-      setIsFullscreenActive(true);
-      // Check if already in fullscreen (triggered from test preview)
-      if (!document.fullscreenElement) {
-        // If not in fullscreen, show warning for user to manually enter
-        setShowFullscreenWarning(true);
-      }
-    }
-  }, [submissionData]);
-
-  // Browser navigation warning system
-  useEffect(() => {
-    if (!submissionData || submissionData.completed) return;
-
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = ''; // Modern browsers require this
-      return '';
-    };
-
-    const handlePopState = (e: PopStateEvent) => {
-      e.preventDefault();
-      setNavigationWarningOpen(true);
-      // Push the current state back to prevent navigation
-      window.history.pushState(null, '', window.location.pathname);
-    };
-
-    // Add beforeunload listener for browser refresh/close
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    
-    // Add popstate listener for back button
-    window.addEventListener('popstate', handlePopState);
-    
-    // Push current state to enable back button detection
-    window.history.pushState(null, '', window.location.pathname);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      window.removeEventListener('popstate', handlePopState);
-    };
-  }, [submissionData]);
-
-  if (isLoading) {
+  if (submissionLoading || questionsLoading) {
     return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar />
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-lg text-gray-500">Loading vocabulary check-up...</p>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading test...</p>
         </div>
       </div>
     );
   }
 
-  if (!submissionData) {
+  if (!currentQuestion) {
     return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <p className="text-lg text-gray-500 mb-4">
-              {error ? "Error loading vocabulary check-up." : "Vocabulary check-up not found."}
-            </p>
-            <p className="text-sm text-gray-400 mb-4">
-              {error ? `Error: ${error.message}` : "Please try again or contact support."}
-            </p>
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle className="text-red-600">No Questions Available</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-slate-600 mb-4">This test doesn't have any questions yet.</p>
             <Button onClick={() => navigate("/learner/dashboard")}>Return to Dashboard</Button>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
-
-  if (submissionData.completed) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <p className="text-lg text-gray-500 mb-4">This check-up has already been completed and is awaiting grading.</p>
-            <Button onClick={() => navigate("/learner/dashboard")}>Return to Dashboard</Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Safety check for currentWord initialization
-  if (!currentWord || shuffledWords.length === 0) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar />
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-lg text-gray-500">Loading vocabulary words...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Safety checks for word data
-  if (!submissionData.list?.words || submissionData.list.words.length === 0) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <p className="text-lg text-gray-500 mb-4">No vocabulary words found for this check-up.</p>
-            <Button onClick={() => navigate("/learner/dashboard")}>Return to Dashboard</Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const totalWords = submissionData.list.words.length;
-
-  const handleReturnToFullscreen = async () => {
-    await enterFullscreen();
-  };
 
   return (
-    <div className="min-h-screen bg-neutral-light">
-      <FullscreenMonitor 
-        submissionId={submissionId} 
-        isActive={isFullscreenActive}
-        onFullscreenExit={() => setShowFullscreenWarning(true)}
-      >
-        {/* Fullscreen warning overlay */}
-        <FullscreenWarning 
-          isVisible={showFullscreenWarning}
-          onReturnToFullscreen={handleReturnToFullscreen}
-        />
-        
-        {/* Overlay to block interactions when not in fullscreen */}
-        {showFullscreenWarning && (
-          <div 
-            className="fixed inset-0 z-[9998] bg-transparent cursor-not-allowed"
-            style={{ pointerEvents: 'all' }}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-            onContextMenu={(e) => e.preventDefault()}
-            onKeyDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-            onTouchStart={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-          />
-        )}
-        <div className="h-screen flex flex-col md:flex-row">
-          {/* Left Panel - Reading Passage */}
-          <div className="h-1/2 md:h-full md:w-1/2 overflow-auto p-6 bg-white border-b md:border-b-0 md:border-r border-gray-200">
-            <div className="max-w-3xl mx-auto">
-                <h2 className="text-xl font-semibold text-neutral-dark mb-4">
-                  {submissionData.list.title}
-                </h2>
-                <div className="prose max-w-none passage-container">
-                  <div dangerouslySetInnerHTML={createMarkup(
-                    currentWord ? submissionData.list.passage.replace(
-                      new RegExp(`\\b${currentWord.word}\\b`, 'gi'), 
-                      `<mark>${currentWord.word}</mark>`
-                    ) : submissionData.list.passage
-                  )} />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      {/* Header */}
+      <div className="bg-white border-b shadow-sm sticky top-0 z-10">
+        <div className="max-w-5xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Badge variant="outline" className="text-sm">
+                Question {currentQuestionIndex + 1} of {questions.length}
+              </Badge>
+              {currentQuestion.word && (
+                <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200">
+                  {currentQuestion.word}
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-4">
+              {timeRemaining !== null && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Clock className="h-4 w-4" />
+                  <span className={timeRemaining < 300 ? "text-red-600 font-semibold" : ""}>
+                    {formatTime(timeRemaining)}
+                  </span>
                 </div>
+              )}
+              <div className="flex items-center gap-2 text-sm text-slate-600">
+                <CheckCircle className="h-4 w-4" />
+                <span>{answeredCount} answered</span>
               </div>
             </div>
-            
-            {/* Right Panel - Vocabulary Check-Up */}
-            <div className="h-1/2 md:h-full md:w-1/2 overflow-auto p-6 bg-gray-50">
-              <div className="max-w-xl mx-auto">
-                <Card>
-                  <CardHeader className="px-6 py-4 border-b border-gray-200 bg-blue-50">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle>Vocabulary Check-Up</CardTitle>
-                        <Badge className="bg-blue-100 text-blue-800 mt-2">
-                          Word {currentWordIndex + 1} of {totalWords}
-                        </Badge>
-                      </div>
-                      {timeRemaining !== null && (
-                        <div className={`text-right font-mono text-lg font-semibold ${
-                          timeRemaining <= 300 ? 'text-red-600' : 'text-blue-600'
-                        }`}>
-                          <div className="text-sm text-gray-500 font-normal">Time Remaining</div>
-                          <div className="flex items-center gap-1">
-                            ⏱️ {formatTimeRemaining(timeRemaining)}
-                          </div>
-                          {timeRemaining <= 300 && (
-                            <div className="text-xs text-red-500 font-normal animate-pulse">
-                              Hurry up! Less than 5 minutes left
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    <CardDescription>
-                      {hasMultipleChoiceQuestions 
-                        ? "Answer the multiple choice questions for each word." 
-                        : "Define each highlighted word from the passage."
-                      }
-                    </CardDescription>
-                  </CardHeader>
-                  
-                  <CardContent className="p-6">
-                    <div className="space-y-6">
-                      <div>
-                        <label className="block text-lg font-medium text-neutral-dark">
-                          {currentWord?.word || "Loading..."}
-                        </label>
-                        
-                        {mcQuestionsLoading ? (
-                          <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-                            <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-                            Loading questions...
-                          </div>
-                        ) : hasMultipleChoiceQuestions ? (
-                          <>
-                            <p className="text-sm text-gray-500 mb-4">
-                              Choose the best answer for each question about this word.
-                            </p>
-                            <div className="space-y-6">
-                              {multipleChoiceQuestions.map((question: MultipleChoiceQuestion) => (
-                                <div key={question.id} className="border rounded-lg p-4 bg-white">
-                                  <div className="flex items-start gap-2 mb-3">
-                                    <HelpCircle className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
-                                    <h4 className="text-sm font-medium text-gray-900">
-                                      {question.question}
-                                    </h4>
-                                  </div>
-                                  
-                                  <RadioGroup
-                                    value={selectedMultipleChoiceAnswers[question.id] || ""}
-                                    onValueChange={(value) => {
-                                      setSelectedMultipleChoiceAnswers(prev => ({
-                                        ...prev,
-                                        [question.id]: value
-                                      }));
-                                    }}
-                                    disabled={showFullscreenWarning}
-                                    className="space-y-2"
-                                  >
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="A" id={`q${question.id}-a`} />
-                                      <Label htmlFor={`q${question.id}-a`} className="flex-1 cursor-pointer">
-                                        A. {question.optionA}
-                                      </Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="B" id={`q${question.id}-b`} />
-                                      <Label htmlFor={`q${question.id}-b`} className="flex-1 cursor-pointer">
-                                        B. {question.optionB}
-                                      </Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="C" id={`q${question.id}-c`} />
-                                      <Label htmlFor={`q${question.id}-c`} className="flex-1 cursor-pointer">
-                                        C. {question.optionC}
-                                      </Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="D" id={`q${question.id}-d`} />
-                                      <Label htmlFor={`q${question.id}-d`} className="flex-1 cursor-pointer">
-                                        D. {question.optionD}
-                                      </Label>
-                                    </div>
-                                  </RadioGroup>
-                                </div>
-                              ))}
-                            </div>
-                          </>
-                        ) : mcQuestionsError ? (
-                          <>
-                            <div className="text-sm text-red-600 bg-red-50 p-2 rounded mb-4">
-                              Error loading questions: {mcQuestionsError?.message || "Unknown error"}
-                              {mcQuestionsError?.message === "Failed to fetch" && (
-                                <div className="mt-2 text-xs">
-                                  Please refresh the page and log in again.
-                                </div>
-                              )}
-                            </div>
-                            <p className="text-sm text-gray-500 mb-2">
-                              Write what you think this word means, or skip if you don't know.
-                            </p>
-                          </>
-                        ) : (
-                          <>
-                            <p className="text-sm text-gray-500 mb-2">
-                              Write what you think this word means, or skip if you don't know.
-                            </p>
-                            <Textarea
-                              id="word-definition"
-                              rows={4}
-                              placeholder="Type your definition here or leave blank to skip..."
-                              value={definition}
-                              onChange={(e) => setDefinition(e.target.value)}
-                              disabled={showFullscreenWarning}
-                              className={showFullscreenWarning ? "opacity-50 cursor-not-allowed" : ""}
-                            />
-                            <div className="mt-2 flex gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setDefinition("")}
-                                disabled={showFullscreenWarning}
-                                className="text-gray-600"
-                              >
-                                Clear
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={async () => {
-                                  setDefinition("");
-                                  await handleNext();
-                                }}
-                                disabled={showFullscreenWarning}
-                                className="text-orange-600 border-orange-300 hover:bg-orange-50"
-                              >
-                                Skip Word
-                              </Button>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                      
-                      <div className="flex justify-between">
-                        <Button
-                          variant="outline"
-                          className="flex items-center"
-                          onClick={handlePrevious}
-                          disabled={currentWordIndex === 0 || showFullscreenWarning}
-                        >
-                          <ChevronLeft className="mr-1 h-4 w-4" />
-                          Previous
-                        </Button>
-                        
-                        {currentWordIndex < totalWords - 1 ? (
-                          <Button
-                            className="flex items-center"
-                            onClick={handleNext}
-                            disabled={showFullscreenWarning}
-                          >
-                            Next
-                            <ChevronRight className="ml-1 h-4 w-4" />
-                          </Button>
-                        ) : (
-                          <Button
-                            className="flex items-center"
-                            onClick={handleComplete}
-                            disabled={showFullscreenWarning}
-                          >
-                            Submit Check-Up
-                          </Button>
-                        )}
-                      </div>
-                      
-                      <div className="pt-4 border-t border-gray-200">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <div className="flex -space-x-1 overflow-hidden">
-                              {submissionData.list.words.map((_: any, index: any) => {
-                                const wordId = submissionData.list.words[index].id;
-                                const hasDefinition = savedDefinitions[wordId];
-                                const isSkipped = savedDefinitions.hasOwnProperty(wordId) && !savedDefinitions[wordId];
-                                
-                                // Check for multiple choice answers for this word
-                                const hasMultipleChoiceAnswers = Array.isArray(multipleChoiceQuestions) && multipleChoiceQuestions.some((q: MultipleChoiceQuestion) => 
-                                  selectedMultipleChoiceAnswers[q.id]
-                                );
-                                
-                                const hasAnyAnswer = hasDefinition || hasMultipleChoiceAnswers;
-                                
-                                return (
-                                  <div 
-                                    key={index} 
-                                    className={`inline-block h-6 w-6 rounded-full ring-2 ring-white ${
-                                      index === currentWordIndex 
-                                        ? 'bg-blue-500 text-white' 
-                                        : hasAnyAnswer
-                                          ? 'bg-green-100 text-green-700' 
-                                          : isSkipped
-                                            ? 'bg-orange-100 text-orange-700'
-                                            : 'bg-gray-200 text-gray-500'
-                                    } flex items-center justify-center text-xs cursor-pointer`}
-                                    onClick={() => setCurrentWordIndex(index)}
-                                  >
-                                    {index + 1}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                          <Dialog open={discardDialogOpen} onOpenChange={setDiscardDialogOpen}>
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-sm text-red-500 hover:text-red-700"
-                              >
-                                <X className="mr-1 h-4 w-4" />
-                                Discard Test
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle className="flex items-center gap-2 text-red-600">
-                                  <AlertTriangle size={18} />
-                                  Discard Test?
-                                </DialogTitle>
-                                <DialogDescription>
-                                  This will discard your current test and you will receive a 0% score.
-                                  This action cannot be undone.
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="mt-4">
-                                <label htmlFor="discard-reason" className="block text-sm font-medium text-neutral-dark mb-1">
-                                  Please explain why you are discarding this test:
-                                </label>
-                                <Textarea
-                                  id="discard-reason"
-                                  rows={3}
-                                  placeholder="I'm discarding this test because..."
-                                  value={discardReason}
-                                  onChange={(e) => setDiscardReason(e.target.value)}
-                                  className="w-full"
-                                />
-                              </div>
-                              <DialogFooter className="mt-4">
-                                <Button 
-                                  variant="outline" 
-                                  onClick={() => setDiscardDialogOpen(false)}
-                                >
-                                  Cancel
-                                </Button>
-                                <Button 
-                                  variant="destructive" 
-                                  className="bg-red-600 hover:bg-red-700"
-                                  onClick={handleDiscardSubmission}
-                                  disabled={discardMutation.isPending}
-                                >
-                                  {discardMutation.isPending ? "Discarding..." : "Discard Test"}
-                                </Button>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
-
-                          {/* Navigation Warning Dialog */}
-                          <Dialog open={navigationWarningOpen} onOpenChange={setNavigationWarningOpen}>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle className="flex items-center gap-2 text-red-600">
-                                  <AlertTriangle size={18} />
-                                  Warning: Leaving Test
-                                </DialogTitle>
-                                <DialogDescription>
-                                  You are trying to leave the vocabulary check-up. If you continue, your test will be ended and you will receive a score of 0%. This action cannot be undone.
-                                </DialogDescription>
-                              </DialogHeader>
-                              <DialogFooter className="mt-4">
-                                <Button 
-                                  variant="outline" 
-                                  onClick={() => setNavigationWarningOpen(false)}
-                                >
-                                  Stay in Test
-                                </Button>
-                                <Button 
-                                  variant="destructive"
-                                  onClick={() => {
-                                    setNavigationWarningOpen(false);
-                                    endTestWithZeroMutation.mutate();
-                                  }}
-                                  disabled={endTestWithZeroMutation.isPending}
-                                >
-                                  {endTestWithZeroMutation.isPending ? "Ending Test..." : "End Test (0% Score)"}
-                                </Button>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
+          </div>
+          <Progress value={progress} className="mt-3 h-2" />
         </div>
-      </FullscreenMonitor>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <Card className="shadow-lg">
+          <CardHeader className="pb-6">
+            <CardTitle className="text-2xl">{currentQuestion.question}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Multiple Choice Question */}
+            {currentQuestion.type === 'multiple_choice' && (
+              <RadioGroup
+                value={answers[currentQuestion.id] || ""}
+                onValueChange={handleAnswerChange}
+                className="space-y-3"
+              >
+                {[
+                  { value: 'A', label: currentQuestion.optionA },
+                  { value: 'B', label: currentQuestion.optionB },
+                  { value: 'C', label: currentQuestion.optionC },
+                  { value: 'D', label: currentQuestion.optionD },
+                ].map(option => (
+                  <div
+                    key={option.value}
+                    className="flex items-center space-x-3 border rounded-lg p-4 hover:bg-slate-50 cursor-pointer transition-colors"
+                  >
+                    <RadioGroupItem value={option.value} id={`option-${option.value}`} />
+                    <Label
+                      htmlFor={`option-${option.value}`}
+                      className="flex-1 cursor-pointer text-base"
+                    >
+                      <span className="font-semibold mr-2">{option.value}.</span>
+                      {option.label}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            )}
+
+            {/* Input Question */}
+            {currentQuestion.type === 'input' && (
+              <div className="space-y-3">
+                <Input
+                  type="text"
+                  placeholder="Type your answer here..."
+                  value={answers[currentQuestion.id] || ""}
+                  onChange={(e) => handleAnswerChange(e.target.value)}
+                  className="text-lg p-4"
+                />
+                {currentQuestion.caseSensitive && (
+                  <p className="text-sm text-amber-600 flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4" />
+                    This answer is case-sensitive
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Navigation Buttons */}
+            <div className="flex items-center justify-between pt-6 border-t">
+              <Button
+                variant="outline"
+                onClick={goToPrevious}
+                disabled={currentQuestionIndex === 0}
+              >
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Previous
+              </Button>
+
+              {currentQuestionIndex === questions.length - 1 ? (
+                <Button
+                  onClick={() => setShowSubmitDialog(true)}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  Submit Test
+                </Button>
+              ) : (
+                <Button onClick={goToNext}>
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Question Navigator */}
+        <div className="mt-6">
+          <Card className="p-4">
+            <h3 className="text-sm font-semibold mb-3 text-slate-600">Question Navigator</h3>
+            <div className="grid grid-cols-10 gap-2">
+              {questions.map((q: Question, idx: number) => (
+                <button
+                  key={q.id}
+                  onClick={() => setCurrentQuestionIndex(idx)}
+                  className={`
+                    aspect-square rounded-lg border-2 text-sm font-medium transition-all
+                    ${currentQuestionIndex === idx ? 'border-blue-600 bg-blue-50 text-blue-700' : ''}
+                    ${answers[q.id] ? 'bg-green-50 border-green-500 text-green-700' : 'border-slate-200 hover:border-slate-300'}
+                  `}
+                >
+                  {idx + 1}
+                </button>
+              ))}
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      {/* Submit Confirmation Dialog */}
+      <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Submit Test?</DialogTitle>
+            <DialogDescription>
+              You have answered {answeredCount} out of {questions.length} questions.
+              {answeredCount < questions.length && (
+                <span className="block mt-2 text-amber-600">
+                  You have {questions.length - answeredCount} unanswered question(s).
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSubmitDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setShowSubmitDialog(false);
+                handleSubmit();
+              }}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Submit Test
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
