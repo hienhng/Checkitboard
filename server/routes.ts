@@ -834,6 +834,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         questions: allQuestions,
         savedAnswers: savedAnswers,
+        passage: list.passage,
+        title: list.title,
         listSettings: {
           shuffleQuestions: list.shuffleQuestions,
           showCorrectAnswers: list.showCorrectAnswers,

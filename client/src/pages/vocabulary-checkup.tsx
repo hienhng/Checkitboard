@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Clock, CheckCircle, AlertCircle, ChevronLeft, ChevronRight, Send } from "lucide-react";
+import { Clock, CheckCircle, AlertCircle, ChevronLeft, ChevronRight, Send, BookOpen } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 interface Question {
@@ -61,6 +61,8 @@ export default function VocabularyCheckup() {
   const questions = (questionsData as any)?.questions || [];
   const savedAnswers = (questionsData as any)?.savedAnswers || {};
   const listSettings = (questionsData as any)?.listSettings || {};
+  const passage = (questionsData as any)?.passage || "";
+  const title = (questionsData as any)?.title || "";
   const currentQuestion = questions[currentQuestionIndex] as Question | undefined;
 
   // Hydrate answers from saved answers
@@ -296,7 +298,26 @@ export default function VocabularyCheckup() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+        {/* Reading Passage */}
+        {passage && (
+          <Card className="shadow-md border-2 border-blue-100">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg text-blue-700 flex items-center gap-2">
+                <BookOpen className="h-5 w-5" />
+                Reading Passage: {title}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div 
+                className="prose prose-sm max-w-none text-slate-700 leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: passage }}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Question Card */}
         <Card className="shadow-lg">
           <CardHeader className="pb-6">
             <CardTitle className="text-2xl">{currentQuestion.question}</CardTitle>
