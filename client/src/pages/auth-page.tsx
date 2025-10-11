@@ -13,7 +13,11 @@ export default function AuthPage() {
   // Redirect if user is already logged in
   useEffect(() => {
     if (user) {
-      navigate("/");
+      if (user.role === "educator") {
+        navigate("/educator/dashboard");
+      } else if (user.role === "learner") {
+        navigate("/learner/dashboard");
+      }
     }
   }, [user, navigate]);
 
