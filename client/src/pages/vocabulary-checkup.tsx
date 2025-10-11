@@ -178,15 +178,35 @@ export default function VocabularyCheckup() {
     },
   });
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Flush all pending debounced input saves before submitting
-    Object.values(inputDebounceTimers).forEach(timer => clearTimeout(timer));
+    const pendingSaves: Promise<void>[] = [];
+    
+    Object.entries(inputDebounceTimers).forEach(([questionId, timer]) => {
+      clearTimeout(timer);
+      
+      // Trigger the save immediately for this question
+      const answer = answers[parseInt(questionId)];
+      if (answer !== undefined) {
+        const savePromise = new Promise<void>((resolve) => {
+          saveInputAnswerMutation.mutate(
+            { questionId: parseInt(questionId), studentAnswer: answer },
+            { 
+              onSettled: () => resolve()
+            }
+          );
+        });
+        pendingSaves.push(savePromise);
+      }
+    });
+    
     setInputDebounceTimers({});
     
-    // Small delay to ensure any in-flight saves complete
-    setTimeout(() => {
-      completeMutation.mutate();
-    }, 100);
+    // Wait for all pending saves to complete
+    await Promise.all(pendingSaves);
+    
+    // Now submit
+    completeMutation.mutate();
   };
 
   // Cleanup timers on unmount
