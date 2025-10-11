@@ -310,7 +310,7 @@ export default function VocabularyCheckup() {
             </CardHeader>
             <CardContent>
               <div 
-                className="prose prose-sm max-w-none text-slate-700 leading-relaxed"
+                className="passage-container prose prose-sm max-w-none text-slate-700 leading-relaxed"
                 dangerouslySetInnerHTML={{ __html: passage }}
               />
             </CardContent>
