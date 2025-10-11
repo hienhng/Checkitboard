@@ -36,8 +36,8 @@ import { EmailVerificationGuard, withEmailVerification } from "@/components/emai
 function Router() {
   return (
     <Switch>
-      {/* Root route shows hero page for unauthenticated users, redirects authenticated users */}
-      <Route path="/" component={HeroPage} />
+      {/* Root route redirects to auth page (hero page temporarily disabled) */}
+      <Route path="/" component={AuthPage} />
       
       {/* Public routes */}
       <Route path="/auth" component={AuthPage} />
