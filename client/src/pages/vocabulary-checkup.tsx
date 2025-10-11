@@ -39,6 +39,7 @@ export default function VocabularyCheckup() {
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+  const [inputDebounceTimers, setInputDebounceTimers] = useState<Record<number, NodeJS.Timeout>>({});
 
   // Get submission details
   const { data: submission, isLoading: submissionLoading } = useQuery({
@@ -52,14 +53,22 @@ export default function VocabularyCheckup() {
 
   // Get all questions for the vocabulary list
   const { data: questionsData, isLoading: questionsLoading } = useQuery({
-    queryKey: [`/api/vocabulary-lists/${listId}/questions`],
+    queryKey: [`/api/vocabulary-lists/${listId}/questions?submissionId=${submissionId}`],
     queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!listId,
   });
 
   const questions = (questionsData as any)?.questions || [];
+  const savedAnswers = (questionsData as any)?.savedAnswers || {};
   const listSettings = (questionsData as any)?.listSettings || {};
   const currentQuestion = questions[currentQuestionIndex] as Question | undefined;
+
+  // Hydrate answers from saved answers
+  useEffect(() => {
+    if (savedAnswers && Object.keys(savedAnswers).length > 0 && Object.keys(answers).length === 0) {
+      setAnswers(savedAnswers);
+    }
+  }, [savedAnswers]);
 
   // Initialize timer
   useEffect(() => {
@@ -134,9 +143,23 @@ export default function VocabularyCheckup() {
 
     // Auto-save the answer
     if (currentQuestion.type === 'multiple_choice') {
+      // Save MC answers immediately
       saveMCAnswerMutation.mutate({ questionId: currentQuestion.id, selectedAnswer: answer });
     } else {
-      saveInputAnswerMutation.mutate({ questionId: currentQuestion.id, studentAnswer: answer });
+      // Debounce input answers to avoid excessive API calls
+      const questionId = currentQuestion.id;
+      
+      // Clear existing timer for this question
+      if (inputDebounceTimers[questionId]) {
+        clearTimeout(inputDebounceTimers[questionId]);
+      }
+      
+      // Set new timer
+      const timer = setTimeout(() => {
+        saveInputAnswerMutation.mutate({ questionId, studentAnswer: answer });
+      }, 500); // 500ms debounce
+      
+      setInputDebounceTimers(prev => ({ ...prev, [questionId]: timer }));
     }
   };
 
@@ -156,8 +179,22 @@ export default function VocabularyCheckup() {
   });
 
   const handleSubmit = () => {
-    completeMutation.mutate();
+    // Flush all pending debounced input saves before submitting
+    Object.values(inputDebounceTimers).forEach(timer => clearTimeout(timer));
+    setInputDebounceTimers({});
+    
+    // Small delay to ensure any in-flight saves complete
+    setTimeout(() => {
+      completeMutation.mutate();
+    }, 100);
   };
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(inputDebounceTimers).forEach(timer => clearTimeout(timer));
+    };
+  }, [inputDebounceTimers]);
 
   // Navigation
   const goToNext = () => {

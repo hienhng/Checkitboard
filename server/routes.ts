@@ -806,8 +806,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Fetch saved answers if submissionId is provided
+      let savedAnswers: Record<number, string> = {};
+      const submissionId = req.query.submissionId ? parseInt(req.query.submissionId as string) : null;
+      
+      if (submissionId && !isNaN(submissionId)) {
+        // Get saved MC answers
+        const mcAnswers = await db.query.multipleChoiceAnswers.findMany({
+          where: eq(multipleChoiceAnswers.submissionId, submissionId)
+        });
+
+        // Get saved input answers
+        const inputAnswers = await db.query.inputFormAnswers.findMany({
+          where: eq(inputFormAnswers.submissionId, submissionId)
+        });
+
+        // Map answers by question ID
+        mcAnswers.forEach(answer => {
+          savedAnswers[answer.questionId] = answer.selectedAnswer;
+        });
+
+        inputAnswers.forEach(answer => {
+          savedAnswers[answer.questionId] = answer.studentAnswer;
+        });
+      }
+
       res.json({
         questions: allQuestions,
+        savedAnswers: savedAnswers,
         listSettings: {
           shuffleQuestions: list.shuffleQuestions,
           showCorrectAnswers: list.showCorrectAnswers,
@@ -1561,6 +1587,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Results not available" });
       }
 
+      // Get MC answers with question details
+      const mcAnswers = await db.query.multipleChoiceAnswers.findMany({
+        where: eq(multipleChoiceAnswers.submissionId, submissionId),
+        with: {
+          question: {
+            with: {
+              word: true
+            }
+          }
+        }
+      });
+
+      // Get input answers with question details
+      const inputAnswers = await db.query.inputFormAnswers.findMany({
+        where: eq(inputFormAnswers.submissionId, submissionId),
+        with: {
+          question: {
+            with: {
+              word: true
+            }
+          }
+        }
+      });
+
       // Check grade visibility settings
       const list = submission.list;
       const gradeVisibility = list?.gradeVisibility || "immediate";
@@ -1588,6 +1638,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const submissionWithoutGrades = {
           ...submission,
           score: null,
+          multipleChoiceAnswers: mcAnswers.map(ans => ({ ...ans, isCorrect: null })),
+          inputFormAnswers: inputAnswers.map(ans => ({ ...ans, isCorrect: null })),
           wordDefinitions: submission.wordDefinitions?.map(def => ({
             ...def,
             isCorrect: null,
@@ -1604,7 +1656,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      res.json(submission);
+      res.json({
+        ...submission,
+        multipleChoiceAnswers: mcAnswers,
+        inputFormAnswers: inputAnswers
+      });
     } catch (error) {
       console.error("Error fetching submission results:", error);
       res.status(500).json({ message: "Internal server error" });
