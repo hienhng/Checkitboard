@@ -3461,6 +3461,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error saving multiple choice answer" });
     }
   });
+
+  // Submit input form answer for a question (learner)
+  app.post("/api/submissions/:submissionId/input-form-answer", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "learner") {
+        return res.status(403).json({ message: "Only learners can submit answers" });
+      }
+
+      const submissionId = parseInt(req.params.submissionId);
+      const { questionId, studentAnswer } = req.body;
+
+      if (isNaN(submissionId) || !questionId || studentAnswer === undefined) {
+        return res.status(400).json({ message: "Valid submission ID, question ID, and answer are required" });
+      }
+
+      // Verify the submission belongs to the current user
+      const submission = await db.query.submissions.findFirst({
+        where: eq(submissions.id, submissionId)
+      });
+
+      if (!submission) {
+        return res.status(404).json({ message: "Submission not found" });
+      }
+
+      if (submission.studentId !== req.user.id) {
+        return res.status(403).json({ message: "You don't have permission to submit answers for this submission" });
+      }
+
+      if (submission.completed) {
+        return res.status(400).json({ message: "Cannot submit answers for a completed submission" });
+      }
+
+      // Get the question to validate and check correctness
+      const question = await db.query.inputFormQuestions.findFirst({
+        where: eq(inputFormQuestions.id, questionId)
+      });
+
+      if (!question) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+
+      // Check correctness based on case sensitivity
+      let isCorrect = false;
+      if (question.caseSensitive) {
+        isCorrect = question.correctAnswer.trim() === studentAnswer.trim();
+      } else {
+        isCorrect = question.correctAnswer.trim().toLowerCase() === studentAnswer.trim().toLowerCase();
+      }
+
+      // Check if an answer already exists for this question and submission
+      const existingAnswer = await db.query.inputFormAnswers.findFirst({
+        where: and(
+          eq(inputFormAnswers.submissionId, submissionId),
+          eq(inputFormAnswers.questionId, questionId)
+        )
+      });
+
+      let answerRecord;
+      if (existingAnswer) {
+        // Update existing answer
+        [answerRecord] = await db.update(inputFormAnswers)
+          .set({
+            studentAnswer,
+            isCorrect
+          })
+          .where(eq(inputFormAnswers.id, existingAnswer.id))
+          .returning();
+      } else {
+        // Create new answer
+        [answerRecord] = await db.insert(inputFormAnswers)
+          .values({
+            submissionId,
+            questionId,
+            studentAnswer,
+            isCorrect
+          })
+          .returning();
+      }
+
+      res.status(201).json(answerRecord);
+    } catch (error) {
+      console.error("Error saving input form answer:", error);
+      res.status(500).json({ message: "Error saving input form answer" });
+    }
+  });
   // #endregion
 
   // #region Notification Routes
