@@ -40,7 +40,7 @@ The application uses a full-stack TypeScript architecture with distinct client a
 ### Feature Specifications
 - **Authentication**: Role-based access (educator/learner), email verification, password reset, session-based authentication.
 - **Vocabulary Management**: Passage editor with word highlighting, AI-powered vocabulary analysis, class management, vocabulary list creation and assignment.
-- **Assessment System**: Interactive check-up tests, real-time grading, fullscreen monitoring for test integrity, score tracking, AI auto-grading, and support for multiple-choice questions.
+- **Assessment System**: Interactive check-up tests with teacher-configured questions (multiple-choice and input types), real-time grading, fullscreen monitoring for test integrity, score tracking, resumable sessions with answer persistence, debounced auto-save (500ms for input questions), and automatic scoring for both question types.
 - **Assignment Properties**: Individual assignment settings including grade visibility (immediate/after due date/manual), retake policies (allow/max attempts), time limits, question shuffling, and correct answer display. Settings moved from class-wide to assignment-specific configuration.
 - **Learning Tools**: Flashcard system for incorrect words, progress tracking, parent email notifications, intelligent sticky note customization (emojis, colors, persistent positioning), and AI-generated definitions for notes.
 - **AI Integration**: Support for multiple AI providers (Groq primary, OpenAI, Hugging Face) for definition generation, passage analysis, vocabulary extraction, contextual suggestions, and auto-grading. Comprehensive fallback mechanisms are implemented.
