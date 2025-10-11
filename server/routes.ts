@@ -716,6 +716,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all questions for a vocabulary list (for test-taking)
+  app.get("/api/vocabulary-lists/:listId/questions", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const listId = parseInt(req.params.listId);
+      if (isNaN(listId)) {
+        return res.status(400).json({ message: "Invalid list ID" });
+      }
+
+      // Verify the list exists and user has access
+      const list = await db.query.vocabularyLists.findFirst({
+        where: eq(vocabularyLists.id, listId),
+        with: {
+          words: {
+            orderBy: asc(vocabularyWords.id)
+          }
+        }
+      });
+
+      if (!list) {
+        return res.status(404).json({ message: "Vocabulary list not found" });
+      }
+
+      // Check access permission
+      let hasAccess = false;
+      if (req.user.role === "educator" && list.educatorId === req.user.id) {
+        hasAccess = true;
+      } else if (req.user.role === "learner" && list.classId) {
+        const enrollment = await db.query.studentClass.findFirst({
+          where: and(
+            eq(studentClass.studentId, req.user.id),
+            eq(studentClass.classId, list.classId),
+            eq(studentClass.status, "approved")
+          )
+        });
+        hasAccess = !!enrollment;
+      }
+
+      if (!hasAccess) {
+        return res.status(403).json({ message: "You don't have permission to view this list" });
+      }
+
+      // Fetch all questions for all words in the list
+      const allQuestions = [];
+      
+      for (const word of list.words) {
+        // Fetch multiple choice questions for this word
+        const mcQuestions = await db.query.multipleChoiceQuestions.findMany({
+          where: eq(multipleChoiceQuestions.wordId, word.id),
+          orderBy: asc(multipleChoiceQuestions.createdAt)
+        });
+
+        // Add MC questions to the array with type indicator
+        for (const mcq of mcQuestions) {
+          allQuestions.push({
+            ...mcq,
+            type: 'multiple_choice',
+            wordId: word.id,
+            word: word.word
+          });
+        }
+
+        // Fetch input form questions for this word
+        const inputQuestions = await db.query.inputFormQuestions.findMany({
+          where: eq(inputFormQuestions.wordId, word.id),
+          orderBy: asc(inputFormQuestions.createdAt)
+        });
+
+        // Add input questions to the array with type indicator
+        for (const inputQ of inputQuestions) {
+          allQuestions.push({
+            ...inputQ,
+            type: 'input',
+            wordId: word.id,
+            word: word.word
+          });
+        }
+      }
+
+      // Shuffle if required
+      if (list.shuffleQuestions) {
+        for (let i = allQuestions.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [allQuestions[i], allQuestions[j]] = [allQuestions[j], allQuestions[i]];
+        }
+      }
+
+      res.json({
+        questions: allQuestions,
+        listSettings: {
+          shuffleQuestions: list.shuffleQuestions,
+          showCorrectAnswers: list.showCorrectAnswers,
+          timeLimit: list.timeLimit
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching questions for vocabulary list:", error);
+      res.status(500).json({ message: "Error fetching questions" });
+    }
+  });
+
   // Update assignment properties for a vocabulary list
   app.patch("/api/vocabulary-lists/:id/properties", async (req, res) => {
     try {
