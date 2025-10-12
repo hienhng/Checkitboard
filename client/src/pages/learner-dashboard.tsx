@@ -382,7 +382,7 @@ function LearnerDashboard() {
                 <CardContent className="p-6 text-center">
                   <CheckCircle className="mx-auto h-10 w-10 text-blue-600 mb-3" />
                   <div className="text-2xl font-bold text-blue-700">
-                    {studyStats?.averageAccuracy || 0}%
+                    {studyStats?.averageAccuracy | 0}%
                   </div>
                   <p className="text-sm text-blue-600 font-medium">Average Accuracy</p>
                 </CardContent>
