@@ -287,7 +287,7 @@ export default function LearnerResults() {
                         <TableCell className="text-right">
                           <Button
                             size="sm"
-                            onClick={() => navigate(`/learner/results/${submission.id}`)}
+                            onClick={() => navigate(`/test-results/${submission.id}`)}
                             className="bg-primary hover:bg-primary/90"
                           >
                             <Eye className="h-4 w-4 mr-2" />
