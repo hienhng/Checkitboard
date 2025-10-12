@@ -123,20 +123,29 @@ export default function VocabularyCheckup() {
 
   // Fullscreen and tab detection for Test mode
   useEffect(() => {
-    if (!isTestMode || !checkupRef.current) return;
+    if (!isTestMode) return;
 
-    // Enter fullscreen on mount
+    console.log("Test mode fullscreen effect running", { isTestMode });
+
+    // Enter fullscreen after a short delay to ensure ref is attached
     const enterFullscreen = async () => {
       try {
         if (checkupRef.current && document.fullscreenElement !== checkupRef.current) {
+          console.log("Attempting to enter fullscreen");
           await checkupRef.current.requestFullscreen();
         }
       } catch (error) {
         console.error("Failed to enter fullscreen:", error);
+        toast({ 
+          title: "Fullscreen required", 
+          description: "Please manually enable fullscreen mode for this test",
+          variant: "destructive" 
+        });
       }
     };
 
-    enterFullscreen();
+    // Delay fullscreen request to ensure ref is attached
+    const fullscreenTimer = setTimeout(enterFullscreen, 100);
 
     // Monitor fullscreen changes
     const handleFullscreenChange = () => {
@@ -178,6 +187,7 @@ export default function VocabularyCheckup() {
     window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
+      clearTimeout(fullscreenTimer);
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('beforeunload', handleBeforeUnload);
