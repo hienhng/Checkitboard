@@ -596,6 +596,64 @@ export default function VocabularyCheckup() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Exit Test Dialog (Test Mode) */}
+      <Dialog open={showExitDialog} onOpenChange={setShowExitDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Exit Test</DialogTitle>
+            <DialogDescription>
+              You are about to exit the test. Please provide a reason for exiting.
+              This will be shared with your teacher.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Textarea
+              placeholder="Enter your reason for exiting the test..."
+              value={exitReason}
+              onChange={(e) => setExitReason(e.target.value)}
+              rows={4}
+              className="resize-none"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowExitDialog(false);
+              setExitReason("");
+            }}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirmExit}
+              disabled={!exitReason.trim() || exitTestMutation.isPending}
+              variant="destructive"
+            >
+              {exitTestMutation.isPending ? "Exiting..." : "Confirm Exit"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Save Progress Dialog (Practice Mode) */}
+      <Dialog open={showSaveProgressDialog} onOpenChange={setShowSaveProgressDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save Progress?</DialogTitle>
+            <DialogDescription>
+              Your progress has been automatically saved. You can return to this practice checkup anytime.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSaveProgressDialog(false)}>
+              Continue Practice
+            </Button>
+            <Button onClick={handleSaveAndGoBack} className="bg-blue-600 hover:bg-blue-700">
+              <Save className="h-4 w-4 mr-2" />
+              Save & Exit
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

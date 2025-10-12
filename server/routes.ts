@@ -2123,6 +2123,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error completing submission" });
     }
   });
+
+  // Exit test with reason
+  app.post("/api/submissions/:id/exit", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "learner") {
+        return res.status(403).json({ message: "Only learners can exit submissions" });
+      }
+
+      const submissionId = parseInt(req.params.id);
+      if (isNaN(submissionId)) {
+        return res.status(400).json({ message: "Invalid submission ID" });
+      }
+
+      // Validate exit payload
+      const exitPayloadSchema = z.object({
+        exitReason: z.string().min(1, "Exit reason is required").max(500, "Exit reason is too long"),
+      });
+
+      const validatedPayload = exitPayloadSchema.parse(req.body);
+
+      const submission = await storage.getSubmission(submissionId);
+      
+      if (!submission) {
+        return res.status(404).json({ message: "Submission not found" });
+      }
+
+      if (submission.studentId !== req.user.id) {
+        return res.status(403).json({ message: "You don't have permission to update this submission" });
+      }
+
+      // Prevent exiting already completed or discarded submissions
+      if (submission.completed) {
+        return res.status(400).json({ message: "Cannot exit a completed submission" });
+      }
+
+      if (submission.isDiscarded) {
+        return res.status(400).json({ message: "This submission has already been exited" });
+      }
+
+      // Verify the vocabulary list is a test (not practice)
+      const list = await storage.getVocabularyList(submission.listId);
+      if (!list) {
+        return res.status(404).json({ message: "Vocabulary list not found" });
+      }
+
+      if (list.type !== "test") {
+        return res.status(400).json({ message: "Exit with reason is only allowed for test-type checkups" });
+      }
+
+      // Update submission with exit reason
+      const updatedSubmission = await storage.updateSubmission(submissionId, {
+        exitReason: validatedPayload.exitReason,
+        isDiscarded: true,
+        discardReason: validatedPayload.exitReason,
+      });
+
+      // Notify educator about the exit
+      const student = await storage.getUser(submission.studentId);
+      
+      if (list.educatorId) {
+        await createSystemNotification(
+          list.educatorId,
+          'test_exit',
+          'Student Exited Test',
+          `${student.name} has exited the test "${list.title}". Reason: ${validatedPayload.exitReason}`,
+          'submission',
+          submissionId
+        );
+      }
+
+      res.json(updatedSubmission);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+      console.error("Error exiting submission:", error);
+      res.status(500).json({ message: "Error exiting submission" });
+    }
+  });
   
   // Get fullscreen exit events for a submission
   app.get("/api/submissions/:id/fullscreen-exits", async (req, res) => {
