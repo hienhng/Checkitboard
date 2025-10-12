@@ -1,16 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Clock, CheckCircle, AlertCircle, ChevronLeft, ChevronRight, Send, BookOpen } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Clock, CheckCircle, AlertCircle, ChevronLeft, ChevronRight, Send, BookOpen, AlertTriangle, Save, LogOut } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 interface Question {
@@ -39,7 +41,12 @@ export default function VocabularyCheckup() {
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+  const [showExitDialog, setShowExitDialog] = useState(false);
+  const [showSaveProgressDialog, setShowSaveProgressDialog] = useState(false);
+  const [exitReason, setExitReason] = useState("");
+  const [fullscreenWarning, setFullscreenWarning] = useState(false);
   const [inputDebounceTimers, setInputDebounceTimers] = useState<Record<number, NodeJS.Timeout>>({});
+  const checkupRef = useRef<HTMLDivElement>(null);
 
   // Get submission details
   const { data: submission, isLoading: submissionLoading } = useQuery({
@@ -50,6 +57,16 @@ export default function VocabularyCheckup() {
 
   const submissionData = submission as any;
   const listId = submissionData?.listId;
+
+  // Get vocabulary list details to check type
+  const { data: listData } = useQuery({
+    queryKey: [`/api/vocabulary-lists/${listId}`],
+    queryFn: getQueryFn({ on401: "throw" }),
+    enabled: !!listId,
+  });
+
+  const checkupType = (listData as any)?.type || "practice";
+  const isTestMode = checkupType === "test";
 
   // Get all questions for the vocabulary list
   const { data: questionsData, isLoading: questionsLoading } = useQuery({
@@ -95,6 +112,58 @@ export default function VocabularyCheckup() {
 
     return () => clearInterval(timer);
   }, [timeRemaining]);
+
+  // Fullscreen and tab detection for Test mode
+  useEffect(() => {
+    if (!isTestMode || !checkupRef.current) return;
+
+    // Enter fullscreen on mount
+    const enterFullscreen = async () => {
+      try {
+        if (checkupRef.current && document.fullscreenElement !== checkupRef.current) {
+          await checkupRef.current.requestFullscreen();
+        }
+      } catch (error) {
+        console.error("Failed to enter fullscreen:", error);
+      }
+    };
+
+    enterFullscreen();
+
+    // Monitor fullscreen changes
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement && isTestMode) {
+        setFullscreenWarning(true);
+      } else {
+        setFullscreenWarning(false);
+      }
+    };
+
+    // Monitor tab visibility changes
+    const handleVisibilityChange = () => {
+      if (document.hidden && isTestMode) {
+        setFullscreenWarning(true);
+      }
+    };
+
+    // Prevent navigation
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isTestMode) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isTestMode]);
 
   // Format time
   const formatTime = (seconds: number) => {
@@ -211,6 +280,48 @@ export default function VocabularyCheckup() {
     completeMutation.mutate();
   };
 
+  // Exit test with reason mutation
+  const exitTestMutation = useMutation({
+    mutationFn: async (reason: string) => {
+      const response = await apiRequest("POST", `/api/submissions/${submissionId}/exit`, {
+        exitReason: reason,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      }
+      toast({ title: "Exit reason submitted" });
+      navigate("/dashboard");
+    },
+    onError: () => {
+      toast({ title: "Error submitting exit reason", variant: "destructive" });
+    },
+  });
+
+  // Handle exit request (for test mode)
+  const handleExitRequest = () => {
+    if (isTestMode) {
+      setShowExitDialog(true);
+    } else {
+      setShowSaveProgressDialog(true);
+    }
+  };
+
+  // Handle confirm exit
+  const handleConfirmExit = () => {
+    if (isTestMode && exitReason.trim()) {
+      exitTestMutation.mutate(exitReason);
+    }
+  };
+
+  // Handle save and go back (practice mode)
+  const handleSaveAndGoBack = () => {
+    toast({ title: "Progress saved" });
+    navigate("/dashboard");
+  };
+
   // Cleanup timers on unmount
   useEffect(() => {
     return () => {
@@ -263,18 +374,42 @@ export default function VocabularyCheckup() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div ref={checkupRef} className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      {/* Fullscreen Warning for Test Mode */}
+      {isTestMode && fullscreenWarning && (
+        <Alert variant="destructive" className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 max-w-md">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            You have exited fullscreen or left the test tab. This has been logged. Please return to fullscreen to continue.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Header */}
       <div className="bg-white border-b shadow-sm sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleExitRequest}
+                className="text-slate-600"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                {isTestMode ? "Exit Test" : "Save & Exit"}
+              </Button>
               <Badge variant="outline" className="text-sm">
                 Question {currentQuestionIndex + 1} of {questions.length}
               </Badge>
               {currentQuestion.word && (
                 <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200">
                   {currentQuestion.word}
+                </Badge>
+              )}
+              {isTestMode && (
+                <Badge variant="destructive" className="text-xs">
+                  TEST MODE
                 </Badge>
               )}
             </div>

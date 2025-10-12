@@ -360,7 +360,9 @@ export default function VocabularyManagement() {
                         variant="outline" 
                         size="sm"
                         onClick={() => handleEdit(list)}
+                        disabled={list.published}
                         className="flex items-center"
+                        title={list.published ? "Unpublish the checkup first to edit" : "Edit checkup"}
                       >
                         <Edit className="mr-1 h-3 w-3" />
                         Edit

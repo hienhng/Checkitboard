@@ -11,7 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarIcon, X } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { CalendarIcon, X, AlertTriangle } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -132,6 +133,15 @@ export function EditVocabularyForm({ vocabularyList, classes, onSuccess, onCance
 
   // Handle form submission
   const handleSubmit = async () => {
+    if (vocabularyList.published) {
+      toast({
+        title: "Cannot edit published checkup",
+        description: "Please unpublish the checkup first to make changes.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!title.trim()) {
       toast({
         title: "Title required",
@@ -172,6 +182,14 @@ export function EditVocabularyForm({ vocabularyList, classes, onSuccess, onCance
 
   return (
     <div className="space-y-6">
+      {vocabularyList.published && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            This checkup is published and cannot be edited. Please unpublish it first to make changes.
+          </AlertDescription>
+        </Alert>
+      )}
       <Form {...form}>
         <form className="space-y-6">
           {/* Title */}

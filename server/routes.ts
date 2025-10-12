@@ -548,6 +548,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You don't have permission to update this list" });
       }
 
+      // Check if trying to edit a published list (except for published status and classId)
+      if (list.published) {
+        const allowedFields = ['published', 'classId'];
+        const editingFields = Object.keys(req.body).filter(key => !allowedFields.includes(key));
+        
+        if (editingFields.length > 0) {
+          return res.status(403).json({ 
+            message: "Cannot edit a published checkup. Please unpublish it first to make changes." 
+          });
+        }
+      }
+
       // If assigning to a class, verify the class exists and belongs to the educator
       if (req.body.classId) {
         const classId = parseInt(req.body.classId);

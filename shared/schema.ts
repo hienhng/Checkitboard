@@ -55,6 +55,7 @@ export const vocabularyLists = pgTable("vocabulary_lists", {
   educatorId: integer("educator_id").references(() => users.id).notNull(),
   classId: integer("class_id").references(() => classes.id),
   published: boolean("published").default(false).notNull(),
+  type: text("type", { enum: ["test", "practice"] }).default("practice").notNull(),
   dueDate: timestamp("due_date"),
   // Assignment-specific settings
   gradeVisibility: text("grade_visibility", { enum: ["immediate", "afterDue", "manual"] }).default("immediate").notNull(),
@@ -131,6 +132,7 @@ export const submissions = pgTable("submissions", {
   isRedo: boolean("is_redo").default(false).notNull(),
   isDiscarded: boolean("is_discarded").default(false).notNull(),
   discardReason: text("discard_reason"),
+  exitReason: text("exit_reason"), // Reason provided when exiting a test
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

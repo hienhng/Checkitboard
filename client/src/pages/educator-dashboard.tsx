@@ -11,6 +11,7 @@ import {
   CardDescription 
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { 
   PlusCircle, 
   BookOpen, 
@@ -22,7 +23,9 @@ import {
   BarChart,
   User,
   Users,
-  School
+  School,
+  FileText,
+  Trophy
 } from "lucide-react";
 
 
@@ -37,7 +40,9 @@ import { useToast } from "@/hooks/use-toast";
 
 function EducatorDashboard() {
   const { toast } = useToast();
+  const [showTypeSelection, setShowTypeSelection] = useState(false);
   const [showCreateList, setShowCreateList] = useState(false);
+  const [checkupType, setCheckupType] = useState<"test" | "practice">("practice");
   const [showGrading, setShowGrading] = useState(false);
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<number | null>(null);
 
@@ -112,6 +117,12 @@ function EducatorDashboard() {
     });
   };
 
+  const handleTypeSelection = (type: "test" | "practice") => {
+    setCheckupType(type);
+    setShowTypeSelection(false);
+    setShowCreateList(true);
+  };
+
   const handleCreateSuccess = () => {
     setShowCreateList(false);
     queryClient.invalidateQueries({ queryKey: ["/api/educator/vocabulary-lists"] });
@@ -183,7 +194,7 @@ function EducatorDashboard() {
                   </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <PassageEditor onSuccess={handleCreateSuccess} />
+                  <PassageEditor onSuccess={handleCreateSuccess} checkupType={checkupType} />
                 </CardContent>
               </Card>
             ) : showGrading && selectedSubmissionId ? (
@@ -267,12 +278,12 @@ function EducatorDashboard() {
                         <CardContent className="p-6">
                           <div className="space-y-4">
                             <Button 
-                              onClick={() => setShowCreateList(true)}
+                              onClick={() => setShowTypeSelection(true)}
                               className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-lg py-6"
                               size="lg"
                             >
                               <PlusCircle className="mr-2 h-5 w-5" />
-                              Create New Vocabulary List
+                              Create New Checkup
                             </Button>
                             <div className="text-center text-sm text-muted-foreground">
                               Paste passages, highlight words, and create engaging assessments
@@ -375,7 +386,7 @@ function EducatorDashboard() {
                               <BookOpen className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
                               <p className="text-muted-foreground text-sm">No vocabulary lists yet</p>
                               <Button 
-                                onClick={() => setShowCreateList(true)}
+                                onClick={() => setShowTypeSelection(true)}
                                 variant="outline" 
                                 size="sm" 
                                 className="mt-3"
@@ -450,6 +461,45 @@ function EducatorDashboard() {
                 </div>
             )}
       </div>
+
+      {/* Type Selection Dialog */}
+      <Dialog open={showTypeSelection} onOpenChange={setShowTypeSelection}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Choose Checkup Type</DialogTitle>
+            <DialogDescription>
+              Select whether you want to create a Test or Practice checkup
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Button
+              onClick={() => handleTypeSelection("test")}
+              className="h-auto py-6 flex flex-col items-start gap-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
+            >
+              <div className="flex items-center gap-2">
+                <Trophy className="h-5 w-5" />
+                <span className="text-lg font-semibold">Test</span>
+              </div>
+              <span className="text-sm text-white/90 text-left">
+                Formal assessment with fullscreen mode, time tracking, and strict monitoring
+              </span>
+            </Button>
+            <Button
+              onClick={() => handleTypeSelection("practice")}
+              variant="outline"
+              className="h-auto py-6 flex flex-col items-start gap-2 border-2 hover:bg-muted"
+            >
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                <span className="text-lg font-semibold">Practice</span>
+              </div>
+              <span className="text-sm text-muted-foreground text-left">
+                Flexible learning mode with save progress option and no time pressure
+              </span>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

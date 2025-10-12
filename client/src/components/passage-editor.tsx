@@ -25,9 +25,10 @@ import { z } from "zod";
 
 interface PassageEditorProps {
   onSuccess: () => void;
+  checkupType?: "test" | "practice";
 }
 
-export function PassageEditor({ onSuccess }: PassageEditorProps) {
+export function PassageEditor({ onSuccess, checkupType = "practice" }: PassageEditorProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [title, setTitle] = useState("");
@@ -52,6 +53,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
     words: string[];
     dueDate?: Date;
     published?: boolean;
+    type?: "test" | "practice";
   };
 
   // Mutation to create a new vocabulary list
@@ -60,6 +62,7 @@ export function PassageEditor({ onSuccess }: PassageEditorProps) {
       // Convert date object to ISO string if it exists
       const payload = {
         ...data,
+        type: checkupType,
         dueDate: data.dueDate ? data.dueDate.toISOString() : undefined
       };
       
