@@ -369,7 +369,7 @@ function EducatorDashboard() {
             {/* Recent Activity */}
             <div className="grid gap-6 md:grid-cols-2">
               {/* Recent Vocabulary Lists */}
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
+              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl w-full">
                 <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-lg p-6">
                   <CardTitle className="text-xl font-bold">
                     <BookOpen className="inline mr-3 h-5 w-5" />
