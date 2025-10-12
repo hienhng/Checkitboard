@@ -407,9 +407,16 @@ export default function VocabularyCheckup() {
                 try {
                   if (checkupRef.current) {
                     await checkupRef.current.requestFullscreen();
+                    // Clear the warning once fullscreen is entered
+                    setFullscreenWarning(false);
                   }
                 } catch (error) {
                   console.error("Failed to enter fullscreen:", error);
+                  toast({
+                    title: "Cannot enter fullscreen",
+                    description: "Please allow fullscreen access to continue the test",
+                    variant: "destructive"
+                  });
                 }
               }}
               className="w-full bg-blue-600 hover:bg-blue-700"
