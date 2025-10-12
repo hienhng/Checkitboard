@@ -132,16 +132,27 @@ export default function VocabularyCheckup() {
 
     // Monitor fullscreen changes
     const handleFullscreenChange = () => {
+      console.log("Fullscreen change detected", {
+        isFullscreen: !!document.fullscreenElement,
+        isTestMode
+      });
       if (!document.fullscreenElement && isTestMode) {
+        console.log("Setting fullscreen warning to TRUE");
         setFullscreenWarning(true);
       } else {
+        console.log("Setting fullscreen warning to FALSE");
         setFullscreenWarning(false);
       }
     };
 
     // Monitor tab visibility changes
     const handleVisibilityChange = () => {
+      console.log("Visibility change detected", {
+        isHidden: document.hidden,
+        isTestMode
+      });
       if (document.hidden && isTestMode) {
+        console.log("Tab hidden - setting fullscreen warning to TRUE");
         setFullscreenWarning(true);
       }
     };
