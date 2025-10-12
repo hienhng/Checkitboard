@@ -157,12 +157,13 @@ export function QuestionsPane({ vocabularyList }: QuestionsPaneProps) {
                           Multiple Choice
                         </div>
                       </SelectItem>
-                      <SelectItem value="input-form">
+                      {/* Temporarily disabled - Input Form questions are being improved */}
+                      {/* <SelectItem value="input-form">
                         <div className="flex items-center">
                           <FileText className="mr-2 h-4 w-4" />
                           Input Form
                         </div>
-                      </SelectItem>
+                      </SelectItem> */}
                     </SelectContent>
                   </Select>
                   
