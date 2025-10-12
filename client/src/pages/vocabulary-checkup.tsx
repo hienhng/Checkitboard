@@ -67,6 +67,14 @@ export default function VocabularyCheckup() {
 
   const checkupType = (listData as any)?.type || "practice";
   const isTestMode = checkupType === "test";
+  
+  // Debug logging
+  console.log("Checkup Debug:", {
+    listData,
+    checkupType,
+    isTestMode,
+    hasListData: !!listData
+  });
 
   // Get all questions for the vocabulary list
   const { data: questionsData, isLoading: questionsLoading } = useQuery({
