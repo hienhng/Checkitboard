@@ -292,7 +292,8 @@ function EducatorDashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 shadow-lg hover:shadow-xl transition-all duration-300">
+              {/* Temporarily hidden - Pending Reviews stat card */}
+              {/* <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 shadow-lg hover:shadow-xl transition-all duration-300">
                 <CardContent className="p-6 text-center">
                   <ClipboardList className="mx-auto h-10 w-10 text-orange-600 mb-3" />
                   <div className="text-2xl font-bold text-orange-700">
@@ -302,7 +303,7 @@ function EducatorDashboard() {
                     Pending Reviews
                   </p>
                 </CardContent>
-              </Card>
+              </Card> */}
             </div>
 
             {/* Action Cards */}
@@ -455,8 +456,8 @@ function EducatorDashboard() {
                 </CardContent>
               </Card>
 
-              {/* Pending Submissions */}
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
+              {/* Temporarily hidden - Pending Submissions section */}
+              {/* <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
                 <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-t-lg p-6">
                   <CardTitle className="text-xl font-bold">
                     <ClipboardList className="inline mr-3 h-5 w-5" />
@@ -526,7 +527,7 @@ function EducatorDashboard() {
                     </div>
                   )}
                 </CardContent>
-              </Card>
+              </Card> */}
             </div>
           </div>
         )}
@@ -534,42 +535,59 @@ function EducatorDashboard() {
 
       {/* Type Selection Dialog */}
       <Dialog open={showTypeSelection} onOpenChange={setShowTypeSelection}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent
+          className="w-[95%] sm:w-[550px] md:w-[650px] max-w-[90vw] mx-auto overflow-hidden rounded-xl box-border 
+                     animate-in fade-in-0 zoom-in-95 
+                     data-[state=open]:animate-in data-[state=closed]:animate-out 
+                     data-[state=open]:zoom-in-100 data-[state=closed]:zoom-out-95 
+                     duration-300 ease-out"
+        >
           <DialogHeader>
             <DialogTitle>Choose Checkup Type</DialogTitle>
             <DialogDescription>
-              Select whether you want to create a Test or Practice checkup
+              Select whether you want to create a <strong>Test</strong> or{" "}
+              <strong>Practice</strong> checkup
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <Button
-              onClick={() => handleTypeSelection("test")}
-              className="h-auto py-6 flex flex-col items-start gap-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
-            >
-              <div className="flex items-center gap-2">
-                <Trophy className="h-5 w-5" />
-                <span className="text-lg font-semibold">Test</span>
-              </div>
-              <span className="text-sm text-white/90 text-left">
-                Formal assessment with fullscreen mode, time tracking, and
-                strict monitoring
-              </span>
-            </Button>
-            <Button
-              onClick={() => handleTypeSelection("practice")}
-              className="h-auto py-6 flex flex-col items-start gap-2 bg-white hover:blue-400 w-auto text-black border border-slate"
-            >
-              <div className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-black" />
-                <span className="text-lg text-black font-semibold">
-                  Practice
+
+          <div className="px-4">
+            <div className="grid gap-4 py-4">
+              {/* Test Button */}
+              <Button
+                onClick={() => handleTypeSelection("test")}
+                className="w-full box-border min-w-0 h-auto py-6 flex flex-col items-start gap-2 
+                 bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 
+                 text-white rounded-lg text-left transition-all duration-200 ease-out"
+              >
+                <div className="flex items-center gap-2">
+                  <Trophy className="h-5 w-5" />
+                  <span className="text-lg font-semibold">Test</span>
+                </div>
+                <span className="text-sm text-white/90">
+                  Formal assessment with fullscreen mode, time tracking, and
+                  strict monitoring
                 </span>
-              </div>
-              <span className="text-sm text-black/90 text-left">
-                Flexible learning mode with save progress option and no time
-                pressure
-              </span>
-            </Button>
+              </Button>
+
+              {/* Practice Button */}
+              <Button
+                onClick={() => handleTypeSelection("practice")}
+                className="w-full box-border min-w-0 h-auto py-6 flex flex-col items-start gap-2 
+                           bg-white hover:bg-blue-50 text-black border border-slate-300 
+                           rounded-lg text-left transition-all duration-200 ease-out"
+              >
+                <div className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-black" />
+                  <span className="text-lg text-black font-semibold">
+                    Practice
+                  </span>
+                </div>
+                <span className="text-sm text-black/90">
+                  Flexible learning mode with save progress option and no time
+                  pressure
+                </span>
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
