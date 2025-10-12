@@ -385,7 +385,7 @@ export default function VocabularyCheckup() {
   }
 
   return (
-    <div ref={checkupRef} className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 relative">
+    <div ref={checkupRef} className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 relative overflow-y-auto">
       {/* Fullscreen Warning Overlay for Test Mode */}
       {isTestMode && fullscreenWarning && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center">
