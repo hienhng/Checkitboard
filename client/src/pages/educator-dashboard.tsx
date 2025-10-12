@@ -257,8 +257,8 @@ function EducatorDashboard() {
         ) : (
           <div className="space-y-8">
             {/* Quick Stats Overview */}
-            <div className="grid gap-6 md:grid-cols-4">
-              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300">
+            <div className="grid gap-10 md:grid-cols-3">
+              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
                 <CardContent className="p-6 text-center">
                   <Users className="mx-auto h-10 w-10 text-blue-600 mb-3" />
                   <div className="text-2xl font-bold text-blue-700">
@@ -270,7 +270,7 @@ function EducatorDashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-green-50 to-emerald-100 border-green-200 shadow-lg hover:shadow-xl transition-all duration-300">
+              <Card className="bg-gradient-to-br from-green-50 to-emerald-100 border-green-200 shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
                 <CardContent className="p-6 text-center">
                   <School className="mx-auto h-10 w-10 text-green-600 mb-3" />
                   <div className="text-2xl font-bold text-green-700">
@@ -280,7 +280,7 @@ function EducatorDashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 shadow-lg hover:shadow-xl transition-all duration-300">
+              <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
                 <CardContent className="p-6 text-center">
                   <BookOpen className="mx-auto h-10 w-10 text-purple-600 mb-3" />
                   <div className="text-2xl font-bold text-purple-700">
@@ -367,7 +367,7 @@ function EducatorDashboard() {
             </div>
 
             {/* Recent Activity */}
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-6">
               {/* Recent Vocabulary Lists */}
               <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl w-full">
                 <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-lg p-6">
@@ -555,9 +555,7 @@ function EducatorDashboard() {
               {/* Test Button */}
               <Button
                 onClick={() => handleTypeSelection("test")}
-                className="w-full box-border min-w-0 h-auto py-6 flex flex-col items-start gap-2 
-                 bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 
-                 text-white rounded-lg text-left transition-all duration-200 ease-out"
+                className="w-full h-auto py-6 flex flex-col items-start gap-2 text-white rounded-lg text-left relative overflow-hidden bg-blue-600 hover:bg-blue-700 transition-all duration-200 ease-out"
               >
                 <div className="flex items-center gap-2">
                   <Trophy className="h-5 w-5" />
@@ -565,7 +563,7 @@ function EducatorDashboard() {
                 </div>
                 <span className="text-sm text-white/90">
                   Formal assessment with fullscreen mode, time tracking, and
-                  strict monitoring
+                  monitoring
                 </span>
               </Button>
 
