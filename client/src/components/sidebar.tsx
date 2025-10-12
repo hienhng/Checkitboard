@@ -168,7 +168,7 @@ export function Sidebar() {
                 key={link.href}
                 to={link.href}
                 className={cn(
-                  "group flex items-center rounded-lg text-sm font-medium transition-all duration-200 relative",
+                  "group flex items-center rounded-lg text-sm font-medium transition-all duration-200 relative hover:-translate-x-1 ",
                   isCollapsed ? "mx-auto p-2.5 w-10 h-10 justify-center" : "px-3 py-2.5",
                   isActive
                     ? "bg-primary text-white shadow-sm"
