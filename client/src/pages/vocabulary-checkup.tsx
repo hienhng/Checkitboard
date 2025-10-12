@@ -407,8 +407,7 @@ export default function VocabularyCheckup() {
                 try {
                   if (checkupRef.current) {
                     await checkupRef.current.requestFullscreen();
-                    // Clear the warning once fullscreen is entered
-                    setFullscreenWarning(false);
+                    // Warning will be cleared automatically by handleFullscreenChange
                   }
                 } catch (error) {
                   console.error("Failed to enter fullscreen:", error);
