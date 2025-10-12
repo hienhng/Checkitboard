@@ -311,7 +311,14 @@ export default function VocabularyCheckup() {
             <CardContent>
               <div 
                 className="passage-container prose prose-sm max-w-none text-slate-700 leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: passage }}
+                dangerouslySetInnerHTML={{ 
+                  __html: currentQuestion?.word 
+                    ? passage.replace(
+                        new RegExp(`(<mark>)?\\b${currentQuestion.word}\\b(</mark>)?`, 'gi'),
+                        `<mark class="current-question-word">${currentQuestion.word}</mark>`
+                      )
+                    : passage 
+                }}
               />
             </CardContent>
           </Card>
