@@ -12,12 +12,30 @@ import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Clock, CheckCircle, AlertCircle, ChevronLeft, ChevronRight, Send, BookOpen, AlertTriangle, Save, LogOut } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  Send,
+  BookOpen,
+  AlertTriangle,
+  Save,
+  LogOut,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 interface Question {
   id: number;
-  type: 'multiple_choice' | 'input';
+  type: "multiple_choice" | "input";
   wordId: number;
   word: string;
   question: string;
@@ -36,7 +54,7 @@ export default function VocabularyCheckup() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const submissionId = parseInt(id || "0");
-  
+
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
@@ -45,7 +63,9 @@ export default function VocabularyCheckup() {
   const [showSaveProgressDialog, setShowSaveProgressDialog] = useState(false);
   const [exitReason, setExitReason] = useState("");
   const [fullscreenWarning, setFullscreenWarning] = useState(false);
-  const [inputDebounceTimers, setInputDebounceTimers] = useState<Record<number, NodeJS.Timeout>>({});
+  const [inputDebounceTimers, setInputDebounceTimers] = useState<
+    Record<number, NodeJS.Timeout>
+  >({});
   const checkupRef = useRef<HTMLDivElement>(null);
 
   // Get submission details
@@ -67,18 +87,20 @@ export default function VocabularyCheckup() {
 
   const checkupType = (listData as any)?.type || "practice";
   const isTestMode = checkupType === "test";
-  
+
   // Debug logging
   console.log("Checkup Debug:", {
     listData,
     checkupType,
     isTestMode,
-    hasListData: !!listData
+    hasListData: !!listData,
   });
 
   // Get all questions for the vocabulary list
   const { data: questionsData, isLoading: questionsLoading } = useQuery({
-    queryKey: [`/api/vocabulary-lists/${listId}/questions?submissionId=${submissionId}`],
+    queryKey: [
+      `/api/vocabulary-lists/${listId}/questions?submissionId=${submissionId}`,
+    ],
     queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!listId,
   });
@@ -88,11 +110,17 @@ export default function VocabularyCheckup() {
   const listSettings = (questionsData as any)?.listSettings || {};
   const passage = (questionsData as any)?.passage || "";
   const title = (questionsData as any)?.title || "";
-  const currentQuestion = questions[currentQuestionIndex] as Question | undefined;
+  const currentQuestion = questions[currentQuestionIndex] as
+    | Question
+    | undefined;
 
   // Hydrate answers from saved answers
   useEffect(() => {
-    if (savedAnswers && Object.keys(savedAnswers).length > 0 && Object.keys(answers).length === 0) {
+    if (
+      savedAnswers &&
+      Object.keys(savedAnswers).length > 0 &&
+      Object.keys(answers).length === 0
+    ) {
       setAnswers(savedAnswers);
     }
   }, [savedAnswers]);
@@ -109,7 +137,7 @@ export default function VocabularyCheckup() {
     if (timeRemaining === null || timeRemaining <= 0) return;
 
     const timer = setInterval(() => {
-      setTimeRemaining(prev => {
+      setTimeRemaining((prev) => {
         if (prev === null || prev <= 1) {
           handleSubmit();
           return 0;
@@ -130,16 +158,19 @@ export default function VocabularyCheckup() {
     // Enter fullscreen after a short delay to ensure ref is attached
     const enterFullscreen = async () => {
       try {
-        if (checkupRef.current && document.fullscreenElement !== checkupRef.current) {
+        if (
+          checkupRef.current &&
+          document.fullscreenElement !== checkupRef.current
+        ) {
           console.log("Attempting to enter fullscreen");
           await checkupRef.current.requestFullscreen();
         }
       } catch (error) {
         console.error("Failed to enter fullscreen:", error);
-        toast({ 
-          title: "Fullscreen required", 
+        toast({
+          title: "Fullscreen required",
           description: "Please manually enable fullscreen mode for this test",
-          variant: "destructive" 
+          variant: "destructive",
         });
       }
     };
@@ -151,7 +182,7 @@ export default function VocabularyCheckup() {
     const handleFullscreenChange = () => {
       console.log("Fullscreen change detected", {
         isFullscreen: !!document.fullscreenElement,
-        isTestMode
+        isTestMode,
       });
       if (!document.fullscreenElement && isTestMode) {
         console.log("Setting fullscreen warning to TRUE");
@@ -166,7 +197,7 @@ export default function VocabularyCheckup() {
     const handleVisibilityChange = () => {
       console.log("Visibility change detected", {
         isHidden: document.hidden,
-        isTestMode
+        isTestMode,
       });
       if (document.hidden && isTestMode) {
         console.log("Tab hidden - setting fullscreen warning to TRUE");
@@ -178,19 +209,19 @@ export default function VocabularyCheckup() {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isTestMode) {
         e.preventDefault();
-        e.returnValue = '';
+        e.returnValue = "";
       }
     };
 
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("beforeunload", handleBeforeUnload);
 
     return () => {
       clearTimeout(fullscreenTimer);
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, [isTestMode]);
 
@@ -198,16 +229,26 @@ export default function VocabularyCheckup() {
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    return `${minutes}:${secs.toString().padStart(2, "0")}`;
   };
 
   // Save MC answer
   const saveMCAnswerMutation = useMutation({
-    mutationFn: async ({ questionId, selectedAnswer }: { questionId: number; selectedAnswer: string }) => {
-      const response = await apiRequest("POST", `/api/submissions/${submissionId}/multiple-choice-answer`, {
-        questionId,
-        selectedAnswer,
-      });
+    mutationFn: async ({
+      questionId,
+      selectedAnswer,
+    }: {
+      questionId: number;
+      selectedAnswer: string;
+    }) => {
+      const response = await apiRequest(
+        "POST",
+        `/api/submissions/${submissionId}/multiple-choice-answer`,
+        {
+          questionId,
+          selectedAnswer,
+        },
+      );
       return response.json();
     },
     onSuccess: () => {
@@ -220,11 +261,21 @@ export default function VocabularyCheckup() {
 
   // Save input answer
   const saveInputAnswerMutation = useMutation({
-    mutationFn: async ({ questionId, studentAnswer }: { questionId: number; studentAnswer: string }) => {
-      const response = await apiRequest("POST", `/api/submissions/${submissionId}/input-form-answer`, {
-        questionId,
-        studentAnswer,
-      });
+    mutationFn: async ({
+      questionId,
+      studentAnswer,
+    }: {
+      questionId: number;
+      studentAnswer: string;
+    }) => {
+      const response = await apiRequest(
+        "POST",
+        `/api/submissions/${submissionId}/input-form-answer`,
+        {
+          questionId,
+          studentAnswer,
+        },
+      );
       return response.json();
     },
     onSuccess: () => {
@@ -238,35 +289,41 @@ export default function VocabularyCheckup() {
   // Handle answer change
   const handleAnswerChange = (answer: string) => {
     if (!currentQuestion) return;
-    
-    setAnswers(prev => ({ ...prev, [currentQuestion.id]: answer }));
+
+    setAnswers((prev) => ({ ...prev, [currentQuestion.id]: answer }));
 
     // Auto-save the answer
-    if (currentQuestion.type === 'multiple_choice') {
+    if (currentQuestion.type === "multiple_choice") {
       // Save MC answers immediately
-      saveMCAnswerMutation.mutate({ questionId: currentQuestion.id, selectedAnswer: answer });
+      saveMCAnswerMutation.mutate({
+        questionId: currentQuestion.id,
+        selectedAnswer: answer,
+      });
     } else {
       // Debounce input answers to avoid excessive API calls
       const questionId = currentQuestion.id;
-      
+
       // Clear existing timer for this question
       if (inputDebounceTimers[questionId]) {
         clearTimeout(inputDebounceTimers[questionId]);
       }
-      
+
       // Set new timer
       const timer = setTimeout(() => {
         saveInputAnswerMutation.mutate({ questionId, studentAnswer: answer });
       }, 500); // 500ms debounce
-      
-      setInputDebounceTimers(prev => ({ ...prev, [questionId]: timer }));
+
+      setInputDebounceTimers((prev) => ({ ...prev, [questionId]: timer }));
     }
   };
 
   // Complete submission
   const completeMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", `/api/submissions/${submissionId}/complete`);
+      const response = await apiRequest(
+        "POST",
+        `/api/submissions/${submissionId}/complete`,
+      );
       return response.json();
     },
     onSuccess: () => {
@@ -281,30 +338,30 @@ export default function VocabularyCheckup() {
   const handleSubmit = async () => {
     // Flush all pending debounced input saves before submitting
     const pendingSaves: Promise<void>[] = [];
-    
+
     Object.entries(inputDebounceTimers).forEach(([questionId, timer]) => {
       clearTimeout(timer);
-      
+
       // Trigger the save immediately for this question
       const answer = answers[parseInt(questionId)];
       if (answer !== undefined) {
         const savePromise = new Promise<void>((resolve) => {
           saveInputAnswerMutation.mutate(
             { questionId: parseInt(questionId), studentAnswer: answer },
-            { 
-              onSettled: () => resolve()
-            }
+            {
+              onSettled: () => resolve(),
+            },
           );
         });
         pendingSaves.push(savePromise);
       }
     });
-    
+
     setInputDebounceTimers({});
-    
+
     // Wait for all pending saves to complete
     await Promise.all(pendingSaves);
-    
+
     // Now submit
     completeMutation.mutate();
   };
@@ -312,9 +369,13 @@ export default function VocabularyCheckup() {
   // Exit test with reason mutation
   const exitTestMutation = useMutation({
     mutationFn: async (reason: string) => {
-      const response = await apiRequest("POST", `/api/submissions/${submissionId}/exit`, {
-        exitReason: reason,
-      });
+      const response = await apiRequest(
+        "POST",
+        `/api/submissions/${submissionId}/exit`,
+        {
+          exitReason: reason,
+        },
+      );
       return response.json();
     },
     onSuccess: () => {
@@ -346,34 +407,60 @@ export default function VocabularyCheckup() {
   };
 
   // Handle save and go back (practice mode)
-  const handleSaveAndGoBack = () => {
-    toast({ title: "Progress saved" });
-    navigate("/dashboard");
+  const handleSaveAndGoBack = async () => {
+    // Clear all pending timers and force save any pending answers
+    const pendingPromises = Object.entries(inputDebounceTimers).map(([questionIdStr, timer]) => {
+      clearTimeout(timer);
+      const questionId = parseInt(questionIdStr);
+      const answer = answers[questionId];
+      
+      // If there's an answer for this question, save it
+      if (answer && currentQuestion && currentQuestion.id === questionId && currentQuestion.type === 'input') {
+        return apiRequest("POST", `/api/submissions/${submissionId}/input-form-answer`, {
+          questionId,
+          studentAnswer: answer,
+        });
+      }
+      return Promise.resolve();
+    });
+
+    // Wait for all saves to complete
+    try {
+      await Promise.all(pendingPromises);
+      toast({ title: "Progress saved" });
+    } catch (error) {
+      toast({ title: "Some answers may not have been saved", variant: "destructive" });
+    }
+    
+    navigate("/learner/dashboard");
   };
 
   // Cleanup timers on unmount
   useEffect(() => {
     return () => {
-      Object.values(inputDebounceTimers).forEach(timer => clearTimeout(timer));
+      Object.values(inputDebounceTimers).forEach((timer) =>
+        clearTimeout(timer),
+      );
     };
   }, [inputDebounceTimers]);
 
   // Navigation
   const goToNext = () => {
     if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
+      setCurrentQuestionIndex((prev) => prev + 1);
     }
   };
 
   const goToPrevious = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(prev => prev - 1);
+      setCurrentQuestionIndex((prev) => prev - 1);
     }
   };
 
   // Calculate progress
   const answeredCount = Object.keys(answers).length;
-  const progress = questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
+  const progress =
+    questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
 
   if (submissionLoading || questionsLoading) {
     return (
@@ -391,11 +478,17 @@ export default function VocabularyCheckup() {
       <div className="min-h-screen flex items-center justify-center">
         <Card className="max-w-md">
           <CardHeader>
-            <CardTitle className="text-red-600">No Questions Available</CardTitle>
+            <CardTitle className="text-red-600">
+              No Questions Available
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-slate-600 mb-4">This test doesn't have any questions yet.</p>
-            <Button onClick={() => navigate("/learner/dashboard")}>Return to Dashboard</Button>
+            <p className="text-slate-600 mb-4">
+              This test doesn't have any questions yet.
+            </p>
+            <Button onClick={() => navigate("/learner/dashboard")}>
+              Return to Dashboard
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -403,7 +496,10 @@ export default function VocabularyCheckup() {
   }
 
   return (
-    <div ref={checkupRef} className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 relative overflow-y-auto">
+    <div
+      ref={checkupRef}
+      className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 relative overflow-y-auto"
+    >
       {/* Fullscreen Warning Overlay for Test Mode */}
       {isTestMode && fullscreenWarning && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center">
@@ -412,15 +508,18 @@ export default function VocabularyCheckup() {
               <div className="bg-red-100 dark:bg-red-900 p-3 rounded-full">
                 <AlertTriangle className="h-8 w-8 text-red-600 dark:text-red-400" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white">Test Interrupted</h3>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                Test Interrupted
+              </h3>
             </div>
             <p className="text-slate-600 dark:text-slate-300 mb-6">
-              You have exited fullscreen mode or switched tabs. This violation has been logged and reported to your teacher.
+              You have exited fullscreen mode or switched tabs. This violation
+              has been logged and reported to your teacher.
             </p>
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
               To continue the test, you must return to fullscreen mode.
             </p>
-            <Button 
+            <Button
               onClick={async () => {
                 try {
                   if (checkupRef.current) {
@@ -431,8 +530,9 @@ export default function VocabularyCheckup() {
                   console.error("Failed to enter fullscreen:", error);
                   toast({
                     title: "Cannot enter fullscreen",
-                    description: "Please allow fullscreen access to continue the test",
-                    variant: "destructive"
+                    description:
+                      "Please allow fullscreen access to continue the test",
+                    variant: "destructive",
                   });
                 }
               }}
@@ -476,7 +576,11 @@ export default function VocabularyCheckup() {
               {timeRemaining !== null && (
                 <div className="flex items-center gap-2 text-sm">
                   <Clock className="h-4 w-4" />
-                  <span className={timeRemaining < 300 ? "text-red-600 font-semibold" : ""}>
+                  <span
+                    className={
+                      timeRemaining < 300 ? "text-red-600 font-semibold" : ""
+                    }
+                  >
                     {formatTime(timeRemaining)}
                   </span>
                 </div>
@@ -503,15 +607,18 @@ export default function VocabularyCheckup() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div 
+              <div
                 className="passage-container prose prose-sm max-w-none text-slate-700 leading-relaxed"
-                dangerouslySetInnerHTML={{ 
-                  __html: currentQuestion?.word 
+                dangerouslySetInnerHTML={{
+                  __html: currentQuestion?.word
                     ? passage.replace(
-                        new RegExp(`(<mark>)?\\b${currentQuestion.word}\\b(</mark>)?`, 'gi'),
-                        `<mark class="current-question-word">${currentQuestion.word}</mark>`
+                        new RegExp(
+                          `(<mark>)?\\b${currentQuestion.word}\\b(</mark>)?`,
+                          "gi",
+                        ),
+                        `<mark class="current-question-word">${currentQuestion.word}</mark>`,
                       )
-                    : passage 
+                    : passage,
                 }}
               />
             </CardContent>
@@ -521,32 +628,39 @@ export default function VocabularyCheckup() {
         {/* Question Card */}
         <Card className="shadow-lg">
           <CardHeader className="pb-6">
-            <CardTitle className="text-2xl">{currentQuestion.question}</CardTitle>
+            <CardTitle className="text-2xl">
+              {currentQuestion.question}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Multiple Choice Question */}
-            {currentQuestion.type === 'multiple_choice' && (
+            {currentQuestion.type === "multiple_choice" && (
               <RadioGroup
                 value={answers[currentQuestion.id] || ""}
                 onValueChange={handleAnswerChange}
                 className="space-y-3"
               >
                 {[
-                  { value: 'A', label: currentQuestion.optionA },
-                  { value: 'B', label: currentQuestion.optionB },
-                  { value: 'C', label: currentQuestion.optionC },
-                  { value: 'D', label: currentQuestion.optionD },
-                ].map(option => (
+                  { value: "A", label: currentQuestion.optionA },
+                  { value: "B", label: currentQuestion.optionB },
+                  { value: "C", label: currentQuestion.optionC },
+                  { value: "D", label: currentQuestion.optionD },
+                ].map((option) => (
                   <div
                     key={option.value}
                     className="flex items-center space-x-3 border rounded-lg p-4 hover:bg-slate-50 cursor-pointer transition-colors"
                   >
-                    <RadioGroupItem value={option.value} id={`option-${option.value}`} />
+                    <RadioGroupItem
+                      value={option.value}
+                      id={`option-${option.value}`}
+                    />
                     <Label
                       htmlFor={`option-${option.value}`}
                       className="flex-1 cursor-pointer text-base"
                     >
-                      <span className="font-semibold mr-2">{option.value}.</span>
+                      <span className="font-semibold mr-2">
+                        {option.value}.
+                      </span>
                       {option.label}
                     </Label>
                   </div>
@@ -555,7 +669,7 @@ export default function VocabularyCheckup() {
             )}
 
             {/* Input Question */}
-            {currentQuestion.type === 'input' && (
+            {currentQuestion.type === "input" && (
               <div className="space-y-3">
                 <Input
                   type="text"
@@ -605,7 +719,9 @@ export default function VocabularyCheckup() {
         {/* Question Navigator */}
         <div className="mt-6">
           <Card className="p-4">
-            <h3 className="text-sm font-semibold mb-3 text-slate-600">Question Navigator</h3>
+            <h3 className="text-sm font-semibold mb-3 text-slate-600">
+              Question Navigator
+            </h3>
             <div className="grid grid-cols-10 gap-2">
               {questions.map((q: Question, idx: number) => (
                 <button
@@ -613,8 +729,8 @@ export default function VocabularyCheckup() {
                   onClick={() => setCurrentQuestionIndex(idx)}
                   className={`
                     aspect-square rounded-lg border-2 text-sm font-medium transition-all
-                    ${currentQuestionIndex === idx ? 'border-blue-600 bg-blue-50 text-blue-700' : ''}
-                    ${answers[q.id] ? 'bg-green-50 border-green-500 text-green-700' : 'border-slate-200 hover:border-slate-300'}
+                    ${currentQuestionIndex === idx ? "border-blue-600 bg-blue-50 text-blue-700" : ""}
+                    ${answers[q.id] ? "bg-green-50 border-green-500 text-green-700" : "border-slate-200 hover:border-slate-300"}
                   `}
                 >
                   {idx + 1}
@@ -631,16 +747,21 @@ export default function VocabularyCheckup() {
           <DialogHeader>
             <DialogTitle>Submit Test?</DialogTitle>
             <DialogDescription>
-              You have answered {answeredCount} out of {questions.length} questions.
+              You have answered {answeredCount} out of {questions.length}{" "}
+              questions.
               {answeredCount < questions.length && (
                 <span className="block mt-2 text-amber-600">
-                  You have {questions.length - answeredCount} unanswered question(s).
+                  You have {questions.length - answeredCount} unanswered
+                  question(s).
                 </span>
               )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowSubmitDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowSubmitDialog(false)}
+            >
               Cancel
             </Button>
             <Button
@@ -662,8 +783,8 @@ export default function VocabularyCheckup() {
           <DialogHeader>
             <DialogTitle>Exit Test</DialogTitle>
             <DialogDescription>
-              You are about to exit the test. Please provide a reason for exiting.
-              This will be shared with your teacher.
+              You are about to exit the test. Please provide a reason for
+              exiting. This will be shared with your teacher.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -676,10 +797,13 @@ export default function VocabularyCheckup() {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setShowExitDialog(false);
-              setExitReason("");
-            }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowExitDialog(false);
+                setExitReason("");
+              }}
+            >
               Cancel
             </Button>
             <Button
@@ -694,19 +818,29 @@ export default function VocabularyCheckup() {
       </Dialog>
 
       {/* Save Progress Dialog (Practice Mode) */}
-      <Dialog open={showSaveProgressDialog} onOpenChange={setShowSaveProgressDialog}>
+      <Dialog
+        open={showSaveProgressDialog}
+        onOpenChange={setShowSaveProgressDialog}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Save Progress?</DialogTitle>
             <DialogDescription>
-              Your progress has been automatically saved. You can return to this practice checkup anytime.
+              Your progress has been automatically saved. You can return to this
+              practice checkup anytime.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowSaveProgressDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowSaveProgressDialog(false)}
+            >
               Continue Practice
             </Button>
-            <Button onClick={handleSaveAndGoBack} className="bg-blue-600 hover:bg-blue-700">
+            <Button
+              onClick={handleSaveAndGoBack}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
               <Save className="h-4 w-4 mr-2" />
               Save & Exit
             </Button>
