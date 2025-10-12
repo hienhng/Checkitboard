@@ -374,15 +374,39 @@ export default function VocabularyCheckup() {
   }
 
   return (
-    <div ref={checkupRef} className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Fullscreen Warning for Test Mode */}
+    <div ref={checkupRef} className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 relative">
+      {/* Fullscreen Warning Overlay for Test Mode */}
       {isTestMode && fullscreenWarning && (
-        <Alert variant="destructive" className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 max-w-md">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            You have exited fullscreen or left the test tab. This has been logged. Please return to fullscreen to continue.
-          </AlertDescription>
-        </Alert>
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-white dark:bg-slate-800 p-8 rounded-lg max-w-md mx-4 shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-red-100 dark:bg-red-900 p-3 rounded-full">
+                <AlertTriangle className="h-8 w-8 text-red-600 dark:text-red-400" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">Test Interrupted</h3>
+            </div>
+            <p className="text-slate-600 dark:text-slate-300 mb-6">
+              You have exited fullscreen mode or switched tabs. This violation has been logged and reported to your teacher.
+            </p>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+              To continue the test, you must return to fullscreen mode.
+            </p>
+            <Button 
+              onClick={async () => {
+                try {
+                  if (checkupRef.current) {
+                    await checkupRef.current.requestFullscreen();
+                  }
+                } catch (error) {
+                  console.error("Failed to enter fullscreen:", error);
+                }
+              }}
+              className="w-full bg-blue-600 hover:bg-blue-700"
+            >
+              Return to Fullscreen
+            </Button>
+          </div>
+        </div>
       )}
 
       {/* Header */}
