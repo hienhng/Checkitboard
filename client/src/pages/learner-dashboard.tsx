@@ -463,6 +463,14 @@ function LearnerDashboard() {
                   <div className="space-y-2">
                     <Button
                       size="sm"
+                      className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600"
+                      onClick={() => navigate("/learner/results")}
+                    >
+                      <FileText className="mr-2 h-4 w-4" />
+                      View All Results
+                    </Button>
+                    <Button
+                      size="sm"
                       className="w-full bg-gradient-to-r from-blue-500 to-sky-500 hover:from-blue-600 hover:to-sky-600"
                       onClick={() => navigate("/explore")}
                     >
