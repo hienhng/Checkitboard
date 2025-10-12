@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, json, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { relations } from "drizzle-orm";
 import { z } from "zod";
@@ -108,7 +108,9 @@ export const multipleChoiceAnswers = pgTable("multiple_choice_answers", {
   selectedAnswer: text("selected_answer").notNull(),
   isCorrect: boolean("is_correct").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  uniqueSubmissionQuestion: unique().on(table.submissionId, table.questionId)
+}));
 
 // Student answers to input form questions
 export const inputFormAnswers = pgTable("input_form_answers", {
@@ -118,7 +120,9 @@ export const inputFormAnswers = pgTable("input_form_answers", {
   studentAnswer: text("student_answer").notNull(),
   isCorrect: boolean("is_correct").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  uniqueSubmissionQuestion: unique().on(table.submissionId, table.questionId)
+}));
 
 // Student Submissions
 export const submissions = pgTable("submissions", {
