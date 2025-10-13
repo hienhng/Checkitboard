@@ -2414,7 +2414,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const totalWordsStudied = flashcards.length;
       const masteredWords = flashcards.filter(card => card.learned).length;
       const averageAccuracy = submissions.length > 0 
-        ? Math.round(submissions.reduce((sum, sub) => sum + (sub.score || 0), 0) / submissions.length)
+        ? submissions.reduce((sum, sub) => sum + (sub.score || 0), 0) / submissions.length 
         : 0;
       
       // Simple streak calculation (this could be enhanced with actual date tracking)
@@ -3622,8 +3622,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       let answerRecord;
-      if (existingAnswer) {
-        // Update existing answer
+      if (existingAnswer) {s
         [answerRecord] = await db.update(multipleChoiceAnswers)
           .set({
             selectedAnswer,
