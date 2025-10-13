@@ -361,3 +361,36 @@ body {
 .hover\\:animate-gradient-move:hover {
   animation: gradient-move 3s ease infinite;
 }
+
+@keyframes color-shift {
+  0% {
+    filter: hue-rotate(0deg);
+  }
+  100% {
+    filter: hue-rotate(360deg);
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(66, 135, 245, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(66, 135, 245, 0.6);
+  }
+}
+
+.hover\\:animate-color-shift:hover {
+  animation: color-shift 3s linear infinite;
+}
+
+.hover\\:animate-glow:hover {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+/* Animated gradient background on hover */
+.hover\\:bg-animated:hover {
+  background: linear-gradient(270deg, hsl(var(--primary)), hsl(var(--primary) / 0.8), hsl(var(--accent)));
+  background-size: 400% 400%;
+  animation: gradient-move 3s ease infinite;
+}
