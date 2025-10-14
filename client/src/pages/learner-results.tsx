@@ -54,6 +54,8 @@ export default function LearnerResults() {
   const { data: submissions = [], isLoading } = useQuery<Submission[]>({
     queryKey: ["/api/learner/results"],
     queryFn: getQueryFn({ on401: "throw" }),
+    staleTime: 0,
+    gcTime: 0,
   });
 
   const getScoreBadge = (score: number) => {
