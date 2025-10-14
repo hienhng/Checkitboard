@@ -138,6 +138,7 @@ function LearnerDashboard() {
 
   const [showJoinClass, setShowJoinClass] = useState(false);
   const [openClasses, setOpenClasses] = useState<Record<number, boolean>>({});
+  const [viewingListId, setViewingListId] = useState<number | null>(null);
 
   // Form for joining a class
   const joinForm = useForm<JoinClassData>({
@@ -199,6 +200,13 @@ function LearnerDashboard() {
   const { data: exploreData } = useQuery<any>({
     queryKey: ["/api/explore/words"],
     queryFn: getQueryFn({ on401: "throw" }),
+  });
+
+  // Fetch vocabulary list details for viewing
+  const { data: viewingList } = useQuery<any>({
+    queryKey: ["/api/vocabulary-lists", viewingListId],
+    queryFn: getQueryFn({ on401: "throw" }),
+    enabled: viewingListId !== null,
   });
 
   // Fetch sticky notes for preview
@@ -632,7 +640,7 @@ function LearnerDashboard() {
                             {vocabLists.length > 0 ? (
                               <div className="space-y-4">
                                 {vocabLists.map((list: any) => (
-                                  <Card key={list.id} className="border border-slate-200 dark:border-slate-700 hover:shadow-md transition-shadow">
+                                  <Card key={list.id} className="border border-slate-200 dark:border-slate-700 hover:shadow-md transition">
                                     <CardHeader className="pb-3">
                                       <div className="flex items-start justify-between">
                                         <div className="flex-1">
@@ -650,13 +658,13 @@ function LearnerDashboard() {
                                           {list.dueDate && (
                                             <div className="flex items-center gap-2 text-sm text-muted-foreground dark:text-muted-foreground">
                                               <CalendarClock className="h-4 w-4" />
-                                              Due {formatDueDate(list.dueDate)}
+                                              {formatDueDate(list.dueDate)}
                                             </div>
                                           )}
                                         </div>
                                         <Button
                                           size="sm"
-                                          onClick={() => navigate(`/vocabulary-checkup/${list.id}`)}
+                                          onClick={() => setViewingListId(list.id)}
                                           className="gap-2"
                                         >
                                           <Eye className="h-4 w-4" />
@@ -714,6 +722,87 @@ function LearnerDashboard() {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* View Passage and Words Dialog */}
+        <Dialog open={viewingListId !== null} onOpenChange={(open) => !open && setViewingListId(null)}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold flex items-center gap-3">
+                <BookOpen className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                {viewingList?.title || "Vocabulary List"}
+              </DialogTitle>
+              {viewingList?.type && (
+                <Badge variant={viewingList.type === 'test' ? 'default' : 'secondary'} className="w-fit mt-2">
+                  {viewingList.type === 'test' ? 'Test' : 'Practice'}
+                </Badge>
+              )}
+            </DialogHeader>
+            
+            {viewingList ? (
+              <div className="space-y-6 mt-4">
+                {/* Passage Section */}
+                {viewingList.passage && (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      Reading Passage
+                    </h3>
+                    <div className="rounded-lg bg-slate-50 dark:bg-slate-800 p-6 border border-slate-200 dark:border-slate-700">
+                      <p className="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
+                        {viewingList.passage}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Vocabulary Words Section */}
+                {viewingList.words && viewingList.words.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                      <Brain className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      Vocabulary Words ({viewingList.words.length})
+                    </h3>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {viewingList.words.map((word: any) => (
+                        <Card key={word.id} className="border border-slate-200 dark:border-slate-700">
+                          <CardContent className="p-4">
+                            <div className="font-semibold text-blue-600 dark:text-blue-400 mb-2">
+                              {word.word}
+                            </div>
+                            {word.definition && (
+                              <p className="text-sm text-slate-600 dark:text-slate-400">
+                                {word.definition}
+                              </p>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Button */}
+                <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-700">
+                  <Button 
+                    onClick={() => {
+                      setViewingListId(null);
+                      navigate(`/vocabulary-checkup/${viewingList.id}`);
+                    }}
+                    className="gap-2"
+                  >
+                    Start Assignment
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <span className="ml-3 text-muted-foreground">Loading...</span>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* Join Class Dialog */}
         <Dialog open={showJoinClass} onOpenChange={setShowJoinClass}>
