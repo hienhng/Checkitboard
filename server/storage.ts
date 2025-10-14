@@ -458,6 +458,7 @@ export class DatabaseStorage {
             id: true,
             title: true,
             passage: true,
+            type: true,
           },
           with: {
             educator: {
