@@ -438,7 +438,7 @@ function LearnerDashboard() {
                   {studyStats?.averageAccuracy ? (
                     <>
                       <div className="text-2xl font-bold text-blue-700">
-                        {studyStats.averageAccuracy}%
+                        {Math.round(studyStats.averageAccuracy)}%
                       </div>
                       <p className="text-sm text-blue-600 font-medium">
                         Average Accuracy
