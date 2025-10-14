@@ -810,17 +810,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Shuffle if required
-      if (list.shuffleQuestions) {
-        for (let i = allQuestions.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [allQuestions[i], allQuestions[j]] = [allQuestions[j], allQuestions[i]];
-        }
-      }
-
       // Fetch saved answers if submissionId is provided
       let savedAnswers: Record<number, string> = {};
       const submissionId = req.query.submissionId ? parseInt(req.query.submissionId as string) : null;
+      
+      // Shuffle if required - use submission ID as seed for consistent ordering
+      if (list.shuffleQuestions && submissionId) {
+        // Seeded random number generator for consistent shuffle
+        const seededRandom = (seed: number) => {
+          let x = Math.sin(seed++) * 10000;
+          return x - Math.floor(x);
+        };
+        
+        // Fisher-Yates shuffle with seeded random
+        for (let i = allQuestions.length - 1; i > 0; i--) {
+          const j = Math.floor(seededRandom(submissionId + i) * (i + 1));
+          [allQuestions[i], allQuestions[j]] = [allQuestions[j], allQuestions[i]];
+        }
+      }
       
       if (submissionId && !isNaN(submissionId)) {
         // Get saved MC answers
