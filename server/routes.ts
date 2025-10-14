@@ -3629,7 +3629,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       let answerRecord;
-      if (existingAnswer) {s
+      if (existingAnswer) {
         [answerRecord] = await db.update(multipleChoiceAnswers)
           .set({
             selectedAnswer,
