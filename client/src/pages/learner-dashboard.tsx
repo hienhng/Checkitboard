@@ -42,8 +42,16 @@ import {
   CalendarClock,
   CircleCheckBig,
   UserCheck,
+  ChevronDown,
+  FileStack,
+  GraduationCap,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { getQueryFn, apiRequest } from "@/lib/queryClient";
 import { formatDate, formatDueDate, getScoreBgColor } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -129,6 +137,7 @@ function LearnerDashboard() {
   const [activeTab, setActiveTab] = useState("dashboard");
 
   const [showJoinClass, setShowJoinClass] = useState(false);
+  const [openClasses, setOpenClasses] = useState<Record<number, boolean>>({});
 
   // Form for joining a class
   const joinForm = useForm<JoinClassData>({
@@ -552,75 +561,157 @@ function LearnerDashboard() {
           </TabsContent>
 
           <TabsContent value="classes" className="space-y-6">
-            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
-              <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-lg p-6">
-                <div className="flex justify-between items-center">
-                  <CardTitle className="text-2xl font-bold">
-                    <School className="inline mr-3 h-6 w-6" />
-                    My Classes
-                  </CardTitle>
-                  {classes && classes.length > 0 && (
-                    <Badge className="bg-white/20 text-white border-white/30 px-3 py-1">
-                      {classes.length} classes
-                    </Badge>
-                  )}
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-3xl font-bold text-foreground dark:text-foreground flex items-center gap-3">
+                  <GraduationCap className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                  My Classes
+                </h2>
+                <p className="text-muted-foreground dark:text-muted-foreground mt-1">
+                  Access your vocabulary lists and reading passages
+                </p>
+              </div>
+              <Button onClick={() => setShowJoinClass(true)} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Join Class
+              </Button>
+            </div>
+
+            {classesLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">Loading your classes...</p>
                 </div>
-                <CardDescription className="text-blue-100 text-base mt-2">
-                  Manage your class memberships and track progress
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-6">
-                {classesLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    <span className="ml-3 text-muted-foreground">
-                      Loading your classes...
-                    </span>
-                  </div>
-                ) : classes && classes.length > 0 ? (
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {classes.map((cls) => (
-                      <Card
-                        key={cls.id}
-                        className="border hover:shadow-md transition-shadow"
+              </div>
+            ) : classes && classes.length > 0 ? (
+              <div className="space-y-4">
+                {classes.map((enrollment) => {
+                  const classData = enrollment.class || enrollment;
+                  const vocabLists = classData.vocabularyLists || [];
+                  const isOpen = openClasses[enrollment.id] || false;
+
+                  return (
+                    <Card key={enrollment.id} className="overflow-hidden border-0 shadow-lg bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+                      <Collapsible 
+                        open={isOpen} 
+                        onOpenChange={(open) => setOpenClasses(prev => ({ ...prev, [enrollment.id]: open }))}
                       >
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-base font-semibold flex items-center">
-                            <School className="mr-2 h-4 w-4 text-blue-500" />
-                            <span>{cls.class?.name || cls.name}</span>
-                          </CardTitle>
-                          {cls.description && (
-                            <CardDescription className="text-sm text-gray-600">
-                              {cls.description}
-                            </CardDescription>
-                          )}
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                          <div className="flex items-center text-sm text-gray-500">
-                            <Users className="mr-1 h-3 w-3" />
-                            {cls.studentCount || 0} students
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <School className="mx-auto h-16 w-16 text-muted-foreground/50 mb-4" />
-                    <h3 className="text-lg font-medium text-foreground mb-2">
-                      No classes yet
+                        <CollapsibleTrigger className="w-full">
+                          <CardHeader className="bg-gradient-to-r from-blue-500 to-indigo-500 dark:from-blue-600 dark:to-indigo-600 text-white p-6">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4">
+                                <div className="p-3 bg-white/20 rounded-lg">
+                                  <School className="h-6 w-6" />
+                                </div>
+                                <div className="text-left">
+                                  <CardTitle className="text-2xl font-bold">
+                                    {classData.name}
+                                  </CardTitle>
+                                  <CardDescription className="text-blue-100 dark:text-blue-200 mt-1">
+                                    Taught by {classData.educator?.name || "Unknown"}
+                                  </CardDescription>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-4">
+                                <Badge className="bg-white/20 text-white border-white/30 px-3 py-1">
+                                  {vocabLists.length} {vocabLists.length === 1 ? 'list' : 'lists'}
+                                </Badge>
+                                <ChevronDown 
+                                  className={`h-5 w-5 transition-transform duration-200 ${
+                                    isOpen ? 'rotate-180' : ''
+                                  }`}
+                                />
+                              </div>
+                            </div>
+                          </CardHeader>
+                        </CollapsibleTrigger>
+
+                        <CollapsibleContent>
+                          <CardContent className="p-6">
+                            {vocabLists.length > 0 ? (
+                              <div className="space-y-4">
+                                {vocabLists.map((list: any) => (
+                                  <Card key={list.id} className="border border-slate-200 dark:border-slate-700 hover:shadow-md transition-shadow">
+                                    <CardHeader className="pb-3">
+                                      <div className="flex items-start justify-between">
+                                        <div className="flex-1">
+                                          <div className="flex items-center gap-3 mb-2">
+                                            <FileStack className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                                            <CardTitle className="text-lg font-semibold">
+                                              {list.title}
+                                            </CardTitle>
+                                            {list.type && (
+                                              <Badge variant={list.type === 'test' ? 'default' : 'secondary'}>
+                                                {list.type === 'test' ? 'Test' : 'Practice'}
+                                              </Badge>
+                                            )}
+                                          </div>
+                                          {list.dueDate && (
+                                            <div className="flex items-center gap-2 text-sm text-muted-foreground dark:text-muted-foreground">
+                                              <CalendarClock className="h-4 w-4" />
+                                              Due {formatDueDate(list.dueDate)}
+                                            </div>
+                                          )}
+                                        </div>
+                                        <Button
+                                          size="sm"
+                                          onClick={() => navigate(`/vocabulary-checkup/${list.id}`)}
+                                          className="gap-2"
+                                        >
+                                          <Eye className="h-4 w-4" />
+                                          View
+                                        </Button>
+                                      </div>
+                                    </CardHeader>
+                                    {list.passage && (
+                                      <CardContent className="pt-0">
+                                        <div className="rounded-lg bg-slate-50 dark:bg-slate-800 p-4 border border-slate-200 dark:border-slate-700">
+                                          <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                                            <BookOpen className="h-4 w-4" />
+                                            Reading Passage
+                                          </h4>
+                                          <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-3">
+                                            {list.passage}
+                                          </p>
+                                        </div>
+                                      </CardContent>
+                                    )}
+                                  </Card>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-center py-8">
+                                <FileStack className="mx-auto h-12 w-12 text-muted-foreground/50 mb-3" />
+                                <p className="text-muted-foreground">No vocabulary lists in this class yet</p>
+                              </div>
+                            )}
+                          </CardContent>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <Card className="border-0 shadow-lg">
+                <CardContent className="py-16">
+                  <div className="text-center">
+                    <School className="mx-auto h-20 w-20 text-muted-foreground/30 mb-6" />
+                    <h3 className="text-2xl font-semibold text-foreground mb-3">
+                      No Classes Yet
                     </h3>
-                    <p className="text-muted-foreground mb-6">
-                      Join a class to access vocabulary lists and assignments.
+                    <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+                      Join a class to access vocabulary lists, reading passages, and track your learning progress.
                     </p>
-                    <Button onClick={() => setShowJoinClass(true)}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Join a Class
+                    <Button onClick={() => setShowJoinClass(true)} size="lg" className="gap-2">
+                      <Plus className="h-5 w-5" />
+                      Join Your First Class
                     </Button>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
 
