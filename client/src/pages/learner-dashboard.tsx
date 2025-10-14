@@ -204,7 +204,7 @@ function LearnerDashboard() {
 
   // Fetch vocabulary list details for viewing
   const { data: viewingList } = useQuery<any>({
-    queryKey: ["/api/vocabulary-lists", viewingListId],
+    queryKey: [`/api/vocabulary-lists/${viewingListId}`],
     queryFn: getQueryFn({ on401: "throw" }),
     enabled: viewingListId !== null,
   });
