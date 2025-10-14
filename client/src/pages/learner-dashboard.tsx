@@ -12,6 +12,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
   BookOpen,
   CheckCircle,
   Award,
@@ -26,6 +39,9 @@ import {
   BookMarked,
   ArrowRight,
   Plus,
+  CalendarClock,
+  CircleCheckBig,
+  UserCheck,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getQueryFn, apiRequest } from "@/lib/queryClient";
@@ -42,6 +58,13 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { ReactNode } from "react";
+
+// Schema for joining a class
+const joinClassSchema = z.object({
+  classCode: z.string().min(6, "Class code must be at least 6 characters"),
+});
+
+type JoinClassData = z.infer<typeof joinClassSchema>;
 
 // Sticky note color constants
 const STICKY_NOTE_COLORS = {
@@ -99,12 +122,45 @@ interface FlashcardType {
 function LearnerDashboard() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  const queryClient = useQueryClient();
 
   // State for the result details dialog
 
   const [activeTab, setActiveTab] = useState("dashboard");
 
   const [showJoinClass, setShowJoinClass] = useState(false);
+
+  // Form for joining a class
+  const joinForm = useForm<JoinClassData>({
+    resolver: zodResolver(joinClassSchema),
+    defaultValues: {
+      classCode: "",
+    },
+  });
+
+  // Mutation for joining a class
+  const joinClassMutation = useMutation({
+    mutationFn: async (data: JoinClassData) => {
+      const response = await apiRequest("POST", "/api/join-class", data);
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/learner/classes"] });
+      setShowJoinClass(false);
+      joinForm.reset();
+      toast({
+        title: "Request submitted",
+        description: "Your request to join the class has been submitted. Waiting for educator approval.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "An error occurred while joining the class.",
+        variant: "destructive",
+      });
+    },
+  });
 
   // Fetch published vocabulary lists
   const { data: vocabularyLists, isLoading: listsLoading } = useQuery<
@@ -284,17 +340,20 @@ function LearnerDashboard() {
                                   )}
                                 </div>
                                 <div className="space-y-2">
-                                  <p className="text-sm text-muted-foreground">
-                                    📅 Due: {formatDueDate(list.dueDate)}
+                                  <p className="text-sm text-muted-foreground hover:text-primary hover:translate-x-1 transition">
+                                    <CalendarClock className="inline mr-1 h-4 w-4" />
+                                      Due: {formatDueDate(list.dueDate)}
                                   </p>
                                   {list.educator && (
-                                    <p className="text-sm text-muted-foreground">
-                                      👨‍🏫 Created by: {list.educator.name}
+                                    <p className="text-sm text-muted-foreground hover:text-primary hover:translate-x-1 transition">
+                                      <UserCheck className="inline mr-1 h-4 w-4" />
+                                        Created by: {list.educator.name}
                                     </p>
                                   )}
                                   {isCompleted && (
-                                    <p className="text-sm text-muted-foreground">
-                                      ✅ Completed:{" "}
+                                    <p className="text-sm text-muted-foreground hover:text-primary hover:translate-x-1 transition">
+                                      <CircleCheckBig className="inline mr-1 h-4 w-4" />
+                                        Completed:{" "}
                                       {list.submission?.submittedAt
                                         ? new Date(
                                             list.submission.submittedAt,
@@ -304,7 +363,7 @@ function LearnerDashboard() {
                                   )}
                                 </div>
                               </div>
-                              <div className="text-muted-foreground group-hover:text-primary transition-colors">
+                              <div className="text-muted-foreground group-hover:text-primary hover:translate-x-1 transition">
                                 <ArrowRight className="h-6 w-6" />
                               </div>
                             </div>
@@ -567,14 +626,45 @@ function LearnerDashboard() {
 
         {/* Join Class Dialog */}
         <Dialog open={showJoinClass} onOpenChange={setShowJoinClass}>
-          <DialogContent>
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Join a Class</DialogTitle>
               <DialogDescription>
                 Enter the class code provided by your educator to join a class.
               </DialogDescription>
             </DialogHeader>
-            <JoinClass />
+            <Form {...joinForm}>
+              <form onSubmit={joinForm.handleSubmit((data) => joinClassMutation.mutate(data))} className="space-y-4">
+                <FormField
+                  control={joinForm.control}
+                  name="classCode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Class Code</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., CL123456" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Class codes are usually 8 characters starting with 'CL'
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex justify-end gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowJoinClass(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={joinClassMutation.isPending}>
+                    {joinClassMutation.isPending ? "Submitting..." : "Join Class"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
           </DialogContent>
         </Dialog>
       </div>
