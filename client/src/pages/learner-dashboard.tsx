@@ -261,14 +261,14 @@ function LearnerDashboard() {
             <TabsList className="grid w-full max-w-xl grid-cols-2 h-12 p-1 bg-white/80 backdrop-blur-sm rounded-xl shadow-lg p-2">
               <TabsTrigger
                 value="dashboard"
-                className="flex items-center justify-center rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:-translate-y-[1px] data-[state=active]:shadow-lg transition-all duration-300"
+                className="flex items-center justify-center rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white data-[state!=active]:hover:-translate-y-[1px] data-[state=active]:shadow-lg transition-all duration-300"
               >
                 <BookOpen className="mr-2 h-4 w-4" />
                 Dashboard
               </TabsTrigger>
               <TabsTrigger
                 value="classes"
-                className="flex items-center justify-center rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:-translate-y-[1px] transition-all duration-300"
+                className="flex items-center justify-center rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state!=active]:hover:-translate-y-1 transition-all duration-300"
               >
                 <School className="mr-2 h-4 w-4" />
                 My Classes
