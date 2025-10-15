@@ -263,7 +263,7 @@ function LearnerDashboard() {
               <div 
                 className="absolute top-1 bottom-1 left-1 rounded-lg bg-primary shadow-lg transition-all duration-200 ease-in-out z-0"
                 style={{
-                  width: 'calc(50% - 4px)',
+                  width: 'calc(50% - 6px)',
                   transform: activeTab === 'classes' ? 'translateX(calc(100% + 4px))' : 'translateX(0)'
                 }}
               />
@@ -277,7 +277,7 @@ function LearnerDashboard() {
               </TabsTrigger>
               <TabsTrigger
                 value="classes"
-                className="relative flex items-center justify-center rounded-lg bg-transparent data-[state=active]:text-white data-[state!=active]:text-slate-700 data-[state!=active]:hover:text-slate-900 transition-colors duration-200 z-10 overflow-hidden text-ellipsis whitespace-nowrap px-2"
+                className="relative flex items-center justify-center rounded-lg bg-transparent data-[state=active]:text-white data-[state!=active]:text-slate-700 data-[state!=active]:hover:text-slate-900 transition-colors duration-200 z-10"
               >
                 <School className="mr-1.5 h-4 w-4 flex-shrink-0" />
                 <span className="truncate">My Classes</span>
