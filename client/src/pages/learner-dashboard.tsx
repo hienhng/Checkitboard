@@ -261,23 +261,23 @@ function LearnerDashboard() {
             <TabsList className="relative grid w-full max-w-xl grid-cols-2 h-12 p-1 bg-white/80 backdrop-blur-sm rounded-xl shadow-lg">
               {/* Animated sliding background */}
               <div 
-                className="absolute top-1 bottom-1 left-1 rounded-lg bg-primary shadow-lg transition-all duration-300 ease-out z-0"
+                className="w-10px absolute top-1 bottom-1 left-1 rounded-lg bg-primary shadow-lg transition-all duration-200 ease-in-out z-0"
                 style={{
                   width: 'calc(50% - 4px)',
                   transform: activeTab === 'classes' ? 'translateX(calc(100% + 4px))' : 'translateX(0)'
                 }}
               />
-              
+
               <TabsTrigger
                 value="dashboard"
-                className="relative flex items-center justify-center rounded-lg bg-transparent data-[state=active]:text-white data-[state!=active]:text-slate-700 data-[state!=active]:hover:text-slate-900 transition-colors duration-200 z-10"
+                className="flex-1 relative flex items-center justify-center rounded-lg bg-transparent data-[state=active]:text-white data-[state!=active]:text-slate-700 data-[state!=active]:hover:text-slate-900 transition-colors duration-200 z-10"
               >
                 <BookOpen className="mr-2 h-4 w-4" />
                 Dashboard
               </TabsTrigger>
               <TabsTrigger
                 value="classes"
-                className="relative flex items-center justify-center rounded-lg bg-transparent data-[state=active]:text-white data-[state!=active]:text-slate-700 data-[state!=active]:hover:text-slate-900 transition-colors duration-200 z-10"
+                className="flex-1 relative flex items-center justify-center rounded-lg bg-transparent data-[state=active]:text-white data-[state!=active]:text-slate-700 data-[state!=active]:hover:text-slate-900 transition-colors duration-200 z-10"
               >
                 <School className="mr-2 h-4 w-4" />
                 My Classes
