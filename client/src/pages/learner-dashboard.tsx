@@ -258,17 +258,26 @@ function LearnerDashboard() {
           className="w-full"
         >
           <div className="flex justify-center mb-8">
-            <TabsList className="grid w-full max-w-xl grid-cols-2 h-12 p-1 bg-white/80 backdrop-blur-sm rounded-xl shadow-lg p-2">
+            <TabsList className="relative grid w-full max-w-xl grid-cols-2 h-12 p-1 bg-white/80 backdrop-blur-sm rounded-xl shadow-lg">
+              {/* Animated sliding background */}
+              <div 
+                className="absolute top-1 bottom-1 left-1 rounded-lg bg-primary shadow-lg transition-all duration-300 ease-out"
+                style={{
+                  width: 'calc(50% - 4px)',
+                  transform: activeTab === 'classes' ? 'translateX(calc(100% + 4px))' : 'translateX(0)'
+                }}
+              />
+              
               <TabsTrigger
                 value="dashboard"
-                className="flex items-center justify-center rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white data-[state!=active]:hover:-translate-y-[1px] data-[state=active]:shadow-lg transition-all duration-300"
+                className="relative flex items-center justify-center rounded-lg data-[state=active]:text-white data-[state!=active]:text-slate-700 data-[state!=active]:hover:text-slate-900 transition-colors duration-200 z-10"
               >
                 <BookOpen className="mr-2 h-4 w-4" />
                 Dashboard
               </TabsTrigger>
               <TabsTrigger
                 value="classes"
-                className="flex items-center justify-center rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state!=active]:hover:-translate-y-1 transition-all duration-300"
+                className="relative flex items-center justify-center rounded-lg data-[state=active]:text-white data-[state!=active]:text-slate-700 data-[state!=active]:hover:text-slate-900 transition-colors duration-200 z-10"
               >
                 <School className="mr-2 h-4 w-4" />
                 My Classes
