@@ -277,7 +277,7 @@ function LearnerDashboard() {
               </TabsTrigger>
               <TabsTrigger
                 value="classes"
-                className="relative flex items-center justify-center rounded-lg data-[state=active]:text-white data-[state!=active]:text-slate-700 data-[state!=active]:hover:text-slate-900 transition-colors duration-200 z-10"
+                className="relative flex items-center justify-center rounded-lg data-[state=active]:text-white   transition-colors duration-200 z-10"
               >
                 <School className="mr-2 h-4 w-4" />
                 My Classes
