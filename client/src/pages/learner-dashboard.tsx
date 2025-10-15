@@ -765,7 +765,7 @@ function LearnerDashboard() {
                     <div className="grid gap-3 md:grid-cols-2">
                       {viewingList.words.map((word: any) => (
                         <Card key={word.id} className="border border-slate-200 dark:border-slate-700">
-                          <CardContent className="p-4">
+                          <CardContent className="p-4 mt-1">
                             <div className="font-semibold text-blue-600 dark:text-blue-400 mb-2">
                               {word.word}
                             </div>
@@ -782,18 +782,7 @@ function LearnerDashboard() {
                 )}
 
                 {/* Action Button */}
-                <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-700">
-                  <Button 
-                    onClick={() => {
-                      setViewingListId(null);
-                      navigate(`/vocabulary-checkup/${viewingList.id}`);
-                    }}
-                    className="gap-2"
-                  >
-                    Start Assignment
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </div>
+                
               </div>
             ) : (
               <div className="flex items-center justify-center py-12">

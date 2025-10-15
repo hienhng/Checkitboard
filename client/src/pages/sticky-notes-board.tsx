@@ -22,24 +22,30 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Edit, Trash2, CheckCircle, Circle, StickyNote as StickyNoteIcon, BookOpen, Filter, Move, GripVertical, LayoutGrid, Brush, Paintbrush, Plus, Sparkles, Wand2 } from "lucide-react";
+import { 
+  Search, Edit, Trash2, CheckCircle, Circle, StickyNote as StickyNoteIcon, 
+  Filter, GripVertical, LayoutGrid, Plus, Sparkles, Wand2, 
+  ZoomIn, ZoomOut, Maximize2, Minimize2
+} from "lucide-react";
 import { StickyNote } from "@shared/schema";
 import { cn } from "@/lib/utils";
 
-
-
-interface StickyNoteWithPosition extends StickyNote {
+interface NoteWithSize extends StickyNote {
   x?: number;
   y?: number;
+  width?: number;
+  height?: number;
 }
 
 interface DragState {
   isDragging: boolean;
+  isResizing: boolean;
   noteId: number | null;
   startX: number;
   startY: number;
-  currentX: number;
-  currentY: number;
+  startWidth: number;
+  startHeight: number;
+  resizeHandle: 'se' | 'sw' | 'ne' | 'nw' | null;
 }
 
 const STICKY_NOTE_COLORS = {
@@ -59,34 +65,9 @@ const EMOJI_OPTIONS = [
   '📋', '📓', '🖊️', '✏️', '🖇️', '📎', '🗂️', '🎓'
 ];
 
-// Generate organized grid position for first-time layout
-const getOrganizedPosition = (boardWidth: number, boardHeight: number, index: number) => {
-  const padding = 20;
-  const noteWidth = 192; // w-48 = 12rem = 192px
-  const noteHeight = 160; // including spacing
-  const spacing = 25; // Horizontal spacing between notes
-  const verticalSpacing = 40; // Vertical spacing between rows
-  
-  // Calculate how many notes can fit horizontally, accounting for the last note not needing spacing
-  const availableWidth = boardWidth - padding * 2;
-  const notesPerRow = Math.floor((availableWidth + spacing) / (noteWidth + spacing));
-  const row = Math.floor(index / notesPerRow);
-  const col = index % notesPerRow;
-  
-  // Calculate total width used by all notes in a row
-  const totalNotesWidth = notesPerRow * noteWidth + (notesPerRow - 1) * spacing;
-  const leftoverSpace = availableWidth - totalNotesWidth;
-  const extraSpacing = leftoverSpace / (notesPerRow + 1); // Distribute extra space evenly
-  
-  // Calculate position with distributed spacing
-  const baseX = padding + extraSpacing + col * (noteWidth + spacing + extraSpacing);
-  const baseY = padding + row * (noteHeight + verticalSpacing);
-  
-  return {
-    x: Math.max(padding, Math.min(boardWidth - noteWidth - padding, baseX)),
-    y: Math.max(padding, baseY)
-  };
-};
+const MIN_NOTE_SIZE = { width: 150, height: 120 };
+const DEFAULT_NOTE_SIZE = { width: 200, height: 160 };
+const MAX_NOTE_SIZE = { width: 400, height: 400 };
 
 export default function StickyNotesBoard() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -102,40 +83,33 @@ export default function StickyNotesBoard() {
   const [isGeneratingDefinition, setIsGeneratingDefinition] = useState(false);
   const [createEmoji, setCreateEmoji] = useState("📝");
   const [createColor, setCreateColor] = useState("yellow");
+  const [zoom, setZoom] = useState(1);
+  
   const [dragState, setDragState] = useState<DragState>({
     isDragging: false,
+    isResizing: false,
     noteId: null,
     startX: 0,
     startY: 0,
-    currentX: 0,
-    currentY: 0
+    startWidth: 0,
+    startHeight: 0,
+    resizeHandle: null
   });
-  // Load positions from sessionStorage on component mount
-  const [notePositions, setNotePositions] = useState<Record<number, { x: number; y: number }>>(() => {
-    const saved = sessionStorage.getItem('stickyNotePositions');
+  
+  const [noteLayout, setNoteLayout] = useState<Record<number, { x: number; y: number; width: number; height: number }>>(() => {
+    const saved = localStorage.getItem('stickyNoteLayout');
     return saved ? JSON.parse(saved) : {};
   });
+  
   const boardRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  
-  // Load positions from localStorage on page load
-  useEffect(() => {
-    const savedPositions = localStorage.getItem('stickyNotePositions');
-    if (savedPositions) {
-      try {
-        setNotePositions(JSON.parse(savedPositions));
-      } catch (error) {
-        console.error('Failed to parse saved positions:', error);
-      }
-    }
-  }, []);
 
-  // Save positions to localStorage whenever they change
+  // Save layout to localStorage
   useEffect(() => {
-    if (Object.keys(notePositions).length > 0) {
-      localStorage.setItem('stickyNotePositions', JSON.stringify(notePositions));
+    if (Object.keys(noteLayout).length > 0) {
+      localStorage.setItem('stickyNoteLayout', JSON.stringify(noteLayout));
     }
-  }, [notePositions]);
+  }, [noteLayout]);
 
   const { data: stickyNotes = [], isLoading } = useQuery<StickyNote[]>({
     queryKey: ["/api/sticky-notes"],
@@ -150,13 +124,6 @@ export default function StickyNotesBoard() {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/sticky-notes"] });
     },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete note",
-        variant: "destructive",
-      });
-    }
   });
 
   const updateNoteMutation = useMutation({
@@ -165,126 +132,206 @@ export default function StickyNotesBoard() {
     onSuccess: () => {
       toast({
         title: "Note Updated",
-        description: "Your changes have been saved.",
+        description: "Your sticky note has been updated successfully.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/sticky-notes"] });
       setEditingNote(null);
     },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update note",
-        variant: "destructive",
-      });
-    }
   });
 
-  // Removed position update mutation - notes are not persisted
-
-  const markAsLearnedMutation = useMutation({
+  const toggleLearnedMutation = useMutation({
     mutationFn: ({ noteId, isLearned }: { noteId: number; isLearned: boolean }) =>
       apiRequest("PATCH", `/api/sticky-notes/${noteId}`, { isLearned }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sticky-notes"] });
-    }
+    },
   });
 
   const createCustomNoteMutation = useMutation({
-    mutationFn: (noteData: any) =>
-      apiRequest("POST", "/api/sticky-notes/custom", noteData),
+    mutationFn: (data: any) => apiRequest("POST", "/api/sticky-notes", data),
     onSuccess: () => {
+      toast({
+        title: "Note Created",
+        description: "Your custom vocabulary note has been added!",
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/sticky-notes"] });
       setShowCreateDialog(false);
       setCustomWord("");
       setCustomDefinition("");
       setCreateEmoji("📝");
       setCreateColor("yellow");
-      toast({
-        title: "Custom Note Created",
-        description: "Your custom vocabulary note has been added to the board."
-      });
     },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create custom note",
-        variant: "destructive",
-      });
-    }
   });
 
   const generateDefinitionMutation = useMutation({
-    mutationFn: async (word: string) => {
-      const response = await apiRequest("POST", "/api/ai/generate-definition", { word });
-      return await response.json();
-    },
+    mutationFn: (word: string) => apiRequest("POST", "/api/ai/generate-definition", { word }),
     onSuccess: (data: any) => {
-      console.log("AI definition response:", data);
-      if (data && data.definition) {
+      if (data.definition) {
         setCustomDefinition(data.definition);
-        toast({
-          title: "Definition Generated",
-          description: "AI has generated a definition for your word."
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: "No definition received from AI",
-          variant: "destructive",
-        });
       }
       setIsGeneratingDefinition(false);
     },
-    onError: (error: any) => {
-      console.error("AI definition error:", error);
-      setIsGeneratingDefinition(false);
+    onError: () => {
       toast({
         title: "Error",
-        description: error.message || "Failed to generate definition",
+        description: "Failed to generate definition. Please try again.",
         variant: "destructive",
       });
-    }
+      setIsGeneratingDefinition(false);
+    },
   });
 
-  // Initialize positions using organized grid layout for new notes
+  // Initialize note positions for new notes
   useEffect(() => {
-    if (stickyNotes.length > 0 && boardRef.current) {
-      const boardRect = boardRef.current.getBoundingClientRect();
-      const newPositions: Record<number, { x: number; y: number }> = {};
-      
-      stickyNotes.forEach((note: any, index) => {
-        if (!notePositions[note.id]) {
-          // Use organized grid layout for notes that don't have saved positions
-          const position = getOrganizedPosition(boardRect.width, boardRect.height, index);
-          newPositions[note.id] = position;
-        }
-      });
-      
-      if (Object.keys(newPositions).length > 0) {
-        setNotePositions(prev => ({ ...prev, ...newPositions }));
+    if (!stickyNotes.length || !boardRef.current) return;
+    
+    const newLayout = { ...noteLayout };
+    let hasChanges = false;
+    
+    stickyNotes.forEach((note, index) => {
+      if (!newLayout[note.id]) {
+        const col = index % 4;
+        const row = Math.floor(index / 4);
+        newLayout[note.id] = {
+          x: 50 + col * 250,
+          y: 50 + row * 220,
+          width: DEFAULT_NOTE_SIZE.width,
+          height: DEFAULT_NOTE_SIZE.height
+        };
+        hasChanges = true;
       }
+    });
+    
+    if (hasChanges) {
+      setNoteLayout(newLayout);
     }
-  }, [stickyNotes]);
+  }, [stickyNotes.length]);
 
-  // Function to clean/reorganize all notes to organized grid
-  const cleanOrganizeNotes = () => {
-    if (boardRef.current) {
-      const boardRect = boardRef.current.getBoundingClientRect();
-      const newPositions: Record<number, { x: number; y: number }> = {};
-      
-      filteredNotes.forEach((note: any, index) => {
-        const position = getOrganizedPosition(boardRect.width, boardRect.height, index);
-        newPositions[note.id] = position;
-      });
-      
-      setNotePositions(prev => ({ ...prev, ...newPositions }));
-      
-      toast({
-        title: "Board Cleaned",
-        description: "All sticky notes have been arranged for better learning."
-      });
+  const handleMouseDown = (e: React.MouseEvent, noteId: number, type: 'drag' | 'resize', handle?: 'se' | 'sw' | 'ne' | 'nw') => {
+    if (e.target instanceof HTMLElement && (
+      e.target.closest('button:not(.drag-handle)') || 
+      e.target.closest('[role="dialog"]') ||
+      e.target.closest('select') ||
+      e.target.closest('input') ||
+      e.target.closest('textarea')
+    )) {
+      return;
     }
+
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const layout = noteLayout[noteId] || { ...DEFAULT_NOTE_SIZE, x: 0, y: 0 };
+    
+    setDragState({
+      isDragging: type === 'drag',
+      isResizing: type === 'resize',
+      noteId,
+      startX: e.clientX,
+      startY: e.clientY,
+      startWidth: layout.width,
+      startHeight: layout.height,
+      resizeHandle: handle || null
+    });
   };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!dragState.noteId || (!dragState.isDragging && !dragState.isResizing)) return;
+
+      e.preventDefault();
+      
+      const layout = noteLayout[dragState.noteId];
+      if (!layout) return;
+
+      const deltaX = e.clientX - dragState.startX;
+      const deltaY = e.clientY - dragState.startY;
+
+      if (dragState.isDragging) {
+        const scaledDeltaX = deltaX / zoom;
+        const scaledDeltaY = deltaY / zoom;
+        
+        setNoteLayout(prev => ({
+          ...prev,
+          [dragState.noteId!]: {
+            ...layout,
+            x: Math.max(0, layout.x + scaledDeltaX),
+            y: Math.max(0, layout.y + scaledDeltaY)
+          }
+        }));
+        
+        setDragState(prev => ({
+          ...prev,
+          startX: e.clientX,
+          startY: e.clientY
+        }));
+      } else if (dragState.isResizing && dragState.resizeHandle) {
+        const handle = dragState.resizeHandle;
+        let newWidth = dragState.startWidth;
+        let newHeight = dragState.startHeight;
+        let newX = layout.x;
+        let newY = layout.y;
+
+        if (handle.includes('e')) {
+          newWidth = Math.max(MIN_NOTE_SIZE.width, Math.min(MAX_NOTE_SIZE.width, dragState.startWidth + deltaX / zoom));
+        }
+        if (handle.includes('w')) {
+          const widthDiff = deltaX / zoom;
+          newWidth = Math.max(MIN_NOTE_SIZE.width, Math.min(MAX_NOTE_SIZE.width, dragState.startWidth - widthDiff));
+          newX = layout.x + (dragState.startWidth - newWidth);
+        }
+        if (handle.includes('s')) {
+          newHeight = Math.max(MIN_NOTE_SIZE.height, Math.min(MAX_NOTE_SIZE.height, dragState.startHeight + deltaY / zoom));
+        }
+        if (handle.includes('n')) {
+          const heightDiff = deltaY / zoom;
+          newHeight = Math.max(MIN_NOTE_SIZE.height, Math.min(MAX_NOTE_SIZE.height, dragState.startHeight - heightDiff));
+          newY = layout.y + (dragState.startHeight - newHeight);
+        }
+
+        setNoteLayout(prev => ({
+          ...prev,
+          [dragState.noteId!]: {
+            x: newX,
+            y: newY,
+            width: newWidth,
+            height: newHeight
+          }
+        }));
+      }
+    };
+
+    const handleMouseUp = () => {
+      setDragState({
+        isDragging: false,
+        isResizing: false,
+        noteId: null,
+        startX: 0,
+        startY: 0,
+        startWidth: 0,
+        startHeight: 0,
+        resizeHandle: null
+      });
+    };
+
+    if (dragState.isDragging || dragState.isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = dragState.isDragging ? 'grabbing' : 
+        dragState.resizeHandle?.includes('e') && dragState.resizeHandle?.includes('s') ? 'nwse-resize' :
+        dragState.resizeHandle?.includes('e') && dragState.resizeHandle?.includes('n') ? 'nesw-resize' :
+        dragState.resizeHandle?.includes('w') && dragState.resizeHandle?.includes('s') ? 'nesw-resize' :
+        dragState.resizeHandle?.includes('w') && dragState.resizeHandle?.includes('n') ? 'nwse-resize' : 'default';
+      document.body.style.userSelect = 'none';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [dragState, noteLayout, zoom]);
 
   const filteredNotes = (stickyNotes || []).filter((note) => {
     if (!note || !note.word || !note.definition) return false;
@@ -299,120 +346,29 @@ export default function StickyNotesBoard() {
   });
 
   const categories = ["all", ...Array.from(new Set((stickyNotes || []).map((n) => n?.category).filter(Boolean)))];
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'easy': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
-      case 'hard': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
-    }
-  };
-
-  const handleMouseDown = (e: React.MouseEvent, noteId: number) => {
-    // Don't start drag if clicking on interactive elements
-    if (e.target instanceof HTMLElement && (
-      e.target.closest('button') || 
-      e.target.closest('[role="dialog"]') ||
-      e.target.closest('[data-radix-popper-content-wrapper]') ||
-      e.target.closest('select') ||
-      e.target.closest('input') ||
-      e.target.closest('textarea') ||
-      e.target.closest('[data-radix-dialog-content]')
-    )) {
-      return;
-    }
-
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const rect = boardRef.current?.getBoundingClientRect();
-    if (!rect) return;
-
-    const currentPosition = notePositions[noteId] || { x: 0, y: 0 };
-
-    setDragState({
-      isDragging: true,
-      noteId,
-      startX: e.clientX - rect.left - currentPosition.x,
-      startY: e.clientY - rect.top - currentPosition.y,
-      currentX: e.clientX - rect.left,
-      currentY: e.clientY - rect.top
-    });
-  };
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!dragState.isDragging || !boardRef.current || !dragState.noteId) return;
-
-      e.preventDefault();
-      
-      const rect = boardRef.current.getBoundingClientRect();
-      
-      // Calculate new position based on mouse position minus offset - allow full board area
-      const boardWidth = rect.width; // Use full width
-      const boardHeight = rect.height * 20; // Account for extremely long board
-      const newX = Math.max(10, Math.min(boardWidth - 210, e.clientX - rect.left - dragState.startX));
-      const newY = Math.max(10, Math.min(boardHeight - 170, e.clientY - rect.top - dragState.startY));
-
-      const newPositions = {
-        ...notePositions,
-        [dragState.noteId!]: { x: newX, y: newY }
-      };
-      setNotePositions(newPositions);
-      
-      // Save to sessionStorage for persistence across page navigations
-      sessionStorage.setItem('stickyNotePositions', JSON.stringify(newPositions));
-
-      // Positions maintained in session state only - no database persistence
-
-      setDragState(prev => ({
-        ...prev,
-        currentX: e.clientX - rect.left,
-        currentY: e.clientY - rect.top
-      }));
-    };
-
-    const handleMouseUp = (e: MouseEvent) => {
-      e.preventDefault();
-      
-      // Clean up drag state - positions remain in session memory
-      setDragState({
-        isDragging: false,
-        noteId: null,
-        startX: 0,
-        startY: 0,
-        currentX: 0,
-        currentY: 0
-      });
-    };
-
-    if (dragState.isDragging) {
-      document.addEventListener('mousemove', handleMouseMove, { passive: false });
-      document.addEventListener('mouseup', handleMouseUp, { passive: false });
-      document.body.style.cursor = 'grabbing';
-      document.body.style.userSelect = 'none';
-    }
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    };
-  }, [dragState]);
-
-  const handleUpdateNote = (updates: Partial<StickyNote>) => {
-    if (!editingNote) return;
-    
-    updateNoteMutation.mutate({
-      noteId: editingNote.id,
-      updates
-    });
-  };
-
   const learnedCount = (stickyNotes || []).filter((n) => n?.isLearned).length;
   const totalCount = (stickyNotes || []).length;
+
+  const handleAutoArrange = () => {
+    const newLayout: typeof noteLayout = {};
+    
+    filteredNotes.forEach((note, index) => {
+      const col = index % 4;
+      const row = Math.floor(index / 4);
+      newLayout[note.id] = {
+        x: 50 + col * 250,
+        y: 50 + row * 220,
+        width: DEFAULT_NOTE_SIZE.width,
+        height: DEFAULT_NOTE_SIZE.height
+      };
+    });
+    
+    setNoteLayout(newLayout);
+    toast({
+      title: "Notes Arranged",
+      description: "All sticky notes have been auto-arranged.",
+    });
+  };
 
   if (isLoading) {
     return (
@@ -430,7 +386,7 @@ export default function StickyNotesBoard() {
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700">
       {/* Header */}
-      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 p-4">
+      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 p-4 shrink-0">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -438,9 +394,39 @@ export default function StickyNotesBoard() {
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Sticky Notes</h1>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {totalCount} total • {learnedCount} learned • {totalCount - learnedCount} learning
+                  {totalCount} total • {learnedCount} learned
                 </p>
               </div>
+            </div>
+
+            {/* Zoom Controls */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setZoom(Math.max(0.5, zoom - 0.1))}
+                disabled={zoom <= 0.5}
+              >
+                <ZoomOut className="h-4 w-4" />
+              </Button>
+              <span className="text-sm text-gray-600 dark:text-gray-400 w-12 text-center">
+                {Math.round(zoom * 100)}%
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setZoom(Math.min(2, zoom + 0.1))}
+                disabled={zoom >= 2}
+              >
+                <ZoomIn className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setZoom(1)}
+              >
+                Reset
+              </Button>
             </div>
           </div>
 
@@ -472,30 +458,23 @@ export default function StickyNotesBoard() {
 
             <Select value={showLearnedFilter} onValueChange={(value: "all" | "learned" | "learning") => setShowLearnedFilter(value)}>
               <SelectTrigger className="w-40">
-                <SelectValue />
+                <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Notes</SelectItem>
-                <SelectItem value="learning">Learning</SelectItem>
                 <SelectItem value="learned">Learned</SelectItem>
+                <SelectItem value="learning">Learning</SelectItem>
               </SelectContent>
             </Select>
-            
-            <Button 
-              onClick={cleanOrganizeNotes}
-              variant="default"
-              className="bg-gray-100 hover:bg-blue-500 text-black hover:text-white border border-gray-200 hover:border-blue-600"
-            >
-              <Paintbrush className="h-4 w-4 mr-2" />
-              Clean
+
+            <Button variant="outline" onClick={handleAutoArrange}>
+              <LayoutGrid className="h-4 w-4 mr-2" />
+              Auto Arrange
             </Button>
 
             <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
               <DialogTrigger asChild>
-                <Button 
-                  variant="default"
-                  className="bg-green-500 hover:bg-green-600 text-white"
-                >
+                <Button variant="default" className="bg-green-500 hover:bg-green-600 text-white">
                   <Plus className="h-4 w-4 mr-2" />
                   Create Custom Note
                 </Button>
@@ -504,7 +483,7 @@ export default function StickyNotesBoard() {
                 <DialogHeader>
                   <DialogTitle>Create Custom Vocabulary Note</DialogTitle>
                   <DialogDescription>
-                    Add your own vocabulary word and definition to your sticky notes board.
+                    Add your own vocabulary word and definition.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
@@ -547,7 +526,7 @@ export default function StickyNotesBoard() {
                         ) : (
                           <>
                             <Sparkles className="h-4 w-4 mr-2" />
-                            Generate Definition with AI
+                            Generate with AI
                           </>
                         )}
                       </Button>
@@ -555,22 +534,6 @@ export default function StickyNotesBoard() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Emoji</label>
-                      <Select value={createEmoji} onValueChange={setCreateEmoji}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {EMOJI_OPTIONS.map(emoji => (
-                            <SelectItem key={emoji} value={emoji}>
-                              {emoji} {emoji}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
                     <div>
                       <label className="text-sm font-medium mb-2 block">Color</label>
                       <Select value={createColor} onValueChange={setCreateColor}>
@@ -580,11 +543,22 @@ export default function StickyNotesBoard() {
                         <SelectContent>
                           {Object.keys(STICKY_NOTE_COLORS).map(color => (
                             <SelectItem key={color} value={color}>
-                              <div className="flex items-center gap-2">
-                                <div className={`w-4 h-4 rounded border ${STICKY_NOTE_COLORS[color as keyof typeof STICKY_NOTE_COLORS]}`} />
-                                {color.charAt(0).toUpperCase() + color.slice(1)}
-                              </div>
+                              {color.charAt(0).toUpperCase() + color.slice(1)}
                             </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Emoji</label>
+                      <Select value={createEmoji} onValueChange={setCreateEmoji}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {EMOJI_OPTIONS.map(emoji => (
+                            <SelectItem key={emoji} value={emoji}>{emoji}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -593,30 +567,20 @@ export default function StickyNotesBoard() {
                 </div>
                 <DialogFooter>
                   <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowCreateDialog(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="button"
                     onClick={() => {
-                      if (customWord?.trim() && customDefinition?.trim()) {
+                      if (customWord && customDefinition) {
                         createCustomNoteMutation.mutate({
-                          word: customWord.trim(),
-                          definition: customDefinition.trim(),
-                          category: "Custom",
-                          difficulty: "medium",
+                          word: customWord,
+                          definition: customDefinition,
                           emoji: createEmoji,
                           color: createColor,
-                          isCustom: true
+                          isCustom: true,
                         });
                       }
                     }}
-                    disabled={!customWord?.trim() || !customDefinition?.trim() || createCustomNoteMutation.isPending}
+                    disabled={!customWord || !customDefinition}
                   >
-                    {createCustomNoteMutation.isPending ? "Creating..." : "Create Note"}
+                    Create Note
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -625,34 +589,24 @@ export default function StickyNotesBoard() {
         </div>
       </div>
 
-      {/* Sticky Notes Board */}
-      <div className="flex-1 relative overflow-auto">
+      {/* Canvas */}
+      <div className="flex-1 overflow-auto">
         <div 
           ref={boardRef}
-          className="relative bg-gradient-to-br from-amber-50/50 via-yellow-50/30 to-orange-50/50 dark:from-gray-800/50 dark:via-gray-700/30 dark:to-gray-600/50"
+          className="relative min-h-full bg-gradient-to-br from-amber-50/50 via-yellow-50/30 to-orange-50/50 dark:from-gray-800/50 dark:via-gray-700/30 dark:to-gray-600/50"
           style={{
-            width: '100%',
-            height: '2000vh', // Make board extremely long for unlimited scrolling
-            minHeight: '2000vh',
+            minWidth: '100%',
+            minHeight: '200vh',
             backgroundImage: `
               radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.3) 2px, transparent 2px),
               radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.2) 1px, transparent 1px)
             `,
-            backgroundSize: '50px 50px, 30px 30px'
+            backgroundSize: '50px 50px, 30px 30px',
+            transform: `scale(${zoom})`,
+            transformOrigin: 'top left',
+            transition: 'transform 0.2s ease-out'
           }}
-          onMouseDown={(e) => e.preventDefault()}
         >
-          {/* Cork Board Pattern */}
-          <div className="absolute inset-0 opacity-30">
-            <div className="absolute inset-0" style={{
-              backgroundImage: `
-                linear-gradient(90deg, rgba(139, 69, 19, 0.1) 1px, transparent 1px),
-                linear-gradient(0deg, rgba(139, 69, 19, 0.1) 1px, transparent 1px)
-              `,
-              backgroundSize: '20px 20px'
-            }} />
-          </div>
-
           {filteredNotes.length === 0 ? (
             <div className="flex items-center justify-center" style={{ minHeight: '50vh' }}>
               <div className="text-center p-8">
@@ -668,219 +622,205 @@ export default function StickyNotesBoard() {
             </div>
           ) : (
             filteredNotes.map((note, index) => {
-              const position = notePositions[note.id] || { x: 0, y: 0 };
+              const layout = noteLayout[note.id] || { ...DEFAULT_NOTE_SIZE, x: 0, y: 0 };
               const colorClass = note.color && STICKY_NOTE_COLORS[note.color as keyof typeof STICKY_NOTE_COLORS] 
                 ? STICKY_NOTE_COLORS[note.color as keyof typeof STICKY_NOTE_COLORS]
                 : STICKY_NOTE_COLORS[Object.keys(STICKY_NOTE_COLORS)[index % Object.keys(STICKY_NOTE_COLORS).length] as keyof typeof STICKY_NOTE_COLORS];
               const isDragging = dragState.isDragging && dragState.noteId === note.id;
+              const isResizing = dragState.isResizing && dragState.noteId === note.id;
               
               return (
                 <div
                   key={note.id}
                   className={cn(
-                    "absolute w-48 min-h-36 p-4 rounded-lg border-2 shadow-lg transform transition-all duration-200 select-none",
+                    "absolute border-2 rounded-lg shadow-lg transition-all",
                     colorClass,
-                    isDragging ? "scale-110 shadow-2xl cursor-grabbing" : "cursor-grab hover:shadow-xl hover:scale-105",
-                    note.isLearned && "opacity-75"
+                    (isDragging || isResizing) && "shadow-2xl ring-2 ring-blue-500",
+                    !note.isLearned && "shadow-xl"
                   )}
                   style={{
-                    left: position.x,
-                    top: position.y,
-                    transform: isDragging 
-                      ? `scale(1.1) rotate(${Math.sin(index) * 3}deg)`
-                      : `rotate(${Math.sin(index) * 2}deg)`,
-                    zIndex: isDragging ? 1000 : note.isLearned ? 1 : 10,
-                    pointerEvents: 'auto'
+                    left: `${layout.x}px`,
+                    top: `${layout.y}px`,
+                    width: `${layout.width}px`,
+                    height: `${layout.height}px`,
+                    cursor: isDragging ? 'grabbing' : 'grab',
+                    zIndex: (isDragging || isResizing) ? 1000 : 1
                   }}
-                  onMouseDown={(e) => handleMouseDown(e, note.id)}
+                  onMouseDown={(e) => handleMouseDown(e, note.id, 'drag')}
                 >
                   {/* Pin */}
                   <div className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full shadow-md border-2 border-red-600"></div>
                   
                   {/* Drag Handle */}
-                  <div className="absolute top-1 right-6">
+                  <div className="absolute top-1 right-6 drag-handle">
                     <GripVertical className="h-3 w-3 text-gray-600 opacity-50" />
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl">{note.emoji || '📝'}</span>
-                        <h3 className="font-bold text-lg truncate">{note.word}</h3>
+                  <div className="h-full p-3 flex flex-col overflow-hidden">
+                    {/* Header */}
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <span className="text-xl shrink-0">{note.emoji || '📝'}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-bold text-sm truncate">{note.word}</div>
+                          {note.category && (
+                            <Badge variant="secondary" className="text-xs mt-1">
+                              {note.category}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          markAsLearnedMutation.mutate({
-                            noteId: note.id,
-                            isLearned: !note.isLearned
-                          });
-                        }}
-                        className="p-1 h-6 w-6"
-                      >
-                        {note.isLearned ? (
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <Circle className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-
-                    <p className="text-sm leading-relaxed line-clamp-3">{note.definition}</p>
-                    <div className="flex items-center gap-1 mt-1">
-                      <div className="w-1 h-1 bg-blue-400 rounded-full"></div>
-                      <span className="text-xs text-blue-600 font-medium">AI-generated</span>
-                    </div>
-                    
-                    {note.example && (
-                      <p className="text-xs italic opacity-75 line-clamp-2">"{note.example}"</p>
-                    )}
-
-                    <div className="flex items-center justify-between pt-2">
-                      <div className="flex gap-1">
-                        <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
-                          {note.category}
-                        </Badge>
-                        <Badge className={cn("text-xs px-1.5 py-0.5", getDifficultyColor(note.difficulty))}>
-                          {note.difficulty}
-                        </Badge>
-                      </div>
-                      
-                      <div className="flex gap-1">
+                      <div className="flex gap-1 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleLearnedMutation.mutate({ 
+                              noteId: note.id, 
+                              isLearned: !note.isLearned 
+                            });
+                          }}
+                        >
+                          {note.isLearned ? (
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                          ) : (
+                            <Circle className="h-3 w-3" />
+                          )}
+                        </Button>
                         <Dialog>
                           <DialogTrigger asChild>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="p-1 h-6 w-6"
+                              className="h-6 w-6 p-0"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setEditingNote(note);
                                 setUserNotes(note.userNotes || "");
                                 setSelectedEmoji(note.emoji || "📝");
-                                setSelectedColor((note.color as keyof typeof STICKY_NOTE_COLORS) || "yellow");
+                                setSelectedColor(note.color || "yellow");
                               }}
                             >
                               <Edit className="h-3 w-3" />
                             </Button>
                           </DialogTrigger>
-                          <DialogContent 
-                            className="sm:max-w-lg"
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onMouseMove={(e) => e.stopPropagation()}
-                            onMouseUp={(e) => e.stopPropagation()}
-                          >
+                          <DialogContent onClick={(e) => e.stopPropagation()}>
                             <DialogHeader>
-                              <DialogTitle>Customize "{note.word}"</DialogTitle>
-                              <DialogDescription>
-                                Personalize your sticky note with emojis, colors, and notes.
-                              </DialogDescription>
+                              <DialogTitle>Edit Note</DialogTitle>
                             </DialogHeader>
-                            
                             <div className="space-y-4">
-                              {/* Emoji Picker */}
-                              <div>
-                                <label className="text-sm font-medium mb-2 block">Choose an Emoji</label>
-                                <div className="grid grid-cols-8 gap-2 p-3 border rounded-lg bg-gray-50 dark:bg-gray-800 max-h-32 overflow-y-auto">
-                                  {EMOJI_OPTIONS.map((emoji, index) => (
-                                    <button
-                                      key={index}
-                                      type="button"
-                                      className={`text-2xl p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${
-                                        selectedEmoji === emoji ? 'bg-blue-100 dark:bg-blue-900' : ''
-                                      }`}
-                                      onClick={() => setSelectedEmoji(emoji)}
-                                    >
-                                      {emoji}
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-
-                              {/* Color Picker */}
-                              <div>
-                                <label className="text-sm font-medium mb-2 block">Choose a Color</label>
-                                <div className="grid grid-cols-4 gap-2">
-                                  {Object.entries(STICKY_NOTE_COLORS).map(([colorName, colorClass]) => (
-                                    <button
-                                      key={colorName}
-                                      type="button"
-                                      className={`p-3 rounded-lg border-2 transition-all duration-200 ${colorClass} ${
-                                        selectedColor === colorName 
-                                          ? 'ring-2 ring-blue-500 ring-offset-2' 
-                                          : 'hover:scale-105'
-                                      }`}
-                                      onClick={() => setSelectedColor(colorName)}
-                                    >
-                                      <div className="text-xs font-medium capitalize">{colorName}</div>
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-
-                              {/* Personal Notes */}
                               <div>
                                 <label className="text-sm font-medium mb-2 block">Personal Notes</label>
                                 <Textarea
                                   value={userNotes}
                                   onChange={(e) => setUserNotes(e.target.value)}
+                                  rows={4}
                                   placeholder="Add your personal notes here..."
-                                  className="min-h-20"
-                                  onMouseDown={(e) => e.stopPropagation()}
-                                  onFocus={(e) => e.stopPropagation()}
                                 />
                               </div>
-
-                              {/* Preview */}
-                              <div>
-                                <label className="text-sm font-medium mb-2 block">Preview</label>
-                                <div className={`p-3 rounded-lg border-2 ${STICKY_NOTE_COLORS[selectedColor as keyof typeof STICKY_NOTE_COLORS]} max-w-48`}>
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <span className="text-xl">{selectedEmoji}</span>
-                                    <div className="font-bold text-sm truncate">{note.word}</div>
-                                  </div>
-                                  <div className="text-xs opacity-80 line-clamp-2">{note.definition}</div>
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <label className="text-sm font-medium mb-2 block">Color</label>
+                                  <Select value={selectedColor} onValueChange={setSelectedColor}>
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {Object.keys(STICKY_NOTE_COLORS).map(color => (
+                                        <SelectItem key={color} value={color}>
+                                          {color.charAt(0).toUpperCase() + color.slice(1)}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium mb-2 block">Emoji</label>
+                                  <Select value={selectedEmoji} onValueChange={setSelectedEmoji}>
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {EMOJI_OPTIONS.map(emoji => (
+                                        <SelectItem key={emoji} value={emoji}>{emoji}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
                                 </div>
                               </div>
                             </div>
-                            
                             <DialogFooter>
-                              <Button 
-                                onClick={() => handleUpdateNote({ 
-                                  userNotes, 
-                                  emoji: selectedEmoji, 
-                                  color: selectedColor as "yellow" | "pink" | "blue" | "green" | "purple" | "orange" | "red" | "indigo"
-                                })}
-                                disabled={updateNoteMutation.isPending}
+                              <Button
+                                onClick={() => {
+                                  if (editingNote) {
+                                    updateNoteMutation.mutate({
+                                      noteId: editingNote.id,
+                                      updates: {
+                                        userNotes,
+                                        emoji: selectedEmoji,
+                                        color: selectedColor as any
+                                      }
+                                    });
+                                  }
+                                }}
                               >
                                 Save Changes
                               </Button>
                             </DialogFooter>
                           </DialogContent>
                         </Dialog>
-                        
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="p-1 h-6 w-6 text-red-600 hover:text-red-700"
+                          className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
                           onClick={(e) => {
                             e.stopPropagation();
-                            deleteNoteMutation.mutate(note.id);
+                            if (confirm('Delete this sticky note?')) {
+                              deleteNoteMutation.mutate(note.id);
+                            }
                           }}
                         >
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
                     </div>
-                    
-                    {note.userNotes && (
-                      <div className="pt-2 border-t border-gray-300/50">
-                        <p className="text-xs text-gray-700 line-clamp-2">{note.userNotes}</p>
-                      </div>
-                    )}
+
+                    {/* Definition */}
+                    <div className="flex-1 overflow-auto text-xs leading-relaxed">
+                      {note.definition}
+                      {note.userNotes && (
+                        <div className="mt-2 pt-2 border-t border-current/20">
+                          <em>{note.userNotes}</em>
+                        </div>
+                      )}
+                    </div>
                   </div>
+
+                  {/* Resize Handles */}
+                  <div
+                    className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize"
+                    onMouseDown={(e) => handleMouseDown(e, note.id, 'resize', 'se')}
+                    style={{ cursor: 'nwse-resize' }}
+                  >
+                    <Maximize2 className="h-3 w-3 text-gray-600 opacity-50" />
+                  </div>
+                  <div
+                    className="absolute bottom-0 left-0 w-4 h-4 cursor-nesw-resize"
+                    onMouseDown={(e) => handleMouseDown(e, note.id, 'resize', 'sw')}
+                    style={{ cursor: 'nesw-resize' }}
+                  />
+                  <div
+                    className="absolute top-0 right-0 w-4 h-4 cursor-nesw-resize"
+                    onMouseDown={(e) => handleMouseDown(e, note.id, 'resize', 'ne')}
+                    style={{ cursor: 'nesw-resize' }}
+                  />
+                  <div
+                    className="absolute top-0 left-0 w-4 h-4 cursor-nwse-resize"
+                    onMouseDown={(e) => handleMouseDown(e, note.id, 'resize', 'nw')}
+                    style={{ cursor: 'nwse-resize' }}
+                  />
                 </div>
               );
             })
