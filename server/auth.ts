@@ -55,9 +55,9 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     name: 'connect.sid',
     cookie: {
-      secure: process.env.NODE_ENV === "production",
+      secure: false, // Allow in development without HTTPS
       httpOnly: true,
-      sameSite: 'lax',
+      sameSite: process.env.NODE_ENV === "production" ? 'strict' : false, // Disable sameSite in dev
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       path: '/',
     }

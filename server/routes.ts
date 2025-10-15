@@ -3999,20 +3999,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update user profile
   app.patch("/api/user/profile", async (req, res) => {
     try {
-      console.log("Profile update request:", {
-        isAuthenticated: req.isAuthenticated(),
-        sessionID: req.sessionID,
-        hasSession: !!req.session,
-        hasUser: !!req.user,
-        userId: req.user?.id,
-      });
-
       if (!req.isAuthenticated()) {
-        console.log("Authentication failed - session details:", {
-          sessionID: req.sessionID,
-          session: req.session,
-          cookies: req.headers.cookie,
-        });
         return res.status(401).json({ message: "Not authenticated" });
       }
 
