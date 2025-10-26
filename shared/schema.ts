@@ -64,6 +64,7 @@ export const vocabularyLists = pgTable("vocabulary_lists", {
   showCorrectAnswers: boolean("show_correct_answers").default(true).notNull(),
   allowRedos: boolean("allow_redos").default(true).notNull(),
   maxRedoAttempts: integer("max_redo_attempts").default(3).notNull(),
+  parentListId: integer("parent_list_id").references(() => vocabularyLists.id), // For tracking duplicates created during multi-class publishing
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

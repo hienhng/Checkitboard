@@ -150,8 +150,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied" });
       }
 
-      const lists = await storage.getVocabularyListsByEducator(req.user.id);
-      res.json(lists);
+      // Get all lists for this educator
+      const allLists = await storage.getVocabularyListsByEducator(req.user.id);
+      
+      // Filter out duplicates (lists with parentListId) and add class assignment count
+      const uniqueLists = allLists.filter(list => !list.parentListId);
+      
+      // For each unique list, count how many classes it's assigned to
+      const listsWithClassCount = await Promise.all(uniqueLists.map(async (list) => {
+        // Count: original list + all duplicates
+        const duplicates = await db.select().from(vocabularyLists).where(eq(vocabularyLists.parentListId, list.id));
+        const assignedClassesCount = list.classId ? 1 + duplicates.length : duplicates.length;
+        
+        // Get all class IDs this list is assigned to
+        const assignedClassIds = [
+          ...(list.classId ? [list.classId] : []),
+          ...duplicates.map(d => d.classId).filter(Boolean)
+        ];
+        
+        return {
+          ...list,
+          assignedClassesCount,
+          assignedClassIds
+        };
+      }));
+      
+      res.json(listsWithClassCount);
     } catch (error) {
       console.error("Error fetching vocabulary lists:", error);
       res.status(500).json({ message: "Error fetching vocabulary lists" });
@@ -729,13 +753,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (let i = 1; i < classIds.length; i++) {
           const classId = classIds[i];
           
-          // Create new vocabulary list
+          // Create new vocabulary list (duplicate with parentListId reference)
           const [newList] = await tx.insert(vocabularyLists).values({
             title: originalList.title,
             passage: originalList.passage,
             educatorId: req.user.id,
             classId: classId,
             published: true,
+            parentListId: listId, // Track that this is a duplicate of the original list
             ...publishSettings,
             dueDate: publishSettings.dueDate ? new Date(publishSettings.dueDate) : undefined,
           }).returning();

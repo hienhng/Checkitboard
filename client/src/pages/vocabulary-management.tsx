@@ -336,10 +336,13 @@ export default function VocabularyManagement() {
                           <ClipboardList className="mr-1 h-3.5 w-3.5" />
                           {list.words?.length || 0} vocabulary words
                         </div>
-                        {list.class && (
+                        {list.assignedClassesCount > 0 && (
                           <div className="mt-1 flex items-center text-xs text-gray-500">
                             <School className="mr-1 h-3.5 w-3.5" />
-                            Class: {list.class.name}
+                            {list.assignedClassesCount === 1 
+                              ? `Assigned to 1 class${list.class ? `: ${list.class.name}` : ''}`
+                              : `Assigned to ${list.assignedClassesCount} classes`
+                            }
                           </div>
                         )}
                       </div>
