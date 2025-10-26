@@ -64,7 +64,7 @@ export default function VocabularyCheckup() {
   const [exitReason, setExitReason] = useState("");
   const [fullscreenWarning, setFullscreenWarning] = useState(false);
   const [showTestModeDialog, setShowTestModeDialog] = useState(false);
-  const [testModeAcknowledged, setTestModeAcknowledged] = useState(false);
+  const [testStarted, setTestStarted] = useState(false);
   const [inputDebounceTimers, setInputDebounceTimers] = useState<
     Record<number, NodeJS.Timeout>
   >({});
@@ -90,12 +90,22 @@ export default function VocabularyCheckup() {
   const checkupType = (listData as any)?.type || "practice";
   const isTestMode = checkupType === "test";
 
+  // Check if all content is loaded
+  const isContentLoaded = 
+    !submissionLoading && 
+    !questionsLoading && 
+    !!listData && 
+    questions.length > 0;
+
   // Debug logging
   console.log("Checkup Debug:", {
     listData,
     checkupType,
     isTestMode,
-    hasListData: !!listData,
+    isContentLoaded,
+    submissionLoading,
+    questionsLoading,
+    questionsCount: questions.length,
   });
 
   // Get all questions for the vocabulary list
@@ -127,19 +137,19 @@ export default function VocabularyCheckup() {
     }
   }, [savedAnswers]);
 
-  // Show test mode dialog for test mode (only when fully loaded)
+  // For practice mode, auto-start once content is loaded
+  // For test mode, show dialog once content is loaded
   useEffect(() => {
-    if (
-      isTestMode && 
-      !testModeAcknowledged && 
-      !submissionLoading && 
-      !questionsLoading &&
-      questions.length > 0 &&
-      listData
-    ) {
+    if (!isContentLoaded) return;
+    
+    if (isTestMode && !testStarted) {
+      // Show test mode warning dialog
       setShowTestModeDialog(true);
+    } else if (!isTestMode && !testStarted) {
+      // Practice mode: auto-start
+      setTestStarted(true);
     }
-  }, [isTestMode, testModeAcknowledged, submissionLoading, questionsLoading, questions.length, listData]);
+  }, [isContentLoaded, isTestMode, testStarted]);
 
   // Initialize timer
   useEffect(() => {
@@ -166,25 +176,12 @@ export default function VocabularyCheckup() {
   }, [timeRemaining]);
 
   // Fullscreen and tab detection for Test mode
+  // ONLY runs when test has started (after dialog acknowledgment for test mode, or auto-start for practice)
   useEffect(() => {
-    // Only enter fullscreen when test mode is acknowledged AND all data is loaded
-    if (
-      !isTestMode || 
-      !testModeAcknowledged ||
-      submissionLoading ||
-      questionsLoading ||
-      questions.length === 0 ||
-      !listData
-    ) return;
+    // Only run for test mode AND after test has started
+    if (!isTestMode || !testStarted) return;
 
-    console.log("Test mode fullscreen effect running", { 
-      isTestMode, 
-      testModeAcknowledged,
-      submissionLoading,
-      questionsLoading,
-      questionsCount: questions.length,
-      hasListData: !!listData
-    });
+    console.log("Test mode fullscreen effect running - entering fullscreen now");
 
     // Enter fullscreen after a short delay to ensure ref is attached
     const enterFullscreen = async () => {
@@ -254,7 +251,7 @@ export default function VocabularyCheckup() {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [isTestMode, testModeAcknowledged, submissionLoading, questionsLoading, questions.length, listData]);
+  }, [isTestMode, testStarted]);
 
   // Format time
   const formatTime = (seconds: number) => {
@@ -266,7 +263,7 @@ export default function VocabularyCheckup() {
   // Handle test mode acknowledgment
   const handleStartTest = () => {
     setShowTestModeDialog(false);
-    setTestModeAcknowledged(true);
+    setTestStarted(true);
   };
 
   // Save MC answer
@@ -499,12 +496,15 @@ export default function VocabularyCheckup() {
   const progress =
     questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
 
-  if (submissionLoading || questionsLoading) {
+  // Show loading screen if content is not loaded OR test hasn't started yet
+  if (!isContentLoaded || !testStarted) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading test...</p>
+          <p className="text-slate-600">
+            {!isContentLoaded ? "Loading test..." : "Preparing test..."}
+          </p>
         </div>
       </div>
     );
