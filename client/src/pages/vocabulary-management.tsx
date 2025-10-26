@@ -165,10 +165,8 @@ export default function VocabularyManagement() {
         published: false
       });
     } else {
-      // Open class selection dialog for unpublished lists
-      setPublishingList(list);
-      setSelectedClassesForPublish([]);
-      setShowPublishDialog(true);
+      // Navigate to publish configuration page for unpublished lists
+      navigate(`/educator/publish/${list.id}`);
     }
   };
 

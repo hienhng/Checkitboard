@@ -666,6 +666,131 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Publish vocabulary list to multiple classes
+  app.post("/api/vocabulary-lists/:id/publish-multi", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (req.user.role !== "educator") {
+        return res.status(403).json({ message: "Only educators can publish vocabulary lists" });
+      }
+
+      const listId = parseInt(req.params.id);
+      if (isNaN(listId)) {
+        return res.status(400).json({ message: "Invalid list ID" });
+      }
+
+      const { classIds, ...publishSettings } = req.body;
+
+      if (!classIds || !Array.isArray(classIds) || classIds.length === 0) {
+        return res.status(400).json({ message: "At least one class ID is required" });
+      }
+
+      // Get the original list with all its words
+      const originalList = await storage.getVocabularyListWithWords(listId);
+      
+      if (!originalList) {
+        return res.status(404).json({ message: "Vocabulary list not found" });
+      }
+
+      if (originalList.educatorId !== req.user.id) {
+        return res.status(403).json({ message: "You don't have permission to publish this list" });
+      }
+
+      // Validate all classes belong to the educator
+      for (const classId of classIds) {
+        const classObj = await storage.getClassById(classId);
+        if (!classObj) {
+          return res.status(404).json({ message: `Class with ID ${classId} not found` });
+        }
+        if (classObj.educatorId !== req.user.id) {
+          return res.status(403).json({ message: "You don't have permission to assign to one or more classes" });
+        }
+      }
+
+      // Wrap all publishing operations in a transaction for data consistency
+      const result = await db.transaction(async (tx) => {
+        // Publish to first class (update existing list)
+        const firstClassId = classIds[0];
+        await tx.update(vocabularyLists)
+          .set({
+            published: true,
+            classId: firstClassId,
+            ...publishSettings,
+            dueDate: publishSettings.dueDate ? new Date(publishSettings.dueDate) : undefined
+          })
+          .where(eq(vocabularyLists.id, listId));
+
+        const publishedLists = [{ listId, classId: firstClassId }];
+
+        // Create duplicates for remaining classes
+        for (let i = 1; i < classIds.length; i++) {
+          const classId = classIds[i];
+          
+          // Create new vocabulary list
+          const [newList] = await tx.insert(vocabularyLists).values({
+            title: originalList.title,
+            passage: originalList.passage,
+            educatorId: req.user.id,
+            classId: classId,
+            published: true,
+            ...publishSettings,
+            dueDate: publishSettings.dueDate ? new Date(publishSettings.dueDate) : undefined,
+          }).returning();
+
+          // Copy all words from the original list
+          for (const word of originalList.words) {
+            const [newWord] = await tx.insert(vocabularyWords).values({
+              listId: newList.id,
+              word: word.word,
+            }).returning();
+
+            // Copy multiple choice questions
+            const mcQuestions = await db.query.multipleChoiceQuestions.findMany({
+              where: eq(multipleChoiceQuestions.wordId, word.id),
+            });
+
+            for (const mcq of mcQuestions) {
+              await tx.insert(multipleChoiceQuestions).values({
+                wordId: newWord.id,
+                question: mcq.question,
+                correctAnswer: mcq.correctAnswer,
+                incorrectAnswers: mcq.incorrectAnswers,
+              });
+            }
+
+            // Copy input form questions
+            const inputQuestions = await db.query.inputFormQuestions.findMany({
+              where: eq(inputFormQuestions.wordId, word.id),
+            });
+
+            for (const inputQ of inputQuestions) {
+              await tx.insert(inputFormQuestions).values({
+                wordId: newWord.id,
+                question: inputQ.question,
+                correctAnswer: inputQ.correctAnswer,
+              });
+            }
+          }
+
+          publishedLists.push({ listId: newList.id, classId });
+        }
+
+        return publishedLists;
+      });
+
+      res.json({
+        message: `Successfully published to ${classIds.length} classes`,
+        publishedLists: result
+      });
+    } catch (error) {
+      console.error("Error publishing vocabulary list to multiple classes:", error);
+      res.status(500).json({ message: "Error publishing vocabulary list" });
+    }
+  });
+
   // Get question status for all words in a vocabulary list
   app.get("/api/vocabulary-lists/:listId/question-status", async (req, res) => {
     try {

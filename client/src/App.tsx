@@ -28,6 +28,7 @@ import EducatorStatisticsPage from "@/pages/educator-statistics-page";
 import EducatorClasses from "@/pages/educator-classes";
 import VocabularyManagement from "@/pages/vocabulary-management";
 import VocabularyDetails from "@/pages/vocabulary-details";
+import PublishVocabularyList from "@/pages/publish-vocabulary-list";
 import ExplorePage from "@/pages/explore-page";
 import StickyNotesBoard from "@/pages/sticky-notes-board";
 import { SettingsPage } from "@/pages/settings";
@@ -62,6 +63,7 @@ function Router() {
             <ProtectedRoute path="/educator/classes" component={withEmailVerification(EducatorClasses)} />
             <ProtectedRoute path="/educator/assignments" component={withEmailVerification(VocabularyManagement)} />
             <ProtectedRoute path="/educator/vocabulary/:listId" component={withEmailVerification(VocabularyDetails)} />
+            <ProtectedRoute path="/educator/publish/:id" component={withEmailVerification(PublishVocabularyList)} />
             <ProtectedRoute path="/learner/dashboard" component={withEmailVerification(LearnerDashboard)} />
             <ProtectedRoute path="/learner/vocabulary/:listId" component={withEmailVerification(VocabularyView)} />
             <ProtectedRoute path="/learner/flashcards" component={withEmailVerification(FlashcardsPage)} />
