@@ -63,6 +63,8 @@ export default function VocabularyCheckup() {
   const [showSaveProgressDialog, setShowSaveProgressDialog] = useState(false);
   const [exitReason, setExitReason] = useState("");
   const [fullscreenWarning, setFullscreenWarning] = useState(false);
+  const [showTestModeDialog, setShowTestModeDialog] = useState(false);
+  const [testModeAcknowledged, setTestModeAcknowledged] = useState(false);
   const [inputDebounceTimers, setInputDebounceTimers] = useState<
     Record<number, NodeJS.Timeout>
   >({});
@@ -125,6 +127,13 @@ export default function VocabularyCheckup() {
     }
   }, [savedAnswers]);
 
+  // Show test mode dialog for test mode
+  useEffect(() => {
+    if (isTestMode && !testModeAcknowledged && questions.length > 0) {
+      setShowTestModeDialog(true);
+    }
+  }, [isTestMode, testModeAcknowledged, questions.length]);
+
   // Initialize timer
   useEffect(() => {
     if (listSettings.timeLimit && timeRemaining === null) {
@@ -151,9 +160,9 @@ export default function VocabularyCheckup() {
 
   // Fullscreen and tab detection for Test mode
   useEffect(() => {
-    if (!isTestMode) return;
+    if (!isTestMode || !testModeAcknowledged) return;
 
-    console.log("Test mode fullscreen effect running", { isTestMode });
+    console.log("Test mode fullscreen effect running", { isTestMode, testModeAcknowledged });
 
     // Enter fullscreen after a short delay to ensure ref is attached
     const enterFullscreen = async () => {
@@ -223,13 +232,19 @@ export default function VocabularyCheckup() {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [isTestMode]);
+  }, [isTestMode, testModeAcknowledged]);
 
   // Format time
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${minutes}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  // Handle test mode acknowledgment
+  const handleStartTest = () => {
+    setShowTestModeDialog(false);
+    setTestModeAcknowledged(true);
   };
 
   // Save MC answer
@@ -740,6 +755,55 @@ export default function VocabularyCheckup() {
           </Card>
         </div>
       </div>
+
+      {/* Test Mode Warning Dialog */}
+      <Dialog open={showTestModeDialog} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-600">
+              <AlertTriangle className="h-5 w-5" />
+              Test Mode - Important Notice
+            </DialogTitle>
+            <DialogDescription className="space-y-3 pt-4">
+              <p className="font-medium text-slate-900">
+                This is a monitored test. Please read the following carefully:
+              </p>
+              <ul className="list-disc list-inside space-y-2 text-sm text-slate-700">
+                <li>
+                  <strong>Fullscreen mode</strong> will be activated and enforced
+                </li>
+                <li>
+                  <strong>Tab switching</strong> and exiting fullscreen will be detected
+                </li>
+                <li>
+                  Any violations will be <strong>recorded and reported</strong> to your teacher
+                </li>
+                <li>
+                  You must remain in fullscreen mode for the entire duration of the test
+                </li>
+              </ul>
+              <p className="text-sm text-amber-700 bg-amber-50 p-3 rounded-md border border-amber-200">
+                ⚠️ By clicking "Start Test", you acknowledge these terms and agree to follow the test rules.
+              </p>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => navigate("/learner-dashboard")}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleStartTest}
+              className="bg-blue-600 hover:bg-blue-700 flex-1"
+            >
+              I Understand - Start Test
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Submit Confirmation Dialog */}
       <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
