@@ -181,16 +181,16 @@ export default function VocabularyCheckup() {
     // Only run for test mode AND after test has started
     if (!isTestMode || !testStarted) return;
 
-    console.log("Test mode fullscreen effect running - entering fullscreen now");
+    console.log("Test mode fullscreen effect running - will enter fullscreen after content renders");
 
-    // Enter fullscreen after a short delay to ensure ref is attached
+    // Enter fullscreen after a delay to allow content to render first
     const enterFullscreen = async () => {
       try {
         if (
           checkupRef.current &&
           document.fullscreenElement !== checkupRef.current
         ) {
-          console.log("Attempting to enter fullscreen");
+          console.log("Attempting to enter fullscreen NOW");
           await checkupRef.current.requestFullscreen();
         }
       } catch (error) {
@@ -203,8 +203,8 @@ export default function VocabularyCheckup() {
       }
     };
 
-    // Delay fullscreen request to ensure ref is attached
-    const fullscreenTimer = setTimeout(enterFullscreen, 100);
+    // Delay fullscreen request to allow content to render and be visible first (2 seconds)
+    const fullscreenTimer = setTimeout(enterFullscreen, 2000);
 
     // Monitor fullscreen changes
     const handleFullscreenChange = () => {
