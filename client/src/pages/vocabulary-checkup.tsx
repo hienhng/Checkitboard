@@ -167,9 +167,24 @@ export default function VocabularyCheckup() {
 
   // Fullscreen and tab detection for Test mode
   useEffect(() => {
-    if (!isTestMode || !testModeAcknowledged) return;
+    // Only enter fullscreen when test mode is acknowledged AND all data is loaded
+    if (
+      !isTestMode || 
+      !testModeAcknowledged ||
+      submissionLoading ||
+      questionsLoading ||
+      questions.length === 0 ||
+      !listData
+    ) return;
 
-    console.log("Test mode fullscreen effect running", { isTestMode, testModeAcknowledged });
+    console.log("Test mode fullscreen effect running", { 
+      isTestMode, 
+      testModeAcknowledged,
+      submissionLoading,
+      questionsLoading,
+      questionsCount: questions.length,
+      hasListData: !!listData
+    });
 
     // Enter fullscreen after a short delay to ensure ref is attached
     const enterFullscreen = async () => {
@@ -239,7 +254,7 @@ export default function VocabularyCheckup() {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [isTestMode, testModeAcknowledged]);
+  }, [isTestMode, testModeAcknowledged, submissionLoading, questionsLoading, questions.length, listData]);
 
   // Format time
   const formatTime = (seconds: number) => {
