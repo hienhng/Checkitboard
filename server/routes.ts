@@ -757,7 +757,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 wordId: newWord.id,
                 question: mcq.question,
                 correctAnswer: mcq.correctAnswer,
-                incorrectAnswers: mcq.incorrectAnswers,
+                optionA: mcq.optionA,
+                optionB: mcq.optionB,
+                optionC: mcq.optionC,
+                optionD: mcq.optionD,
               });
             }
 
