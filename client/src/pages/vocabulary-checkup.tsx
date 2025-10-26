@@ -87,6 +87,24 @@ export default function VocabularyCheckup() {
     enabled: !!listId,
   });
 
+  // Get all questions for the vocabulary list
+  const { data: questionsData, isLoading: questionsLoading } = useQuery({
+    queryKey: [
+      `/api/vocabulary-lists/${listId}/questions?submissionId=${submissionId}`,
+    ],
+    queryFn: getQueryFn({ on401: "throw" }),
+    enabled: !!listId,
+  });
+
+  const questions = (questionsData as any)?.questions || [];
+  const savedAnswers = (questionsData as any)?.savedAnswers || {};
+  const listSettings = (questionsData as any)?.listSettings || {};
+  const passage = (questionsData as any)?.passage || "";
+  const title = (questionsData as any)?.title || "";
+  const currentQuestion = questions[currentQuestionIndex] as
+    | Question
+    | undefined;
+
   const checkupType = (listData as any)?.type || "practice";
   const isTestMode = checkupType === "test";
 
@@ -107,24 +125,6 @@ export default function VocabularyCheckup() {
     questionsLoading,
     questionsCount: questions.length,
   });
-
-  // Get all questions for the vocabulary list
-  const { data: questionsData, isLoading: questionsLoading } = useQuery({
-    queryKey: [
-      `/api/vocabulary-lists/${listId}/questions?submissionId=${submissionId}`,
-    ],
-    queryFn: getQueryFn({ on401: "throw" }),
-    enabled: !!listId,
-  });
-
-  const questions = (questionsData as any)?.questions || [];
-  const savedAnswers = (questionsData as any)?.savedAnswers || {};
-  const listSettings = (questionsData as any)?.listSettings || {};
-  const passage = (questionsData as any)?.passage || "";
-  const title = (questionsData as any)?.title || "";
-  const currentQuestion = questions[currentQuestionIndex] as
-    | Question
-    | undefined;
 
   // Hydrate answers from saved answers
   useEffect(() => {
