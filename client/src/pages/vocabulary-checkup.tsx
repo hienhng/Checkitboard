@@ -127,12 +127,19 @@ export default function VocabularyCheckup() {
     }
   }, [savedAnswers]);
 
-  // Show test mode dialog for test mode
+  // Show test mode dialog for test mode (only when fully loaded)
   useEffect(() => {
-    if (isTestMode && !testModeAcknowledged && questions.length > 0) {
+    if (
+      isTestMode && 
+      !testModeAcknowledged && 
+      !submissionLoading && 
+      !questionsLoading &&
+      questions.length > 0 &&
+      listData
+    ) {
       setShowTestModeDialog(true);
     }
-  }, [isTestMode, testModeAcknowledged, questions.length]);
+  }, [isTestMode, testModeAcknowledged, submissionLoading, questionsLoading, questions.length, listData]);
 
   // Initialize timer
   useEffect(() => {
