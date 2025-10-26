@@ -748,9 +748,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }).returning();
 
             // Copy multiple choice questions
-            const mcQuestions = await db.query.multipleChoiceQuestions.findMany({
-              where: eq(multipleChoiceQuestions.wordId, word.id),
-            });
+            const mcQuestions = await db.select().from(multipleChoiceQuestions).where(eq(multipleChoiceQuestions.wordId, word.id));
 
             for (const mcq of mcQuestions) {
               await tx.insert(multipleChoiceQuestions).values({
@@ -765,9 +763,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
 
             // Copy input form questions
-            const inputQuestions = await db.query.inputFormQuestions.findMany({
-              where: eq(inputFormQuestions.wordId, word.id),
-            });
+            const inputQuestions = await db.select().from(inputFormQuestions).where(eq(inputFormQuestions.wordId, word.id));
 
             for (const inputQ of inputQuestions) {
               await tx.insert(inputFormQuestions).values({
