@@ -151,7 +151,11 @@ body {
 
   /* Modern glass effect */
   .glass {
-    @apply bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50;
+    @apply bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border border-white/20 dark:border-gray-700/30 shadow-lg shadow-black/5;
+  }
+
+  .glass-subtle {
+    @apply bg-white/50 dark:bg-gray-900/50 backdrop-blur-md border border-white/30 dark:border-gray-700/20;
   }
 
   /* Modern gradient backgrounds */
@@ -163,19 +167,59 @@ body {
     @apply bg-gradient-to-br from-secondary via-secondary/90 to-secondary/80;
   }
 
+  .gradient-subtle {
+    @apply bg-gradient-to-br from-slate-50 via-blue-50/50 to-indigo-50/30 dark:from-slate-900 dark:via-blue-950/30 dark:to-indigo-950/20;
+  }
+
+  .gradient-mesh {
+    @apply bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950/40 dark:via-indigo-950/30 dark:to-purple-950/20;
+  }
+
   /* Enhanced buttons */
   .btn-modern {
-    @apply inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98];
   }
 
   /* Modern card styles */
   .card-modern {
-    @apply bg-card text-card-foreground rounded-xl border border-border/50 shadow-sm hover:shadow-md transition-all duration-200;
+    @apply bg-card text-card-foreground rounded-2xl border border-border/50 shadow-sm shadow-black/5 hover:shadow-lg hover:shadow-black/10 transition-all duration-300 hover:-translate-y-1;
+  }
+
+  .card-interactive {
+    @apply bg-card text-card-foreground rounded-2xl border border-border/40 shadow-md shadow-black/5 hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 cursor-pointer;
+  }
+
+  .card-glass {
+    @apply bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-gray-700/30 shadow-lg shadow-black/5;
   }
 
   /* Enhanced input styles */
   .input-modern {
-    @apply flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply flex h-12 w-full rounded-xl border-2 border-input bg-background px-4 py-3 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:border-primary/50 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200;
+  }
+
+  /* Floating elements */
+  .float-card {
+    @apply bg-white/90 dark:bg-gray-800/90 backdrop-blur-lg rounded-2xl p-4 shadow-xl shadow-black/10 border border-white/50 dark:border-gray-700/50;
+  }
+
+  /* Icon containers */
+  .icon-container {
+    @apply w-12 h-12 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center text-primary;
+  }
+
+  .icon-container-sm {
+    @apply w-10 h-10 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center text-primary;
+  }
+
+  /* Section dividers */
+  .section-divider {
+    @apply h-px bg-gradient-to-r from-transparent via-border to-transparent my-8;
+  }
+
+  /* Stat cards */
+  .stat-card {
+    @apply bg-gradient-to-br from-white to-slate-50/50 dark:from-slate-800 dark:to-slate-900/50 rounded-2xl p-6 border border-border/40 shadow-sm;
   }
 }
 
