@@ -320,19 +320,18 @@ export default function VocabularyCheckup() {
     },
   });
 
+  // Track pending MC answers that haven't been saved yet
+  const [pendingMCAnswers, setPendingMCAnswers] = useState<Record<number, string>>({});
+
   // Handle answer change
   const handleAnswerChange = (answer: string) => {
     if (!currentQuestion) return;
 
     setAnswers((prev) => ({ ...prev, [currentQuestion.id]: answer }));
 
-    // Auto-save the answer
+    // For multiple choice, just mark as pending - will save on navigation
     if (currentQuestion.type === "multiple_choice") {
-      // Save MC answers immediately
-      saveMCAnswerMutation.mutate({
-        questionId: currentQuestion.id,
-        selectedAnswer: answer,
-      });
+      setPendingMCAnswers((prev) => ({ ...prev, [currentQuestion.id]: answer }));
     } else {
       // Debounce input answers to avoid excessive API calls
       const questionId = currentQuestion.id;
@@ -348,6 +347,30 @@ export default function VocabularyCheckup() {
       }, 500); // 500ms debounce
 
       setInputDebounceTimers((prev) => ({ ...prev, [questionId]: timer }));
+    }
+  };
+
+  // Save pending MC answer for a specific question
+  const savePendingMCAnswer = (questionId: number) => {
+    const pendingAnswer = pendingMCAnswers[questionId];
+    if (pendingAnswer !== undefined) {
+      saveMCAnswerMutation.mutate({
+        questionId,
+        selectedAnswer: pendingAnswer,
+      });
+      // Remove from pending after initiating save
+      setPendingMCAnswers((prev) => {
+        const updated = { ...prev };
+        delete updated[questionId];
+        return updated;
+      });
+    }
+  };
+
+  // Save current question's pending MC answer before navigation
+  const saveCurrentMCAnswerIfPending = () => {
+    if (currentQuestion && currentQuestion.type === "multiple_choice") {
+      savePendingMCAnswer(currentQuestion.id);
     }
   };
 
@@ -370,9 +393,24 @@ export default function VocabularyCheckup() {
   });
 
   const handleSubmit = async () => {
-    // Flush all pending debounced input saves before submitting
+    // Flush all pending saves before submitting
     const pendingSaves: Promise<void>[] = [];
 
+    // Save all pending MC answers
+    Object.entries(pendingMCAnswers).forEach(([questionId, selectedAnswer]) => {
+      const savePromise = new Promise<void>((resolve) => {
+        saveMCAnswerMutation.mutate(
+          { questionId: parseInt(questionId), selectedAnswer },
+          {
+            onSettled: () => resolve(),
+          },
+        );
+      });
+      pendingSaves.push(savePromise);
+    });
+    setPendingMCAnswers({});
+
+    // Save all pending debounced input answers
     Object.entries(inputDebounceTimers).forEach(([questionId, timer]) => {
       clearTimeout(timer);
 
@@ -442,21 +480,37 @@ export default function VocabularyCheckup() {
 
   // Handle save and go back (practice mode)
   const handleSaveAndGoBack = async () => {
-    // Clear all pending timers and force save any pending answers
-    const pendingPromises = Object.entries(inputDebounceTimers).map(([questionIdStr, timer]) => {
+    const pendingPromises: Promise<any>[] = [];
+
+    // Save all pending MC answers
+    Object.entries(pendingMCAnswers).forEach(([questionIdStr, selectedAnswer]) => {
+      const questionId = parseInt(questionIdStr);
+      pendingPromises.push(
+        apiRequest("POST", `/api/submissions/${submissionId}/multiple-choice-answer`, {
+          questionId,
+          selectedAnswer,
+        })
+      );
+    });
+    setPendingMCAnswers({});
+
+    // Clear all pending input timers and force save any pending input answers
+    Object.entries(inputDebounceTimers).forEach(([questionIdStr, timer]) => {
       clearTimeout(timer);
       const questionId = parseInt(questionIdStr);
       const answer = answers[questionId];
       
       // If there's an answer for this question, save it
       if (answer && currentQuestion && currentQuestion.id === questionId && currentQuestion.type === 'input') {
-        return apiRequest("POST", `/api/submissions/${submissionId}/input-form-answer`, {
-          questionId,
-          studentAnswer: answer,
-        });
+        pendingPromises.push(
+          apiRequest("POST", `/api/submissions/${submissionId}/input-form-answer`, {
+            questionId,
+            studentAnswer: answer,
+          })
+        );
       }
-      return Promise.resolve();
     });
+    setInputDebounceTimers({});
 
     // Wait for all saves to complete
     try {
@@ -481,13 +535,23 @@ export default function VocabularyCheckup() {
   // Navigation
   const goToNext = () => {
     if (currentQuestionIndex < questions.length - 1) {
+      saveCurrentMCAnswerIfPending();
       setCurrentQuestionIndex((prev) => prev + 1);
     }
   };
 
   const goToPrevious = () => {
     if (currentQuestionIndex > 0) {
+      saveCurrentMCAnswerIfPending();
       setCurrentQuestionIndex((prev) => prev - 1);
+    }
+  };
+
+  // Navigate to specific question (from question navigator)
+  const goToQuestion = (index: number) => {
+    if (index !== currentQuestionIndex) {
+      saveCurrentMCAnswerIfPending();
+      setCurrentQuestionIndex(index);
     }
   };
 
@@ -763,7 +827,7 @@ export default function VocabularyCheckup() {
               {questions.map((q: Question, idx: number) => (
                 <button
                   key={q.id}
-                  onClick={() => setCurrentQuestionIndex(idx)}
+                  onClick={() => goToQuestion(idx)}
                   className={`
                     aspect-square rounded-lg border-2 text-sm font-medium transition-all
                     ${currentQuestionIndex === idx ? "border-blue-600 bg-blue-50 text-blue-700" : ""}
