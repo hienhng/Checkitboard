@@ -575,7 +575,7 @@ function LearnerDashboard() {
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-indigo-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <CardContent className="p-6 relative">
                   <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-purple-300 flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-300">
-                    <Plus className="h-7 w-7 text-purple-600 group-hover:icon-rotate-90" />
+                    <Plus className="h-7 w-7 text-purple-600 icon-rotate-90 group-hover:rotate-90" />
                   </div>
                   <div className="space-y-2.5">
                     <Button
