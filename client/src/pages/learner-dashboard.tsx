@@ -45,6 +45,7 @@ import {
   ChevronDown,
   FileStack,
   GraduationCap,
+
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -573,8 +574,8 @@ function LearnerDashboard() {
               <Card className="stat-card group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-0 overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-indigo-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <CardContent className="p-6 relative">
-                  <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center shadow-sm">
-                    <ChevronRight className="h-7 w-7 text-purple-600" />
+                  <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-purple-300 flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-300">
+                    <Plus className="h-7 w-7 text-purple-600 group-hover:animate-spin transition-transform duration-300" />
                   </div>
                   <div className="space-y-2.5">
                     <Button
@@ -594,9 +595,9 @@ function LearnerDashboard() {
                       Explore Words
                     </Button>
                     <Button
-                      variant="outline"
+                      variant="default"
                       size="sm"
-                      className="w-full hover:bg-slate-50 transition-colors duration-200"
+                      className="w-full bg-slate-50 text-black hover:bg-blue-50 transition-all duration-200"
                       onClick={() => setShowJoinClass(true)}
                     >
                       <Plus className="mr-2 h-4 w-4" />

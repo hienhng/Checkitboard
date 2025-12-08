@@ -438,3 +438,12 @@ body {
   background-size: 400% 400%;
   animation: gradient-move 3s ease infinite;
 }
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.rotate {
+  animation: spin 2s linear infinite;
+}
