@@ -187,162 +187,162 @@ export default function LearnerAnalysis() {
   };
 
   return (
-    <div className="container py-8 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-            <Activity className="h-6 w-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent">
-              Learning Progress
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Track your vocabulary mastery journey and achievements
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-blue-950 dark:to-indigo-950">
+      <div className="container py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-10">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center shadow-lg shadow-primary/25">
+              <Activity className="h-7 w-7 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 dark:from-white dark:via-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
+                Learning Progress
+              </h1>
+              <p className="text-lg text-muted-foreground mt-1">
+                Track your vocabulary mastery journey and achievements
+              </p>
+            </div>
           </div>
         </div>
-      </div>
 
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading your progress data...</p>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-24">
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center shadow-lg shadow-primary/25 animate-pulse">
+                <Activity className="h-8 w-8 text-white" />
+              </div>
+              <p className="text-muted-foreground text-lg">Loading your progress data...</p>
+            </div>
           </div>
-        </div>
-      ) : (
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-[600px]">
-            <TabsTrigger value="overview" className="flex items-center gap-2">
-              <Activity className="h-4 w-4" />
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Analytics
-            </TabsTrigger>
-            <TabsTrigger value="achievements" className="flex items-center gap-2">
-              <Award className="h-4 w-4" />
-              Achievements
-            </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              History
-            </TabsTrigger>
-          </TabsList>
+        ) : (
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="grid w-full grid-cols-4 lg:w-[650px] p-1.5 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-slate-200/80 dark:border-slate-700/50 shadow-lg rounded-xl">
+              <TabsTrigger value="overview" className="flex items-center gap-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200">
+                <Activity className="h-4 w-4" />
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="flex items-center gap-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200">
+                <BarChart3 className="h-4 w-4" />
+                Analytics
+              </TabsTrigger>
+              <TabsTrigger value="achievements" className="flex items-center gap-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200">
+                <Award className="h-4 w-4" />
+                Achievements
+              </TabsTrigger>
+              <TabsTrigger value="history" className="flex items-center gap-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200">
+                <Clock className="h-4 w-4" />
+                History
+              </TabsTrigger>
+            </TabsList>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
             {/* Key Stats Cards */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-              <Card className="relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-blue-500/20 to-transparent rounded-bl-3xl"></div>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Average Score
-                    </CardTitle>
-                    <Target className="h-4 w-4 text-blue-500" />
+              <Card className="group relative overflow-hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg hover:shadow-xl rounded-2xl transition-all duration-300 hover:-translate-y-1">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent dark:from-blue-500/10" />
+                <CardContent className="relative p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/25 group-hover:scale-110 transition-transform duration-300">
+                      <Target className="h-7 w-7 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-muted-foreground mb-1">Average Score</p>
+                      <p className={`text-3xl font-bold ${getPerformanceColor(avgScore)}`}>{avgScore}%</p>
+                    </div>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className={`text-3xl font-bold ${getPerformanceColor(avgScore)}`}>
-                    {avgScore}%
-                  </div>
-                  <Progress value={avgScore} className="mt-2" />
+                  <Progress value={avgScore} className="mt-4" />
                   <p className="text-xs text-muted-foreground mt-2">
                     Across {totalSubmissions} completed tests
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-green-500/20 to-transparent rounded-bl-3xl"></div>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Best Score
-                    </CardTitle>
-                    <Trophy className="h-4 w-4 text-green-500" />
+              <Card className="group relative overflow-hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg hover:shadow-xl rounded-2xl transition-all duration-300 hover:-translate-y-1">
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent dark:from-emerald-500/10" />
+                <CardContent className="relative p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/25 group-hover:scale-110 transition-transform duration-300">
+                      <Trophy className="h-7 w-7 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-muted-foreground mb-1">Best Score</p>
+                      <p className={`text-3xl font-bold ${getPerformanceColor(bestScore)}`}>{bestScore}%</p>
+                    </div>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className={`text-3xl font-bold ${getPerformanceColor(bestScore)}`}>
-                    {bestScore}%
-                  </div>
-                  <Progress value={bestScore} className="mt-2" />
+                  <Progress value={bestScore} className="mt-4" />
                   <p className="text-xs text-muted-foreground mt-2">
                     Your highest achievement
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-purple-500/20 to-transparent rounded-bl-3xl"></div>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Recent Performance
-                    </CardTitle>
-                    <Zap className="h-4 w-4 text-purple-500" />
+              <Card className="group relative overflow-hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg hover:shadow-xl rounded-2xl transition-all duration-300 hover:-translate-y-1">
+                <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent dark:from-violet-500/10" />
+                <CardContent className="relative p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center shadow-lg shadow-violet-500/25 group-hover:scale-110 transition-transform duration-300">
+                      <Zap className="h-7 w-7 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-muted-foreground mb-1">Recent Performance</p>
+                      <p className={`text-3xl font-bold ${getPerformanceColor(recentScore)}`}>{recentScore || 0}%</p>
+                    </div>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className={`text-3xl font-bold ${getPerformanceColor(recentScore)}`}>
-                    {recentScore || 0}%
-                  </div>
-                  <Progress value={recentScore || 0} className="mt-2" />
+                  <Progress value={recentScore || 0} className="mt-4" />
                   <p className="text-xs text-muted-foreground mt-2">
                     Your latest test result
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-orange-500/20 to-transparent rounded-bl-3xl"></div>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Improvement
-                    </CardTitle>
-                    <TrendingUp className="h-4 w-4 text-orange-500" />
+              <Card className="group relative overflow-hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg hover:shadow-xl rounded-2xl transition-all duration-300 hover:-translate-y-1">
+                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent dark:from-amber-500/10" />
+                <CardContent className="relative p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/25 group-hover:scale-110 transition-transform duration-300">
+                      <TrendingUp className="h-7 w-7 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-muted-foreground mb-1">Improvement</p>
+                      <p className={`text-3xl font-bold ${improvementTrend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {improvementTrend >= 0 ? '+' : ''}{improvementTrend}
+                      </p>
+                    </div>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className={`text-3xl font-bold ${improvementTrend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {improvementTrend >= 0 ? '+' : ''}{improvementTrend}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Points since first test
-                  </p>
-                  <div className="flex items-center gap-1 mt-1">
+                  <div className="flex items-center gap-1 mt-4">
                     {improvementTrend >= 0 ? (
-                      <TrendingUp className="h-3 w-3 text-green-500" />
+                      <TrendingUp className="h-4 w-4 text-green-500" />
                     ) : (
-                      <TrendingUp className="h-3 w-3 text-red-500 rotate-180" />
+                      <TrendingUp className="h-4 w-4 text-red-500 rotate-180" />
                     )}
-                    <span className={`text-xs font-medium ${improvementTrend >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    <span className={`text-sm font-medium ${improvementTrend >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                       {improvementTrend >= 0 ? 'Improving' : 'Declining'}
                     </span>
+                    <span className="text-xs text-muted-foreground ml-1">since first test</span>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
             {/* Progress Chart */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <LineChartIcon className="mr-2 h-5 w-5 text-primary" />
-                  Progress Over Time
-                </CardTitle>
-                <CardDescription>
-                  Your vocabulary check-up scores over time
-                </CardDescription>
+            <Card className="relative overflow-hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-xl rounded-2xl">
+              <CardHeader className="relative bg-gradient-to-r from-primary via-primary to-indigo-600 dark:from-primary dark:via-primary dark:to-indigo-700 text-white rounded-t-2xl px-8 py-6">
+                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iNCIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
+                <div className="relative flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                    <LineChartIcon className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl font-bold">Progress Over Time</CardTitle>
+                    <CardDescription className="text-white/80 mt-1">
+                      Your vocabulary check-up scores over time
+                    </CardDescription>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-8">
                 {chartData.length > 0 ? (
                   <div className="h-[400px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
@@ -368,9 +368,10 @@ export default function LearnerAnalysis() {
                           formatter={(value, name) => [`${value}%`, 'Score']}
                           labelFormatter={(label) => `Date: ${label}`}
                           contentStyle={{ 
-                            borderRadius: '8px',
-                            border: '1px solid #e5e7eb',
-                            backgroundColor: 'white'
+                            borderRadius: '12px',
+                            border: 'none',
+                            backgroundColor: 'white',
+                            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)'
                           }}
                         />
                         <Line
@@ -386,12 +387,14 @@ export default function LearnerAnalysis() {
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <div className="text-center py-12">
-                    <LineChartIcon className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                    <h3 className="text-lg font-semibold text-gray-600 mb-2">
+                  <div className="text-center py-16">
+                    <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center">
+                      <LineChartIcon className="h-10 w-10 text-muted-foreground/50" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-foreground dark:text-foreground mb-2">
                       No Progress Data Yet
                     </h3>
-                    <p className="text-gray-500">
+                    <p className="text-muted-foreground max-w-sm mx-auto">
                       Complete some vocabulary tests to see your progress chart
                     </p>
                   </div>
@@ -404,17 +407,21 @@ export default function LearnerAnalysis() {
           <TabsContent value="analytics" className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2">
               {/* Performance Distribution */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <PieChartIcon className="mr-2 h-5 w-5 text-primary" />
-                    Performance Distribution
-                  </CardTitle>
-                  <CardDescription>
-                    Breakdown of your test performance levels
-                  </CardDescription>
+              <Card className="group relative overflow-hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg hover:shadow-xl rounded-2xl transition-all duration-300">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/25">
+                      <PieChartIcon className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg font-bold">Performance Distribution</CardTitle>
+                      <CardDescription className="mt-0.5">
+                        Breakdown of your test performance levels
+                      </CardDescription>
+                    </div>
+                  </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-0">
                   {performanceData.length > 0 ? (
                     <div className="h-[300px] w-full">
                       <ResponsiveContainer width="100%" height="100%">
@@ -424,40 +431,56 @@ export default function LearnerAnalysis() {
                             cx="50%"
                             cy="50%"
                             labelLine={false}
-                            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                            outerRadius={80}
+                            label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
+                            outerRadius={100}
+                            innerRadius={40}
                             fill="#8884d8"
                             dataKey="value"
+                            paddingAngle={2}
                           >
                             {performanceData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.fill} />
                             ))}
                           </Pie>
-                          <Tooltip />
+                          <Tooltip 
+                            contentStyle={{ 
+                              borderRadius: '12px',
+                              border: 'none',
+                              backgroundColor: 'white',
+                              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)'
+                            }}
+                          />
+                          <Legend />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
                   ) : (
-                    <div className="text-center py-8">
-                      <PieChartIcon className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                      <p className="text-gray-500">No performance data available</p>
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center">
+                        <PieChartIcon className="h-8 w-8 text-muted-foreground/50" />
+                      </div>
+                      <p className="text-muted-foreground">No performance data available</p>
                     </div>
                   )}
                 </CardContent>
               </Card>
 
               {/* Monthly Trends */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <BarChart3 className="mr-2 h-5 w-5 text-primary" />
-                    Monthly Trends
-                  </CardTitle>
-                  <CardDescription>
-                    Average scores by month
-                  </CardDescription>
+              <Card className="group relative overflow-hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg hover:shadow-xl rounded-2xl transition-all duration-300">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-cyan-500/25">
+                      <BarChart3 className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg font-bold">Monthly Trends</CardTitle>
+                      <CardDescription className="mt-0.5">
+                        Average scores by month
+                      </CardDescription>
+                    </div>
+                  </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-0">
                   {monthlyData.length > 0 ? (
                     <div className="h-[300px] w-full">
                       <ResponsiveContainer width="100%" height="100%">
@@ -468,19 +491,22 @@ export default function LearnerAnalysis() {
                           <Tooltip 
                             formatter={(value) => [`${value}%`, 'Average Score']}
                             contentStyle={{ 
-                              borderRadius: '8px',
-                              border: '1px solid #e5e7eb',
-                              backgroundColor: 'white'
+                              borderRadius: '12px',
+                              border: 'none',
+                              backgroundColor: 'white',
+                              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)'
                             }}
                           />
-                          <Bar dataKey="average" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="average" fill="#06b6d4" radius={[8, 8, 0, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
                   ) : (
-                    <div className="text-center py-8">
-                      <BarChart3 className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                      <p className="text-gray-500">No monthly data available</p>
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center">
+                        <BarChart3 className="h-8 w-8 text-muted-foreground/50" />
+                      </div>
+                      <p className="text-muted-foreground">No monthly data available</p>
                     </div>
                   )}
                 </CardContent>
@@ -488,30 +514,37 @@ export default function LearnerAnalysis() {
             </div>
 
             {/* Performance Summary */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Performance Summary</CardTitle>
-                <CardDescription>
-                  Detailed breakdown of your test results
-                </CardDescription>
+            <Card className="relative overflow-hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg rounded-2xl">
+              <CardHeader className="pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+                    <Activity className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg font-bold">Performance Summary</CardTitle>
+                    <CardDescription className="mt-0.5">
+                      Detailed breakdown of your test results
+                    </CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4 md:grid-cols-4">
-                  <div className="text-center p-4 bg-green-50 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">{excellentCount}</div>
-                    <div className="text-sm text-green-700">Excellent (90-100%)</div>
+                  <div className="group text-center p-5 bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/30 dark:to-emerald-800/30 rounded-xl border border-emerald-200 dark:border-emerald-700/50 hover:shadow-lg hover:shadow-emerald-500/10 transition-all duration-300 hover:-translate-y-0.5">
+                    <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{excellentCount}</div>
+                    <div className="text-sm font-medium text-emerald-700 dark:text-emerald-300 mt-1">Excellent (90-100%)</div>
                   </div>
-                  <div className="text-center p-4 bg-blue-50 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">{goodCount}</div>
-                    <div className="text-sm text-blue-700">Good (70-89%)</div>
+                  <div className="group text-center p-5 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 rounded-xl border border-blue-200 dark:border-blue-700/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 hover:-translate-y-0.5">
+                    <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{goodCount}</div>
+                    <div className="text-sm font-medium text-blue-700 dark:text-blue-300 mt-1">Good (70-89%)</div>
                   </div>
-                  <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                    <div className="text-2xl font-bold text-yellow-600">{averageCount}</div>
-                    <div className="text-sm text-yellow-700">Average (50-69%)</div>
+                  <div className="group text-center p-5 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/30 dark:to-amber-800/30 rounded-xl border border-amber-200 dark:border-amber-700/50 hover:shadow-lg hover:shadow-amber-500/10 transition-all duration-300 hover:-translate-y-0.5">
+                    <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">{averageCount}</div>
+                    <div className="text-sm font-medium text-amber-700 dark:text-amber-300 mt-1">Average (50-69%)</div>
                   </div>
-                  <div className="text-center p-4 bg-red-50 rounded-lg">
-                    <div className="text-2xl font-bold text-red-600">{needsImprovementCount}</div>
-                    <div className="text-sm text-red-700">Needs Work (&lt;50%)</div>
+                  <div className="group text-center p-5 bg-gradient-to-br from-rose-50 to-rose-100 dark:from-rose-900/30 dark:to-rose-800/30 rounded-xl border border-rose-200 dark:border-rose-700/50 hover:shadow-lg hover:shadow-rose-500/10 transition-all duration-300 hover:-translate-y-0.5">
+                    <div className="text-3xl font-bold text-rose-600 dark:text-rose-400">{needsImprovementCount}</div>
+                    <div className="text-sm font-medium text-rose-700 dark:text-rose-300 mt-1">Needs Work (&lt;50%)</div>
                   </div>
                 </div>
               </CardContent>
@@ -520,27 +553,43 @@ export default function LearnerAnalysis() {
 
           {/* Achievements Tab */}
           <TabsContent value="achievements" className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {achievements.map((achievement) => {
                 const IconComponent = achievement.icon;
                 return (
-                  <Card key={achievement.id} className={`relative overflow-hidden ${achievement.earned ? 'border-yellow-200 bg-gradient-to-br from-yellow-50 to-orange-50' : 'opacity-60'}`}>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <IconComponent className={`h-8 w-8 ${achievement.earned ? achievement.color : 'text-gray-400'}`} />
+                  <Card 
+                    key={achievement.id} 
+                    className={`group relative overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-1 ${
+                      achievement.earned 
+                        ? 'bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-900/30 dark:via-yellow-900/20 dark:to-orange-900/30 border-amber-200/80 dark:border-amber-700/50 shadow-lg hover:shadow-xl hover:shadow-amber-500/10' 
+                        : 'bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm border-slate-200/80 dark:border-slate-700/50 opacity-75 hover:opacity-100'
+                    }`}
+                  >
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className={`w-14 h-14 rounded-xl flex items-center justify-center shadow-lg transition-transform duration-300 group-hover:scale-110 ${
+                          achievement.earned 
+                            ? 'bg-gradient-to-br from-amber-500 to-orange-500 shadow-amber-500/25' 
+                            : 'bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600'
+                        }`}>
+                          <IconComponent className={`h-7 w-7 ${achievement.earned ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+                        </div>
                         {achievement.earned && (
-                          <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">
+                          <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 rounded-full px-3 py-1 shadow-md">
+                            <Star className="h-3 w-3 mr-1" />
                             Earned
                           </Badge>
                         )}
                       </div>
-                    </CardHeader>
-                    <CardContent>
-                      <h3 className="font-semibold mb-2">{achievement.title}</h3>
-                      <p className="text-sm text-muted-foreground">{achievement.description}</p>
+                      <h3 className={`font-bold text-lg mb-2 ${achievement.earned ? 'text-amber-900 dark:text-amber-100' : 'text-slate-600 dark:text-slate-400'}`}>
+                        {achievement.title}
+                      </h3>
+                      <p className={`text-sm ${achievement.earned ? 'text-amber-700 dark:text-amber-300' : 'text-muted-foreground'}`}>
+                        {achievement.description}
+                      </p>
                     </CardContent>
                     {achievement.earned && (
-                      <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-yellow-400/20 to-transparent rounded-bl-3xl"></div>
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-amber-400/20 via-yellow-400/10 to-transparent rounded-bl-[3rem]"></div>
                     )}
                   </Card>
                 );
@@ -548,18 +597,29 @@ export default function LearnerAnalysis() {
             </div>
 
             {earnedAchievements.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Trophy className="mr-2 h-5 w-5 text-yellow-500" />
-                    Your Achievements ({earnedAchievements.length}/{achievements.length})
-                  </CardTitle>
+              <Card className="relative overflow-hidden bg-gradient-to-r from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-900/30 dark:via-yellow-900/20 dark:to-orange-900/30 border-amber-200/80 dark:border-amber-700/50 shadow-lg rounded-2xl">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/25">
+                      <Trophy className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg font-bold text-amber-900 dark:text-amber-100">
+                        Your Achievements ({earnedAchievements.length}/{achievements.length})
+                      </CardTitle>
+                      <CardDescription className="text-amber-700 dark:text-amber-300 mt-0.5">
+                        Keep up the great work!
+                      </CardDescription>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <Progress value={(earnedAchievements.length / achievements.length) * 100} className="mb-4" />
-                  <p className="text-sm text-muted-foreground">
-                    Keep up the great work! You've earned {earnedAchievements.length} out of {achievements.length} available achievements.
-                  </p>
+                  <div className="bg-white/50 dark:bg-slate-900/50 rounded-xl p-4 backdrop-blur-sm">
+                    <Progress value={(earnedAchievements.length / achievements.length) * 100} className="h-3 mb-3" />
+                    <p className="text-sm text-amber-700 dark:text-amber-300">
+                      You've earned <span className="font-bold">{earnedAchievements.length}</span> out of <span className="font-bold">{achievements.length}</span> available achievements.
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -567,55 +627,63 @@ export default function LearnerAnalysis() {
 
           {/* History Tab */}
           <TabsContent value="history" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <CalendarCheck className="mr-2 h-5 w-5 text-primary" />
-                  Test History
-                </CardTitle>
-                <CardDescription>
-                  Complete record of all your vocabulary test submissions
-                </CardDescription>
+            <Card className="relative overflow-hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-xl rounded-2xl">
+              <CardHeader className="relative bg-gradient-to-r from-primary via-primary to-indigo-600 dark:from-primary dark:via-primary dark:to-indigo-700 text-white rounded-t-2xl px-8 py-6">
+                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iNCIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
+                <div className="relative flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                    <CalendarCheck className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl font-bold">Test History</CardTitle>
+                    <CardDescription className="text-white/80 mt-1">
+                      Complete record of all your vocabulary test submissions
+                    </CardDescription>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-6">
                 {chartData.length > 0 ? (
                   <div className="space-y-4">
                     {chartData.slice().reverse().map((submission: any, index: number) => (
-                      <div key={submission.id} className="flex items-center p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                        <div className="flex-shrink-0 mr-4">
-                          <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white flex items-center justify-center font-bold">
+                      <div 
+                        key={submission.id} 
+                        className="group flex items-center p-5 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border border-slate-200/80 dark:border-slate-700/50 rounded-xl hover:bg-white dark:hover:bg-slate-800 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 hover:-translate-y-0.5"
+                      >
+                        <div className="flex-shrink-0 mr-5">
+                          <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-primary to-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-lg shadow-primary/25 group-hover:scale-105 transition-transform duration-300">
                             #{chartData.length - index}
                           </div>
                         </div>
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-semibold text-gray-900">{submission.title}</h4>
-                            <Badge className={getScoreBadgeColor(submission.score)}>
+                            <h4 className="font-semibold text-foreground dark:text-foreground truncate">{submission.title}</h4>
+                            <Badge className={`${getScoreBadgeColor(submission.score)} rounded-full px-3 py-1 font-medium ml-3`}>
                               {submission.score}%
                             </Badge>
                           </div>
-                          <div className="flex items-center text-sm text-gray-600 space-x-4">
+                          <div className="flex items-center text-sm text-muted-foreground space-x-4">
                             <div className="flex items-center">
-                              <Calendar className="h-4 w-4 mr-1" />
-                              {submission.fullDate}
-                            </div>
-                            <div className="flex items-center">
-                              <Target className="h-4 w-4 mr-1" />
-                              Test #{chartData.length - index}
+                              <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center mr-2">
+                                <Calendar className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                              </div>
+                              <span className="font-medium">{submission.fullDate}</span>
                             </div>
                           </div>
-                          <Progress value={submission.score} className="mt-2" />
+                          <Progress value={submission.score} className="mt-3 h-2" />
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-12">
-                    <Clock className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                    <h3 className="text-lg font-semibold text-gray-600 mb-2">
+                  <div className="text-center py-16">
+                    <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center">
+                      <Clock className="h-10 w-10 text-muted-foreground/50" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-foreground dark:text-foreground mb-2">
                       No Test History
                     </h3>
-                    <p className="text-gray-500">
+                    <p className="text-muted-foreground max-w-sm mx-auto">
                       Your completed vocabulary tests will appear here
                     </p>
                   </div>
@@ -623,8 +691,9 @@ export default function LearnerAnalysis() {
               </CardContent>
             </Card>
           </TabsContent>
-        </Tabs>
-      )}
+          </Tabs>
+        )}
+      </div>
     </div>
   );
 }
