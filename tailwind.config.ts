@@ -8,7 +8,7 @@ export default {
       sans: ["Poppins", "system-ui", "sans-serif"],
       serif: ["Poppins", "system-ui", "sans-serif"],
       mono: ["JetBrains Mono", "monospace"],
-      brand: ["Climate Crisis", "sans-serif"],
+      brand: ["Oi", "sans-serif"],
     },
     extend: {
       borderRadius: {
