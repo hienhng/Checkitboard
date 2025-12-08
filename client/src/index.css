@@ -147,6 +147,15 @@ body {
   }
 }
 
+@keyframes subtle-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(90deg);
+  }
+}
+
 @layer components {
 
   /* Modern glass effect */
@@ -220,6 +229,11 @@ body {
   /* Stat cards */
   .stat-card {
     @apply bg-gradient-to-br from-white to-slate-50/50 dark:from-slate-800 dark:to-slate-900/50 rounded-2xl p-6 border border-border/40 shadow-sm;
+  }
+
+  /* Subtle rotate animation */
+  .icon-rotate-90 {
+    animation: subtle-rotate 0.5s ease-in-out;
   }
 }
 
