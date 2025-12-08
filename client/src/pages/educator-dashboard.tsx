@@ -257,111 +257,118 @@ function EducatorDashboard() {
         ) : (
           <div className="space-y-8">
             {/* Quick Stats Overview */}
-            <div className="grid gap-10 md:grid-cols-3">
-              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
-                <CardContent className="p-6 text-center">
-                  <Users className="mx-auto h-10 w-10 text-blue-600 mb-3" />
-                  <div className="text-2xl font-bold text-blue-700">
-                    {stats?.totalStudents || 0}
+            <div className="grid gap-6 md:grid-cols-3">
+              <div className="stat-card group hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/25 group-hover:scale-110 transition-transform duration-300">
+                    <Users className="h-7 w-7 text-white" />
                   </div>
-                  <p className="text-sm text-blue-600 font-medium">
-                    Total Students
-                  </p>
-                </CardContent>
-              </Card>
+                  <div>
+                    <div className="text-3xl font-bold text-foreground">
+                      {stats?.totalStudents || 0}
+                    </div>
+                    <p className="text-sm text-muted-foreground font-medium">
+                      Total Students
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-              <Card className="bg-gradient-to-br from-green-50 to-emerald-100 border-green-200 shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
-                <CardContent className="p-6 text-center">
-                  <School className="mx-auto h-10 w-10 text-green-600 mb-3" />
-                  <div className="text-2xl font-bold text-green-700">
-                    {stats?.totalClasses || 0}
+              <div className="stat-card group hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg shadow-emerald-500/25 group-hover:scale-110 transition-transform duration-300">
+                    <School className="h-7 w-7 text-white" />
                   </div>
-                  <p className="text-sm text-green-600 font-medium">Classes</p>
-                </CardContent>
-              </Card>
+                  <div>
+                    <div className="text-3xl font-bold text-foreground">
+                      {stats?.totalClasses || 0}
+                    </div>
+                    <p className="text-sm text-muted-foreground font-medium">
+                      Classes
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-              <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
-                <CardContent className="p-6 text-center">
-                  <BookOpen className="mx-auto h-10 w-10 text-purple-600 mb-3" />
-                  <div className="text-2xl font-bold text-purple-700">
-                    {stats?.totalLists || 0}
+              <div className="stat-card group hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/25 group-hover:scale-110 transition-transform duration-300">
+                    <BookOpen className="h-7 w-7 text-white" />
                   </div>
-                  <p className="text-sm text-purple-600 font-medium">
-                    Vocabulary Lists
-                  </p>
-                </CardContent>
-              </Card>
-
-              {/* Temporarily hidden - Pending Reviews stat card */}
-              {/* <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 shadow-lg hover:shadow-xl transition-all duration-300">
-                <CardContent className="p-6 text-center">
-                  <ClipboardList className="mx-auto h-10 w-10 text-orange-600 mb-3" />
-                  <div className="text-2xl font-bold text-orange-700">
-                    {pendingSubmissions?.length || 0}
+                  <div>
+                    <div className="text-3xl font-bold text-foreground">
+                      {stats?.totalLists || 0}
+                    </div>
+                    <p className="text-sm text-muted-foreground font-medium">
+                      Vocabulary Lists
+                    </p>
                   </div>
-                  <p className="text-sm text-orange-600 font-medium">
-                    Pending Reviews
-                  </p>
-                </CardContent>
-              </Card> */}
+                </div>
+              </div>
             </div>
 
             {/* Action Cards */}
             <div className="grid gap-6 md:grid-cols-2">
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
-                <CardHeader className="bg-gradient-to-r from-primary to-primary/80 text-white rounded-t-lg p-6">
-                  <CardTitle className="text-2xl font-bold">
-                    <PlusCircle className="inline mr-3 h-6 w-6" />
-                    Create Content
-                  </CardTitle>
-                  <CardDescription className="text-primary-foreground/90 text-base mt-2">
-                    Build engaging vocabulary lists and assignments
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    <Button
-                      onClick={() => setShowTypeSelection(true)}
-                      className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-lg py-6"
-                      size="lg"
-                    >
-                      <PlusCircle className="mr-2 h-5 w-5" />
-                      Create New Checkup
-                    </Button>
-                    <div className="text-center text-sm text-muted-foreground">
-                      Paste passages, highlight words, and create engaging
-                      assessments
+              <Card className="card-glass overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-0">
+                <div className="relative bg-gradient-to-r from-primary via-primary/95 to-primary/85 p-6">
+                  <div className="absolute inset-0 opacity-10">
+                    <div className="absolute top-2 right-2 w-24 h-24 rounded-full bg-white/20 blur-xl"></div>
+                    <div className="absolute bottom-0 left-1/4 w-32 h-32 rounded-full bg-white/10 blur-2xl"></div>
+                  </div>
+                  <div className="relative flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                      <PlusCircle className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-white">Create Content</h3>
+                      <p className="text-white/80 text-sm mt-1">Build engaging vocabulary lists</p>
                     </div>
                   </div>
+                </div>
+                <CardContent className="p-6 space-y-4 bg-card">
+                  <Button
+                    onClick={() => setShowTypeSelection(true)}
+                    className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-base py-6 rounded-xl shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300"
+                    size="lg"
+                  >
+                    <PlusCircle className="mr-2 h-5 w-5" />
+                    Create New Checkup
+                  </Button>
+                  <p className="text-center text-sm text-muted-foreground">
+                    Paste passages, highlight words, and create engaging assessments
+                  </p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
-                <CardHeader className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-t-lg p-6">
-                  <CardTitle className="text-2xl font-bold">
-                    <BarChart className="inline mr-3 h-6 w-6" />
-                    Analytics & Insights
-                  </CardTitle>
-                  <CardDescription className="text-green-100 text-base mt-2">
-                    View detailed statistics and student progress
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    <Link to="/educator/statistics">
-                      <Button
-                        className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-lg py-6"
-                        size="lg"
-                      >
-                        <BarChart className="mr-2 h-5 w-5" />
-                        View Full Statistics
-                      </Button>
-                    </Link>
-                    <div className="text-center text-sm text-muted-foreground">
-                      Track student progress, completion rates, and performance
-                      trends
+              <Card className="card-glass overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-0">
+                <div className="relative bg-gradient-to-r from-emerald-500 via-emerald-500/95 to-green-500/85 p-6">
+                  <div className="absolute inset-0 opacity-10">
+                    <div className="absolute top-2 right-2 w-24 h-24 rounded-full bg-white/20 blur-xl"></div>
+                    <div className="absolute bottom-0 left-1/4 w-32 h-32 rounded-full bg-white/10 blur-2xl"></div>
+                  </div>
+                  <div className="relative flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                      <BarChart className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-white">Analytics & Insights</h3>
+                      <p className="text-white/80 text-sm mt-1">Track student progress</p>
                     </div>
                   </div>
+                </div>
+                <CardContent className="p-6 space-y-4 bg-card">
+                  <Link to="/educator/statistics">
+                    <Button
+                      className="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-base py-6 rounded-xl shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-300"
+                      size="lg"
+                    >
+                      <BarChart className="mr-2 h-5 w-5" />
+                      View Full Statistics
+                    </Button>
+                  </Link>
+                  <p className="text-center text-sm text-muted-foreground">
+                    Track completion rates and performance trends
+                  </p>
                 </CardContent>
               </Card>
             </div>
@@ -369,20 +376,26 @@ function EducatorDashboard() {
             {/* Recent Activity */}
             <div className="space-y-6">
               {/* Recent Vocabulary Lists */}
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl w-full">
-                <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-lg p-6">
-                  <CardTitle className="text-xl font-bold">
-                    <BookOpen className="inline mr-3 h-5 w-5" />
-                    Recent Vocabulary Lists
-                  </CardTitle>
-                  <CardDescription className="text-blue-100 text-sm mt-2">
-                    Your latest vocabulary assignments
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-6">
+              <Card className="card-glass overflow-hidden border-0">
+                <div className="relative bg-gradient-to-r from-blue-500 via-blue-500/95 to-indigo-500/85 p-6">
+                  <div className="absolute inset-0 opacity-10">
+                    <div className="absolute top-2 right-2 w-24 h-24 rounded-full bg-white/20 blur-xl"></div>
+                    <div className="absolute bottom-0 left-1/4 w-32 h-32 rounded-full bg-white/10 blur-2xl"></div>
+                  </div>
+                  <div className="relative flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                      <BookOpen className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-white">Recent Vocabulary Lists</h3>
+                      <p className="text-white/80 text-sm mt-1">Your latest vocabulary assignments</p>
+                    </div>
+                  </div>
+                </div>
+                <CardContent className="p-6 bg-card">
                   {listsLoading ? (
                     <div className="flex items-center justify-center py-8">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                       <span className="ml-3 text-sm text-muted-foreground">
                         Loading...
                       </span>
@@ -392,35 +405,36 @@ function EducatorDashboard() {
                       {vocabularyLists.slice(0, 3).map((list: any) => (
                         <div
                           key={list.id}
-                          className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                          className="group p-4 bg-gradient-to-r from-slate-50/80 to-blue-50/30 dark:from-slate-800/50 dark:to-blue-900/20 rounded-2xl border border-border/30 hover:border-blue-300/50 hover:shadow-md transition-all duration-300"
                         >
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
-                              <h4 className="font-semibold text-foreground">
+                              <h4 className="font-semibold text-foreground group-hover:text-blue-600 transition-colors">
                                 {list.title}
                               </h4>
-                              <p className="text-sm text-muted-foreground mt-1">
+                              <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
+                                <CalendarDays className="h-3.5 w-3.5" />
                                 Due: {formatDueDate(list.dueDate)}
                               </p>
                               <div className="flex items-center gap-2 mt-2">
                                 {list.published ? (
-                                  <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">
+                                  <span className="px-2.5 py-1 bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 text-xs rounded-full font-medium">
                                     Published
                                   </span>
                                 ) : (
-                                  <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
+                                  <span className="px-2.5 py-1 bg-gradient-to-r from-gray-100 to-slate-100 text-gray-600 text-xs rounded-full font-medium">
                                     Draft
                                   </span>
                                 )}
                                 {list.class && (
-                                  <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">
+                                  <span className="px-2.5 py-1 bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 text-xs rounded-full font-medium">
                                     {list.class.name}
                                   </span>
                                 )}
                               </div>
                             </div>
                             <Link to={`/educator/vocabulary/${list.id}`}>
-                              <Button variant="ghost" size="sm">
+                              <Button variant="ghost" size="sm" className="rounded-xl hover:bg-blue-100/50 group-hover:translate-x-1 transition-transform">
                                 <ArrowRight className="h-4 w-4" />
                               </Button>
                             </Link>
@@ -430,7 +444,7 @@ function EducatorDashboard() {
                       {vocabularyLists.length > 3 && (
                         <div className="text-center pt-4">
                           <Link to="/educator/assignments">
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" className="rounded-xl hover:bg-blue-50 hover:border-blue-300">
                               View All Lists ({vocabularyLists.length})
                             </Button>
                           </Link>
@@ -438,16 +452,18 @@ function EducatorDashboard() {
                       )}
                     </div>
                   ) : (
-                    <div className="text-center py-8">
-                      <BookOpen className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
-                      <p className="text-muted-foreground text-sm">
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center mx-auto mb-4">
+                        <BookOpen className="h-8 w-8 text-blue-500" />
+                      </div>
+                      <p className="text-muted-foreground text-sm mb-4">
                         No vocabulary lists yet
                       </p>
                       <Button
                         onClick={() => setShowTypeSelection(true)}
                         variant="outline"
                         size="sm"
-                        className="mt-3"
+                        className="rounded-xl hover:bg-blue-50 hover:border-blue-300"
                       >
                         Create Your First List
                       </Button>

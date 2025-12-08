@@ -289,22 +289,29 @@ function LearnerDashboard() {
             {/* Modern Grid Layout */}
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
               {/* Vocabulary Lists Card */}
-              <Card className="md:col-span-2 lg:col-span-2 bg-white/80 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
-                <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-lg p-6">
-                  <div className="flex justify-between items-center">
-                    <CardTitle className="text-2xl font-bold">
-                      <BookOpen className="inline mr-3 h-6 w-6" />
-                      Vocabulary Lists
-                    </CardTitle>
+              <Card className="md:col-span-2 lg:col-span-2 card-glass border-0 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 text-white p-6 relative">
+                  <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48Y2lyY2xlIGN4PSIzMCIgY3k9IjMwIiByPSIyIi8+PC9nPjwvZz48L3N2Zz4=')] opacity-30" />
+                  <div className="flex justify-between items-center relative">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                        <BookOpen className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-2xl font-bold">
+                          Vocabulary Lists
+                        </CardTitle>
+                        <CardDescription className="text-blue-100 text-sm mt-1">
+                          Complete vocabulary check-ups and track your progress
+                        </CardDescription>
+                      </div>
+                    </div>
                     {vocabularyLists && vocabularyLists.length > 0 && (
-                      <Badge className="bg-white/20 text-white border-white/30 px-3 py-1">
+                      <Badge className="bg-white/20 text-white border-white/30 px-3 py-1.5 backdrop-blur-sm shadow-sm">
                         {vocabularyLists.length} lists
                       </Badge>
                     )}
                   </div>
-                  <CardDescription className="text-blue-100 text-base mt-2">
-                    Complete vocabulary check-ups and track your progress
-                  </CardDescription>
                 </CardHeader>
                 <CardContent className="p-6">
                   {listsLoading ? (
@@ -327,70 +334,71 @@ function LearnerDashboard() {
                         return (
                           <div
                             key={list.id}
-                            className={`group p-6 rounded-xl cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
+                            className={`group p-5 rounded-2xl cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-2 ${
                               isDiscarded
-                                ? "bg-red-50 border border-red-200 hover:bg-red-100"
+                                ? "bg-gradient-to-r from-red-50 to-rose-50 border-red-200/60 hover:border-red-300"
                                 : isGraded
-                                  ? "bg-green-50 border border-green-200 hover:bg-green-100"
+                                  ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-200/60 hover:border-green-300"
                                   : isCompleted
-                                    ? "bg-yellow-50 border border-yellow-200 hover:bg-yellow-100"
-                                    : "bg-white border border-gray-200 hover:border-primary/50"
+                                    ? "bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200/60 hover:border-yellow-300"
+                                    : "bg-gradient-to-r from-slate-50 to-blue-50/50 border-slate-200/60 hover:border-primary/40"
                             }`}
                             onClick={() => startCheckUp(list.id)}
                           >
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-2">
-                                  <h4 className="text-lg font-semibold text-foreground">
+                            <div className="flex items-center justify-between gap-4">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center flex-wrap gap-2 mb-3">
+                                  <h4 className="text-lg font-semibold text-foreground truncate">
                                     {list.title}
                                   </h4>
                                   {isDiscarded && (
-                                    <Badge className="bg-red-100 text-red-700 border-red-300">
+                                    <Badge className="bg-red-100/80 text-red-700 border-red-200 shadow-sm">
                                       Discarded
                                     </Badge>
                                   )}
                                   {isGraded && !isDiscarded && (
-                                    <Badge className="bg-green-100 text-green-700 border-green-300">
+                                    <Badge className="bg-green-100/80 text-green-700 border-green-200 shadow-sm">
                                       {list.submission?.score}% - Graded
                                     </Badge>
                                   )}
                                   {isCompleted && !isGraded && !isDiscarded && (
-                                    <Badge className="bg-yellow-100 text-yellow-700 border-yellow-300">
+                                    <Badge className="bg-yellow-100/80 text-yellow-700 border-yellow-200 shadow-sm">
                                       Pending Review
                                     </Badge>
                                   )}
                                   {!isCompleted && (
-                                    <Badge className="bg-blue-100 text-blue-700 border-blue-300">
+                                    <Badge className="bg-blue-100/80 text-blue-700 border-blue-200 shadow-sm">
                                       Ready to Start
                                     </Badge>
                                   )}
                                 </div>
-                                <div className="space-y-2">
-                                  <p className="text-sm text-muted-foreground hover:text-primary hover:translate-x-1 transition">
-                                    <CalendarClock className="inline mr-1 h-4 w-4" />
-                                      Due: {formatDueDate(list.dueDate)}
+                                <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+                                  <p className="text-sm text-muted-foreground flex items-center gap-1.5 group-hover:text-primary transition-colors duration-200">
+                                    <CalendarClock className="h-4 w-4" />
+                                    <span>Due: {formatDueDate(list.dueDate)}</span>
                                   </p>
                                   {list.educator && (
-                                    <p className="text-sm text-muted-foreground hover:text-primary hover:translate-x-1 transition">
-                                      <UserCheck className="inline mr-1 h-4 w-4" />
-                                        Created by: {list.educator.name}
+                                    <p className="text-sm text-muted-foreground flex items-center gap-1.5 group-hover:text-primary transition-colors duration-200">
+                                      <UserCheck className="h-4 w-4" />
+                                      <span>{list.educator.name}</span>
                                     </p>
                                   )}
                                   {isCompleted && (
-                                    <p className="text-sm text-muted-foreground hover:text-primary hover:translate-x-1 transition">
-                                      <CircleCheckBig className="inline mr-1 h-4 w-4" />
-                                        Completed:{" "}
-                                      {list.submission?.submittedAt
-                                        ? new Date(
-                                            list.submission.submittedAt,
-                                          ).toLocaleDateString()
-                                        : "Unknown Date"}
+                                    <p className="text-sm text-muted-foreground flex items-center gap-1.5 group-hover:text-primary transition-colors duration-200">
+                                      <CircleCheckBig className="h-4 w-4" />
+                                      <span>
+                                        {list.submission?.submittedAt
+                                          ? new Date(
+                                              list.submission.submittedAt,
+                                            ).toLocaleDateString()
+                                          : "Unknown Date"}
+                                      </span>
                                     </p>
                                   )}
                                 </div>
                               </div>
-                              <div className="text-muted-foreground group-hover:text-primary hover:translate-x-1 transition">
-                                <ArrowRight className="h-6 w-6" />
+                              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all duration-300">
+                                <ArrowRight className="h-5 w-5" />
                               </div>
                             </div>
                           </div>
@@ -398,12 +406,14 @@ function LearnerDashboard() {
                       })}
                     </div>
                   ) : (
-                    <div className="text-center py-12">
-                      <BookOpen className="mx-auto h-16 w-16 text-muted-foreground/50 mb-4" />
-                      <h3 className="text-lg font-medium text-foreground mb-2">
+                    <div className="text-center py-16">
+                      <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center">
+                        <BookOpen className="h-10 w-10 text-blue-500" />
+                      </div>
+                      <h3 className="text-xl font-semibold text-foreground mb-2">
                         No vocabulary lists yet
                       </h3>
-                      <p className="text-muted-foreground mb-6">
+                      <p className="text-muted-foreground max-w-sm mx-auto">
                         Ask your educator to create vocabulary lists for your
                         class.
                       </p>
@@ -413,13 +423,23 @@ function LearnerDashboard() {
               </Card>
 
               {/* Flashcards Card */}
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
-                <CardHeader className="bg-gradient-to-r from-purple-500 to-purple-700 text-white rounded-t-lg p-6">
-                  <div className="flex justify-between items-center">
-                    <CardTitle className="text-xl font-bold">
-                      <Brain className="inline mr-3 h-5 w-5" />
-                      Flashcards
-                    </CardTitle>
+              <Card className="card-glass border-0 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-purple-500 via-purple-600 to-indigo-600 text-white p-6 relative">
+                  <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48Y2lyY2xlIGN4PSIzMCIgY3k9IjMwIiByPSIyIi8+PC9nPjwvZz48L3N2Zz4=')] opacity-30" />
+                  <div className="flex justify-between items-start relative">
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                        <Brain className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl font-bold">
+                          Flashcards
+                        </CardTitle>
+                        <CardDescription className="text-purple-100 text-sm mt-1">
+                          Review words you got wrong
+                        </CardDescription>
+                      </div>
+                    </div>
                     {flashcards &&
                       flashcards.length > 0 &&
                       (() => {
@@ -427,15 +447,12 @@ function LearnerDashboard() {
                           (card) => !card.learned,
                         ).length;
                         return cardCount > 0 ? (
-                          <Badge className="bg-white/20 text-white border-white/30 px-3 py-1">
+                          <Badge className="bg-white/20 text-white border-white/30 px-3 py-1.5 backdrop-blur-sm shadow-sm">
                             {cardCount}
                           </Badge>
                         ) : null;
                       })()}
                   </div>
-                  <CardDescription className="text-blue-100 text-sm mt-2">
-                    Review words you got wrong
-                  </CardDescription>
                 </CardHeader>
                 <CardContent className="p-6">
                   {flashcardsLoading ? (
@@ -460,25 +477,27 @@ function LearnerDashboard() {
                         .map((card) => (
                           <div
                             key={card.id}
-                            className="p-4 bg-gradient-to-r from-blue-50 to-sky-50 rounded-lg border border-blue-200"
+                            className="group p-4 bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 rounded-xl border border-purple-200/50 hover:border-purple-300 hover:shadow-md transition-all duration-300 cursor-pointer"
                           >
-                            <div className="flex justify-between items-start">
+                            <div className="flex justify-between items-start gap-3">
                               <div className="flex-1">
-                                <h4 className="font-bold text-lg text-blue-900 mb-1">
+                                <h4 className="font-bold text-lg bg-gradient-to-r from-purple-700 to-indigo-700 bg-clip-text text-transparent mb-1">
                                   {card.word.word}
                                 </h4>
-                                <p className="text-sm text-blue-600">
+                                <p className="text-sm text-slate-600 line-clamp-2">
                                   {card.definition.correctDefinition ||
                                     card.definition.studentDefinition}
                                 </p>
                               </div>
-                              <BookMarked className="h-5 w-5 text-blue-400" />
+                              <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                <BookMarked className="h-4 w-4 text-purple-500" />
+                              </div>
                             </div>
                           </div>
                         ))}
-                      <div className="mt-4 text-center">
+                      <div className="mt-5">
                         <Button
-                          className="w-full"
+                          className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 shadow-md hover:shadow-lg transition-all duration-300"
                           onClick={() => navigate("/learner/flashcards")}
                         >
                           Study All Flashcards
@@ -487,12 +506,14 @@ function LearnerDashboard() {
                       </div>
                     </div>
                   ) : (
-                    <div className="text-center py-8">
-                      <Brain className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
-                      <h3 className="text-base font-medium text-foreground mb-2">
+                    <div className="text-center py-10">
+                      <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center">
+                        <Brain className="h-8 w-8 text-purple-500" />
+                      </div>
+                      <h3 className="text-base font-semibold text-foreground mb-2">
                         No flashcards yet
                       </h3>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground max-w-xs mx-auto">
                         Complete some vocabulary tests to generate flashcards.
                       </p>
                     </div>
@@ -504,28 +525,34 @@ function LearnerDashboard() {
             {/* Quick Stats Row */}
             <div className="grid gap-6 md:grid-cols-3 mb-8">
               {/* Study Stats */}
-              <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 shadow-lg">
-                <CardContent className="p-6 text-center">
-                  <Award className="mx-auto h-10 w-10 text-green-600 mb-3" />
-                  <div className="text-2xl font-bold text-green-700">
+              <Card className="stat-card group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-0 overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <CardContent className="p-6 text-center relative">
+                  <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-green-100 to-emerald-100 flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-300">
+                    <Award className="h-7 w-7 text-green-600" />
+                  </div>
+                  <div className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                     {studyStats?.totalWordsStudied || 0}
                   </div>
-                  <p className="text-sm text-green-600 font-medium">
+                  <p className="text-sm text-green-600/80 font-medium mt-1">
                     Words Studied
                   </p>
                 </CardContent>
               </Card>
 
               {/* Average Accuracy */}
-              <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 shadow-lg">
-                <CardContent className="p-6 text-center">
-                  <CheckCircle className="mx-auto h-10 w-10 text-blue-600 mb-3" />
+              <Card className="stat-card group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-0 overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-indigo-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <CardContent className="p-6 text-center relative">
+                  <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-300">
+                    <CheckCircle className="h-7 w-7 text-blue-600" />
+                  </div>
                   {studyStats?.averageAccuracy ? (
                     <>
-                      <div className="text-2xl font-bold text-blue-700">
+                      <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                         {Math.round(studyStats.averageAccuracy)}%
                       </div>
-                      <p className="text-sm text-blue-600 font-medium">
+                      <p className="text-sm text-blue-600/80 font-medium mt-1">
                         Average Accuracy
                       </p>
                     </>
@@ -534,7 +561,7 @@ function LearnerDashboard() {
                       <div className="text-lg font-semibold text-blue-700 mb-1">
                         No checkups yet
                       </div>
-                      <p className="text-xs text-blue-600">
+                      <p className="text-xs text-blue-600/70">
                         Complete a vocabulary checkup to track your accuracy
                       </p>
                     </>
@@ -543,12 +570,16 @@ function LearnerDashboard() {
               </Card>
 
               {/* Quick Actions */}
-              <Card className="bg-gradient-to-br from-blue-50 to-sky-50 border-blue-200 shadow-lg">
-                <CardContent className="p-6 text-center">
-                  <div className="space-y-2">
+              <Card className="stat-card group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-0 overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-indigo-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <CardContent className="p-6 relative">
+                  <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center shadow-sm">
+                    <ChevronRight className="h-7 w-7 text-purple-600" />
+                  </div>
+                  <div className="space-y-2.5">
                     <Button
                       size="sm"
-                      className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600"
+                      className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 shadow-sm hover:shadow-md transition-all duration-200"
                       onClick={() => navigate("/learner/results")}
                     >
                       <FileText className="mr-2 h-4 w-4" />
@@ -556,7 +587,7 @@ function LearnerDashboard() {
                     </Button>
                     <Button
                       size="sm"
-                      className="w-full bg-gradient-to-r from-blue-500 to-sky-500 hover:from-blue-600 hover:to-sky-600"
+                      className="w-full bg-gradient-to-r from-blue-500 to-sky-500 hover:from-blue-600 hover:to-sky-600 shadow-sm hover:shadow-md transition-all duration-200"
                       onClick={() => navigate("/explore")}
                     >
                       <StickyNote className="mr-2 h-4 w-4" />
@@ -565,7 +596,7 @@ function LearnerDashboard() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="w-full"
+                      className="w-full hover:bg-slate-50 transition-colors duration-200"
                       onClick={() => setShowJoinClass(true)}
                     >
                       <Plus className="mr-2 h-4 w-4" />
