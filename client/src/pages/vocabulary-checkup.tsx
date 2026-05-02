@@ -1,21 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getQueryFn, apiRequest } from "@/lib/queryClient";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Clock,
   CheckCircle,
-  AlertCircle,
   ChevronLeft,
   ChevronRight,
   Send,
@@ -23,6 +16,9 @@ import {
   AlertTriangle,
   Save,
   LogOut,
+  Shield,
+  Zap,
+  XCircle,
 } from "lucide-react";
 import {
   Dialog,
@@ -40,12 +36,10 @@ interface Question {
   word: string;
   question: string;
   correctAnswer: string;
-  // MC specific
   optionA?: string;
   optionB?: string;
   optionC?: string;
   optionD?: string;
-  // Input specific
   caseSensitive?: boolean;
 }
 
@@ -65,12 +59,10 @@ export default function VocabularyCheckup() {
   const [fullscreenWarning, setFullscreenWarning] = useState(false);
   const [showTestModeDialog, setShowTestModeDialog] = useState(false);
   const [testStarted, setTestStarted] = useState(false);
-  const [inputDebounceTimers, setInputDebounceTimers] = useState<
-    Record<number, NodeJS.Timeout>
-  >({});
+  const [pendingMCAnswers, setPendingMCAnswers] = useState<Record<number, string>>({});
+  const [inputDebounceTimers, setInputDebounceTimers] = useState<Record<number, NodeJS.Timeout>>({});
   const checkupRef = useRef<HTMLDivElement>(null);
 
-  // Get submission details
   const { data: submission, isLoading: submissionLoading } = useQuery({
     queryKey: [`/api/submissions/${submissionId}`],
     queryFn: getQueryFn({ on401: "throw" }),
@@ -80,18 +72,14 @@ export default function VocabularyCheckup() {
   const submissionData = submission as any;
   const listId = submissionData?.listId;
 
-  // Get vocabulary list details to check type
   const { data: listData } = useQuery({
     queryKey: [`/api/vocabulary-lists/${listId}`],
     queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!listId,
   });
 
-  // Get all questions for the vocabulary list
   const { data: questionsData, isLoading: questionsLoading } = useQuery({
-    queryKey: [
-      `/api/vocabulary-lists/${listId}/questions?submissionId=${submissionId}`,
-    ],
+    queryKey: [`/api/vocabulary-lists/${listId}/questions?submissionId=${submissionId}`],
     queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!listId,
   });
@@ -101,52 +89,24 @@ export default function VocabularyCheckup() {
   const listSettings = (questionsData as any)?.listSettings || {};
   const passage = (questionsData as any)?.passage || "";
   const title = (questionsData as any)?.title || "";
-  const currentQuestion = questions[currentQuestionIndex] as
-    | Question
-    | undefined;
-
+  const currentQuestion = questions[currentQuestionIndex] as Question | undefined;
   const checkupType = (listData as any)?.type || "practice";
   const isTestMode = checkupType === "test";
+  const isContentLoaded = !submissionLoading && !questionsLoading && !!listData && questions.length > 0;
 
-  // Check if all content is loaded
-  const isContentLoaded = 
-    !submissionLoading && 
-    !questionsLoading && 
-    !!listData && 
-    questions.length > 0;
-
-  // Debug logging
-  console.log("Checkup Debug:", {
-    listData,
-    checkupType,
-    isTestMode,
-    isContentLoaded,
-    submissionLoading,
-    questionsLoading,
-    questionsCount: questions.length,
-  });
-
-  // Hydrate answers from saved answers
+  // Hydrate saved answers
   useEffect(() => {
-    if (
-      savedAnswers &&
-      Object.keys(savedAnswers).length > 0 &&
-      Object.keys(answers).length === 0
-    ) {
+    if (savedAnswers && Object.keys(savedAnswers).length > 0 && Object.keys(answers).length === 0) {
       setAnswers(savedAnswers);
     }
   }, [savedAnswers]);
 
-  // For practice mode, auto-start once content is loaded
-  // For test mode, show dialog once content is loaded
+  // Auto-start or show dialog
   useEffect(() => {
     if (!isContentLoaded) return;
-    
     if (isTestMode && !testStarted) {
-      // Show test mode warning dialog
       setShowTestModeDialog(true);
     } else if (!isTestMode && !testStarted) {
-      // Practice mode: auto-start
       setTestStarted(true);
     }
   }, [isContentLoaded, isTestMode, testStarted]);
@@ -161,7 +121,6 @@ export default function VocabularyCheckup() {
   // Timer countdown
   useEffect(() => {
     if (timeRemaining === null || timeRemaining <= 0) return;
-
     const timer = setInterval(() => {
       setTimeRemaining((prev) => {
         if (prev === null || prev <= 1) {
@@ -171,74 +130,48 @@ export default function VocabularyCheckup() {
         return prev - 1;
       });
     }, 1000);
-
     return () => clearInterval(timer);
   }, [timeRemaining]);
 
-  // Fullscreen and tab detection for Test mode
-  // ONLY runs when test has started (after dialog acknowledgment for test mode, or auto-start for practice)
+  // Fullscreen monitoring for test mode
   useEffect(() => {
-    // Only run for test mode AND after test has started
     if (!isTestMode || !testStarted) return;
 
-    console.log("Test mode fullscreen effect running - will enter fullscreen after content renders");
-
-    // Enter fullscreen after a delay to allow content to render first
     const enterFullscreen = async () => {
       try {
-        if (
-          checkupRef.current &&
-          document.fullscreenElement !== checkupRef.current
-        ) {
-          console.log("Attempting to enter fullscreen NOW");
+        if (checkupRef.current && document.fullscreenElement !== checkupRef.current) {
           await checkupRef.current.requestFullscreen();
         }
-      } catch (error) {
-        console.error("Failed to enter fullscreen:", error);
-        toast({
-          title: "Fullscreen required",
-          description: "Please manually enable fullscreen mode for this test",
-          variant: "destructive",
-        });
+      } catch {
+        toast({ title: "Fullscreen required", description: "Please enable fullscreen mode manually.", variant: "destructive" });
       }
     };
 
-    // Delay fullscreen request to allow content to render and be visible first (2 seconds)
-    const fullscreenTimer = setTimeout(enterFullscreen, 2000);
+    const fullscreenTimer = setTimeout(enterFullscreen, 1500);
 
-    // Monitor fullscreen changes
     const handleFullscreenChange = () => {
-      console.log("Fullscreen change detected", {
-        isFullscreen: !!document.fullscreenElement,
-        isTestMode,
-      });
       if (!document.fullscreenElement && isTestMode) {
-        console.log("Setting fullscreen warning to TRUE");
         setFullscreenWarning(true);
+        // Log the violation
+        apiRequest("POST", `/api/submissions/${submissionId}/fullscreen-exit`, {
+          timestamp: new Date().toISOString(),
+        }).catch(() => {});
       } else {
-        console.log("Setting fullscreen warning to FALSE");
         setFullscreenWarning(false);
       }
     };
 
-    // Monitor tab visibility changes
     const handleVisibilityChange = () => {
-      console.log("Visibility change detected", {
-        isHidden: document.hidden,
-        isTestMode,
-      });
       if (document.hidden && isTestMode) {
-        console.log("Tab hidden - setting fullscreen warning to TRUE");
         setFullscreenWarning(true);
+        apiRequest("POST", `/api/submissions/${submissionId}/fullscreen-exit`, {
+          timestamp: new Date().toISOString(),
+        }).catch(() => {});
       }
     };
 
-    // Prevent navigation
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isTestMode) {
-        e.preventDefault();
-        e.returnValue = "";
-      }
+      if (isTestMode) { e.preventDefault(); e.returnValue = ""; }
     };
 
     document.addEventListener("fullscreenchange", handleFullscreenChange);
@@ -253,134 +186,67 @@ export default function VocabularyCheckup() {
     };
   }, [isTestMode, testStarted]);
 
-  // Format time
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => { Object.values(inputDebounceTimers).forEach(clearTimeout); };
+  }, [inputDebounceTimers]);
+
   const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${minutes}:${secs.toString().padStart(2, "0")}`;
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
-  // Handle test mode acknowledgment
+  const timerPercent = timeRemaining !== null && listSettings.timeLimit
+    ? (timeRemaining / (listSettings.timeLimit * 60)) * 100
+    : 100;
+  const timerUrgent = timeRemaining !== null && timeRemaining < 300;
+
   const handleStartTest = () => {
     setShowTestModeDialog(false);
     setTestStarted(true);
   };
 
-  // Save MC answer
   const saveMCAnswerMutation = useMutation({
-    mutationFn: async ({
-      questionId,
-      selectedAnswer,
-    }: {
-      questionId: number;
-      selectedAnswer: string;
-    }) => {
-      const response = await apiRequest(
-        "POST",
-        `/api/submissions/${submissionId}/multiple-choice-answer`,
-        {
-          questionId,
-          selectedAnswer,
-        },
-      );
+    mutationFn: async ({ questionId, selectedAnswer }: { questionId: number; selectedAnswer: string }) => {
+      const response = await apiRequest("POST", `/api/submissions/${submissionId}/multiple-choice-answer`, { questionId, selectedAnswer });
       return response.json();
-    },
-    onSuccess: () => {
-      toast({ title: "Answer saved" });
-    },
-    onError: () => {
-      toast({ title: "Error saving answer", variant: "destructive" });
     },
   });
 
-  // Save input answer
   const saveInputAnswerMutation = useMutation({
-    mutationFn: async ({
-      questionId,
-      studentAnswer,
-    }: {
-      questionId: number;
-      studentAnswer: string;
-    }) => {
-      const response = await apiRequest(
-        "POST",
-        `/api/submissions/${submissionId}/input-form-answer`,
-        {
-          questionId,
-          studentAnswer,
-        },
-      );
+    mutationFn: async ({ questionId, studentAnswer }: { questionId: number; studentAnswer: string }) => {
+      const response = await apiRequest("POST", `/api/submissions/${submissionId}/input-form-answer`, { questionId, studentAnswer });
       return response.json();
-    },
-    onSuccess: () => {
-      toast({ title: "Answer saved" });
-    },
-    onError: () => {
-      toast({ title: "Error saving answer", variant: "destructive" });
     },
   });
 
-  // Track pending MC answers that haven't been saved yet
-  const [pendingMCAnswers, setPendingMCAnswers] = useState<Record<number, string>>({});
-
-  // Handle answer change
   const handleAnswerChange = (answer: string) => {
     if (!currentQuestion) return;
-
     setAnswers((prev) => ({ ...prev, [currentQuestion.id]: answer }));
 
-    // For multiple choice, just mark as pending - will save on navigation
     if (currentQuestion.type === "multiple_choice") {
       setPendingMCAnswers((prev) => ({ ...prev, [currentQuestion.id]: answer }));
     } else {
-      // Debounce input answers to avoid excessive API calls
       const questionId = currentQuestion.id;
-
-      // Clear existing timer for this question
-      if (inputDebounceTimers[questionId]) {
-        clearTimeout(inputDebounceTimers[questionId]);
-      }
-
-      // Set new timer
+      if (inputDebounceTimers[questionId]) clearTimeout(inputDebounceTimers[questionId]);
       const timer = setTimeout(() => {
         saveInputAnswerMutation.mutate({ questionId, studentAnswer: answer });
-      }, 500); // 500ms debounce
-
+      }, 500);
       setInputDebounceTimers((prev) => ({ ...prev, [questionId]: timer }));
     }
   };
 
-  // Save pending MC answer for a specific question
-  const savePendingMCAnswer = (questionId: number) => {
-    const pendingAnswer = pendingMCAnswers[questionId];
-    if (pendingAnswer !== undefined) {
-      saveMCAnswerMutation.mutate({
-        questionId,
-        selectedAnswer: pendingAnswer,
-      });
-      // Remove from pending after initiating save
-      setPendingMCAnswers((prev) => {
-        const updated = { ...prev };
-        delete updated[questionId];
-        return updated;
-      });
-    }
-  };
-
-  // Save current question's pending MC answer before navigation
   const saveCurrentMCAnswerIfPending = () => {
-    if (currentQuestion && currentQuestion.type === "multiple_choice") {
-      savePendingMCAnswer(currentQuestion.id);
+    if (currentQuestion?.type === "multiple_choice" && pendingMCAnswers[currentQuestion.id] !== undefined) {
+      saveMCAnswerMutation.mutate({ questionId: currentQuestion.id, selectedAnswer: pendingMCAnswers[currentQuestion.id] });
+      setPendingMCAnswers((prev) => { const u = { ...prev }; delete u[currentQuestion.id]; return u; });
     }
   };
 
-  // Complete submission
   const completeMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest(
-        "POST",
-        `/api/submissions/${submissionId}/complete`,
-      );
+      const response = await apiRequest("POST", `/api/submissions/${submissionId}/complete`);
       return response.json();
     },
     onSuccess: () => {
@@ -393,161 +259,81 @@ export default function VocabularyCheckup() {
   });
 
   const handleSubmit = async () => {
-    // Flush all pending saves before submitting
     const pendingSaves: Promise<void>[] = [];
 
-    // Save all pending MC answers
-    Object.entries(pendingMCAnswers).forEach(([questionId, selectedAnswer]) => {
-      const savePromise = new Promise<void>((resolve) => {
-        saveMCAnswerMutation.mutate(
-          { questionId: parseInt(questionId), selectedAnswer },
-          {
-            onSettled: () => resolve(),
-          },
-        );
-      });
-      pendingSaves.push(savePromise);
+    Object.entries(pendingMCAnswers).forEach(([qId, selectedAnswer]) => {
+      pendingSaves.push(new Promise<void>((resolve) => {
+        saveMCAnswerMutation.mutate({ questionId: parseInt(qId), selectedAnswer }, { onSettled: () => resolve() });
+      }));
     });
     setPendingMCAnswers({});
 
-    // Save all pending debounced input answers
-    Object.entries(inputDebounceTimers).forEach(([questionId, timer]) => {
+    Object.entries(inputDebounceTimers).forEach(([qId, timer]) => {
       clearTimeout(timer);
-
-      // Trigger the save immediately for this question
-      const answer = answers[parseInt(questionId)];
+      const answer = answers[parseInt(qId)];
       if (answer !== undefined) {
-        const savePromise = new Promise<void>((resolve) => {
-          saveInputAnswerMutation.mutate(
-            { questionId: parseInt(questionId), studentAnswer: answer },
-            {
-              onSettled: () => resolve(),
-            },
-          );
-        });
-        pendingSaves.push(savePromise);
+        pendingSaves.push(new Promise<void>((resolve) => {
+          saveInputAnswerMutation.mutate({ questionId: parseInt(qId), studentAnswer: answer }, { onSettled: () => resolve() });
+        }));
       }
     });
-
     setInputDebounceTimers({});
 
-    // Wait for all pending saves to complete
     await Promise.all(pendingSaves);
-
-    // Now submit
     completeMutation.mutate();
   };
 
-  // Exit test with reason mutation
   const exitTestMutation = useMutation({
     mutationFn: async (reason: string) => {
-      const response = await apiRequest(
-        "POST",
-        `/api/submissions/${submissionId}/exit`,
-        {
-          exitReason: reason,
-        },
-      );
+      const response = await apiRequest("POST", `/api/submissions/${submissionId}/exit`, { exitReason: reason });
       return response.json();
     },
     onSuccess: () => {
-      if (document.fullscreenElement) {
-        document.exitFullscreen();
-      }
-      toast({ title: "Exit reason submitted" });
-      navigate("/dashboard");
+      if (document.fullscreenElement) document.exitFullscreen();
+      navigate("/learner/dashboard");
     },
     onError: () => {
       toast({ title: "Error submitting exit reason", variant: "destructive" });
     },
   });
 
-  // Handle exit request (for test mode)
-  const handleExitRequest = () => {
-    if (isTestMode) {
-      setShowExitDialog(true);
-    } else {
-      setShowSaveProgressDialog(true);
-    }
-  };
-
-  // Handle confirm exit
-  const handleConfirmExit = () => {
-    if (isTestMode && exitReason.trim()) {
-      exitTestMutation.mutate(exitReason);
-    }
-  };
-
-  // Handle save and go back (practice mode)
   const handleSaveAndGoBack = async () => {
     const pendingPromises: Promise<any>[] = [];
-
-    // Save all pending MC answers
-    Object.entries(pendingMCAnswers).forEach(([questionIdStr, selectedAnswer]) => {
-      const questionId = parseInt(questionIdStr);
-      pendingPromises.push(
-        apiRequest("POST", `/api/submissions/${submissionId}/multiple-choice-answer`, {
-          questionId,
-          selectedAnswer,
-        })
-      );
+    Object.entries(pendingMCAnswers).forEach(([qId, selectedAnswer]) => {
+      pendingPromises.push(apiRequest("POST", `/api/submissions/${submissionId}/multiple-choice-answer`, { questionId: parseInt(qId), selectedAnswer }));
     });
     setPendingMCAnswers({});
-
-    // Clear all pending input timers and force save any pending input answers
-    Object.entries(inputDebounceTimers).forEach(([questionIdStr, timer]) => {
+    Object.entries(inputDebounceTimers).forEach(([qId, timer]) => {
       clearTimeout(timer);
-      const questionId = parseInt(questionIdStr);
-      const answer = answers[questionId];
-      
-      // If there's an answer for this question, save it
-      if (answer && currentQuestion && currentQuestion.id === questionId && currentQuestion.type === 'input') {
-        pendingPromises.push(
-          apiRequest("POST", `/api/submissions/${submissionId}/input-form-answer`, {
-            questionId,
-            studentAnswer: answer,
-          })
-        );
+      const answer = answers[parseInt(qId)];
+      if (answer) {
+        pendingPromises.push(apiRequest("POST", `/api/submissions/${submissionId}/input-form-answer`, { questionId: parseInt(qId), studentAnswer: answer }));
       }
     });
     setInputDebounceTimers({});
-
-    // Wait for all saves to complete
     try {
       await Promise.all(pendingPromises);
-      toast({ title: "Progress saved" });
-    } catch (error) {
+      toast({ title: "Progress saved!" });
+    } catch {
       toast({ title: "Some answers may not have been saved", variant: "destructive" });
     }
-    
     navigate("/learner/dashboard");
   };
 
-  // Cleanup timers on unmount
-  useEffect(() => {
-    return () => {
-      Object.values(inputDebounceTimers).forEach((timer) =>
-        clearTimeout(timer),
-      );
-    };
-  }, [inputDebounceTimers]);
-
-  // Navigation
   const goToNext = () => {
     if (currentQuestionIndex < questions.length - 1) {
       saveCurrentMCAnswerIfPending();
-      setCurrentQuestionIndex((prev) => prev + 1);
+      setCurrentQuestionIndex((p) => p + 1);
     }
   };
 
   const goToPrevious = () => {
     if (currentQuestionIndex > 0) {
       saveCurrentMCAnswerIfPending();
-      setCurrentQuestionIndex((prev) => prev - 1);
+      setCurrentQuestionIndex((p) => p - 1);
     }
   };
 
-  // Navigate to specific question (from question navigator)
   const goToQuestion = (index: number) => {
     if (index !== currentQuestionIndex) {
       saveCurrentMCAnswerIfPending();
@@ -555,19 +341,17 @@ export default function VocabularyCheckup() {
     }
   };
 
-  // Calculate progress
   const answeredCount = Object.keys(answers).length;
-  const progress =
-    questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
+  const progress = questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
 
-  // Show loading screen if content is not loaded OR test hasn't started yet
+  // Loading state
   if (!isContentLoaded || !testStarted) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">
-            {!isContentLoaded ? "Loading test..." : "Preparing test..."}
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 rounded-full border-4 border-blue-400/30 border-t-blue-400 animate-spin mx-auto" />
+          <p className="text-blue-200 font-medium">
+            {!isContentLoaded ? "Loading questions..." : "Preparing your test..."}
           </p>
         </div>
       </div>
@@ -576,68 +360,45 @@ export default function VocabularyCheckup() {
 
   if (!currentQuestion) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle className="text-red-600">
-              No Questions Available
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-slate-600 mb-4">
-              This test doesn't have any questions yet.
-            </p>
-            <Button onClick={() => navigate("/learner/dashboard")}>
-              Return to Dashboard
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md text-center">
+          <XCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-slate-900 mb-2">No Questions</h2>
+          <p className="text-slate-500 mb-6">This assignment doesn't have any questions yet.</p>
+          <Button onClick={() => navigate("/learner/dashboard")}>Back to Dashboard</Button>
+        </div>
       </div>
     );
   }
 
+  const mcOptions = [
+    { value: "A", label: currentQuestion.optionA },
+    { value: "B", label: currentQuestion.optionB },
+    { value: "C", label: currentQuestion.optionC },
+    { value: "D", label: currentQuestion.optionD },
+  ];
+
   return (
-    <div
-      ref={checkupRef}
-      className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 relative overflow-y-auto"
-    >
-      {/* Fullscreen Warning Overlay for Test Mode */}
+    <div ref={checkupRef} className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 flex flex-col overflow-y-auto">
+      {/* Fullscreen Warning Overlay */}
       {isTestMode && fullscreenWarning && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center">
-          <div className="bg-white dark:bg-slate-800 p-8 rounded-lg max-w-md mx-4 shadow-2xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="bg-red-100 dark:bg-red-900 p-3 rounded-full">
-                <AlertTriangle className="h-8 w-8 text-red-600 dark:text-red-400" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-                Test Interrupted
-              </h3>
+        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-8 text-center shadow-2xl">
+            <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="h-8 w-8 text-red-600" />
             </div>
-            <p className="text-slate-600 dark:text-slate-300 mb-6">
-              You have exited fullscreen mode or switched tabs. This violation
-              has been logged and reported to your teacher.
-            </p>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-              To continue the test, you must return to fullscreen mode.
-            </p>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">Test Interrupted</h3>
+            <p className="text-slate-600 mb-2">You exited fullscreen or switched tabs.</p>
+            <p className="text-sm text-red-600 font-medium mb-6">This violation has been logged and reported to your teacher.</p>
             <Button
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
               onClick={async () => {
                 try {
-                  if (checkupRef.current) {
-                    await checkupRef.current.requestFullscreen();
-                    // Warning will be cleared automatically by handleFullscreenChange
-                  }
-                } catch (error) {
-                  console.error("Failed to enter fullscreen:", error);
-                  toast({
-                    title: "Cannot enter fullscreen",
-                    description:
-                      "Please allow fullscreen access to continue the test",
-                    variant: "destructive",
-                  });
+                  if (checkupRef.current) await checkupRef.current.requestFullscreen();
+                } catch {
+                  toast({ title: "Cannot enter fullscreen", description: "Please allow fullscreen access.", variant: "destructive" });
                 }
               }}
-              className="w-full bg-blue-600 hover:bg-blue-700"
             >
               Return to Fullscreen
             </Button>
@@ -645,283 +406,321 @@ export default function VocabularyCheckup() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="bg-white border-b shadow-sm sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+      {/* Top Header Bar */}
+      <div className="bg-black/30 backdrop-blur-sm border-b border-white/10 sticky top-0 z-10">
+        <div className="max-w-6xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between gap-4">
+            {/* Left: Exit + Mode badge */}
+            <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleExitRequest}
-                className="text-slate-600"
+                onClick={() => isTestMode ? setShowExitDialog(true) : setShowSaveProgressDialog(true)}
+                className="text-slate-300 hover:text-white hover:bg-white/10"
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 {isTestMode ? "Exit Test" : "Save & Exit"}
               </Button>
-              <Badge variant="outline" className="text-sm">
-                Question {currentQuestionIndex + 1} of {questions.length}
-              </Badge>
-              {currentQuestion.word && (
-                <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200">
-                  {currentQuestion.word}
-                </Badge>
-              )}
-              {isTestMode && (
-                <Badge variant="destructive" className="text-xs">
-                  TEST MODE
-                </Badge>
-              )}
+              <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${isTestMode ? "bg-red-500/20 text-red-300 border border-red-500/30" : "bg-blue-500/20 text-blue-300 border border-blue-500/30"}`}>
+                {isTestMode ? <Shield className="h-3 w-3" /> : <Zap className="h-3 w-3" />}
+                {isTestMode ? "TEST MODE" : "PRACTICE"}
+              </div>
             </div>
+
+            {/* Center: Progress */}
+            <div className="flex-1 max-w-md hidden md:block">
+              <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
+                <span>Question {currentQuestionIndex + 1} of {questions.length}</span>
+                <span>{answeredCount} answered</span>
+              </div>
+              <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-blue-400 to-indigo-400 rounded-full transition-all duration-500"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Right: Timer + Count */}
             <div className="flex items-center gap-4">
               {timeRemaining !== null && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Clock className="h-4 w-4" />
-                  <span
-                    className={
-                      timeRemaining < 300 ? "text-red-600 font-semibold" : ""
-                    }
-                  >
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${timerUrgent ? "bg-red-500/20 border border-red-500/30" : "bg-white/10"}`}>
+                  <Clock className={`h-4 w-4 ${timerUrgent ? "text-red-400 animate-pulse" : "text-slate-300"}`} />
+                  <span className={`font-mono font-bold text-sm ${timerUrgent ? "text-red-300" : "text-slate-200"}`}>
                     {formatTime(timeRemaining)}
                   </span>
                 </div>
               )}
-              <div className="flex items-center gap-2 text-sm text-slate-600">
-                <CheckCircle className="h-4 w-4" />
-                <span>{answeredCount} answered</span>
+              <div className="flex items-center gap-1.5 text-xs text-slate-400 hidden sm:flex">
+                <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
+                <span>{answeredCount}/{questions.length}</span>
               </div>
             </div>
           </div>
-          <Progress value={progress} className="mt-3 h-2" />
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
-        {/* Reading Passage */}
-        {passage && (
-          <Card className="shadow-md border-2 border-blue-100">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg text-blue-700 flex items-center gap-2">
-                <BookOpen className="h-5 w-5" />
-                Reading Passage: {title}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+      <div className="flex-1 max-w-6xl mx-auto w-full px-4 py-6">
+        <div className={`grid gap-6 ${passage ? "lg:grid-cols-2" : "lg:grid-cols-1 max-w-2xl mx-auto w-full"}`}>
+          {/* Reading Passage */}
+          {passage && (
+            <div className="bg-white/8 backdrop-blur-sm border border-white/10 rounded-2xl p-5 h-fit lg:sticky lg:top-20">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                  <BookOpen className="h-4 w-4 text-blue-300" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold text-white">{title}</h2>
+                  <p className="text-xs text-slate-400">Reading Passage</p>
+                </div>
+              </div>
               <div
-                className="passage-container prose prose-sm max-w-none text-slate-700 leading-relaxed"
+                className="text-sm text-slate-300 leading-relaxed passage-container max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar"
                 dangerouslySetInnerHTML={{
                   __html: currentQuestion?.word
                     ? passage.replace(
-                        new RegExp(
-                          `(<mark>)?\\b${currentQuestion.word}\\b(</mark>)?`,
-                          "gi",
-                        ),
-                        `<mark class="current-question-word">${currentQuestion.word}</mark>`,
+                        new RegExp(`(<mark>)?\\b${currentQuestion.word}\\b(</mark>)?`, "gi"),
+                        `<mark class="current-question-word bg-yellow-400/30 text-yellow-200 px-1 rounded font-semibold">${currentQuestion.word}</mark>`,
                       )
                     : passage,
                 }}
               />
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          )}
 
-        {/* Question Card */}
-        <Card className="shadow-lg">
-          <CardHeader className="pb-6">
-            <CardTitle className="text-2xl">
-              {currentQuestion.question}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Multiple Choice Question */}
-            {currentQuestion.type === "multiple_choice" && (
-              <RadioGroup
-                value={answers[currentQuestion.id] || ""}
-                onValueChange={handleAnswerChange}
-                className="space-y-3"
-              >
-                {[
-                  { value: "A", label: currentQuestion.optionA },
-                  { value: "B", label: currentQuestion.optionB },
-                  { value: "C", label: currentQuestion.optionC },
-                  { value: "D", label: currentQuestion.optionD },
-                ].map((option) => (
-                  <div
-                    key={option.value}
-                    className="flex items-center space-x-3 border rounded-lg p-4 hover:bg-slate-50 cursor-pointer transition-colors"
-                  >
-                    <RadioGroupItem
-                      value={option.value}
-                      id={`option-${option.value}`}
-                    />
-                    <Label
-                      htmlFor={`option-${option.value}`}
-                      className="flex-1 cursor-pointer text-base"
-                    >
-                      <span className="font-semibold mr-2">
-                        {option.value}.
-                      </span>
-                      {option.label}
-                    </Label>
-                  </div>
-                ))}
-              </RadioGroup>
-            )}
-
-            {/* Input Question */}
-            {currentQuestion.type === "input" && (
-              <div className="space-y-3">
-                <Input
-                  type="text"
-                  placeholder="Type your answer here..."
-                  value={answers[currentQuestion.id] || ""}
-                  onChange={(e) => handleAnswerChange(e.target.value)}
-                  className="text-lg p-4"
-                />
-                {currentQuestion.caseSensitive && (
-                  <p className="text-sm text-amber-600 flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4" />
-                    This answer is case-sensitive
-                  </p>
+          {/* Question Panel */}
+          <div className="space-y-4">
+            {/* Question Card */}
+            <div className="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl overflow-hidden">
+              {/* Question Header */}
+              <div className="bg-white/5 border-b border-white/10 px-5 py-3 flex items-center gap-3">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  {currentQuestion.type === "multiple_choice" ? "Multiple Choice" : "Written Answer"}
+                </span>
+                {currentQuestion.word && (
+                  <span className="bg-yellow-400/20 text-yellow-300 border border-yellow-400/30 text-xs px-2.5 py-0.5 rounded-full font-medium">
+                    {currentQuestion.word}
+                  </span>
                 )}
               </div>
-            )}
 
-            {/* Navigation Buttons */}
-            <div className="flex items-center justify-between pt-6 border-t">
-              <Button
-                variant="outline"
-                onClick={goToPrevious}
-                disabled={currentQuestionIndex === 0}
-              >
-                <ChevronLeft className="h-4 w-4 mr-2" />
-                Previous
-              </Button>
+              <div className="p-5">
+                {/* Question Text */}
+                <p className="text-lg font-semibold text-white mb-5 leading-relaxed">
+                  {currentQuestion.question}
+                </p>
 
-              {currentQuestionIndex === questions.length - 1 ? (
+                {/* Multiple Choice Options */}
+                {currentQuestion.type === "multiple_choice" && (
+                  <div className="space-y-3">
+                    {mcOptions.map((option) => {
+                      const isSelected = answers[currentQuestion.id] === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          onClick={() => handleAnswerChange(option.value)}
+                          className={`w-full flex items-center gap-4 p-4 rounded-xl border text-left transition-all duration-200 ${
+                            isSelected
+                              ? "bg-blue-500/25 border-blue-400/60 shadow-lg shadow-blue-500/10"
+                              : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20"
+                          }`}
+                        >
+                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 font-bold text-sm transition-all duration-200 ${
+                            isSelected
+                              ? "bg-blue-500 text-white shadow-md shadow-blue-500/40"
+                              : "bg-white/10 text-slate-300"
+                          }`}>
+                            {option.value}
+                          </div>
+                          <span className={`text-sm leading-snug flex-1 ${isSelected ? "text-white font-medium" : "text-slate-300"}`}>
+                            {option.label}
+                          </span>
+                          {isSelected && (
+                            <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Input Question */}
+                {currentQuestion.type === "input" && (
+                  <div className="space-y-3">
+                    <Input
+                      type="text"
+                      placeholder="Type your answer here..."
+                      value={answers[currentQuestion.id] || ""}
+                      onChange={(e) => handleAnswerChange(e.target.value)}
+                      className="bg-white/10 border-white/20 text-white placeholder:text-slate-500 focus:border-blue-400 text-base h-12"
+                    />
+                    {currentQuestion.caseSensitive && (
+                      <p className="text-xs text-amber-400 flex items-center gap-1.5">
+                        <AlertTriangle className="h-3.5 w-3.5" />
+                        This answer is case-sensitive
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Navigation Footer */}
+              <div className="border-t border-white/10 px-5 py-4 flex items-center justify-between">
                 <Button
-                  onClick={() => setShowSubmitDialog(true)}
-                  className="bg-green-600 hover:bg-green-700"
+                  variant="ghost"
+                  onClick={goToPrevious}
+                  disabled={currentQuestionIndex === 0}
+                  className="text-slate-300 hover:text-white hover:bg-white/10 disabled:opacity-30"
                 >
-                  <Send className="h-4 w-4 mr-2" />
-                  Submit Test
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Previous
                 </Button>
-              ) : (
-                <Button onClick={goToNext}>
-                  Next
-                  <ChevronRight className="h-4 w-4 ml-2" />
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Question Navigator */}
-        <div className="mt-6">
-          <Card className="p-4">
-            <h3 className="text-sm font-semibold mb-3 text-slate-600">
-              Question Navigator
-            </h3>
-            <div className="grid grid-cols-10 gap-2">
-              {questions.map((q: Question, idx: number) => (
-                <button
-                  key={q.id}
-                  onClick={() => goToQuestion(idx)}
-                  className={`
-                    aspect-square rounded-lg border-2 text-sm font-medium transition-all
-                    ${currentQuestionIndex === idx ? "border-blue-600 bg-blue-50 text-blue-700" : ""}
-                    ${answers[q.id] ? "bg-green-50 border-green-500 text-green-700" : "border-slate-200 hover:border-slate-300"}
-                  `}
-                >
-                  {idx + 1}
-                </button>
-              ))}
+                <span className="text-xs text-slate-500 font-medium">
+                  {currentQuestionIndex + 1} / {questions.length}
+                </span>
+
+                {currentQuestionIndex === questions.length - 1 ? (
+                  <Button
+                    onClick={() => setShowSubmitDialog(true)}
+                    className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold shadow-lg shadow-emerald-500/25"
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    Submit
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={goToNext}
+                    className="bg-white/10 hover:bg-white/20 text-white border border-white/15"
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                )}
+              </div>
             </div>
-          </Card>
+
+            {/* Question Navigator */}
+            <div className="bg-white/8 backdrop-blur-sm border border-white/10 rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Question Navigator</p>
+                <p className="text-xs text-slate-500">{answeredCount} of {questions.length} answered</p>
+              </div>
+              <div className="grid grid-cols-10 gap-1.5">
+                {questions.map((q: Question, idx: number) => {
+                  const isAnswered = !!answers[q.id];
+                  const isCurrent = currentQuestionIndex === idx;
+                  return (
+                    <button
+                      key={q.id}
+                      onClick={() => goToQuestion(idx)}
+                      title={`Question ${idx + 1}`}
+                      className={`aspect-square rounded-lg text-xs font-bold transition-all duration-150 ${
+                        isCurrent
+                          ? "bg-blue-500 text-white shadow-md shadow-blue-500/40 scale-110"
+                          : isAnswered
+                          ? "bg-emerald-500/30 text-emerald-300 border border-emerald-500/40"
+                          : "bg-white/8 text-slate-400 border border-white/10 hover:bg-white/15"
+                      }`}
+                    >
+                      {idx + 1}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/10">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-sm bg-emerald-500/40 border border-emerald-500/60" />
+                  <span className="text-xs text-slate-500">Answered</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-sm bg-blue-500" />
+                  <span className="text-xs text-slate-500">Current</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-sm bg-white/10 border border-white/20" />
+                  <span className="text-xs text-slate-500">Unanswered</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Test Mode Warning Dialog */}
+      {/* Test Mode Start Dialog */}
       <Dialog open={showTestModeDialog} onOpenChange={() => {}}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-amber-600">
-              <AlertTriangle className="h-5 w-5" />
-              Test Mode - Important Notice
+            <DialogTitle className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                <Shield className="h-4 w-4 text-amber-600" />
+              </div>
+              Monitored Test
             </DialogTitle>
-            <DialogDescription className="space-y-3 pt-4">
-              <p className="font-medium text-slate-900">
-                This is a monitored test. Please read the following carefully:
-              </p>
-              <ul className="list-disc list-inside space-y-2 text-sm text-slate-700">
-                <li>
-                  <strong>Fullscreen mode</strong> will be activated and enforced
-                </li>
-                <li>
-                  <strong>Tab switching</strong> and exiting fullscreen will be detected
-                </li>
-                <li>
-                  Any violations will be <strong>recorded and reported</strong> to your teacher
-                </li>
-                <li>
-                  You must remain in fullscreen mode for the entire duration of the test
-                </li>
+            <DialogDescription className="space-y-3 pt-3">
+              <p className="text-slate-700 font-medium">Please read before starting:</p>
+              <ul className="space-y-2.5 text-sm text-slate-600">
+                {[
+                  "Fullscreen mode will be activated and enforced",
+                  "Tab switching will be detected and logged",
+                  "All violations are reported to your teacher",
+                  "Stay in fullscreen for the entire test duration",
+                ].map((rule, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <div className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">{i + 1}</div>
+                    {rule}
+                  </li>
+                ))}
               </ul>
-              <p className="text-sm text-amber-700 bg-amber-50 p-3 rounded-md border border-amber-200">
-                ⚠️ By clicking "Start Test", you acknowledge these terms and agree to follow the test rules.
-              </p>
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-700">
+                By clicking "Start Test", you agree to follow all test rules.
+              </div>
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="flex gap-2 sm:gap-0">
-            <Button
-              variant="outline"
-              onClick={() => navigate("/learner-dashboard")}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleStartTest}
-              className="bg-blue-600 hover:bg-blue-700 flex-1"
-            >
-              I Understand - Start Test
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => navigate("/learner/dashboard")} className="flex-1">Cancel</Button>
+            <Button onClick={handleStartTest} className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
+              I Understand — Start
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Submit Confirmation Dialog */}
+      {/* Submit Dialog */}
       <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Submit Test?</DialogTitle>
-            <DialogDescription>
-              You have answered {answeredCount} out of {questions.length}{" "}
-              questions.
-              {answeredCount < questions.length && (
-                <span className="block mt-2 text-amber-600">
-                  You have {questions.length - answeredCount} unanswered
-                  question(s).
-                </span>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="h-5 w-5 text-emerald-600" />
+              Submit Test?
+            </DialogTitle>
+            <DialogDescription className="pt-2 space-y-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-emerald-50 rounded-lg p-3 text-center">
+                  <p className="text-2xl font-bold text-emerald-700">{answeredCount}</p>
+                  <p className="text-xs text-emerald-600">Answered</p>
+                </div>
+                <div className={`rounded-lg p-3 text-center ${questions.length - answeredCount > 0 ? "bg-amber-50" : "bg-slate-50"}`}>
+                  <p className={`text-2xl font-bold ${questions.length - answeredCount > 0 ? "text-amber-700" : "text-slate-700"}`}>{questions.length - answeredCount}</p>
+                  <p className={`text-xs ${questions.length - answeredCount > 0 ? "text-amber-600" : "text-slate-500"}`}>Unanswered</p>
+                </div>
+              </div>
+              {questions.length - answeredCount > 0 && (
+                <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 p-3 rounded-lg">
+                  You have {questions.length - answeredCount} unanswered question(s). Unanswered questions will be marked incorrect.
+                </p>
               )}
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowSubmitDialog(false)}>Keep Going</Button>
             <Button
-              variant="outline"
-              onClick={() => setShowSubmitDialog(false)}
+              onClick={() => { setShowSubmitDialog(false); handleSubmit(); }}
+              disabled={completeMutation.isPending}
+              className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
             >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                setShowSubmitDialog(false);
-                handleSubmit();
-              }}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              Submit Test
+              {completeMutation.isPending ? "Submitting..." : "Submit Test"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -931,33 +730,25 @@ export default function VocabularyCheckup() {
       <Dialog open={showExitDialog} onOpenChange={setShowExitDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Exit Test</DialogTitle>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="h-5 w-5" />
+              Exit Test
+            </DialogTitle>
             <DialogDescription>
-              You are about to exit the test. Please provide a reason for
-              exiting. This will be shared with your teacher.
+              Provide a reason for exiting. This will be shared with your teacher.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <Textarea
-              placeholder="Enter your reason for exiting the test..."
-              value={exitReason}
-              onChange={(e) => setExitReason(e.target.value)}
-              rows={4}
-              className="resize-none"
-            />
-          </div>
-          <DialogFooter>
+          <Textarea
+            placeholder="Enter your reason for exiting the test..."
+            value={exitReason}
+            onChange={(e) => setExitReason(e.target.value)}
+            rows={3}
+            className="resize-none"
+          />
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => { setShowExitDialog(false); setExitReason(""); }}>Cancel</Button>
             <Button
-              variant="outline"
-              onClick={() => {
-                setShowExitDialog(false);
-                setExitReason("");
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleConfirmExit}
+              onClick={() => exitTestMutation.mutate(exitReason)}
               disabled={!exitReason.trim() || exitTestMutation.isPending}
               variant="destructive"
             >
@@ -967,30 +758,21 @@ export default function VocabularyCheckup() {
         </DialogContent>
       </Dialog>
 
-      {/* Save Progress Dialog (Practice Mode) */}
-      <Dialog
-        open={showSaveProgressDialog}
-        onOpenChange={setShowSaveProgressDialog}
-      >
+      {/* Save & Exit Dialog (Practice Mode) */}
+      <Dialog open={showSaveProgressDialog} onOpenChange={setShowSaveProgressDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Save Progress?</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Save className="h-5 w-5 text-blue-600" />
+              Save Progress?
+            </DialogTitle>
             <DialogDescription>
-              Your progress has been automatically saved. You can return to this
-              practice checkup anytime.
+              Your progress is automatically saved. You can return to this practice checkup anytime from your dashboard.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowSaveProgressDialog(false)}
-            >
-              Continue Practice
-            </Button>
-            <Button
-              onClick={handleSaveAndGoBack}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowSaveProgressDialog(false)}>Continue Practicing</Button>
+            <Button onClick={handleSaveAndGoBack} className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
               <Save className="h-4 w-4 mr-2" />
               Save & Exit
             </Button>

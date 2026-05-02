@@ -1,11 +1,25 @@
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
+import { getQueryFn, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, BookOpen, Eye, Play, Users, Calendar, CheckCircle, XCircle, Award, RotateCcw } from "lucide-react";
+import {
+  Clock,
+  BookOpen,
+  Play,
+  Users,
+  CheckCircle,
+  XCircle,
+  Award,
+  RotateCcw,
+  ArrowLeft,
+  Shield,
+  Zap,
+  Target,
+  Eye,
+  AlertTriangle,
+} from "lucide-react";
 import { useState } from "react";
 
 export default function TestPreview() {
@@ -16,48 +30,37 @@ export default function TestPreview() {
 
   const listId = parseInt(id || "0");
 
-  // Get vocabulary list details
   const { data: vocabularyList, isLoading } = useQuery({
     queryKey: [`/api/vocabulary-lists/${listId}`],
     queryFn: getQueryFn({ on401: "throw" }),
   });
 
-  // Check for existing submission and results (graded submissions only)
-  const { data: submissionData, error: submissionError } = useQuery({
+  const { data: submissionData } = useQuery({
     queryKey: [`/api/vocabulary-lists/${listId}/submission`],
     queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!listId,
   });
 
-  // Check for ANY existing submission (completed or not) to prevent retaking
   const { data: existingSubmission } = useQuery({
     queryKey: [`/api/submissions/check/${listId}`],
     queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!listId,
   });
 
-  // Get attempt information for this vocabulary list
   const { data: attemptInfo } = useQuery({
     queryKey: [`/api/vocabulary-lists/${listId}/attempts`],
     queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!listId,
   });
 
-
-
-  console.log("TestPreview loaded", { listId, isLoading, hasData: !!vocabularyList });
-
-  // Type guard for vocabulary list data
   const listData = vocabularyList as any;
 
-  // Mutation to start the test
   const startTestMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("POST", `/api/vocabulary-lists/${listId}/start-test`);
       return await res.json();
     },
     onSuccess: (data) => {
-      // Navigate to the actual test
       navigate(`/vocabulary-checkup/${data.submissionId}`);
     },
     onError: (error: any) => {
@@ -72,27 +75,20 @@ export default function TestPreview() {
 
   const handleStartTest = async () => {
     setIsStarting(true);
-    
-    // Only enter fullscreen for test mode, not practice mode
     if (listData?.type === "test") {
       try {
         await document.documentElement.requestFullscreen();
-      } catch (error) {
-        console.error("Failed to enter fullscreen:", error);
-        // Continue with test even if fullscreen fails
-      }
+      } catch {}
     }
-    
-    // Then start the test
     await startTestMutation.mutateAsync();
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading test preview...</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 rounded-full border-4 border-blue-200 border-t-blue-600 animate-spin mx-auto" />
+          <p className="text-slate-500 font-medium">Loading assignment...</p>
         </div>
       </div>
     );
@@ -100,477 +96,254 @@ export default function TestPreview() {
 
   if (!listData) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="p-6 text-center">
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">Test Not Found</h2>
-            <p className="text-gray-600 mb-4">The vocabulary test you're looking for doesn't exist or you don't have access to it.</p>
-            <Button onClick={() => navigate("/learner/dashboard")}>
-              Return to Dashboard
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center p-4">
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-8 max-w-md w-full text-center">
+          <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center mx-auto mb-4">
+            <XCircle className="h-8 w-8 text-white" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-900 mb-2">Assignment Not Found</h2>
+          <p className="text-slate-500 mb-6">This assignment doesn't exist or you don't have access to it.</p>
+          <Button onClick={() => navigate("/learner/dashboard")} className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+        </div>
       </div>
     );
   }
 
-  // Create blurred preview of passage (show first half, blur second half)
-  const passageWords = listData.passage.split(' ');
-  const midPoint = Math.floor(passageWords.length / 2);
-  const visiblePart = passageWords.slice(0, midPoint).join(' ');
-  const blurredPart = passageWords.slice(midPoint).join(' ');
+  const isTestMode = listData.type === "test";
+  const wordCount = listData.words?.length || 0;
+  const estimatedTime = listData.timeLimit ? `${listData.timeLimit} min` : `~${Math.ceil(wordCount * 2)} min`;
+  const hasGradedResult = submissionData && (submissionData as any)?.gradedAt;
+  const hasDoneIt = existingSubmission && (existingSubmission as any)?.exists && (!attemptInfo || !(attemptInfo as any)?.canAttempt);
+  const attemptData = attemptInfo as any;
+
+  const passageWords = (listData.passage || "").split(" ");
+  const midPoint = Math.floor(passageWords.length / 3);
+  const visiblePart = passageWords.slice(0, midPoint).join(" ");
+  const blurredPart = passageWords.slice(midPoint).join(" ");
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Header */}
-        <div className="mb-8">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate("/learner/dashboard")}
-            className="mb-4"
-          >
-            ← Back to Dashboard
-          </Button>
-          
-          <div className="bg-white rounded-lg shadow-sm border p-6">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                  {listData.title}
-                </h1>
-                <p className="text-gray-600 mb-4">
-                  {listData.description || "Vocabulary comprehension test"}
-                </p>
-                
-                <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-                  <div className="flex items-center gap-1">
-                    <BookOpen className="h-4 w-4" />
-                    <span>{listData.words?.length || 0} vocabulary words</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    <span>Estimated time: {Math.ceil((listData.words?.length || 0) * 2)} minutes</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Users className="h-4 w-4" />
-                    <span>Created by {listData.educator?.name}</span>
-                  </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="max-w-5xl mx-auto px-4 py-8">
+        {/* Back button */}
+        <button
+          onClick={() => navigate("/learner/dashboard")}
+          className="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors mb-6 group"
+        >
+          <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+          <span className="text-sm font-medium">Back to Dashboard</span>
+        </button>
+
+        {/* Header Card */}
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-white/20 p-6 mb-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-3">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isTestMode ? "bg-gradient-to-br from-red-500 to-rose-600" : "bg-gradient-to-br from-blue-500 to-indigo-600"}`}>
+                  {isTestMode ? <Shield className="h-6 w-6 text-white" /> : <Zap className="h-6 w-6 text-white" />}
+                </div>
+                <div>
+                  <Badge className={isTestMode ? "bg-red-100 text-red-700 border-red-200" : "bg-blue-100 text-blue-700 border-blue-200"}>
+                    {isTestMode ? "Graded Test" : "Practice Mode"}
+                  </Badge>
                 </div>
               </div>
-              
-              <Badge 
-                variant={listData.published ? "default" : "secondary"}
-                className="ml-4"
-              >
-                {listData.published ? "Published" : "Draft"}
-              </Badge>
+              <h1 className="text-2xl font-bold text-slate-900 mb-1">{listData.title}</h1>
+              <p className="text-slate-500">{listData.description || "Vocabulary comprehension assignment"}</p>
+            </div>
+          </div>
+
+          {/* Stats Row */}
+          <div className="grid grid-cols-3 gap-4 mt-6 pt-5 border-t border-slate-100">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-violet-100 flex items-center justify-center">
+                <BookOpen className="h-4 w-4 text-violet-600" />
+              </div>
+              <div>
+                <p className="text-xs text-slate-400 font-medium">Words</p>
+                <p className="text-base font-bold text-slate-800">{wordCount}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center">
+                <Clock className="h-4 w-4 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-xs text-slate-400 font-medium">Time</p>
+                <p className="text-base font-bold text-slate-800">{estimatedTime}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center">
+                <Users className="h-4 w-4 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-xs text-slate-400 font-medium">By</p>
+                <p className="text-base font-bold text-slate-800 truncate">{listData.educator?.name || "Educator"}</p>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Passage Preview */}
-          <Card className="h-fit">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Eye className="h-5 w-5" />
-                Reading Passage Preview
-              </CardTitle>
-              <CardDescription>
-                Start the test to see the full passage with highlighted vocabulary words
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="prose max-w-none">
-                <div className="relative">
-                  {/* Visible part */}
-                  <div className="mb-4">
-                    {visiblePart}
-                  </div>
-                  
-                  {/* Blurred part */}
-                  <div className="relative">
-                    <div 
-                      className="blur-sm select-none pointer-events-none text-gray-400"
-                      style={{ filter: 'blur(4px)' }}
-                    >
-                      {blurredPart}
-                    </div>
-                    
-                    {/* Overlay gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/20 to-white/80 pointer-events-none"></div>
-                    
-                    {/* "Start test to continue" message */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="bg-white/90 backdrop-blur-sm rounded-lg px-4 py-2 shadow-sm border">
-                        <p className="text-sm font-medium text-gray-700">
-                          Start test to read the full passage
-                        </p>
-                      </div>
+          <div className="lg:col-span-3">
+            <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-white/20 p-6 h-full">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center">
+                  <Eye className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <h2 className="font-semibold text-slate-800">Passage Preview</h2>
+                  <p className="text-xs text-slate-400">Start to see the full passage</p>
+                </div>
+              </div>
+
+              <div className="relative overflow-hidden rounded-xl bg-slate-50 p-4 text-sm text-slate-700 leading-relaxed min-h-[200px]">
+                <p>{visiblePart}</p>
+                <div className="relative mt-2">
+                  <p className="blur-sm select-none pointer-events-none text-slate-400">{blurredPart}</p>
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-50/95" />
+                  <div className="absolute bottom-4 left-0 right-0 flex justify-center">
+                    <div className="bg-white rounded-full px-4 py-2 shadow-md border border-slate-200 text-xs font-semibold text-slate-600">
+                      🔒 Start assignment to read full passage
                     </div>
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          {/* Test Information & Start */}
-          <div className="space-y-6">
-            {/* Test Instructions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Test Instructions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-medium flex-shrink-0 mt-0.5">
-                      1
-                    </div>
-                    <p className="text-sm text-gray-700">
-                      Read the complete passage carefully
+          {/* Right Panel */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Attempt Info */}
+            {attemptData && (
+              <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-white/20 p-5">
+                <h3 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                  <Target className="h-4 w-4 text-blue-600" />
+                  Attempts
+                </h3>
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div className="bg-slate-50 rounded-xl p-3 text-center">
+                    <p className="text-2xl font-bold text-slate-800">{attemptData.attemptCount || 0}</p>
+                    <p className="text-xs text-slate-400 mt-1">Used</p>
+                  </div>
+                  <div className="bg-blue-50 rounded-xl p-3 text-center">
+                    <p className="text-2xl font-bold text-blue-700">
+                      {attemptData.allowRedos
+                        ? attemptData.maxAttempts
+                          ? attemptData.remainingAttempts ?? 0
+                          : "∞"
+                        : (attemptData.attemptCount || 0) === 0 ? "1" : "0"}
                     </p>
-                  </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-medium flex-shrink-0 mt-0.5">
-                      2
-                    </div>
-                    <p className="text-sm text-gray-700">
-                      Define each highlighted vocabulary word based on its context
-                    </p>
-                  </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-medium flex-shrink-0 mt-0.5">
-                      3
-                    </div>
-                    <p className="text-sm text-gray-700">
-                      Write your definitions in your own words
-                    </p>
-                  </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-medium flex-shrink-0 mt-0.5">
-                      4
-                    </div>
-                    <p className="text-sm text-gray-700">
-                      Submit your test when complete for grading
-                    </p>
+                    <p className="text-xs text-blue-400 mt-1">Remaining</p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Test Requirements */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Test Requirements</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center gap-2 text-sm">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>Fullscreen mode required</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>No external resources allowed</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>Complete all vocabulary definitions</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                  <span>
-                    {attemptInfo?.allowRedos 
-                      ? attemptInfo.maxAttempts 
-                        ? `Maximum ${attemptInfo.maxAttempts} attempt${attemptInfo.maxAttempts > 1 ? 's' : ''} allowed`
-                        : "Multiple attempts allowed"
-                      : "Only one attempt allowed"
-                    }
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Attempt Information */}
-            {attemptInfo && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    Attempt Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center p-3 bg-gray-50 rounded-lg">
-                      <div className="text-2xl font-bold text-gray-900">
-                        {attemptInfo?.attemptCount || 0}
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        Attempt{(attemptInfo?.attemptCount || 0) !== 1 ? 's' : ''} Used
-                      </div>
-                    </div>
-                    <div className="text-center p-3 bg-blue-50 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-900">
-                        {attemptInfo?.allowRedos
-                          ? attemptInfo?.maxAttempts
-                            ? attemptInfo?.remainingAttempts || 0
-                            : "∞"
-                          : (attemptInfo?.attemptCount || 0) === 0 ? "1" : "0"
-                        }
-                      </div>
-                      <div className="text-sm text-blue-600">
-                        Attempt{((attemptInfo?.remainingAttempts || 0) !== 1 && attemptInfo?.allowRedos) ? 's' : ''} Left
-                      </div>
-                    </div>
+                <p className="text-xs text-slate-500 text-center">
+                  {attemptData.allowRedos
+                    ? attemptData.maxAttempts
+                      ? `Up to ${attemptData.maxAttempts} attempts allowed`
+                      : "Unlimited attempts"
+                    : "One attempt only"}
+                </p>
+                {!attemptData.canAttempt && (
+                  <div className="mt-3 flex items-center gap-2 bg-red-50 text-red-700 text-xs p-3 rounded-lg border border-red-200">
+                    <XCircle className="h-4 w-4 flex-shrink-0" />
+                    All attempts used
                   </div>
-                  
-                  <div className="text-sm text-gray-600 text-center">
-                    {attemptInfo?.allowRedos 
-                      ? attemptInfo?.maxAttempts
-                        ? `This assignment allows up to ${attemptInfo.maxAttempts} attempt${(attemptInfo.maxAttempts || 0) > 1 ? 's' : ''}.`
-                        : "This assignment allows unlimited attempts."
-                      : "This assignment allows only one attempt."
-                    }
-                  </div>
-
-                  {!attemptInfo?.canAttempt && (
-                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <div className="flex items-center gap-2 text-red-700 text-sm">
-                        <XCircle className="h-4 w-4" />
-                        <span>You have used all available attempts for this assignment.</span>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                )}
+              </div>
             )}
 
-            {/* Conditional Section: Start Test, Pending Grade, or View Results */}
-            {submissionData && (submissionData as any)?.gradedAt ? (
-              // Show Results Section - Test has been graded
-              <Card className="border-green-200 bg-green-50">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-green-800">
-                    <Award className="h-5 w-5" />
-                    Test Results
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-green-800 mb-2">
-                      {(submissionData as any)?.score || 0}%
-                    </div>
-                    <p className="text-sm text-green-700 mb-4">
-                      Completed on {new Date((submissionData as any)?.gradedAt).toLocaleDateString()}
-                    </p>
-                  </div>
+            {/* Test Rules (test mode) */}
+            {isTestMode && (
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
+                <h3 className="font-semibold text-amber-800 flex items-center gap-2 mb-3">
+                  <AlertTriangle className="h-4 w-4" />
+                  Test Rules
+                </h3>
+                <ul className="space-y-2 text-sm text-amber-700">
+                  <li className="flex items-start gap-2"><Shield className="h-4 w-4 flex-shrink-0 mt-0.5" /> Fullscreen mode required</li>
+                  <li className="flex items-start gap-2"><Eye className="h-4 w-4 flex-shrink-0 mt-0.5" /> Tab switching is monitored</li>
+                  <li className="flex items-start gap-2"><AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" /> Violations are reported to your teacher</li>
+                </ul>
+              </div>
+            )}
 
-                  {/* Show word results */}
-                  {(submissionData as any)?.definitions && (submissionData as any)?.definitions.length > 0 && (
-                    <div className="space-y-3">
-                      <h4 className="font-medium text-gray-800">Word Results:</h4>
-                      <div className="space-y-2 max-h-64 overflow-y-auto">
-                        {(submissionData as any)?.definitions.map((def: any) => (
-                          <div key={def.id} className="flex items-center justify-between p-3 bg-white rounded-lg border">
-                            <div className="flex-1">
-                              <span className="font-medium">{def.word?.word}</span>
-                              {def.showCorrectDefinition && def.correctDefinition && (
-                                <p className="text-xs text-gray-600 mt-1">
-                                  Correct: {def.correctDefinition}
-                                </p>
-                              )}
-                            </div>
-                            <div className="flex items-center">
-                              {def.isCorrect ? (
-                                <CheckCircle className="h-5 w-5 text-green-500" />
-                              ) : (
-                                <XCircle className="h-5 w-5 text-red-500" />
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="space-y-3">
-                    <Button 
-                      onClick={() => navigate(`/test-results/${(submissionData as any)?.id}`)}
-                      className="w-full"
-                    >
-                      <Award className="h-4 w-4 mr-2" />
-                      View Detailed Results
-                    </Button>
-                    
-                    {/* Show retake option if allowed and attempts remain */}
-                    {attemptInfo && (attemptInfo as any)?.canAttempt && (
-                      <Button 
-                        onClick={handleStartTest}
-                        disabled={isStarting || startTestMutation.isPending}
-                        className="w-full"
-                        variant="outline"
-                      >
-                        {isStarting || startTestMutation.isPending ? (
-                          <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
-                            Starting Retake...
-                          </>
-                        ) : (
-                          <>
-                            <RotateCcw className="h-4 w-4 mr-2" />
-                            Retake Test ({(attemptInfo as any)?.remainingAttempts || 0} attempt{((attemptInfo as any)?.remainingAttempts || 0) !== 1 ? 's' : ''} left)
-                          </>
-                        )}
-                      </Button>
-                    )}
-                    
-                    <Button 
-                      onClick={() => navigate("/learner/dashboard")}
-                      className="w-full"
-                      variant="outline"
-                    >
-                      Return to Dashboard
-                    </Button>
+            {/* Action Card */}
+            {hasGradedResult ? (
+              <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-5">
+                <div className="text-center mb-4">
+                  <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-3">
+                    <Award className="h-7 w-7 text-emerald-600" />
                   </div>
-                </CardContent>
-              </Card>
-            ) : existingSubmission && (existingSubmission as any)?.exists && (!attemptInfo || !(attemptInfo as any)?.canAttempt) ? (
-              // Show Already Done Section - Only when submission exists AND retakes are not allowed or no attempts left
-              <Card className="border-gray-200 bg-gray-50">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-gray-800">
-                    <CheckCircle className="h-5 w-5" />
-                    Already Done
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="text-center">
-                    <div className="text-gray-600 mb-4">
-                      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
-                        <CheckCircle className="h-8 w-8 text-gray-600" />
-                      </div>
-                      <h3 className="font-semibold text-gray-900 mb-2">Test Completed</h3>
-                      <p className="text-sm text-gray-700 mb-4">
-                        {(existingSubmission as any)?.completed && (existingSubmission as any)?.gradedAt 
-                          ? attemptInfo && !(attemptInfo as any)?.allowRedos
-                            ? "You have completed this vocabulary test. Retakes are not allowed for this assignment."
-                            : "You have used all available attempts for this assignment."
-                          : (existingSubmission as any)?.completed 
-                          ? "You have completed this test and it's awaiting grading by your teacher."
-                          : "You have started this test but haven't finished it yet."
-                        }
-                      </p>
-                      {(existingSubmission as any)?.submittedAt && (
-                        <p className="text-xs text-gray-600">
-                          {(existingSubmission as any)?.completed 
-                            ? `Submitted on ${new Date((existingSubmission as any)?.submittedAt).toLocaleDateString()}`
-                            : "Test in progress"
-                          }
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    {(existingSubmission as any)?.completed && (existingSubmission as any)?.gradedAt && (
-                      <Button 
-                        onClick={() => navigate(`/test-results/${(existingSubmission as any)?.id}`)}
-                        className="w-full"
-                      >
-                        <Award className="h-4 w-4 mr-2" />
-                        View Results
-                      </Button>
-                    )}
-                    <Button 
-                      onClick={() => navigate("/learner/dashboard")}
-                      className="w-full"
-                      variant="outline"
-                    >
-                      Return to Dashboard
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              // Show Start Test Section - No submission exists yet
-              <Card className="border-blue-200 bg-blue-50">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-blue-800">
-                    <Play className="h-5 w-5" />
-                    Ready to Start
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="text-center">
-                    <div className="text-blue-600 mb-4">
-                      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-100 flex items-center justify-center">
-                        <Play className="h-8 w-8 text-blue-600" />
-                      </div>
-                      <h3 className="font-semibold text-blue-900 mb-2">Start Your Vocabulary Test</h3>
-                      <p className="text-sm text-blue-700 mb-4">
-                        You haven't started this vocabulary test yet. Click the button below to begin.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="bg-blue-100 border border-blue-200 rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0">
-                        <div className="w-5 h-5 rounded-full bg-blue-200 flex items-center justify-center">
-                          <span className="text-blue-600 text-xs font-bold">!</span>
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium text-blue-800 mb-1">Important</h4>
-                        <p className="text-sm text-blue-700">
-                          Once you start the test, you must complete it in one session. 
-                          Make sure you have enough time and a stable internet connection.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    {attemptInfo && !(attemptInfo as any)?.canAttempt && (
-                      <div className="p-3 bg-red-50 border border-red-200 rounded-lg mb-3">
-                        <div className="flex items-center gap-2 text-red-700 text-sm">
-                          <XCircle className="h-4 w-4" />
-                          <span>You have used all available attempts for this assignment.</span>
-                        </div>
-                      </div>
-                    )}
-                    <Button 
+                  <p className="text-3xl font-bold text-emerald-700">{(submissionData as any)?.score ?? 0}%</p>
+                  <p className="text-sm text-emerald-600 mt-1">Your score</p>
+                </div>
+                <div className="space-y-2">
+                  <Button
+                    onClick={() => navigate(`/test-results/${(submissionData as any)?.id}`)}
+                    className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+                  >
+                    <Award className="h-4 w-4 mr-2" />
+                    View Results
+                  </Button>
+                  {attemptData?.canAttempt && (
+                    <Button
                       onClick={handleStartTest}
-                      disabled={isStarting || startTestMutation.isPending || (attemptInfo && !(attemptInfo as any)?.canAttempt)}
+                      disabled={isStarting || startTestMutation.isPending}
+                      variant="outline"
                       className="w-full"
                     >
                       {isStarting || startTestMutation.isPending ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Starting Test...
-                        </>
+                        <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />Starting...</>
                       ) : (
-                        <>
-                          <Play className="h-4 w-4 mr-2" />
-                          {attemptInfo && !(attemptInfo as any)?.canAttempt ? "No Attempts Remaining" : "Start Vocabulary Test"}
-                        </>
+                        <><RotateCcw className="h-4 w-4 mr-2" />Retake ({attemptData.remainingAttempts} left)</>
                       )}
                     </Button>
-                    <Button 
-                      onClick={() => navigate("/learner/dashboard")}
-                      className="w-full"
-                      variant="outline"
-                    >
-                      Return to Dashboard
-                    </Button>
+                  )}
+                </div>
+              </div>
+            ) : hasDoneIt ? (
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 text-center">
+                <CheckCircle className="h-10 w-10 text-slate-400 mx-auto mb-3" />
+                <h3 className="font-semibold text-slate-800 mb-1">Already Submitted</h3>
+                <p className="text-sm text-slate-500 mb-4">
+                  {(existingSubmission as any)?.completed
+                    ? "Awaiting grading by your teacher."
+                    : "You've started this but haven't finished."}
+                </p>
+                <Button onClick={() => navigate("/learner/dashboard")} variant="outline" className="w-full">
+                  Back to Dashboard
+                </Button>
+              </div>
+            ) : (
+              <div className={`rounded-2xl p-5 ${isTestMode ? "bg-gradient-to-br from-red-50 to-rose-50 border border-red-200" : "bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200"}`}>
+                <div className="text-center mb-5">
+                  <div className={`w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3 ${isTestMode ? "bg-red-100" : "bg-blue-100"}`}>
+                    <Play className={`h-7 w-7 ${isTestMode ? "text-red-600" : "text-blue-600"}`} />
                   </div>
-                </CardContent>
-              </Card>
+                  <h3 className={`font-bold text-lg ${isTestMode ? "text-red-900" : "text-blue-900"}`}>
+                    {isTestMode ? "Ready to take the test?" : "Start practicing!"}
+                  </h3>
+                  <p className={`text-sm mt-1 ${isTestMode ? "text-red-700" : "text-blue-600"}`}>
+                    {isTestMode ? "This is a graded test. Your results will be reported." : "Practice at your own pace, no pressure."}
+                  </p>
+                </div>
+                <Button
+                  onClick={handleStartTest}
+                  disabled={isStarting || startTestMutation.isPending || (attemptData && !attemptData.canAttempt)}
+                  className={`w-full text-white font-semibold ${isTestMode ? "bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700" : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"}`}
+                >
+                  {isStarting || startTestMutation.isPending ? (
+                    <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />Starting...</>
+                  ) : (
+                    <><Play className="h-4 w-4 mr-2" />{isTestMode ? "Begin Test" : "Start Practice"}</>
+                  )}
+                </Button>
+              </div>
             )}
           </div>
         </div>
