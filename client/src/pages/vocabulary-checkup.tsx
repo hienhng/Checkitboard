@@ -19,6 +19,7 @@ import {
   Shield,
   Zap,
   XCircle,
+  PenLine,
 } from "lucide-react";
 import {
   Dialog,
@@ -94,14 +95,12 @@ export default function VocabularyCheckup() {
   const isTestMode = checkupType === "test";
   const isContentLoaded = !submissionLoading && !questionsLoading && !!listData && questions.length > 0;
 
-  // Hydrate saved answers
   useEffect(() => {
     if (savedAnswers && Object.keys(savedAnswers).length > 0 && Object.keys(answers).length === 0) {
       setAnswers(savedAnswers);
     }
   }, [savedAnswers]);
 
-  // Auto-start or show dialog
   useEffect(() => {
     if (!isContentLoaded) return;
     if (isTestMode && !testStarted) {
@@ -111,29 +110,23 @@ export default function VocabularyCheckup() {
     }
   }, [isContentLoaded, isTestMode, testStarted]);
 
-  // Initialize timer
   useEffect(() => {
     if (listSettings.timeLimit && timeRemaining === null) {
       setTimeRemaining(listSettings.timeLimit * 60);
     }
   }, [listSettings.timeLimit]);
 
-  // Timer countdown
   useEffect(() => {
     if (timeRemaining === null || timeRemaining <= 0) return;
     const timer = setInterval(() => {
       setTimeRemaining((prev) => {
-        if (prev === null || prev <= 1) {
-          handleSubmit();
-          return 0;
-        }
+        if (prev === null || prev <= 1) { handleSubmit(); return 0; }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(timer);
   }, [timeRemaining]);
 
-  // Fullscreen monitoring for test mode
   useEffect(() => {
     if (!isTestMode || !testStarted) return;
 
@@ -152,10 +145,7 @@ export default function VocabularyCheckup() {
     const handleFullscreenChange = () => {
       if (!document.fullscreenElement && isTestMode) {
         setFullscreenWarning(true);
-        // Log the violation
-        apiRequest("POST", `/api/submissions/${submissionId}/fullscreen-exit`, {
-          timestamp: new Date().toISOString(),
-        }).catch(() => {});
+        apiRequest("POST", `/api/submissions/${submissionId}/fullscreen-exit`, { timestamp: new Date().toISOString() }).catch(() => {});
       } else {
         setFullscreenWarning(false);
       }
@@ -164,9 +154,7 @@ export default function VocabularyCheckup() {
     const handleVisibilityChange = () => {
       if (document.hidden && isTestMode) {
         setFullscreenWarning(true);
-        apiRequest("POST", `/api/submissions/${submissionId}/fullscreen-exit`, {
-          timestamp: new Date().toISOString(),
-        }).catch(() => {});
+        apiRequest("POST", `/api/submissions/${submissionId}/fullscreen-exit`, { timestamp: new Date().toISOString() }).catch(() => {});
       }
     };
 
@@ -186,7 +174,6 @@ export default function VocabularyCheckup() {
     };
   }, [isTestMode, testStarted]);
 
-  // Cleanup timers on unmount
   useEffect(() => {
     return () => { Object.values(inputDebounceTimers).forEach(clearTimeout); };
   }, [inputDebounceTimers]);
@@ -197,9 +184,6 @@ export default function VocabularyCheckup() {
     return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
-  const timerPercent = timeRemaining !== null && listSettings.timeLimit
-    ? (timeRemaining / (listSettings.timeLimit * 60)) * 100
-    : 100;
   const timerUrgent = timeRemaining !== null && timeRemaining < 300;
 
   const handleStartTest = () => {
@@ -224,7 +208,6 @@ export default function VocabularyCheckup() {
   const handleAnswerChange = (answer: string) => {
     if (!currentQuestion) return;
     setAnswers((prev) => ({ ...prev, [currentQuestion.id]: answer }));
-
     if (currentQuestion.type === "multiple_choice") {
       setPendingMCAnswers((prev) => ({ ...prev, [currentQuestion.id]: answer }));
     } else {
@@ -260,14 +243,12 @@ export default function VocabularyCheckup() {
 
   const handleSubmit = async () => {
     const pendingSaves: Promise<void>[] = [];
-
     Object.entries(pendingMCAnswers).forEach(([qId, selectedAnswer]) => {
       pendingSaves.push(new Promise<void>((resolve) => {
         saveMCAnswerMutation.mutate({ questionId: parseInt(qId), selectedAnswer }, { onSettled: () => resolve() });
       }));
     });
     setPendingMCAnswers({});
-
     Object.entries(inputDebounceTimers).forEach(([qId, timer]) => {
       clearTimeout(timer);
       const answer = answers[parseInt(qId)];
@@ -278,7 +259,6 @@ export default function VocabularyCheckup() {
       }
     });
     setInputDebounceTimers({});
-
     await Promise.all(pendingSaves);
     completeMutation.mutate();
   };
@@ -344,15 +324,21 @@ export default function VocabularyCheckup() {
   const answeredCount = Object.keys(answers).length;
   const progress = questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
 
-  // Loading state
+  // ── Loading ─────────────────────────────────────────────────────────────────
   if (!isContentLoaded || !testStarted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 rounded-full border-4 border-blue-400/30 border-t-blue-400 animate-spin mx-auto" />
-          <p className="text-blue-200 font-medium">
-            {!isContentLoaded ? "Loading questions..." : "Preparing your test..."}
-          </p>
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="text-center space-y-5">
+          <div className="relative w-20 h-20 mx-auto">
+            <div className="absolute inset-0 rounded-full border-4 border-slate-800" />
+            <div className="absolute inset-0 rounded-full border-4 border-t-indigo-500 animate-spin" />
+          </div>
+          <div>
+            <p className="text-white font-semibold text-lg">
+              {!isContentLoaded ? "Loading questions" : "Preparing your test"}
+            </p>
+            <p className="text-slate-500 text-sm mt-1">Please wait a moment…</p>
+          </div>
         </div>
       </div>
     );
@@ -360,12 +346,12 @@ export default function VocabularyCheckup() {
 
   if (!currentQuestion) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md text-center">
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 max-w-sm w-full text-center">
           <XCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-slate-900 mb-2">No Questions</h2>
-          <p className="text-slate-500 mb-6">This assignment doesn't have any questions yet.</p>
-          <Button onClick={() => navigate("/learner/dashboard")}>Back to Dashboard</Button>
+          <h2 className="text-xl font-bold text-white mb-2">No Questions</h2>
+          <p className="text-slate-400 mb-6">This assignment doesn't have any questions yet.</p>
+          <Button onClick={() => navigate("/learner/dashboard")} className="bg-indigo-600 hover:bg-indigo-700">Back to Dashboard</Button>
         </div>
       </div>
     );
@@ -378,20 +364,28 @@ export default function VocabularyCheckup() {
     { value: "D", label: currentQuestion.optionD },
   ];
 
+  const optionColors: Record<string, { idle: string; selected: string; letter: string }> = {
+    A: { idle: "hover:border-violet-500/50 hover:bg-violet-500/5", selected: "border-violet-500 bg-violet-500/10", letter: "bg-violet-500 text-white" },
+    B: { idle: "hover:border-blue-500/50 hover:bg-blue-500/5", selected: "border-blue-500 bg-blue-500/10", letter: "bg-blue-500 text-white" },
+    C: { idle: "hover:border-emerald-500/50 hover:bg-emerald-500/5", selected: "border-emerald-500 bg-emerald-500/10", letter: "bg-emerald-500 text-white" },
+    D: { idle: "hover:border-amber-500/50 hover:bg-amber-500/5", selected: "border-amber-500 bg-amber-500/10", letter: "bg-amber-500 text-white" },
+  };
+
   return (
-    <div ref={checkupRef} className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 flex flex-col overflow-y-auto">
-      {/* Fullscreen Warning Overlay */}
+    <div ref={checkupRef} className="min-h-screen bg-slate-950 flex flex-col">
+
+      {/* ── Fullscreen Warning ──────────────────────────────────────────────── */}
       {isTestMode && fullscreenWarning && (
-        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-8 text-center shadow-2xl">
-            <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-              <AlertTriangle className="h-8 w-8 text-red-600" />
+        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-red-500/30 rounded-2xl max-w-sm w-full p-8 text-center shadow-2xl shadow-red-500/10">
+            <div className="w-16 h-16 rounded-full bg-red-500/15 border border-red-500/30 flex items-center justify-center mx-auto mb-5">
+              <AlertTriangle className="h-8 w-8 text-red-400" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">Test Interrupted</h3>
-            <p className="text-slate-600 mb-2">You exited fullscreen or switched tabs.</p>
-            <p className="text-sm text-red-600 font-medium mb-6">This violation has been logged and reported to your teacher.</p>
+            <h3 className="text-xl font-bold text-white mb-2">Test Interrupted</h3>
+            <p className="text-slate-400 text-sm mb-1">You exited fullscreen or switched tabs.</p>
+            <p className="text-red-400 text-sm font-medium mb-6">This violation has been logged and reported to your teacher.</p>
             <Button
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+              className="w-full bg-indigo-600 hover:bg-indigo-700 h-11"
               onClick={async () => {
                 try {
                   if (checkupRef.current) await checkupRef.current.requestFullscreen();
@@ -406,138 +400,169 @@ export default function VocabularyCheckup() {
         </div>
       )}
 
-      {/* Top Header Bar */}
-      <div className="bg-black/30 backdrop-blur-sm border-b border-white/10 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between gap-4">
-            {/* Left: Exit + Mode badge */}
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => isTestMode ? setShowExitDialog(true) : setShowSaveProgressDialog(true)}
-                className="text-slate-300 hover:text-white hover:bg-white/10"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                {isTestMode ? "Exit Test" : "Save & Exit"}
-              </Button>
-              <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${isTestMode ? "bg-red-500/20 text-red-300 border border-red-500/30" : "bg-blue-500/20 text-blue-300 border border-blue-500/30"}`}>
-                {isTestMode ? <Shield className="h-3 w-3" /> : <Zap className="h-3 w-3" />}
-                {isTestMode ? "TEST MODE" : "PRACTICE"}
-              </div>
-            </div>
+      {/* ── Header ──────────────────────────────────────────────────────────── */}
+      <header className="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-5 h-14 flex items-center gap-4">
 
-            {/* Center: Progress */}
-            <div className="flex-1 max-w-md hidden md:block">
-              <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-                <span>Question {currentQuestionIndex + 1} of {questions.length}</span>
-                <span>{answeredCount} answered</span>
-              </div>
-              <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-blue-400 to-indigo-400 rounded-full transition-all duration-500"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-            </div>
+          {/* Left */}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <button
+              onClick={() => isTestMode ? setShowExitDialog(true) : setShowSaveProgressDialog(true)}
+              className="flex items-center gap-1.5 text-slate-400 hover:text-white text-sm font-medium transition-colors px-2 py-1 rounded-lg hover:bg-white/5"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              {isTestMode ? "Exit" : "Save & Exit"}
+            </button>
 
-            {/* Right: Timer + Count */}
-            <div className="flex items-center gap-4">
-              {timeRemaining !== null && (
-                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${timerUrgent ? "bg-red-500/20 border border-red-500/30" : "bg-white/10"}`}>
-                  <Clock className={`h-4 w-4 ${timerUrgent ? "text-red-400 animate-pulse" : "text-slate-300"}`} />
-                  <span className={`font-mono font-bold text-sm ${timerUrgent ? "text-red-300" : "text-slate-200"}`}>
-                    {formatTime(timeRemaining)}
-                  </span>
-                </div>
-              )}
-              <div className="flex items-center gap-1.5 text-xs text-slate-400 hidden sm:flex">
-                <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
-                <span>{answeredCount}/{questions.length}</span>
-              </div>
+            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold tracking-wide ${
+              isTestMode
+                ? "bg-red-500/10 text-red-400 ring-1 ring-red-500/30"
+                : "bg-indigo-500/10 text-indigo-400 ring-1 ring-indigo-500/30"
+            }`}>
+              {isTestMode ? <Shield className="h-3 w-3" /> : <Zap className="h-3 w-3" />}
+              {isTestMode ? "TEST" : "PRACTICE"}
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="flex-1 max-w-6xl mx-auto w-full px-4 py-6">
-        <div className={`grid gap-6 ${passage ? "lg:grid-cols-2" : "lg:grid-cols-1 max-w-2xl mx-auto w-full"}`}>
-          {/* Reading Passage */}
-          {passage && (
-            <div className="bg-white/8 backdrop-blur-sm border border-white/10 rounded-2xl p-5 h-fit lg:sticky lg:top-20">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                  <BookOpen className="h-4 w-4 text-blue-300" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold text-white">{title}</h2>
-                  <p className="text-xs text-slate-400">Reading Passage</p>
-                </div>
-              </div>
+          {/* Center — progress bar */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between text-xs text-slate-500 mb-1.5">
+              <span className="font-medium text-slate-300">
+                Q {currentQuestionIndex + 1} <span className="text-slate-600">/ {questions.length}</span>
+              </span>
+              <span>{answeredCount} answered</span>
+            </div>
+            <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
               <div
-                className="text-sm text-slate-300 leading-relaxed passage-container max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar"
-                dangerouslySetInnerHTML={{
-                  __html: currentQuestion?.word
-                    ? passage.replace(
-                        new RegExp(`(<mark>)?\\b${currentQuestion.word}\\b(</mark>)?`, "gi"),
-                        `<mark class="current-question-word bg-yellow-400/30 text-yellow-200 px-1 rounded font-semibold">${currentQuestion.word}</mark>`,
-                      )
-                    : passage,
+                className="h-full rounded-full transition-all duration-500 ease-out"
+                style={{
+                  width: `${progress}%`,
+                  background: "linear-gradient(90deg, #6366f1, #818cf8)",
                 }}
               />
             </div>
+          </div>
+
+          {/* Right — timer */}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            {timeRemaining !== null && (
+              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-mono font-bold transition-colors ${
+                timerUrgent
+                  ? "bg-red-500/15 text-red-400 ring-1 ring-red-500/30"
+                  : "bg-slate-800 text-slate-200"
+              }`}>
+                <Clock className={`h-3.5 w-3.5 ${timerUrgent ? "animate-pulse" : "text-slate-500"}`} />
+                {formatTime(timeRemaining)}
+              </div>
+            )}
+            <div className="text-xs text-slate-500 hidden sm:block">
+              <span className="text-emerald-400 font-semibold">{answeredCount}</span>/{questions.length}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* ── Main ────────────────────────────────────────────────────────────── */}
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-5 py-6">
+        <div className={`grid gap-5 h-full ${passage ? "lg:grid-cols-[1fr_1.1fr]" : "max-w-2xl mx-auto"}`}>
+
+          {/* Reading Passage Panel */}
+          {passage && (
+            <aside className="lg:sticky lg:top-[calc(3.5rem+1.25rem)] self-start">
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+                {/* Panel header */}
+                <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-800">
+                  <div className="w-7 h-7 rounded-lg bg-indigo-500/15 flex items-center justify-center flex-shrink-0">
+                    <BookOpen className="h-3.5 w-3.5 text-indigo-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Reading Passage</p>
+                    <p className="text-sm font-semibold text-white truncate">{title}</p>
+                  </div>
+                  {currentQuestion.word && (
+                    <span className="ml-auto flex-shrink-0 bg-yellow-400/10 text-yellow-400 ring-1 ring-yellow-400/30 text-xs px-2.5 py-1 rounded-full font-semibold">
+                      {currentQuestion.word}
+                    </span>
+                  )}
+                </div>
+                {/* Passage text */}
+                <div
+                  className="px-5 py-4 text-[0.9rem] text-slate-300 leading-[1.85] max-h-[calc(100vh-12rem)] overflow-y-auto"
+                  style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+                  dangerouslySetInnerHTML={{
+                    __html: currentQuestion?.word
+                      ? passage.replace(
+                          new RegExp(`(<mark[^>]*>)?\\b(${currentQuestion.word})\\b(</mark>)?`, "gi"),
+                          `<mark style="background:rgba(250,204,21,0.18);color:#fde68a;padding:1px 3px;border-radius:3px;font-weight:600">$2</mark>`,
+                        )
+                      : passage,
+                  }}
+                />
+              </div>
+            </aside>
           )}
 
-          {/* Question Panel */}
-          <div className="space-y-4">
+          {/* Question + Navigator */}
+          <div className="flex flex-col gap-4">
+
             {/* Question Card */}
-            <div className="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl overflow-hidden">
-              {/* Question Header */}
-              <div className="bg-white/5 border-b border-white/10 px-5 py-3 flex items-center gap-3">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                  {currentQuestion.type === "multiple_choice" ? "Multiple Choice" : "Written Answer"}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col">
+
+              {/* Question Meta Bar */}
+              <div className="flex items-center gap-3 px-5 py-3 border-b border-slate-800 bg-slate-900/50">
+                <span className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-md ${
+                  currentQuestion.type === "multiple_choice"
+                    ? "bg-violet-500/10 text-violet-400"
+                    : "bg-emerald-500/10 text-emerald-400"
+                }`}>
+                  {currentQuestion.type === "multiple_choice"
+                    ? <><CheckCircle className="h-3 w-3" />Multiple Choice</>
+                    : <><PenLine className="h-3 w-3" />Written Answer</>
+                  }
                 </span>
-                {currentQuestion.word && (
-                  <span className="bg-yellow-400/20 text-yellow-300 border border-yellow-400/30 text-xs px-2.5 py-0.5 rounded-full font-medium">
-                    {currentQuestion.word}
-                  </span>
-                )}
+                <span className="text-slate-700 text-xs">•</span>
+                <span className="text-xs text-slate-500">
+                  Question {currentQuestionIndex + 1} of {questions.length}
+                </span>
               </div>
 
-              <div className="p-5">
-                {/* Question Text */}
-                <p className="text-lg font-semibold text-white mb-5 leading-relaxed">
+              {/* Question Body */}
+              <div className="px-6 py-6 flex-1">
+                <p className="text-[1.05rem] font-semibold text-white leading-relaxed mb-6">
                   {currentQuestion.question}
                 </p>
 
-                {/* Multiple Choice Options */}
+                {/* Multiple Choice */}
                 {currentQuestion.type === "multiple_choice" && (
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     {mcOptions.map((option) => {
                       const isSelected = answers[currentQuestion.id] === option.value;
+                      const colors = optionColors[option.value];
                       return (
                         <button
                           key={option.value}
                           onClick={() => handleAnswerChange(option.value)}
-                          className={`w-full flex items-center gap-4 p-4 rounded-xl border text-left transition-all duration-200 ${
+                          className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl border transition-all duration-150 text-left group ${
                             isSelected
-                              ? "bg-blue-500/25 border-blue-400/60 shadow-lg shadow-blue-500/10"
-                              : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20"
+                              ? `${colors.selected} shadow-sm`
+                              : `border-slate-800 bg-slate-800/40 ${colors.idle}`
                           }`}
                         >
-                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 font-bold text-sm transition-all duration-200 ${
-                            isSelected
-                              ? "bg-blue-500 text-white shadow-md shadow-blue-500/40"
-                              : "bg-white/10 text-slate-300"
+                          {/* Letter badge */}
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-sm font-bold transition-all duration-150 ${
+                            isSelected ? colors.letter : "bg-slate-700 text-slate-400 group-hover:bg-slate-600"
                           }`}>
                             {option.value}
                           </div>
-                          <span className={`text-sm leading-snug flex-1 ${isSelected ? "text-white font-medium" : "text-slate-300"}`}>
+                          {/* Label */}
+                          <span className={`flex-1 text-sm leading-snug transition-colors duration-150 ${
+                            isSelected ? "text-white font-medium" : "text-slate-300"
+                          }`}>
                             {option.label}
                           </span>
+                          {/* Checkmark */}
                           {isSelected && (
-                            <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                            <CheckCircle className="h-4 w-4 flex-shrink-0 text-current opacity-80" />
                           )}
                         </button>
                       );
@@ -545,18 +570,18 @@ export default function VocabularyCheckup() {
                   </div>
                 )}
 
-                {/* Input Question */}
+                {/* Input / Written Answer */}
                 {currentQuestion.type === "input" && (
                   <div className="space-y-3">
                     <Input
                       type="text"
-                      placeholder="Type your answer here..."
+                      placeholder="Type your answer here…"
                       value={answers[currentQuestion.id] || ""}
                       onChange={(e) => handleAnswerChange(e.target.value)}
-                      className="bg-white/10 border-white/20 text-white placeholder:text-slate-500 focus:border-blue-400 text-base h-12"
+                      className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-600 focus:border-indigo-500 focus:ring-indigo-500/20 h-12 text-base rounded-xl"
                     />
                     {currentQuestion.caseSensitive && (
-                      <p className="text-xs text-amber-400 flex items-center gap-1.5">
+                      <p className="flex items-center gap-1.5 text-xs text-amber-400">
                         <AlertTriangle className="h-3.5 w-3.5" />
                         This answer is case-sensitive
                       </p>
@@ -565,34 +590,45 @@ export default function VocabularyCheckup() {
                 )}
               </div>
 
-              {/* Navigation Footer */}
-              <div className="border-t border-white/10 px-5 py-4 flex items-center justify-between">
+              {/* Navigation footer */}
+              <div className="px-5 py-4 border-t border-slate-800 flex items-center justify-between bg-slate-900/50">
                 <Button
                   variant="ghost"
                   onClick={goToPrevious}
                   disabled={currentQuestionIndex === 0}
-                  className="text-slate-300 hover:text-white hover:bg-white/10 disabled:opacity-30"
+                  className="text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-25 h-9 px-3"
                 >
                   <ChevronLeft className="h-4 w-4 mr-1" />
-                  Previous
+                  Back
                 </Button>
 
-                <span className="text-xs text-slate-500 font-medium">
-                  {currentQuestionIndex + 1} / {questions.length}
-                </span>
+                <div className="flex gap-1.5">
+                  {questions.map((_: any, i: number) => (
+                    <div
+                      key={i}
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        i === currentQuestionIndex
+                          ? "w-6 bg-indigo-500"
+                          : answers[questions[i]?.id]
+                          ? "w-1.5 bg-emerald-500/60"
+                          : "w-1.5 bg-slate-700"
+                      }`}
+                    />
+                  ))}
+                </div>
 
                 {currentQuestionIndex === questions.length - 1 ? (
                   <Button
                     onClick={() => setShowSubmitDialog(true)}
-                    className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold shadow-lg shadow-emerald-500/25"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white h-9 px-4 font-semibold"
                   >
-                    <Send className="h-4 w-4 mr-2" />
+                    <Send className="h-3.5 w-3.5 mr-1.5" />
                     Submit
                   </Button>
                 ) : (
                   <Button
                     onClick={goToNext}
-                    className="bg-white/10 hover:bg-white/20 text-white border border-white/15"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white h-9 px-4"
                   >
                     Next
                     <ChevronRight className="h-4 w-4 ml-1" />
@@ -602,12 +638,15 @@ export default function VocabularyCheckup() {
             </div>
 
             {/* Question Navigator */}
-            <div className="bg-white/8 backdrop-blur-sm border border-white/10 rounded-2xl p-4">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Question Navigator</p>
-                <p className="text-xs text-slate-500">{answeredCount} of {questions.length} answered</p>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Jump to question</p>
+                <p className="text-xs text-slate-600">
+                  <span className="text-emerald-400 font-semibold">{answeredCount}</span> / {questions.length}
+                </p>
               </div>
-              <div className="grid grid-cols-10 gap-1.5">
+
+              <div className="flex flex-wrap gap-1.5">
                 {questions.map((q: Question, idx: number) => {
                   const isAnswered = !!answers[q.id];
                   const isCurrent = currentQuestionIndex === idx;
@@ -616,12 +655,12 @@ export default function VocabularyCheckup() {
                       key={q.id}
                       onClick={() => goToQuestion(idx)}
                       title={`Question ${idx + 1}`}
-                      className={`aspect-square rounded-lg text-xs font-bold transition-all duration-150 ${
+                      className={`w-8 h-8 rounded-lg text-xs font-bold transition-all duration-150 ${
                         isCurrent
-                          ? "bg-blue-500 text-white shadow-md shadow-blue-500/40 scale-110"
+                          ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/30 scale-105"
                           : isAnswered
-                          ? "bg-emerald-500/30 text-emerald-300 border border-emerald-500/40"
-                          : "bg-white/8 text-slate-400 border border-white/10 hover:bg-white/15"
+                          ? "bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30 hover:bg-emerald-500/25"
+                          : "bg-slate-800 text-slate-500 hover:bg-slate-700 hover:text-slate-300"
                       }`}
                     >
                       {idx + 1}
@@ -629,151 +668,171 @@ export default function VocabularyCheckup() {
                   );
                 })}
               </div>
-              <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/10">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-sm bg-emerald-500/40 border border-emerald-500/60" />
-                  <span className="text-xs text-slate-500">Answered</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-sm bg-blue-500" />
-                  <span className="text-xs text-slate-500">Current</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-sm bg-white/10 border border-white/20" />
-                  <span className="text-xs text-slate-500">Unanswered</span>
-                </div>
+
+              <div className="flex items-center gap-5 mt-3 pt-3 border-t border-slate-800">
+                <span className="flex items-center gap-1.5 text-xs text-slate-600">
+                  <span className="w-3 h-3 rounded-sm bg-emerald-500/20 ring-1 ring-emerald-500/40 inline-block" />
+                  Answered
+                </span>
+                <span className="flex items-center gap-1.5 text-xs text-slate-600">
+                  <span className="w-3 h-3 rounded-sm bg-indigo-600 inline-block" />
+                  Current
+                </span>
+                <span className="flex items-center gap-1.5 text-xs text-slate-600">
+                  <span className="w-3 h-3 rounded-sm bg-slate-800 ring-1 ring-slate-700 inline-block" />
+                  Unanswered
+                </span>
               </div>
             </div>
+
           </div>
         </div>
-      </div>
+      </main>
 
-      {/* Test Mode Start Dialog */}
+      {/* ── Test Mode Dialog ─────────────────────────────────────────────────── */}
       <Dialog open={showTestModeDialog} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-slate-900 border-slate-800 text-white">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
-                <Shield className="h-4 w-4 text-amber-600" />
+            <DialogTitle className="flex items-center gap-3 text-white">
+              <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center">
+                <Shield className="h-4.5 w-4.5 text-amber-400" />
               </div>
               Monitored Test
             </DialogTitle>
-            <DialogDescription className="space-y-3 pt-3">
-              <p className="text-slate-700 font-medium">Please read before starting:</p>
-              <ul className="space-y-2.5 text-sm text-slate-600">
+            <DialogDescription className="space-y-4 pt-3">
+              <p className="text-slate-300 font-medium">Please read before starting:</p>
+              <ul className="space-y-3">
                 {[
                   "Fullscreen mode will be activated and enforced",
-                  "Tab switching will be detected and logged",
+                  "Tab switching is detected and logged",
                   "All violations are reported to your teacher",
-                  "Stay in fullscreen for the entire test duration",
+                  "Stay in fullscreen for the full duration",
                 ].map((rule, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <div className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">{i + 1}</div>
+                  <li key={i} className="flex items-start gap-3 text-sm text-slate-400">
+                    <span className="w-5 h-5 rounded-full bg-amber-500/15 text-amber-400 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
+                      {i + 1}
+                    </span>
                     {rule}
                   </li>
                 ))}
               </ul>
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-700">
+              <div className="bg-amber-500/8 border border-amber-500/20 rounded-xl p-3.5 text-sm text-amber-300/80">
                 By clicking "Start Test", you agree to follow all test rules.
               </div>
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => navigate("/learner/dashboard")} className="flex-1">Cancel</Button>
-            <Button onClick={handleStartTest} className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
+          <DialogFooter className="gap-2 mt-2">
+            <Button variant="outline" onClick={() => navigate("/learner/dashboard")} className="flex-1 border-slate-700 text-slate-300 hover:bg-slate-800">
+              Cancel
+            </Button>
+            <Button onClick={handleStartTest} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white">
               I Understand — Start
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Submit Dialog */}
+      {/* ── Submit Dialog ────────────────────────────────────────────────────── */}
       <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-sm bg-slate-900 border-slate-800 text-white">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Send className="h-5 w-5 text-emerald-600" />
+            <DialogTitle className="flex items-center gap-2.5 text-white">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+                <Send className="h-4 w-4 text-emerald-400" />
+              </div>
               Submit Test?
             </DialogTitle>
-            <DialogDescription className="pt-2 space-y-2">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-emerald-50 rounded-lg p-3 text-center">
-                  <p className="text-2xl font-bold text-emerald-700">{answeredCount}</p>
-                  <p className="text-xs text-emerald-600">Answered</p>
-                </div>
-                <div className={`rounded-lg p-3 text-center ${questions.length - answeredCount > 0 ? "bg-amber-50" : "bg-slate-50"}`}>
-                  <p className={`text-2xl font-bold ${questions.length - answeredCount > 0 ? "text-amber-700" : "text-slate-700"}`}>{questions.length - answeredCount}</p>
-                  <p className={`text-xs ${questions.length - answeredCount > 0 ? "text-amber-600" : "text-slate-500"}`}>Unanswered</p>
-                </div>
-              </div>
-              {questions.length - answeredCount > 0 && (
-                <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 p-3 rounded-lg">
-                  You have {questions.length - answeredCount} unanswered question(s). Unanswered questions will be marked incorrect.
-                </p>
-              )}
-            </DialogDescription>
           </DialogHeader>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 text-center">
+              <p className="text-2xl font-black text-emerald-400">{answeredCount}</p>
+              <p className="text-xs text-slate-500 mt-0.5">Answered</p>
+            </div>
+            <div className={`border rounded-xl p-4 text-center ${
+              questions.length - answeredCount > 0
+                ? "bg-amber-500/10 border-amber-500/20"
+                : "bg-slate-800 border-slate-700"
+            }`}>
+              <p className={`text-2xl font-black ${questions.length - answeredCount > 0 ? "text-amber-400" : "text-slate-400"}`}>
+                {questions.length - answeredCount}
+              </p>
+              <p className="text-xs text-slate-500 mt-0.5">Unanswered</p>
+            </div>
+          </div>
+          {questions.length - answeredCount > 0 && (
+            <div className="text-sm text-amber-300/80 bg-amber-500/8 border border-amber-500/20 rounded-xl px-4 py-3">
+              Unanswered questions will be marked incorrect.
+            </div>
+          )}
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setShowSubmitDialog(false)}>Keep Going</Button>
+            <Button variant="outline" onClick={() => setShowSubmitDialog(false)} className="border-slate-700 text-slate-300 hover:bg-slate-800">
+              Keep Going
+            </Button>
             <Button
               onClick={() => { setShowSubmitDialog(false); handleSubmit(); }}
               disabled={completeMutation.isPending}
-              className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
             >
-              {completeMutation.isPending ? "Submitting..." : "Submit Test"}
+              {completeMutation.isPending ? "Submitting…" : "Submit Test"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Exit Test Dialog (Test Mode) */}
+      {/* ── Exit Test Dialog ─────────────────────────────────────────────────── */}
       <Dialog open={showExitDialog} onOpenChange={setShowExitDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-sm bg-slate-900 border-slate-800 text-white">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
+            <DialogTitle className="flex items-center gap-2.5 text-red-400">
               <AlertTriangle className="h-5 w-5" />
               Exit Test
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-slate-400">
               Provide a reason for exiting. This will be shared with your teacher.
             </DialogDescription>
           </DialogHeader>
           <Textarea
-            placeholder="Enter your reason for exiting the test..."
+            placeholder="Enter your reason for exiting the test…"
             value={exitReason}
             onChange={(e) => setExitReason(e.target.value)}
             rows={3}
-            className="resize-none"
+            className="resize-none bg-slate-800 border-slate-700 text-white placeholder:text-slate-600 focus:border-red-500/50"
           />
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => { setShowExitDialog(false); setExitReason(""); }}>Cancel</Button>
+            <Button variant="outline" onClick={() => { setShowExitDialog(false); setExitReason(""); }} className="border-slate-700 text-slate-300 hover:bg-slate-800">
+              Cancel
+            </Button>
             <Button
               onClick={() => exitTestMutation.mutate(exitReason)}
               disabled={!exitReason.trim() || exitTestMutation.isPending}
               variant="destructive"
             >
-              {exitTestMutation.isPending ? "Exiting..." : "Confirm Exit"}
+              {exitTestMutation.isPending ? "Exiting…" : "Confirm Exit"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Save & Exit Dialog (Practice Mode) */}
+      {/* ── Save & Exit Dialog ───────────────────────────────────────────────── */}
       <Dialog open={showSaveProgressDialog} onOpenChange={setShowSaveProgressDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-sm bg-slate-900 border-slate-800 text-white">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Save className="h-5 w-5 text-blue-600" />
+            <DialogTitle className="flex items-center gap-2.5 text-white">
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/15 flex items-center justify-center">
+                <Save className="h-4 w-4 text-indigo-400" />
+              </div>
               Save Progress?
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-slate-400">
               Your progress is automatically saved. You can return to this practice checkup anytime from your dashboard.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setShowSaveProgressDialog(false)}>Continue Practicing</Button>
-            <Button onClick={handleSaveAndGoBack} className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
-              <Save className="h-4 w-4 mr-2" />
+            <Button variant="outline" onClick={() => setShowSaveProgressDialog(false)} className="border-slate-700 text-slate-300 hover:bg-slate-800">
+              Continue
+            </Button>
+            <Button onClick={handleSaveAndGoBack} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+              <Save className="h-3.5 w-3.5 mr-1.5" />
               Save & Exit
             </Button>
           </DialogFooter>
