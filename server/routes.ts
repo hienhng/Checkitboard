@@ -4868,18 +4868,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(409).json({ message: "Word already exists in your sticky notes" });
       }
 
-      // Generate AI definition for the word (inherent feature)
-      let aiDefinition = "Definition not available";
-      try {
-        aiDefinition = await ai.generateSingleDefinition(req.body.word);
-      } catch (error) {
-        console.warn("Failed to generate AI definition:", error);
+      // Keep a user-provided definition for custom notes. Generate one only
+      // when the caller did not provide a definition (for example, Explore).
+      const providedDefinition =
+        typeof req.body.definition === "string" && req.body.definition.trim()
+          ? req.body.definition.trim()
+          : null;
+      let noteDefinition = providedDefinition || "Definition not available";
+      if (!providedDefinition) {
+        try {
+          noteDefinition = await ai.generateSingleDefinition(req.body.word);
+        } catch (error) {
+          console.warn("Failed to generate AI definition:", error);
+        }
       }
 
       const validatedData = insertStickyNoteSchema.parse({
         ...req.body,
         studentId: req.user.id,
-        definition: aiDefinition, // Always use AI-generated definition
+        definition: noteDefinition,
+        category: req.body.category || "General",
+        difficulty: req.body.difficulty || "medium",
       });
 
       const [newNote] = await db.insert(stickyNotes)

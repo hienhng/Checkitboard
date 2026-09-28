@@ -161,6 +161,13 @@ export default function StickyNotesBoard() {
       setCreateEmoji("📝");
       setCreateColor("yellow");
     },
+    onError: (error: any) => {
+      toast({
+        title: "Could not create note",
+        description: error.message || "Please check the word and definition, then try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   const generateDefinitionMutation = useMutation({
@@ -572,6 +579,8 @@ export default function StickyNotesBoard() {
                         createCustomNoteMutation.mutate({
                           word: customWord,
                           definition: customDefinition,
+                          category: "General",
+                          difficulty: "medium",
                           emoji: createEmoji,
                           color: createColor,
                           isCustom: true,

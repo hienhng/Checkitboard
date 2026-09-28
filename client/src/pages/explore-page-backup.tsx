@@ -25,6 +25,8 @@ interface ExploreWordsResponse {
   personalized: boolean;
   message: string;
 }
+
+const exploreWords: ExploreWord[] = [
   {
     word: "serendipity",
     definition: "The occurrence and development of events by chance in a happy or beneficial way",
