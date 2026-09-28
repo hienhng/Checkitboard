@@ -24,27 +24,25 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { 
   Search, Edit, Trash2, CheckCircle, Circle, StickyNote as StickyNoteIcon, 
-  Filter, GripVertical, LayoutGrid, Plus, Sparkles, Wand2, 
-  ZoomIn, ZoomOut, Maximize2, Minimize2
+  GripVertical, LayoutGrid, Plus, Sparkles, Wand2,
+  ZoomIn, ZoomOut, Maximize2
 } from "lucide-react";
 import { StickyNote } from "@shared/schema";
 import { cn } from "@/lib/utils";
 
-interface NoteWithSize extends StickyNote {
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
-}
-
 interface DragState {
-  isDragging: boolean;
-  isResizing: boolean;
-  noteId: number | null;
+  type: 'drag' | 'resize';
+  noteId: number;
+  pointerId: number;
   startX: number;
   startY: number;
-  startWidth: number;
-  startHeight: number;
+  startLayout: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  scale: number;
   resizeHandle: 'se' | 'sw' | 'ne' | 'nw' | null;
 }
 
@@ -68,6 +66,8 @@ const EMOJI_OPTIONS = [
 const MIN_NOTE_SIZE = { width: 150, height: 120 };
 const DEFAULT_NOTE_SIZE = { width: 200, height: 160 };
 const MAX_NOTE_SIZE = { width: 400, height: 400 };
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, value));
 
 export default function StickyNotesBoard() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -84,24 +84,18 @@ export default function StickyNotesBoard() {
   const [createEmoji, setCreateEmoji] = useState("📝");
   const [createColor, setCreateColor] = useState("yellow");
   const [zoom, setZoom] = useState(1);
-  
-  const [dragState, setDragState] = useState<DragState>({
-    isDragging: false,
-    isResizing: false,
-    noteId: null,
-    startX: 0,
-    startY: 0,
-    startWidth: 0,
-    startHeight: 0,
-    resizeHandle: null
-  });
-  
+  const [activeDrag, setActiveDrag] = useState<{ noteId: number; type: DragState["type"] } | null>(null);
   const [noteLayout, setNoteLayout] = useState<Record<number, { x: number; y: number; width: number; height: number }>>(() => {
-    const saved = localStorage.getItem('stickyNoteLayout');
-    return saved ? JSON.parse(saved) : {};
+    try {
+      const saved = localStorage.getItem('stickyNoteLayout');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
   });
   
   const boardRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<DragState | null>(null);
   const { toast } = useToast();
 
   // Save layout to localStorage
@@ -214,9 +208,16 @@ export default function StickyNotesBoard() {
     }
   }, [stickyNotes.length]);
 
-  const handleMouseDown = (e: React.MouseEvent, noteId: number, type: 'drag' | 'resize', handle?: 'se' | 'sw' | 'ne' | 'nw') => {
-    if (e.target instanceof HTMLElement && (
-      e.target.closest('button:not(.drag-handle)') || 
+  const handlePointerDown = (
+    e: React.PointerEvent,
+    noteId: number,
+    type: DragState["type"],
+    handle?: DragState["resizeHandle"]
+  ) => {
+    if (e.button !== 0) return;
+
+    if (e.target instanceof Element && (
+      e.target.closest('button') ||
       e.target.closest('[role="dialog"]') ||
       e.target.closest('select') ||
       e.target.closest('input') ||
@@ -229,116 +230,91 @@ export default function StickyNotesBoard() {
     e.stopPropagation();
     
     const layout = noteLayout[noteId] || { ...DEFAULT_NOTE_SIZE, x: 0, y: 0 };
-    
-    setDragState({
-      isDragging: type === 'drag',
-      isResizing: type === 'resize',
+
+    dragRef.current = {
+      type,
       noteId,
+      pointerId: e.pointerId,
       startX: e.clientX,
       startY: e.clientY,
-      startWidth: layout.width,
-      startHeight: layout.height,
+      startLayout: layout,
+      scale: zoom,
       resizeHandle: handle || null
-    });
+    };
+    setActiveDrag({ noteId, type });
+    document.body.style.cursor = type === 'drag' ? 'grabbing' : (
+      handle === 'se' || handle === 'nw' ? 'nwse-resize' : 'nesw-resize'
+    );
+    document.body.style.userSelect = 'none';
   };
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!dragState.noteId || (!dragState.isDragging && !dragState.isResizing)) return;
-
+    const handlePointerMove = (e: PointerEvent) => {
+      const drag = dragRef.current;
+      if (!drag || e.pointerId !== drag.pointerId) return;
       e.preventDefault();
-      
-      const layout = noteLayout[dragState.noteId];
-      if (!layout) return;
+      const deltaX = (e.clientX - drag.startX) / drag.scale;
+      const deltaY = (e.clientY - drag.startY) / drag.scale;
 
-      const deltaX = e.clientX - dragState.startX;
-      const deltaY = e.clientY - dragState.startY;
+      setNoteLayout(prev => {
+        const layout = prev[drag.noteId] || drag.startLayout;
+        if (drag.type === 'drag') {
+          return {
+            ...prev,
+            [drag.noteId]: {
+              ...layout,
+              x: Math.max(0, drag.startLayout.x + deltaX),
+              y: Math.max(0, drag.startLayout.y + deltaY)
+            }
+          };
+        }
 
-      if (dragState.isDragging) {
-        const scaledDeltaX = deltaX / zoom;
-        const scaledDeltaY = deltaY / zoom;
-        
-        setNoteLayout(prev => ({
+        const handle = drag.resizeHandle;
+        if (!handle) return prev;
+
+        const width = handle.includes('e')
+          ? clamp(drag.startLayout.width + deltaX, MIN_NOTE_SIZE.width, MAX_NOTE_SIZE.width)
+          : handle.includes('w')
+            ? clamp(drag.startLayout.width - deltaX, MIN_NOTE_SIZE.width, MAX_NOTE_SIZE.width)
+            : drag.startLayout.width;
+        const height = handle.includes('s')
+          ? clamp(drag.startLayout.height + deltaY, MIN_NOTE_SIZE.height, MAX_NOTE_SIZE.height)
+          : handle.includes('n')
+            ? clamp(drag.startLayout.height - deltaY, MIN_NOTE_SIZE.height, MAX_NOTE_SIZE.height)
+            : drag.startLayout.height;
+
+        return {
           ...prev,
-          [dragState.noteId!]: {
-            ...layout,
-            x: Math.max(0, layout.x + scaledDeltaX),
-            y: Math.max(0, layout.y + scaledDeltaY)
+          [drag.noteId]: {
+            x: handle.includes('w') ? drag.startLayout.x + drag.startLayout.width - width : drag.startLayout.x,
+            y: handle.includes('n') ? drag.startLayout.y + drag.startLayout.height - height : drag.startLayout.y,
+            width,
+            height
           }
-        }));
-        
-        setDragState(prev => ({
-          ...prev,
-          startX: e.clientX,
-          startY: e.clientY
-        }));
-      } else if (dragState.isResizing && dragState.resizeHandle) {
-        const handle = dragState.resizeHandle;
-        let newWidth = dragState.startWidth;
-        let newHeight = dragState.startHeight;
-        let newX = layout.x;
-        let newY = layout.y;
-
-        if (handle.includes('e')) {
-          newWidth = Math.max(MIN_NOTE_SIZE.width, Math.min(MAX_NOTE_SIZE.width, dragState.startWidth + deltaX / zoom));
-        }
-        if (handle.includes('w')) {
-          const widthDiff = deltaX / zoom;
-          newWidth = Math.max(MIN_NOTE_SIZE.width, Math.min(MAX_NOTE_SIZE.width, dragState.startWidth - widthDiff));
-          newX = layout.x + (dragState.startWidth - newWidth);
-        }
-        if (handle.includes('s')) {
-          newHeight = Math.max(MIN_NOTE_SIZE.height, Math.min(MAX_NOTE_SIZE.height, dragState.startHeight + deltaY / zoom));
-        }
-        if (handle.includes('n')) {
-          const heightDiff = deltaY / zoom;
-          newHeight = Math.max(MIN_NOTE_SIZE.height, Math.min(MAX_NOTE_SIZE.height, dragState.startHeight - heightDiff));
-          newY = layout.y + (dragState.startHeight - newHeight);
-        }
-
-        setNoteLayout(prev => ({
-          ...prev,
-          [dragState.noteId!]: {
-            x: newX,
-            y: newY,
-            width: newWidth,
-            height: newHeight
-          }
-        }));
-      }
-    };
-
-    const handleMouseUp = () => {
-      setDragState({
-        isDragging: false,
-        isResizing: false,
-        noteId: null,
-        startX: 0,
-        startY: 0,
-        startWidth: 0,
-        startHeight: 0,
-        resizeHandle: null
+        };
       });
     };
 
-    if (dragState.isDragging || dragState.isResizing) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = dragState.isDragging ? 'grabbing' : 
-        dragState.resizeHandle?.includes('e') && dragState.resizeHandle?.includes('s') ? 'nwse-resize' :
-        dragState.resizeHandle?.includes('e') && dragState.resizeHandle?.includes('n') ? 'nesw-resize' :
-        dragState.resizeHandle?.includes('w') && dragState.resizeHandle?.includes('s') ? 'nesw-resize' :
-        dragState.resizeHandle?.includes('w') && dragState.resizeHandle?.includes('n') ? 'nwse-resize' : 'default';
-      document.body.style.userSelect = 'none';
-    }
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+    const handlePointerEnd = () => {
+      if (!dragRef.current) return;
+      dragRef.current = null;
+      setActiveDrag(null);
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
     };
-  }, [dragState, noteLayout, zoom]);
+
+    window.addEventListener('pointermove', handlePointerMove, { passive: false });
+    window.addEventListener('pointerup', handlePointerEnd);
+    window.addEventListener('pointercancel', handlePointerEnd);
+    window.addEventListener('blur', handlePointerEnd);
+
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerEnd);
+      window.removeEventListener('pointercancel', handlePointerEnd);
+      window.removeEventListener('blur', handlePointerEnd);
+    };
+  }, []);
 
   const filteredNotes = (stickyNotes || []).filter((note) => {
     if (!note || !note.word || !note.definition) return false;
@@ -391,67 +367,83 @@ export default function StickyNotesBoard() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700">
+    <div className="flex min-h-[calc(100vh-3rem)] w-full flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-slate-50 via-blue-50/70 to-indigo-100/80 shadow-sm dark:border-slate-700/80 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950/50">
       {/* Header */}
-      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 p-4 shrink-0">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-4">
+      <div className="shrink-0 border-b border-slate-200/80 bg-white/75 p-5 backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-950/65 lg:p-6">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-5 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div className="flex items-center gap-3">
-              <StickyNoteIcon className="h-8 w-8 text-yellow-600" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-orange-500/20">
+                <StickyNoteIcon className="h-6 w-6" />
+              </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Sticky Notes</h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {totalCount} total • {learnedCount} learned
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">My Canvas</h1>
+                  <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-300">
+                    Study space
+                  </span>
+                </div>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                  Arrange your vocabulary notes and build connections.
                 </p>
               </div>
             </div>
 
-            {/* Zoom Controls */}
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setZoom(Math.max(0.5, zoom - 0.1))}
-                disabled={zoom <= 0.5}
-              >
-                <ZoomOut className="h-4 w-4" />
-              </Button>
-              <span className="text-sm text-gray-600 dark:text-gray-400 w-12 text-center">
-                {Math.round(zoom * 100)}%
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setZoom(Math.min(2, zoom + 0.1))}
-                disabled={zoom >= 2}
-              >
-                <ZoomIn className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setZoom(1)}
-              >
-                Reset
-              </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-xs dark:border-slate-700 dark:bg-slate-900/70">
+                <span className="font-semibold text-slate-900 dark:text-slate-100">{totalCount}</span>
+                <span className="ml-1 text-slate-500 dark:text-slate-400">notes</span>
+              </div>
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-3 py-2 text-xs dark:border-emerald-900/60 dark:bg-emerald-950/30">
+                <span className="font-semibold text-emerald-700 dark:text-emerald-300">{learnedCount}</span>
+                <span className="ml-1 text-emerald-700/70 dark:text-emerald-300/70">learned</span>
+              </div>
+              <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white/80 p-1 dark:border-slate-700 dark:bg-slate-900/70">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => setZoom(Math.max(0.5, zoom - 0.1))}
+                  disabled={zoom <= 0.5}
+                  aria-label="Zoom out"
+                >
+                  <ZoomOut className="h-4 w-4" />
+                </Button>
+                <span className="w-12 text-center text-xs font-semibold text-slate-600 dark:text-slate-300">
+                  {Math.round(zoom * 100)}%
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => setZoom(Math.min(2, zoom + 0.1))}
+                  disabled={zoom >= 2}
+                  aria-label="Zoom in"
+                >
+                  <ZoomIn className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => setZoom(1)}>
+                  Reset
+                </Button>
+              </div>
             </div>
           </div>
 
           {/* Search and Filter Controls */}
-          <div className="flex flex-wrap gap-4">
-            <div className="relative min-w-64">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3 dark:border-slate-700/80 dark:bg-slate-900/60 md:flex-row md:flex-wrap md:items-center">
+            <div className="relative min-w-64 flex-1 md:max-w-md">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <Input
                 type="text"
                 placeholder="Search words or definitions..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="h-10 border-slate-200 bg-white pl-10 shadow-none dark:border-slate-700 dark:bg-slate-950"
               />
             </div>
             
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="h-10 w-full border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950 md:w-44">
                 <SelectValue placeholder="Filter by category" />
               </SelectTrigger>
               <SelectContent>
@@ -464,7 +456,7 @@ export default function StickyNotesBoard() {
             </Select>
 
             <Select value={showLearnedFilter} onValueChange={(value: "all" | "learned" | "learning") => setShowLearnedFilter(value)}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="h-10 w-full border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950 md:w-36">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
@@ -474,14 +466,14 @@ export default function StickyNotesBoard() {
               </SelectContent>
             </Select>
 
-            <Button variant="outline" onClick={handleAutoArrange}>
+            <Button variant="outline" className="h-10 border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950" onClick={handleAutoArrange}>
               <LayoutGrid className="h-4 w-4 mr-2" />
               Auto Arrange
             </Button>
 
             <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
               <DialogTrigger asChild>
-                <Button variant="default" className="bg-green-500 hover:bg-green-600 text-white">
+                <Button variant="default" className="h-10 bg-indigo-600 text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-700">
                   <Plus className="h-4 w-4 mr-2" />
                   Create Custom Note
                 </Button>
@@ -599,34 +591,42 @@ export default function StickyNotesBoard() {
       </div>
 
       {/* Canvas */}
-      <div className="flex-1 overflow-auto">
+      <div className="min-h-0 flex-1 overflow-auto overscroll-contain">
         <div 
           ref={boardRef}
-          className="relative min-h-full bg-gradient-to-br from-amber-50/50 via-yellow-50/30 to-orange-50/50 dark:from-gray-800/50 dark:via-gray-700/30 dark:to-gray-600/50"
+          className="relative min-h-full bg-gradient-to-br from-amber-50/60 via-yellow-50/30 to-orange-50/50 dark:from-slate-900/80 dark:via-slate-800/70 dark:to-indigo-950/40"
           style={{
-            minWidth: '100%',
-            minHeight: '200vh',
+            minWidth: zoom > 1 ? `${zoom * 100}%` : '100%',
+            minHeight: `${Math.max(720, Math.ceil(filteredNotes.length / 4) * 220 + 300)}px`,
             backgroundImage: `
-              radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.3) 2px, transparent 2px),
-              radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.2) 1px, transparent 1px)
+              radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.38) 2px, transparent 2px),
+              radial-gradient(circle at 75% 75%, rgba(99, 102, 241, 0.12) 1px, transparent 1px)
             `,
             backgroundSize: '50px 50px, 30px 30px',
             transform: `scale(${zoom})`,
             transformOrigin: 'top left',
-            transition: 'transform 0.2s ease-out'
+            transition: 'transform 180ms ease-out'
           }}
         >
           {filteredNotes.length === 0 ? (
-            <div className="flex items-center justify-center" style={{ minHeight: '50vh' }}>
-              <div className="text-center p-8">
-                <StickyNoteIcon className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">No Sticky Notes Found</h3>
-                <p className="text-gray-500 dark:text-gray-500">
+            <div className="flex items-center justify-center px-6 py-20">
+              <div className="max-w-md rounded-3xl border border-dashed border-slate-300 bg-white/70 p-10 text-center shadow-sm backdrop-blur-sm dark:border-slate-600 dark:bg-slate-900/60">
+                <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 text-amber-600 dark:bg-amber-400/15 dark:text-amber-300">
+                  <StickyNoteIcon className="h-8 w-8" />
+                </div>
+                <h3 className="mb-2 text-xl font-semibold text-slate-800 dark:text-slate-100">Your canvas is ready</h3>
+                <p className="mb-6 text-sm leading-6 text-slate-500 dark:text-slate-400">
                   {stickyNotes.length === 0 
-                    ? "Visit the Explore page to discover and add new vocabulary words!"
+                    ? "Add a vocabulary note to start building your personal study space."
                     : "Try adjusting your search or filters to find your notes."
                   }
                 </p>
+                {stickyNotes.length === 0 && (
+                  <Button className="bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => setShowCreateDialog(true)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create your first note
+                  </Button>
+                )}
               </div>
             </div>
           ) : (
@@ -635,16 +635,16 @@ export default function StickyNotesBoard() {
               const colorClass = note.color && STICKY_NOTE_COLORS[note.color as keyof typeof STICKY_NOTE_COLORS] 
                 ? STICKY_NOTE_COLORS[note.color as keyof typeof STICKY_NOTE_COLORS]
                 : STICKY_NOTE_COLORS[Object.keys(STICKY_NOTE_COLORS)[index % Object.keys(STICKY_NOTE_COLORS).length] as keyof typeof STICKY_NOTE_COLORS];
-              const isDragging = dragState.isDragging && dragState.noteId === note.id;
-              const isResizing = dragState.isResizing && dragState.noteId === note.id;
+              const isDragging = activeDrag?.type === 'drag' && activeDrag.noteId === note.id;
+              const isResizing = activeDrag?.type === 'resize' && activeDrag.noteId === note.id;
               
               return (
                 <div
                   key={note.id}
                   className={cn(
-                    "absolute border-2 rounded-lg shadow-lg transition-all",
+                    "absolute select-none rounded-2xl border-2 shadow-lg transition-shadow duration-150 will-change-[left,top,width,height] touch-none",
                     colorClass,
-                    (isDragging || isResizing) && "shadow-2xl ring-2 ring-blue-500",
+                    (isDragging || isResizing) && "z-50 shadow-2xl ring-2 ring-indigo-500/80",
                     !note.isLearned && "shadow-xl"
                   )}
                   style={{
@@ -653,16 +653,16 @@ export default function StickyNotesBoard() {
                     width: `${layout.width}px`,
                     height: `${layout.height}px`,
                     cursor: isDragging ? 'grabbing' : 'grab',
-                    zIndex: (isDragging || isResizing) ? 1000 : 1
+                     zIndex: (isDragging || isResizing) ? 1000 : 1
                   }}
-                  onMouseDown={(e) => handleMouseDown(e, note.id, 'drag')}
+                   onPointerDown={(e) => handlePointerDown(e, note.id, 'drag')}
                 >
                   {/* Pin */}
                   <div className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full shadow-md border-2 border-red-600"></div>
                   
                   {/* Drag Handle */}
-                  <div className="absolute top-1 right-6 drag-handle">
-                    <GripVertical className="h-3 w-3 text-gray-600 opacity-50" />
+                  <div className="drag-handle pointer-events-none absolute right-7 top-2">
+                    <GripVertical className="h-4 w-4 text-current opacity-35" />
                   </div>
 
                   <div className="h-full p-3 flex flex-col overflow-hidden">
@@ -809,25 +809,25 @@ export default function StickyNotesBoard() {
 
                   {/* Resize Handles */}
                   <div
-                    className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize"
-                    onMouseDown={(e) => handleMouseDown(e, note.id, 'resize', 'se')}
+                    className="absolute bottom-0 right-0 h-5 w-5 cursor-nwse-resize"
+                    onPointerDown={(e) => handlePointerDown(e, note.id, 'resize', 'se')}
                     style={{ cursor: 'nwse-resize' }}
                   >
                     <Maximize2 className="h-3 w-3 text-gray-600 opacity-50" />
                   </div>
                   <div
-                    className="absolute bottom-0 left-0 w-4 h-4 cursor-nesw-resize"
-                    onMouseDown={(e) => handleMouseDown(e, note.id, 'resize', 'sw')}
+                    className="absolute bottom-0 left-0 h-5 w-5 cursor-nesw-resize"
+                    onPointerDown={(e) => handlePointerDown(e, note.id, 'resize', 'sw')}
                     style={{ cursor: 'nesw-resize' }}
                   />
                   <div
-                    className="absolute top-0 right-0 w-4 h-4 cursor-nesw-resize"
-                    onMouseDown={(e) => handleMouseDown(e, note.id, 'resize', 'ne')}
+                    className="absolute right-0 top-0 h-5 w-5 cursor-nesw-resize"
+                    onPointerDown={(e) => handlePointerDown(e, note.id, 'resize', 'ne')}
                     style={{ cursor: 'nesw-resize' }}
                   />
                   <div
-                    className="absolute top-0 left-0 w-4 h-4 cursor-nwse-resize"
-                    onMouseDown={(e) => handleMouseDown(e, note.id, 'resize', 'nw')}
+                    className="absolute left-0 top-0 h-5 w-5 cursor-nwse-resize"
+                    onPointerDown={(e) => handlePointerDown(e, note.id, 'resize', 'nw')}
                     style={{ cursor: 'nwse-resize' }}
                   />
                 </div>
