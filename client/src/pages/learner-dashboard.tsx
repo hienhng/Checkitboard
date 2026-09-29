@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Navbar } from "@/components/navbar";
 import {
   Card,
   CardContent,
@@ -67,6 +66,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { ReactNode } from "react";
+import { useAuth } from "@/hooks/use-auth";
 
 // Schema for joining a class
 const joinClassSchema = z.object({
@@ -130,6 +130,7 @@ interface FlashcardType {
 
 function LearnerDashboard() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
 
@@ -228,60 +229,75 @@ function LearnerDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Modern Header */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent"></div>
-        <div className="relative px-6 py-12">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center space-y-4">
-              <h1 className="text-6xl font-bold text-foreground">
-                Welcome to{" "}
-                <span className="font-brand font-light text-blue-600 bg-clip-text outline-blue-600 tracking-wide">
-                  lexible
-                </span>
+    <div className="min-h-screen bg-[#f6f8fc] text-slate-900 dark:bg-slate-950 dark:text-slate-50">
+      {/* Learner workspace header */}
+      <div className="relative overflow-hidden border-b border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-950">
+        <div className="absolute -right-24 -top-32 h-80 w-80 rounded-full bg-blue-200/40 blur-3xl dark:bg-blue-500/10" />
+        <div className="absolute -bottom-40 left-1/3 h-72 w-72 rounded-full bg-indigo-200/35 blur-3xl dark:bg-indigo-500/10" />
+        <div className="relative mx-auto max-w-7xl px-6 pb-10 pt-8 lg:px-8">
+          <div className="flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
+            <div className="max-w-2xl">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-blue-700 dark:border-blue-900/70 dark:bg-blue-950/50 dark:text-blue-300">
+                <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                Learner workspace
+              </div>
+              <h1 className="text-4xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-5xl">
+                Keep your vocabulary moving{user?.name ? `, ${user.name.split(" ")[0]}` : ""}.
               </h1>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Master vocabulary through interactive learning, track your
-                progress, and achieve your language goals.
+              <p className="mt-4 max-w-xl text-base leading-7 text-slate-500 dark:text-slate-400">
+                Review your assignments, strengthen difficult words, and see your progress at a glance.
               </p>
+            </div>
+            <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-slate-950 p-5 text-white shadow-xl shadow-blue-900/10 dark:border-slate-800">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-200">Learning pulse</p>
+                  <p className="mt-2 text-sm text-slate-300">Your current study snapshot</p>
+                </div>
+                <div className="rounded-xl bg-blue-500/20 p-2 text-blue-200">
+                  <Brain className="h-5 w-5" />
+                </div>
+              </div>
+              <div className="mt-5 flex items-end justify-between gap-4">
+                <div>
+                  <p className="text-3xl font-semibold">{studyStats?.totalWordsStudied || 0}</p>
+                  <p className="mt-1 text-xs text-slate-400">words studied</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-3xl font-semibold text-blue-300">
+                    {studyStats?.averageAccuracy ? `${Math.round(studyStats.averageAccuracy)}%` : "—"}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-400">average accuracy</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-6 pb-12 -mt-8 relative z-10">
+      <div className="relative z-10 mx-auto max-w-7xl px-6 pb-12 pt-8 lg:px-8">
         <Tabs
           defaultValue="dashboard"
           value={activeTab}
           onValueChange={setActiveTab}
           className="w-full"
         >
-          <div className="flex justify-center mb-8">
-            <TabsList className="relative grid w-full max-w-xl grid-cols-2 h-12 p-1 bg-white/80 backdrop-blur-sm rounded-xl shadow-lg">
-              {/* Animated sliding background */}
-              <div 
-                className="absolute top-1 bottom-1 left-1 rounded-lg bg-primary shadow-lg transition-all duration-200 ease-in-out z-0"
-                style={{
-                  width: 'calc(50% - 6px)',
-                  transform: activeTab === 'classes' ? 'translateX(calc(100% + 4px))' : 'translateX(0)'
-                }}
-              />
-
+          <div className="mb-8 flex justify-start">
+            <TabsList className="grid h-12 w-full max-w-md grid-cols-2 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <TabsTrigger
                 value="dashboard"
-                className="relative flex items-center justify-center rounded-lg bg-transparent data-[state=active]:text-white data-[state!=active]:text-slate-700 data-[state!=active]:hover:text-slate-900 transition-colors duration-200 z-10 overflow-hidden text-ellipsis whitespace-nowrap px-2"
+                className="flex items-center justify-center rounded-xl text-slate-500 transition-all data-[state=active]:bg-slate-950 data-[state=active]:text-white dark:text-slate-400 dark:data-[state=active]:bg-blue-600"
               >
-                <BookOpen className="mr-1.5 h-4 w-4 flex-shrink-0" />
-                <span className="truncate">Dashboard</span>
+                <BookOpen className="mr-2 h-4 w-4" />
+                Dashboard
               </TabsTrigger>
               <TabsTrigger
                 value="classes"
-                className="relative flex items-center justify-center rounded-lg bg-transparent data-[state=active]:text-white data-[state!=active]:text-slate-700 data-[state!=active]:hover:text-slate-900 transition-colors duration-200 z-10"
+                className="flex items-center justify-center rounded-xl text-slate-500 transition-all data-[state=active]:bg-slate-950 data-[state=active]:text-white dark:text-slate-400 dark:data-[state=active]:bg-blue-600"
               >
-                <School className="mr-1.5 h-4 w-4 flex-shrink-0" />
-                <span className="truncate">My Classes</span>
+                <School className="mr-2 h-4 w-4" />
+                My Classes
               </TabsTrigger>
             </TabsList>
           </div>
@@ -290,8 +306,8 @@ function LearnerDashboard() {
             {/* Modern Grid Layout */}
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
               {/* Vocabulary Lists Card */}
-              <Card className="md:col-span-2 lg:col-span-2 card-glass border-0 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
-                <CardHeader className="bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 text-white p-6 relative">
+              <Card className="md:col-span-2 lg:col-span-2 overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900">
+                <CardHeader className="relative bg-slate-950 p-6 text-white dark:bg-blue-950">
                   <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48Y2lyY2xlIGN4PSIzMCIgY3k9IjMwIiByPSIyIi8+PC9nPjwvZz48L3N2Zz4=')] opacity-30" />
                   <div className="flex justify-between items-center relative">
                     <div className="flex items-center gap-4">
@@ -424,8 +440,8 @@ function LearnerDashboard() {
               </Card>
 
               {/* Flashcards Card */}
-              <Card className="card-glass border-0 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
-                <CardHeader className="bg-gradient-to-r from-purple-500 via-purple-600 to-indigo-600 text-white p-6 relative">
+              <Card className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900">
+                <CardHeader className="relative bg-indigo-600 p-6 text-white dark:bg-indigo-700">
                   <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48Y2lyY2xlIGN4PSIzMCIgY3k9IjMwIiByPSIyIi8+PC9nPjwvZz48L3N2Zz4=')] opacity-30" />
                   <div className="flex justify-between items-start relative">
                     <div className="flex items-center gap-3">
@@ -526,7 +542,7 @@ function LearnerDashboard() {
             {/* Quick Stats Row */}
             <div className="grid gap-6 md:grid-cols-3 mb-8">
               {/* Study Stats */}
-              <Card className="stat-card group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-0 overflow-hidden">
+                <Card className="group relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900">
                 <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <CardContent className="p-6 text-center relative">
                   <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-green-100 to-emerald-100 flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-300">
@@ -542,7 +558,7 @@ function LearnerDashboard() {
               </Card>
 
               {/* Average Accuracy */}
-              <Card className="stat-card group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-0 overflow-hidden">
+                <Card className="group relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-indigo-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <CardContent className="p-6 text-center relative">
                   <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-300">
@@ -571,7 +587,7 @@ function LearnerDashboard() {
               </Card>
 
               {/* Quick Actions */}
-              <Card className="stat-card group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-0 overflow-hidden">
+                <Card className="group relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900">
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-indigo-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <CardContent className="p-6 relative">
                   <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-purple-300 flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-300">

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Navbar } from "@/components/navbar";
 import { PassageEditor } from "@/components/passage-editor";
 import {
   Card,
@@ -42,9 +41,11 @@ import { GradingPanel } from "@/components/grading-panel";
 import { RequestApprovalButton } from "@/components/request-approval";
 
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 
 function EducatorDashboard() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [showTypeSelection, setShowTypeSelection] = useState(false);
   const [showCreateList, setShowCreateList] = useState(false);
   const [checkupType, setCheckupType] = useState<"test" | "practice">(
@@ -172,30 +173,56 @@ function EducatorDashboard() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Modern Header */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent"></div>
-        <div className="relative px-6 py-12">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center space-y-4">
-              <h1 className="text-6xl font-bold text-foreground">
-                Welcome to{" "}
-                <span className="font-brand font-light bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent tracking-wide">
-                  lexible
-                </span>
+    <div className="min-h-screen bg-[#f6f8fc] text-slate-900 dark:bg-slate-950 dark:text-slate-50">
+      {/* Educator workspace header */}
+      <div className="relative overflow-hidden border-b border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-950">
+        <div className="absolute -right-24 -top-32 h-80 w-80 rounded-full bg-emerald-200/40 blur-3xl dark:bg-emerald-500/10" />
+        <div className="absolute -bottom-40 left-1/3 h-72 w-72 rounded-full bg-blue-200/35 blur-3xl dark:bg-blue-500/10" />
+        <div className="relative mx-auto max-w-7xl px-6 pb-10 pt-8 lg:px-8">
+          <div className="flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
+            <div className="max-w-2xl">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:border-emerald-900/70 dark:bg-emerald-950/50 dark:text-emerald-300">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                Educator workspace
+              </div>
+              <h1 className="text-4xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-5xl">
+                Build better learning moments{user?.name ? `, ${user.name.split(" ")[0]}` : ""}.
               </h1>
-              <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                Create engaging vocabulary experiences, manage classes, and
-                track student progress with powerful insights.
+              <p className="mt-4 max-w-xl text-base leading-7 text-slate-500 dark:text-slate-400">
+                Create assignments, stay on top of your classes, and use progress insights to guide your next lesson.
               </p>
+            </div>
+            <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-slate-950 p-5 text-white shadow-xl shadow-emerald-900/10 dark:border-slate-800">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-200">Workspace pulse</p>
+                  <p className="mt-2 text-sm text-slate-300">Your teaching snapshot</p>
+                </div>
+                <div className="rounded-xl bg-emerald-500/20 p-2 text-emerald-200">
+                  <BarChart className="h-5 w-5" />
+                </div>
+              </div>
+              <div className="mt-5 grid grid-cols-3 gap-3">
+                <div>
+                  <p className="text-2xl font-semibold">{stats?.totalStudents || 0}</p>
+                  <p className="mt-1 text-xs text-slate-400">students</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-semibold">{stats?.totalClasses || 0}</p>
+                  <p className="mt-1 text-xs text-slate-400">classes</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-semibold text-emerald-300">{stats?.totalLists || 0}</p>
+                  <p className="mt-1 text-xs text-slate-400">lists</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-6 pb-12 -mt-8 relative z-10">
+      <div className="relative z-10 mx-auto max-w-7xl px-6 pb-12 pt-8 lg:px-8">
         {showCreateList ? (
           <Card className="border-0 bg-gradient-to-br from-card to-card/80 shadow-2xl">
             <CardHeader className="border-b border-border/20">
@@ -258,7 +285,7 @@ function EducatorDashboard() {
           <div className="space-y-8">
             {/* Quick Stats Overview */}
             <div className="grid gap-6 md:grid-cols-3">
-              <div className="stat-card group hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              <div className="group rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900">
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/25 group-hover:scale-110 transition-transform duration-300">
                     <Users className="h-7 w-7 text-white" />
@@ -274,7 +301,7 @@ function EducatorDashboard() {
                 </div>
               </div>
 
-              <div className="stat-card group hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              <div className="group rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900">
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg shadow-emerald-500/25 group-hover:scale-110 transition-transform duration-300">
                     <School className="h-7 w-7 text-white" />
@@ -290,7 +317,7 @@ function EducatorDashboard() {
                 </div>
               </div>
 
-              <div className="stat-card group hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              <div className="group rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900">
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/25 group-hover:scale-110 transition-transform duration-300">
                     <BookOpen className="h-7 w-7 text-white" />
