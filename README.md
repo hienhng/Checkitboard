@@ -1,6 +1,6 @@
-# Lexible
+# Checkit
 
-Lexible is a vocabulary-learning platform for educators and learners. Educators can create classes and vocabulary assignments from reading passages; learners can complete check-ups, review vocabulary with flashcards, and track their progress.
+Checkit is a vocabulary-learning platform for educators and learners. Educators can create classes and vocabulary assignments from reading passages; learners can complete check-ups, review vocabulary with flashcards, and track their progress.
 
 ## Features
 
@@ -34,7 +34,7 @@ Lexible is a vocabulary-learning platform for educators and learners. Educators 
 2. Set the required environment variables in your shell:
 
    ```powershell
-   $env:DATABASE_URL = "postgresql://user:password@localhost:5432/lexible"
+   $env:DATABASE_URL = "postgresql://user:password@localhost:5432/checkit"
    $env:SESSION_SECRET = "replace-with-a-long-random-secret"
    ```
 
