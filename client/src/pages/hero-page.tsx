@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { BrandLogo } from "@/components/brand";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
@@ -46,7 +47,7 @@ export default function HeroPage() {
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center">
               <div className="flex items-center space-x-3">
-                
+                <BrandLogo alt="" className="h-10 w-10" />
                 <span className="text-3xl font-brand font-light bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent tracking-wide">
                   checkit
                 </span>
@@ -507,9 +508,7 @@ export default function HeroPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center mb-8">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
-                  <BookOpen className="h-6 w-6 text-white" />
-                </div>
+                <BrandLogo alt="" className="mr-3 h-10 w-10" />
                 <span className="text-3xl font-brand font-light tracking-wide">checkit</span>
               </div>
               <p className="text-slate-400 mb-8 max-w-md text-lg leading-relaxed">

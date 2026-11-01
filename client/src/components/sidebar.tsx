@@ -36,7 +36,6 @@ function NavigationContent({ compact = false, onNavigate }: { compact?: boolean;
   });
   return <div className="flex h-full min-h-0 flex-col bg-sidebar">
     <div className={cn("flex h-[76px] shrink-0 items-center px-5", compact && "justify-center px-2")}><Link to="/home" aria-label="Checkit home" onClick={onNavigate}><Brand compact={compact} /></Link></div>
-    {!compact && <div className="mx-4 mb-5 flex items-center gap-2.5 rounded-xl border bg-background/70 px-3 py-3"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border bg-card text-muted-foreground"><GraduationCap className="h-4 w-4" /></span><div><p className="text-xs font-semibold">{educator ? "Teaching workspace" : "Learning workspace"}</p><p className="mt-0.5 text-[11px] text-muted-foreground">A little progress, every day</p></div></div>}
     <nav aria-label="Main navigation" className="min-h-0 flex-1 space-y-6 overflow-y-auto px-3 py-1">
       <div>{!compact && <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Workspace</p>}<div className="space-y-1">{navGroup(primary)}</div></div>
       {tools.length > 0 && <div>{!compact && <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Learning tools</p>}<div className="space-y-1">{navGroup(tools)}</div></div>}

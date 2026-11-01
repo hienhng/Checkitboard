@@ -4,6 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn, apiRequest } from "@/lib/queryClient";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { BrandLogo } from "@/components/brand";
 import { useToast } from "@/hooks/use-toast";
 import {
   Clock,
@@ -421,7 +422,7 @@ export default function VocabularyCheckup() {
       <header className="sticky top-0 z-20 border-b bg-card/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-[1440px] items-center gap-3 px-4 py-3 sm:gap-5 sm:px-8">
           <div className="hidden items-center gap-2.5 border-r pr-5 md:flex">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground"><BookOpen className="h-[19px] w-[19px]" /></span>
+            <BrandLogo alt="" />
             <span className="text-lg font-bold tracking-tight">checkit<span className="text-primary">.</span></span>
           </div>
           <div className="min-w-0 flex-1">
