@@ -23,12 +23,12 @@ test("automatic grid-in questions, publishing, answer saves and AI assessment", 
     const sql = (await readFile(new URL("../db/setup.sql", import.meta.url), "utf8"))
       .replace("SET LOCAL search_path TO public;", `SET LOCAL search_path TO ${schema};`);
     await admin.query(sql);
-    const database = await import("../db");
+    const database = await import("../db/index.js");
     pool = database.pool;
-    const { storage } = await import("./storage");
-    const { ensureDefaultGridInQuestions } = await import("./grid-in");
-    const { gemini } = await import("./gemini");
-    const { registerRoutes } = await import("./routes");
+    const { storage } = await import("./storage.js");
+    const { ensureDefaultGridInQuestions } = await import("./grid-in.js");
+    const { gemini } = await import("./gemini.js");
+    const { registerRoutes } = await import("./routes.js");
     const educator = await storage.createUser({ email: "teacher@test.invalid", password: "unused", name: "Teacher", role: "educator", emailVerified: true });
     const learner = await storage.createUser({ email: "learner@test.invalid", password: "unused", name: "Learner", role: "learner", emailVerified: true });
     let calls = 0;

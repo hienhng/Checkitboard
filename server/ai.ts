@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import { z } from "zod";
-import * as geminiService from "./gemini";
-import * as huggingfaceService from "./huggingface";
+import * as geminiService from "./gemini.js";
+import * as huggingfaceService from "./huggingface.js";
 
 // Check if API keys are available
 const openaiApiKey = process.env.OPENAI_API_KEY;

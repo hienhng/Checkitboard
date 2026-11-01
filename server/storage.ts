@@ -1,4 +1,4 @@
-import { db, pool } from "../db";
+import { db, pool } from "../db/index.js";
 import {
   users,
   vocabularyLists,
@@ -26,9 +26,9 @@ import {
   InsertNotification,
   InsertFullscreenExit,
   InsertStickyNote,
-} from "../shared/schema";
+} from "../shared/schema.js";
 import { eq, and, desc, isNull, asc, count, sql, or, inArray } from "drizzle-orm";
-import { defaultGridInQuestion } from "../shared/grid-in";
+import { defaultGridInQuestion } from "../shared/grid-in.js";
 export class DatabaseStorage {
 
   // User methods

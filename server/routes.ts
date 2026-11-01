@@ -1,11 +1,11 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
-import { setupAuth } from "./auth";
-import { sendParentEmail } from "./email";
-import { sendVerificationEmail, sendWelcomeEmail, generateVerificationToken } from "./email-verification";
-import { sendPasswordResetEmail, sendPasswordResetConfirmationEmail, generatePasswordResetToken } from "./password-reset";
-import { hashPassword, comparePasswords } from "./auth";
+import { storage } from "./storage.js";
+import { setupAuth } from "./auth.js";
+import { sendParentEmail } from "./email.js";
+import { sendVerificationEmail, sendWelcomeEmail, generateVerificationToken } from "./email-verification.js";
+import { sendPasswordResetEmail, sendPasswordResetConfirmationEmail, generatePasswordResetToken } from "./password-reset.js";
+import { hashPassword, comparePasswords } from "./auth.js";
 import { 
   isAIConfigured, 
   generateDefinitions,
@@ -15,15 +15,15 @@ import {
   generateLearningStrategies,
   generatePassageFromWords,
   generateSingleDefinition
-} from "./ai";
-import * as ai from "./ai";
-import { generateMultipleChoiceQuestion } from "./ai-questions";
-import { ensureDefaultGridInQuestions } from "./grid-in";
-import { completeQuestionSubmission } from "./submission-assessment";
-import { AIAssessmentError } from "./ai-assessment";
+} from "./ai.js";
+import * as ai from "./ai.js";
+import { generateMultipleChoiceQuestion } from "./ai-questions.js";
+import { ensureDefaultGridInQuestions } from "./grid-in.js";
+import { completeQuestionSubmission } from "./submission-assessment.js";
+import { AIAssessmentError } from "./ai-assessment.js";
 import { eq, and, desc, isNull, asc, not, inArray, sql } from "drizzle-orm";
 
-import { db, pool } from "../db";
+import { db, pool } from "../db/index.js";
 import {
   insertVocabularyListSchema,
   insertVocabularyWordSchema,
@@ -58,7 +58,7 @@ import {
   classes,
   studentClass,
   educatorSettings,
-} from "../shared/schema";
+} from "../shared/schema.js";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -3541,7 +3541,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = schema.parse(req.body);
       
       // Generate multiple choice options using AI
-      const { generateMultipleChoice } = await import("./ai");
+      const { generateMultipleChoice } = await import("./ai.js");
       const questionData = await generateMultipleChoice(validatedData.word, validatedData.correctDefinition);
       
       res.json(questionData);
@@ -3966,7 +3966,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Send welcome email
       try {
-        const { sendWelcomeEmail } = await import("./email-verification");
+        const { sendWelcomeEmail } = await import("./email-verification.js");
         await sendWelcomeEmail({
           email: user.email,
           name: user.name,
@@ -4142,7 +4142,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Import password comparison and hashing functions from auth
-      const { comparePasswords, hashPassword } = await import("./auth");
+      const { comparePasswords, hashPassword } = await import("./auth.js");
       
       // Verify current password using the same method as login
       const isCurrentPasswordValid = await comparePasswords(validatedData.currentPassword, user.password);
@@ -4291,7 +4291,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Send welcome email
-      const { sendWelcomeEmail } = await import("./email-verification");
+      const { sendWelcomeEmail } = await import("./email-verification.js");
       try {
         await sendWelcomeEmail({
           email: user.email,
@@ -4498,7 +4498,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       let result;
-      const { isAIConfigured, getPrimaryAIProvider } = await import("./ai");
+      const { isAIConfigured, getPrimaryAIProvider } = await import("./ai.js");
 
       if (!isAIConfigured()) {
         return res.status(503).json({ 
@@ -4510,18 +4510,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       switch (testType) {
         case "definitions":
-          const { generateDefinitions } = await import("./ai");
+          const { generateDefinitions } = await import("./ai.js");
           result = await generateDefinitions(words);
           break;
         case "passage":
-          const { generatePassageFromWords } = await import("./ai");
+          const { generatePassageFromWords } = await import("./ai.js");
           result = await generatePassageFromWords(words, { 
             topic: req.body.topic || "general knowledge",
             gradeLevel: req.body.gradeLevel || "middle school"
           });
           break;
         case "analyze":
-          const { analyzePassage } = await import("./ai");
+          const { analyzePassage } = await import("./ai.js");
           const passage = req.body.passage;
           if (!passage) {
             return res.status(400).json({ message: "Please provide a passage to analyze" });
@@ -4555,9 +4555,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Not authenticated" });
       }
 
-      const { isAIConfigured, getPrimaryAIProvider } = await import("./ai");
-      const { isGeminiConfigured } = await import("./gemini");
-      const { isHuggingFaceConfigured } = await import("./huggingface");
+      const { isAIConfigured, getPrimaryAIProvider } = await import("./ai.js");
+      const { isGeminiConfigured } = await import("./gemini.js");
+      const { isHuggingFaceConfigured } = await import("./huggingface.js");
 
       res.json({
         isConfigured: isAIConfigured(),
@@ -4590,7 +4590,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Word is required" });
       }
 
-      const { generateSingleDefinition } = await import("./ai");
+      const { generateSingleDefinition } = await import("./ai.js");
       const definition = await generateSingleDefinition(word.trim());
       
       console.log("Generated definition for word:", word, "->", definition);
@@ -4696,7 +4696,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .limit(5);
 
       // Always add smart vocabulary suggestions using AI
-      const { generateVocabularySuggestions, generateContextualSuggestions } = await import("./ai");
+      const { generateVocabularySuggestions, generateContextualSuggestions } = await import("./ai.js");
       let aiSuggestions: any[] = [];
       
       try {

@@ -1,4 +1,4 @@
-import { gemini, GEMINI_MODEL } from "./gemini";
+import { gemini, GEMINI_MODEL } from "./gemini.js";
 import OpenAI from "openai";
 
 interface QuestionGenerationData {

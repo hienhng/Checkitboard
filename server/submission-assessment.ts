@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
-import { db } from "../db";
-import { submissions, vocabularyLists, vocabularyWords, inputFormQuestions, inputFormAnswers, multipleChoiceQuestions, multipleChoiceAnswers } from "../shared/schema";
-import { assessGridInAnswers } from "./ai-assessment";
+import { db } from "../db/index.js";
+import { submissions, vocabularyLists, vocabularyWords, inputFormQuestions, inputFormAnswers, multipleChoiceQuestions, multipleChoiceAnswers } from "../shared/schema.js";
+import { assessGridInAnswers } from "./ai-assessment.js";
 
 export async function completeQuestionSubmission(submissionId: number, studentId: number) {
   return db.transaction(async tx => {

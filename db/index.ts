@@ -1,9 +1,9 @@
-import '../server/env';
+import '../server/env.js';
 import pkg from 'pg';
 import { attachDatabasePool } from '@vercel/functions';
 const { Pool } = pkg;
 import { drizzle } from 'drizzle-orm/node-postgres';
-import * as schema from "../shared/schema";
+import * as schema from "../shared/schema.js";
 
 if (!process.env.DATABASE_URL) {
   throw new Error(

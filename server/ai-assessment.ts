@@ -1,6 +1,6 @@
 import { z } from "zod";
 import OpenAI from "openai";
-import { gemini, GEMINI_MODEL } from "./gemini";
+import { gemini, GEMINI_MODEL } from "./gemini.js";
 
 export class AIAssessmentError extends Error {
   constructor() {

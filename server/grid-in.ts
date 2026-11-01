@@ -1,7 +1,7 @@
 import { eq, inArray } from "drizzle-orm";
-import { db } from "../db";
-import { vocabularyWords, inputFormQuestions, multipleChoiceQuestions } from "../shared/schema";
-import { defaultGridInQuestion } from "../shared/grid-in";
+import { db } from "../db/index.js";
+import { vocabularyWords, inputFormQuestions, multipleChoiceQuestions } from "../shared/schema.js";
+import { defaultGridInQuestion } from "../shared/grid-in.js";
 
 // Also prepares older lists without requiring a data migration. Lock the words
 // while checking/inserting so simultaneous publish or test requests cannot duplicate questions.

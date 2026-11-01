@@ -100,6 +100,12 @@ frontend from `dist/public` and sends `/api/*` to a Node.js function. Browser
 routes such as `/settings` fall back to `index.html`; unknown API routes return
 JSON with a 404 status. Local development still uses `npm run dev`.
 
+Server-side relative imports use explicit JavaScript paths such as
+`../server/app.js` and `../db/index.js`. Keep these extensions in TypeScript
+sources: the deployed function runs as native Node ESM. `npm run build` first
+runs `check:api`, which emits unbundled JavaScript and loads it with Node to
+catch import-resolution failures before deployment.
+
 1. Provision a hosted PostgreSQL database. Use the provider's pooled connection
    URL for `DATABASE_URL`, including its required SSL options. A database running
    on your PC cannot be reached by Vercel. Keep the database and function close

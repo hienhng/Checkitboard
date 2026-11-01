@@ -1,7 +1,7 @@
-import "./env";
+import "./env.js";
 import express, { type ErrorRequestHandler, type Express } from "express";
 import type { Server } from "node:http";
-import { registerRoutes } from "./routes";
+import { registerRoutes } from "./routes.js";
 
 export async function createApp(configureClient?: (app: Express, server: Server) => void | Promise<void>) {
   const app = express();

@@ -5,9 +5,9 @@ import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
-import { storage } from "./storage";
-import { pool } from "../db";
-import { User } from "../shared/schema";
+import { storage } from "./storage.js";
+import { pool } from "../db/index.js";
+import { User } from "../shared/schema.js";
 
 declare global {
   namespace Express {
@@ -133,7 +133,7 @@ export function setupAuth(app: Express) {
 
       // Create new user with hashed password and email verification
       const hashedPassword = await hashPassword(password);
-      const { generateVerificationToken, sendVerificationEmail } = await import("./email-verification");
+      const { generateVerificationToken, sendVerificationEmail } = await import("./email-verification.js");
       
       const verificationToken = generateVerificationToken();
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours

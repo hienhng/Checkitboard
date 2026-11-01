@@ -1,8 +1,8 @@
-import { createApp } from "./app";
+import { createApp } from "./app.js";
 
 async function main() {
   // Only the standalone server needs Vite and filesystem serving.
-  const { setupVite, serveStatic, log } = await import("./vite");
+  const { setupVite, serveStatic, log } = await import("./vite.js");
   const { server } = await createApp(async (app, server) => {
     if (app.get("env") === "development") {
       await setupVite(app, server);

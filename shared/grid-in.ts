@@ -1,4 +1,4 @@
-import type { VocabularyWord } from "./schema";
+import type { VocabularyWord } from "./schema.js";
 
 export function defaultGridInQuestion(word: Pick<VocabularyWord, "id" | "word" | "definition">) {
   return {

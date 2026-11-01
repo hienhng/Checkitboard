@@ -1,4 +1,4 @@
-import { db, pool } from "./index";
+import { db, pool } from "./index.js";
 import * as schema from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { scrypt, randomBytes } from "crypto";

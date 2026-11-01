@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { createApp } from "../server/app";
+import { createApp } from "../server/app.js";
 
 // Share initialization across concurrent requests and warm invocations.
 let application: ReturnType<typeof createApp> | undefined;

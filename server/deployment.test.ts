@@ -28,9 +28,9 @@ test("Vercel API initializes once, keeps API paths, and rejects unsafe productio
       .replace("SET LOCAL search_path TO public;", `SET LOCAL search_path TO ${schema};`);
     await admin.query(sql);
   }
-  const { createApp } = await import("./app");
-  const { pool } = await import("../db");
-  const { default: handler } = await import("../api/index");
+  const { createApp } = await import("./app.js");
+  const { pool } = await import("../db/index.js");
+  const { default: handler } = await import("../api/index.js");
   const server = createServer(handler);
   try {
     await t.test("production refuses missing, short, and example session secrets", async () => {
@@ -67,8 +67,8 @@ test("Vercel API initializes once, keeps API paths, and rejects unsafe productio
     });
 
     await t.test("production login sets a secure cookie and persists a safe user session", { skip: !admin }, async () => {
-      const { storage } = await import("./storage");
-      const { hashPassword } = await import("./auth");
+      const { storage } = await import("./storage.js");
+      const { hashPassword } = await import("./auth.js");
       const user = await storage.createUser({
         email: "deployment@test.invalid", name: "Deployment Test", role: "educator",
         password: await hashPassword("test-password"), emailVerified: true,

@@ -1,4 +1,4 @@
-import "../server/env";
+import "../server/env.js";
 import { readFile } from "node:fs/promises";
 import pg from "pg";
 

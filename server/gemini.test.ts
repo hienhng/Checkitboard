@@ -7,9 +7,9 @@ process.env.GEMINI_API_KEY = "test-ai-studio-key";
 process.env.GEMINI_MODEL = "test-gemini-model";
 process.env.OPENAI_API_KEY = "test-fallback-key";
 
-const service = await import("./gemini");
-const ai = await import("./ai");
-const { generateMultipleChoiceQuestion } = await import("./ai-questions");
+const service = await import("./gemini.js");
+const ai = await import("./ai.js");
+const { generateMultipleChoiceQuestion } = await import("./ai-questions.js");
 const client = service.gemini!;
 let content: unknown;
 let requests: Record<string, any>[] = [];
