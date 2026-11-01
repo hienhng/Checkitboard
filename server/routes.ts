@@ -58,7 +58,7 @@ import {
   classes,
   studentClass,
   educatorSettings,
-} from "@shared/schema";
+} from "../shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -4085,7 +4085,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const schema = z.object({
         name: z.string().min(2, "Name must be at least 2 characters"),
-        profilePicture: z.string().optional(),
+        profilePicture: z.string().max(2_800_000, "Profile pictures must be 2 MB or smaller").optional(),
       });
 
       const validatedData = schema.parse(req.body);

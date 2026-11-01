@@ -3,11 +3,16 @@
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "tsx watch server/index.ts",
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc",
+    "test": "tsx --test server/*.test.ts client/src/lib/*.test.ts",
+    "db:setup": "tsx db/setup.ts",
     "db:push": "drizzle-kit push --force --config=./drizzle.config.ts",
     "db:seed": "tsx db/seed.ts"
   },
@@ -49,6 +54,7 @@
     "@tanstack/react-query": "^5.60.5",
     "@types/bcrypt": "^5.0.2",
     "@types/nodemailer": "^6.4.17",
+    "@vercel/functions": "^3.10.5",
     "bcrypt": "^6.0.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",

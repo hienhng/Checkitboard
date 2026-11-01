@@ -7,7 +7,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { pool } from "../db";
-import { User } from "@shared/schema";
+import { User } from "../shared/schema";
 
 declare global {
   namespace Express {
@@ -26,6 +26,18 @@ declare global {
 
 const scryptAsync = promisify(scrypt);
 
+function publicUser(user: Express.User) {
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    profilePicture: user.profilePicture,
+    emailVerified: user.emailVerified,
+    createdAt: user.createdAt,
+  };
+}
+
 export async function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
@@ -40,6 +52,11 @@ export async function comparePasswords(supplied: string, stored: string): Promis
 }
 
 export function setupAuth(app: Express) {
+  const production = app.get("env") === "production";
+  const secret = process.env.SESSION_SECRET;
+  if (production && (!secret || secret.length < 32 || secret === "replace-with-a-long-random-secret" || secret === "default_secret_for_development_only")) {
+    throw new Error("Set SESSION_SECRET to a unique random value of at least 32 characters in production.");
+  }
   if (!process.env.SESSION_SECRET) {
     console.warn("No SESSION_SECRET env variable set. Using a default secret for development.");
   }
@@ -52,14 +69,14 @@ export function setupAuth(app: Express) {
       tableName: 'session',
       createTableIfMissing: true,
     }),
-    secret: process.env.SESSION_SECRET || "default_secret_for_development_only",
+    secret: secret || "default_secret_for_development_only",
     resave: false,
     saveUninitialized: false,
     name: 'connect.sid',
     cookie: {
-      secure: false, // Allow in development without HTTPS
+      secure: production,
       httpOnly: true,
-      sameSite: process.env.NODE_ENV === "production" ? 'strict' : false, // Disable sameSite in dev
+      sameSite: 'lax',
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       path: '/',
     }
@@ -149,7 +166,7 @@ export function setupAuth(app: Express) {
       // Log the user in
       req.login(user, (err) => {
         if (err) return next(err);
-        return res.status(201).json(user);
+        return res.status(201).json(publicUser(user));
       });
     } catch (error: any) {
       console.error("Registration error:", error);
@@ -169,7 +186,7 @@ export function setupAuth(app: Express) {
         if (loginErr) {
           return next(loginErr);
         }
-        return res.json(user);
+        return res.json(publicUser(user));
       });
     })(req, res, next);
   });

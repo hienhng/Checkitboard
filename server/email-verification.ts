@@ -137,18 +137,18 @@ export async function sendVerificationEmail({
     console.log(`Starting email verification process for ${email}`);
     
     // Check email credentials first
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_APP_PASSWORD) {
-      throw new Error('Email credentials not configured. EMAIL_USER and EMAIL_APP_PASSWORD must be set.');
+    const gmailConfigured = process.env.EMAIL_USER && process.env.EMAIL_APP_PASSWORD;
+    const smtpConfigured = process.env.SMTP_HOST && process.env.SMTP_PORT && process.env.SMTP_USER && process.env.SMTP_PASSWORD;
+    if (!gmailConfigured && !smtpConfigured) {
+      throw new Error('Email credentials not configured. Set Gmail or SMTP credentials.');
     }
     
     const transporter = createTransporter();
     const verificationUrl = getVerificationUrl(verificationToken);
     const htmlContent = generateVerificationEmailTemplate({ name, verificationUrl });
     
-    console.log(`Verification URL generated: ${verificationUrl}`);
-    
     const mailOptions = {
-      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER || process.env.SMTP_USER,
       to: email,
       subject: 'Verify Your Email - Just one step away.. 🎓',
       html: htmlContent,
@@ -261,7 +261,7 @@ export async function sendWelcomeEmail({
     `;
 
     const mailOptions = {
-      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER || process.env.SMTP_USER,
       to: email,
       subject: `Welcome to Checkit, ${name}! 🎉`,
       html: htmlContent,

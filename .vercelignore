@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+.local
+.git
+.agents
+.config
+cookies.txt
+test-email.js
+test-submission.js
+**/*.test.ts
+.typecheck.log
