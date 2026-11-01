@@ -1,42 +1,45 @@
-import Groq from 'groq-sdk';
-import { z } from "zod";
+import OpenAI from "openai";
 
 // Check if API key is available
-const apiKey = process.env.GROQ_API_KEY;
+const apiKey = process.env.GEMINI_API_KEY?.trim();
 
-// Initialize the Groq client only if API key is available
-let groq: Groq | null = null;
+// Initialize the Gemini client only if API key is available
+let gemini: OpenAI | null = null;
 
 try {
   if (apiKey) {
-    groq = new Groq({
-      apiKey: apiKey,
+    gemini = new OpenAI({
+      apiKey,
+      baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+      timeout: 45_000,
+      maxRetries: 1,
     });
-    console.log("Groq client initialized successfully");
+    console.log("Gemini client initialized successfully");
   } else {
-    console.warn("GROQ_API_KEY is not set. AI features will be unavailable.");
+    console.warn("GEMINI_API_KEY is not set. AI features will use fallback providers if configured.");
   }
 } catch (error) {
-  console.error("Error initializing Groq client:", error);
+  console.error("Error initializing Gemini client:", error);
 }
 
-// Default model for text generation (updated to current supported model)
-const DEFAULT_MODEL = "llama-3.1-8b-instant";
+// Override the model without changing code when Google updates availability.
+// Gemini output limits include thinking tokens; allow room for reasoning and JSON.
+export const GEMINI_MODEL = process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash";
 
 /**
- * Check if the Groq API key is configured
+ * Check if the Gemini API key is configured
  */
-export function isGroqConfigured(): boolean {
-  return !!groq;
+export function isGeminiConfigured(): boolean {
+  return !!gemini;
 }
 
 /**
- * Generate definitions for words using Groq
+ * Generate definitions for words using Gemini
  */
 export async function generateDefinitions(words: string[]): Promise<Record<string, string>> {
   try {
-    if (!groq) {
-      throw new Error("Groq API key is not configured");
+    if (!gemini) {
+      throw new Error("Gemini API key is not configured");
     }
 
     const definitions: Record<string, string> = {};
@@ -56,7 +59,7 @@ Return only valid JSON in this format:
   "word2": "definition here"
 }`;
 
-      const completion = await groq.chat.completions.create({
+      const completion = await gemini.chat.completions.create({
         messages: [
           {
             role: "system",
@@ -67,9 +70,11 @@ Return only valid JSON in this format:
             content: prompt
           }
         ],
-        model: DEFAULT_MODEL,
+        model: GEMINI_MODEL,
+        reasoning_effort: "low",
         temperature: 0.3,
-        max_tokens: 1000,
+        max_tokens: 8192,
+        response_format: { type: "json_object" },
       });
 
       const content = completion.choices[0]?.message?.content;
@@ -87,7 +92,7 @@ Return only valid JSON in this format:
       }
     }
     
-    console.log(`Generated definitions for ${Object.keys(definitions).length} words using Groq`);
+    console.log(`Generated definitions for ${Object.keys(definitions).length} words using Gemini`);
     return definitions;
   } catch (error: any) {
     console.error("Error generating definitions:", error);
@@ -104,12 +109,12 @@ Return only valid JSON in this format:
 }
 
 /**
- * Analyze a passage and extract potential vocabulary words using Groq
+ * Analyze a passage and extract potential vocabulary words using Gemini
  */
 export async function analyzePassage(passage: string, count: number = 10): Promise<string[]> {
   try {
-    if (!groq) {
-      throw new Error("Groq API key is not configured");
+    if (!gemini) {
+      throw new Error("Gemini API key is not configured");
     }
     
     const prompt = `Analyze the following passage and identify the ${count} most challenging vocabulary words that would be appropriate for students to learn. Focus on words that are:
@@ -120,31 +125,33 @@ export async function analyzePassage(passage: string, count: number = 10): Promi
 Passage:
 "${passage}"
 
-Return only a JSON array of the words:
-["word1", "word2", "word3"]`;
+Return only a JSON object containing the words:
+{"words": ["word1", "word2", "word3"]}`;
 
-    const completion = await groq.chat.completions.create({
+    const completion = await gemini.chat.completions.create({
       messages: [
         {
           role: "system",
-          content: "You are an educational assistant that identifies vocabulary words from passages. Always respond with valid JSON format only - an array of strings."
+          content: "You are an educational assistant that identifies vocabulary words from passages. Always respond with valid JSON format only - an object with a words array of strings."
         },
         {
           role: "user",
           content: prompt
         }
       ],
-      model: DEFAULT_MODEL,
+      model: GEMINI_MODEL,
+      reasoning_effort: "low",
       temperature: 0.3,
-      max_tokens: 500,
+      max_tokens: 8192,
+      response_format: { type: "json_object" },
     });
 
     const content = completion.choices[0]?.message?.content;
     if (content) {
       try {
-        const words = JSON.parse(content);
-        if (Array.isArray(words)) {
-          console.log(`Extracted ${words.length} vocabulary words from passage using Groq`);
+        const { words } = JSON.parse(content);
+        if (Array.isArray(words) && words.every((word: unknown) => typeof word === "string")) {
+          console.log(`Extracted ${words.length} vocabulary words from passage using Gemini`);
           return words.slice(0, count); // Ensure we don't exceed requested count
         }
       } catch (parseError) {
@@ -179,50 +186,45 @@ Return only a JSON array of the words:
   }
 }
 
-// Export the groq client
-export { groq };
+// Export the gemini client
+export { gemini };
 
 /**
- * Generate a passage that includes all the provided vocabulary words using Groq
+ * Generate a passage that includes all the provided vocabulary words using Gemini
  */
 export async function generatePassageFromWords(
   words: string[],
-  difficulty: 'elementary' | 'middle' | 'high' = 'middle',
-  topic?: string
+  options: { topic?: string; gradeLevel?: string; paragraphCount?: number; style?: string } = {}
 ): Promise<string> {
   try {
-    console.log("generatePassageFromWords called with:", { words, difficulty, topic });
     
-    if (!groq) {
-      console.error("Groq client is null - API key not configured properly");
-      throw new Error("Groq API key is not configured");
+    if (!gemini) {
+      console.error("Gemini client is null - API key not configured properly");
+      throw new Error("Gemini API key is not configured");
     }
 
-    const difficultyDescriptions = {
-      elementary: "simple language suitable for elementary school students (grades 3-5)",
-      middle: "moderate complexity suitable for middle school students (grades 6-8)",
-      high: "advanced language suitable for high school students (grades 9-12)"
-    };
-
-    const topicContext = topic ? ` The passage should be about ${topic}.` : '';
+    const gradeLevel = options.gradeLevel || "middle school";
+    const paragraphCount = options.paragraphCount || 1;
+    const style = options.style || "educational";
+    const topic = options.topic || "general knowledge";
     
-    const prompt = `Create an educational passage using ${difficultyDescriptions[difficulty]} that naturally incorporates all of these vocabulary words: ${words.join(', ')}.
+    const prompt = `Create a ${style} passage about ${topic} at a ${gradeLevel} reading level that naturally incorporates all of these vocabulary words: ${words.join(', ')}.
 
 Requirements:
-- Use each vocabulary word at least once in a natural, contextually appropriate way
+- Use each vocabulary word in its exact form at least once in a natural, contextually appropriate way
 - Make the passage engaging and educational
 - Length should be 200-400 words
-- Use proper paragraph structure${topicContext}
+- Write exactly ${paragraphCount} paragraph(s), separated by a blank line
 
 Words to include: ${words.join(', ')}
 
 Write only the passage, no additional text or explanations:`;
 
-    console.log("Calling Groq API to generate passage...");
-    console.log("Using model:", DEFAULT_MODEL);
+    console.log("Calling Gemini API to generate passage...");
+    console.log("Using model:", GEMINI_MODEL);
     console.log("Prompt length:", prompt.length);
     
-    const completion = await groq.chat.completions.create({
+    const completion = await gemini.chat.completions.create({
       messages: [
         {
           role: "system",
@@ -233,24 +235,25 @@ Write only the passage, no additional text or explanations:`;
           content: prompt
         }
       ],
-      model: DEFAULT_MODEL,
+      model: GEMINI_MODEL,
+      reasoning_effort: "low",
       temperature: 0.7,
-      max_tokens: 1500,
+      max_tokens: 8192,
     });
     
-    console.log("Groq API response received");
+    console.log("Gemini API response received");
     console.log("Response choices length:", completion.choices?.length || 0);
 
     const passage = completion.choices[0]?.message?.content?.trim();
     
     if (passage) {
-      console.log(`Generated passage with ${words.length} vocabulary words using Groq`);
+      console.log(`Generated passage with ${words.length} vocabulary words using Gemini`);
       return passage;
     } else {
-      throw new Error("No passage content received from Groq API");
+      throw new Error("No passage content received from Gemini API");
     }
   } catch (error: any) {
-    console.error("Error generating passage with Groq:", error);
+    console.error("Error generating passage with Gemini:", error);
     console.error("Error details:", {
       message: error.message,
       status: error.status,
@@ -259,17 +262,23 @@ Write only the passage, no additional text or explanations:`;
     });
     
     if (error.status === 429) {
-      throw new Error("Groq API rate limit exceeded. Please try again later.");
+      throw new Error("Gemini API rate limit exceeded. Please try again later.");
     } else if (error.status === 401 || error.status === 403) {
-      throw new Error("Groq API key authentication failed. Please check your GROQ_API_KEY.");
+      throw new Error("Gemini API key authentication failed. Please check your GEMINI_API_KEY.");
+    } else if (error.status === 404) {
+      throw new Error("The configured Gemini model is unavailable. Please check GEMINI_MODEL.");
+    } else if (error.status >= 500) {
+      throw new Error("Gemini is temporarily unavailable. Please try generating again shortly.");
+    } else if (error instanceof OpenAI.APIConnectionError) {
+      throw new Error("Could not connect to Gemini. Please try generating again shortly.");
     } else {
-      throw new Error(`Groq API error: ${error.message || 'Unknown error'}`);
+      throw new Error("Gemini could not generate a passage. Please try again or check the server's AI configuration.");
     }
   }
 }
 
 /**
- * Grade a student's definition against the correct definition using Groq
+ * Grade a student's definition against the correct definition using Gemini
  */
 export async function gradeDefinition(
   word: string,
@@ -277,8 +286,8 @@ export async function gradeDefinition(
   correctDefinition: string
 ): Promise<{ isCorrect: boolean; feedback: string }> {
   try {
-    if (!groq) {
-      throw new Error("Groq API key is not configured");
+    if (!gemini) {
+      throw new Error("Gemini API key is not configured");
     }
 
     const prompt = `Grade this student's definition of the word "${word}".
@@ -297,7 +306,7 @@ Respond with valid JSON only:
   "feedback": "Brief encouraging feedback for the student"
 }`;
 
-    const completion = await groq.chat.completions.create({
+    const completion = await gemini.chat.completions.create({
       messages: [
         {
           role: "system",
@@ -308,9 +317,11 @@ Respond with valid JSON only:
           content: prompt
         }
       ],
-      model: DEFAULT_MODEL,
+      model: GEMINI_MODEL,
+      reasoning_effort: "low",
       temperature: 0.2,
-      max_tokens: 300,
+      max_tokens: 8192,
+      response_format: { type: "json_object" },
     });
 
     const content = completion.choices[0]?.message?.content;
@@ -348,12 +359,12 @@ Respond with valid JSON only:
 }
 
 /**
- * Generate example sentences for vocabulary words using Groq
+ * Generate example sentences for vocabulary words using Gemini
  */
 export async function generateExampleSentences(words: string[], count: number = 1): Promise<Record<string, string[]>> {
   try {
-    if (!groq) {
-      throw new Error("Groq API key is not configured");
+    if (!gemini) {
+      throw new Error("Gemini API key is not configured");
     }
 
     const examples: Record<string, string[]> = {};
@@ -373,7 +384,7 @@ Return valid JSON in this format:
   "word2": ["sentence 1", "sentence 2"]
 }`;
 
-      const completion = await groq.chat.completions.create({
+      const completion = await gemini.chat.completions.create({
         messages: [
           {
             role: "system",
@@ -384,9 +395,11 @@ Return valid JSON in this format:
             content: prompt
           }
         ],
-        model: DEFAULT_MODEL,
+        model: GEMINI_MODEL,
+        reasoning_effort: "low",
         temperature: 0.5,
-        max_tokens: 800,
+        max_tokens: 8192,
+        response_format: { type: "json_object" },
       });
 
       const content = completion.choices[0]?.message?.content;
@@ -404,7 +417,7 @@ Return valid JSON in this format:
       }
     }
     
-    console.log(`Generated example sentences for ${Object.keys(examples).length} words using Groq`);
+    console.log(`Generated example sentences for ${Object.keys(examples).length} words using Gemini`);
     return examples;
   } catch (error: any) {
     console.error("Error generating example sentences:", error);
@@ -420,7 +433,7 @@ Return valid JSON in this format:
 }
 
 /**
- * Generate personalized learning strategies based on student performance using Groq
+ * Generate personalized learning strategies based on student performance using Gemini
  */
 export async function generateContextualSuggestions(wrongWords: string[]): Promise<Array<{
   word: string;
@@ -430,8 +443,8 @@ export async function generateContextualSuggestions(wrongWords: string[]): Promi
   difficulty: 'easy' | 'medium' | 'hard';
 }>> {
   try {
-    if (!groq) {
-      throw new Error("Groq API key is not configured");
+    if (!gemini) {
+      throw new Error("Gemini API key is not configured");
     }
 
     const prompt = `Based on these vocabulary words the student got wrong: ${wrongWords.join(', ')}
@@ -465,7 +478,7 @@ Respond with valid JSON only in this format:
   ]
 }`;
 
-    const completion = await groq.chat.completions.create({
+    const completion = await gemini.chat.completions.create({
       messages: [
         {
           role: "system",
@@ -476,9 +489,11 @@ Respond with valid JSON only in this format:
           content: prompt
         }
       ],
-      model: DEFAULT_MODEL,
+      model: GEMINI_MODEL,
+      reasoning_effort: "low",
       temperature: 0.7,
-      max_tokens: 1200,
+      max_tokens: 8192,
+      response_format: { type: "json_object" },
     });
 
     const content = completion.choices[0]?.message?.content;
@@ -504,7 +519,7 @@ Respond with valid JSON only in this format:
             }
           }
         } catch (secondParseError) {
-          console.warn("Failed to parse contextual suggestions from Groq after JSON extraction, content:", content);
+          console.warn("Failed to parse contextual suggestions from Gemini after JSON extraction, content:", content);
         }
       }
     }
@@ -512,7 +527,7 @@ Respond with valid JSON only in this format:
     // Return empty array instead of throwing error to allow fallback to work
     return [];
   } catch (error: any) {
-    console.error("Error generating contextual suggestions with Groq:", error);
+    console.error("Error generating contextual suggestions with Gemini:", error);
     throw error;
   }
 }
@@ -525,8 +540,8 @@ export async function generateVocabularySuggestions(): Promise<Array<{
   difficulty: 'easy' | 'medium' | 'hard';
 }>> {
   try {
-    if (!groq) {
-      throw new Error("Groq API key is not configured");
+    if (!gemini) {
+      throw new Error("Gemini API key is not configured");
     }
 
     const prompt = `Generate 8 high-quality vocabulary words that would be beneficial for students to learn.
@@ -552,7 +567,7 @@ Respond with valid JSON only in this format:
   ]
 }`;
 
-    const completion = await groq.chat.completions.create({
+    const completion = await gemini.chat.completions.create({
       messages: [
         {
           role: "system",
@@ -563,9 +578,11 @@ Respond with valid JSON only in this format:
           content: prompt
         }
       ],
-      model: DEFAULT_MODEL,
+      model: GEMINI_MODEL,
+      reasoning_effort: "low",
       temperature: 0.7,
-      max_tokens: 1000,
+      max_tokens: 8192,
+      response_format: { type: "json_object" },
     });
 
     const content = completion.choices[0]?.message?.content;
@@ -576,13 +593,13 @@ Respond with valid JSON only in this format:
           return result.words;
         }
       } catch (parseError) {
-        console.warn("Failed to parse vocabulary suggestions from Groq");
+        console.warn("Failed to parse vocabulary suggestions from Gemini");
       }
     }
     
-    throw new Error("No valid vocabulary suggestions received from Groq");
+    throw new Error("No valid vocabulary suggestions received from Gemini");
   } catch (error: any) {
-    console.error("Error generating vocabulary suggestions with Groq:", error);
+    console.error("Error generating vocabulary suggestions with Gemini:", error);
     throw error;
   }
 }
@@ -596,8 +613,8 @@ export async function generateLearningStrategies(
   encouragement: string;
 }> {
   try {
-    if (!groq) {
-      throw new Error("Groq API key is not configured");
+    if (!gemini) {
+      throw new Error("Gemini API key is not configured");
     }
 
     const incorrectWords = words.filter(word => studentPerformance[word] === false);
@@ -615,7 +632,7 @@ Generate specific, actionable learning strategies and encouragement. Respond wit
   "encouragement": "personalized encouraging message"
 }`;
 
-    const completion = await groq.chat.completions.create({
+    const completion = await gemini.chat.completions.create({
       messages: [
         {
           role: "system",
@@ -626,9 +643,11 @@ Generate specific, actionable learning strategies and encouragement. Respond wit
           content: prompt
         }
       ],
-      model: DEFAULT_MODEL,
+      model: GEMINI_MODEL,
+      reasoning_effort: "low",
       temperature: 0.6,
-      max_tokens: 600,
+      max_tokens: 8192,
+      response_format: { type: "json_object" },
     });
 
     const content = completion.choices[0]?.message?.content;

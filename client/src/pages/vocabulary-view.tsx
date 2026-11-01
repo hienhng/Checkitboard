@@ -82,9 +82,9 @@ export default function VocabularyView() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col min-h-screen">
+      <div className="flex flex-col min-h-full">
         <Navbar />
-        <div className="container max-w-5xl mx-auto py-8">
+        <div className="workspace-page">
           <div className="animate-pulse">
             <div className="h-8 w-48 bg-gray-200 rounded mb-4"></div>
             <div className="h-4 w-full bg-gray-200 rounded mb-2"></div>
@@ -103,10 +103,10 @@ export default function VocabularyView() {
 
   if (!list) {
     return (
-      <div className="flex flex-col min-h-screen">
+      <div className="flex flex-col min-h-full">
         <Navbar />
-        <div className="container max-w-5xl mx-auto py-8 text-center">
-          <h1 className="text-2xl font-bold mb-4">Vocabulary List Not Found</h1>
+        <div className="workspace-page text-center">
+          <h1 className="page-title">Vocabulary List Not Found</h1>
           <p className="text-muted-foreground mb-6">The vocabulary list you're looking for doesn't exist or you don't have access to it.</p>
           <Button onClick={() => navigate("/learner/dashboard")}>Return to Dashboard</Button>
         </div>
@@ -115,9 +115,9 @@ export default function VocabularyView() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-full">
       <Navbar />
-      <div className="container max-w-5xl mx-auto py-8">
+      <div className="workspace-page">
         <div className="mb-6">
           <Button variant="ghost" asChild className="mb-4">
             <div onClick={() => window.history.back()} className="flex items-center cursor-pointer">

@@ -226,7 +226,8 @@ export function NotificationCenter({ onOpenChange }: NotificationCenterProps = {
         <Button
           variant="ghost"
           size="icon"
-          className="relative"
+          className="relative h-9 w-9"
+          aria-label="Notifications"
         >
           <Bell className="h-5 w-5" />
           {(countQuery.data?.count || 0) > 0 && (
@@ -239,7 +240,7 @@ export function NotificationCenter({ onOpenChange }: NotificationCenterProps = {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-96 p-0" align="end">
+      <PopoverContent className="w-[min(384px,calc(100vw-2rem))] p-0" align="end">
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="font-medium">Notifications</h3>
           <div className="flex space-x-2">

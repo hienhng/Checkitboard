@@ -123,7 +123,7 @@ export function AIPassageAssist({ passage, onSelectWords }: AIPassageAssistProps
       <Alert variant="destructive">
         <AlertTitle>AI features unavailable</AlertTitle>
         <AlertDescription>
-          Hugging Face API key is not configured. Contact your administrator to enable AI features.
+          AI suggestions are currently unavailable. You can still choose words from your passage or add them manually.
         </AlertDescription>
       </Alert>
     );

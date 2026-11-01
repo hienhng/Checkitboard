@@ -1,0 +1,2 @@
+ALTER TABLE vocabulary_lists
+ADD COLUMN IF NOT EXISTS grades_released BOOLEAN NOT NULL DEFAULT FALSE;

@@ -19,7 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const inputFormSchema = z.object({
   question: z.string().min(5, "Question must be at least 5 characters"),
-  correctAnswer: z.string().min(1, "Correct answer cannot be empty"),
+  correctAnswer: z.string().default(""),
   caseSensitive: z.boolean().default(false),
   showAnswer: z.boolean().default(true),
 });
@@ -46,7 +46,7 @@ export function InputFormManager({ word }: InputFormManagerProps) {
     },
   });
 
-  const { data: questions = [], isLoading } = useQuery({
+  const { data: questions = [], isLoading } = useQuery<InputFormQuestion[]>({
     queryKey: [`/api/vocabulary-words/${word.id}/input-form`],
     enabled: !!word.id,
   });
@@ -160,7 +160,7 @@ export function InputFormManager({ word }: InputFormManagerProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FileText className="h-5 w-5 text-blue-500" />
-          <h3 className="text-lg font-semibold">Input Form Questions</h3>
+          <h3 className="text-lg font-semibold">Grid-in Questions</h3>
           <Badge variant="secondary">{questions.length} questions</Badge>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -173,7 +173,7 @@ export function InputFormManager({ word }: InputFormManagerProps) {
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>
-                {editingQuestion ? "Edit Input Form Question" : "Create Input Form Question"}
+                {editingQuestion ? "Edit Grid-in Question" : "Create Grid-in Question"}
               </DialogTitle>
             </DialogHeader>
             <Form {...form}>
@@ -201,10 +201,10 @@ export function InputFormManager({ word }: InputFormManagerProps) {
                   name="correctAnswer"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Correct Answer</FormLabel>
+                      <FormLabel>Reference answer (optional)</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Enter the correct answer"
+                          placeholder="Leave blank for AI to assess the meaning in context"
                           {...field}
                         />
                       </FormControl>
@@ -213,28 +213,8 @@ export function InputFormManager({ word }: InputFormManagerProps) {
                   )}
                 />
 
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="caseSensitive"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">Case Sensitive</FormLabel>
-                          <div className="text-sm text-muted-foreground">
-                            Require exact case matching
-                          </div>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">AI assesses meaning and accepts accurate answers in the learner's own words.</p>
                   <FormField
                     control={form.control}
                     name="showAnswer"
@@ -308,7 +288,8 @@ export function InputFormManager({ word }: InputFormManagerProps) {
                       size="sm"
                       variant="outline"
                       onClick={() => deleteQuestionMutation.mutate(question.id)}
-                      disabled={deleteQuestionMutation.isPending}
+                      disabled={deleteQuestionMutation.isPending || questions.length <= 1}
+                      title={questions.length <= 1 ? "Keep at least one question for this word" : "Delete question"}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -318,14 +299,14 @@ export function InputFormManager({ word }: InputFormManagerProps) {
               <CardContent>
                 <div className="space-y-2">
                   <div>
-                    <span className="text-sm font-medium">Correct Answer: </span>
+                    <span className="text-sm font-medium">Reference answer: </span>
                     <span className="text-sm font-mono bg-muted px-2 py-1 rounded">
-                      {question.correctAnswer}
+                      {question.correctAnswer || "AI uses the word's meaning in the passage"}
                     </span>
                   </div>
                   <div className="flex gap-4 text-xs text-muted-foreground">
                     <span>
-                      Case Sensitive: {question.caseSensitive ? "Yes" : "No"}
+                      Assessed by AI
                     </span>
                     <span>
                       Show Answer: {question.showAnswer ? "Yes" : "No"}

@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EditVocabularyForm } from "@/components/edit-vocabulary-form";
+import { PageHeader } from "@/components/workspace-ui";
 import { AssignmentProperties } from "@/components/assignment-properties";
 import {
   BookOpen,
@@ -210,13 +211,8 @@ export default function VocabularyManagement() {
   };
 
   return (
-    <div className="container py-8 max-w-6xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Vocabulary Lists Management</h1>
-        <p className="text-muted-foreground mt-2">
-          Manage and organize your vocabulary assignments
-        </p>
-      </div>
+    <div className="workspace-page ">
+      <PageHeader eyebrow="Your content library" title="Your assignments" description="From a first draft to a shared discovery. Keep all your vocabulary lists in one place." actions={<Button onClick={() => navigate("/educator/dashboard?create=1")}><BookOpen />Create a checkup</Button>} />
 
       <Card className="mt-6">
         <CardHeader>
@@ -231,10 +227,10 @@ export default function VocabularyManagement() {
         <CardContent>
           <div className="space-y-4">
             {/* Filter Controls */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-4">
                 <div className="flex items-center space-x-2">
-                  <Filter className="h-4 w-4 text-gray-500" />
+                  <Filter className="h-4 w-4 text-muted-foreground" />
                   <Select value={selectedClass} onValueChange={setSelectedClass}>
                     <SelectTrigger className="w-48">
                       <SelectValue placeholder="Filter by class" />
@@ -316,7 +312,7 @@ export default function VocabularyManagement() {
 
             {/* Vocabulary Lists */}
             {listsLoading ? (
-              <div className="py-4 text-center text-sm text-gray-500">Loading vocabulary lists...</div>
+              <div className="py-4 text-center text-sm text-muted-foreground">Loading vocabulary lists...</div>
             ) : filteredLists && filteredLists.length > 0 ? (
               <div className="divide-y divide-gray-200">
                 {filteredLists.map((list) => (
@@ -328,16 +324,16 @@ export default function VocabularyManagement() {
                       />
                       <div className="flex-1">
                         <h4 className="text-sm font-medium text-neutral-dark">{list.title}</h4>
-                        <div className="mt-1 flex items-center text-xs text-gray-500">
+                        <div className="mt-1 flex items-center text-xs text-muted-foreground">
                           <CalendarDays className="mr-1 h-3.5 w-3.5" />
                           Created: {formatDate(list.createdAt)}
                         </div>
-                        <div className="mt-1 flex items-center text-xs text-gray-500">
+                        <div className="mt-1 flex items-center text-xs text-muted-foreground">
                           <ClipboardList className="mr-1 h-3.5 w-3.5" />
                           {list.words?.length || 0} vocabulary words
                         </div>
                         {list.assignedClassesCount > 0 && (
-                          <div className="mt-1 flex items-center text-xs text-gray-500">
+                          <div className="mt-1 flex items-center text-xs text-muted-foreground">
                             <School className="mr-1 h-3.5 w-3.5" />
                             {list.assignedClassesCount === 1 
                               ? `Assigned to 1 class${list.class ? `: ${list.class.name}` : ''}`
@@ -390,7 +386,7 @@ export default function VocabularyManagement() {
                 ))}
               </div>
             ) : (
-              <div className="py-4 text-center text-sm text-gray-500">
+              <div className="py-4 text-center text-sm text-muted-foreground">
                 {selectedClass === "all" 
                   ? "You haven't created any vocabulary lists yet."
                   : "No vocabulary lists found for the selected class filter."

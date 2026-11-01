@@ -1,3 +1,4 @@
+import { Brand } from "@/components/brand";
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,8 +54,8 @@ function VerifyEmail() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-        <Card className="w-full max-w-md">
+      <div className="auth-recovery flex min-h-svh flex-col items-center justify-center gap-8 bg-background px-4 py-10"><a href="/auth" aria-label="Back to Checkit"><Brand /></a>
+        <Card className="w-full max-w-md shadow-sm">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
               <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
@@ -73,8 +74,8 @@ function VerifyEmail() {
 
   if (status === 'error') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-        <Card className="w-full max-w-md">
+      <div className="auth-recovery flex min-h-svh flex-col items-center justify-center gap-8 bg-background px-4 py-10"><a href="/auth" aria-label="Back to Checkit"><Brand /></a>
+        <Card className="w-full max-w-md shadow-sm">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
               <XCircle className="h-6 w-6 text-red-600" />
@@ -111,8 +112,8 @@ function VerifyEmail() {
 
   // Success case
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md">
+    <div className="auth-recovery flex min-h-svh flex-col items-center justify-center gap-8 bg-background px-4 py-10"><a href="/auth" aria-label="Back to Checkit"><Brand /></a>
+      <Card className="w-full max-w-md shadow-sm">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
             <CheckCircle className="h-6 w-6 text-green-600" />
@@ -121,13 +122,13 @@ function VerifyEmail() {
             Email Verified Successfully!
           </CardTitle>
           <CardDescription>
-            Welcome to Lexible! Your account has been activated.
+            Welcome to Checkit! Your account has been activated.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="text-center space-y-2">
             <p className="text-sm text-gray-600">
-              Your email address has been successfully verified. You can now log in to your Lexible account and start using all features.
+              Your email address has been successfully verified. You can now log in to your Checkit account and start using all features.
             </p>
             {userName && (
               <p className="text-sm font-medium text-gray-900">

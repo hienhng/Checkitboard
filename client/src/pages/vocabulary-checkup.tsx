@@ -36,7 +36,7 @@ interface Question {
   wordId: number;
   word: string;
   question: string;
-  correctAnswer: string;
+  correctAnswer?: string;
   optionA?: string;
   optionB?: string;
   optionC?: string;
@@ -51,7 +51,7 @@ export default function VocabularyCheckup() {
   const submissionId = parseInt(id || "0");
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
@@ -60,8 +60,10 @@ export default function VocabularyCheckup() {
   const [fullscreenWarning, setFullscreenWarning] = useState(false);
   const [showTestModeDialog, setShowTestModeDialog] = useState(false);
   const [testStarted, setTestStarted] = useState(false);
-  const [pendingMCAnswers, setPendingMCAnswers] = useState<Record<number, string>>({});
-  const [inputDebounceTimers, setInputDebounceTimers] = useState<Record<number, NodeJS.Timeout>>({});
+  const answersRef = useRef<Record<string, string>>({});
+  const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const saveQueue = useRef<Record<string, Promise<unknown>>>({});
+  const submitting = useRef(false);
   const checkupRef = useRef<HTMLDivElement>(null);
 
   const { data: submission, isLoading: submissionLoading } = useQuery({
@@ -85,7 +87,7 @@ export default function VocabularyCheckup() {
     enabled: !!listId,
   });
 
-  const questions = (questionsData as any)?.questions || [];
+  const questions: Question[] = (questionsData as any)?.questions || [];
   const savedAnswers = (questionsData as any)?.savedAnswers || {};
   const listSettings = (questionsData as any)?.listSettings || {};
   const passage = (questionsData as any)?.passage || "";
@@ -98,6 +100,7 @@ export default function VocabularyCheckup() {
   useEffect(() => {
     if (savedAnswers && Object.keys(savedAnswers).length > 0 && Object.keys(answers).length === 0) {
       setAnswers(savedAnswers);
+      answersRef.current = savedAnswers;
     }
   }, [savedAnswers]);
 
@@ -175,8 +178,8 @@ export default function VocabularyCheckup() {
   }, [isTestMode, testStarted]);
 
   useEffect(() => {
-    return () => { Object.values(inputDebounceTimers).forEach(clearTimeout); };
-  }, [inputDebounceTimers]);
+    return () => { Object.values(saveTimers.current).forEach(clearTimeout); };
+  }, []);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -191,75 +194,62 @@ export default function VocabularyCheckup() {
     setTestStarted(true);
   };
 
-  const saveMCAnswerMutation = useMutation({
-    mutationFn: async ({ questionId, selectedAnswer }: { questionId: number; selectedAnswer: string }) => {
-      const response = await apiRequest("POST", `/api/submissions/${submissionId}/multiple-choice-answer`, { questionId, selectedAnswer });
-      return response.json();
-    },
-  });
+  const answerKey = (question: Question) => `${question.type}:${question.id}`;
 
-  const saveInputAnswerMutation = useMutation({
-    mutationFn: async ({ questionId, studentAnswer }: { questionId: number; studentAnswer: string }) => {
-      const response = await apiRequest("POST", `/api/submissions/${submissionId}/input-form-answer`, { questionId, studentAnswer });
-      return response.json();
-    },
-  });
-
-  const handleAnswerChange = (answer: string) => {
-    if (!currentQuestion) return;
-    setAnswers((prev) => ({ ...prev, [currentQuestion.id]: answer }));
-    if (currentQuestion.type === "multiple_choice") {
-      setPendingMCAnswers((prev) => ({ ...prev, [currentQuestion.id]: answer }));
-    } else {
-      const questionId = currentQuestion.id;
-      if (inputDebounceTimers[questionId]) clearTimeout(inputDebounceTimers[questionId]);
-      const timer = setTimeout(() => {
-        saveInputAnswerMutation.mutate({ questionId, studentAnswer: answer });
-      }, 500);
-      setInputDebounceTimers((prev) => ({ ...prev, [questionId]: timer }));
-    }
+  const queueAnswerSave = (question: Question, answer: string) => {
+    const key = answerKey(question);
+    const previous = saveQueue.current[key] || Promise.resolve();
+    const save = previous.catch(() => {}).then(() => apiRequest("POST",
+      `/api/submissions/${submissionId}/${question.type === "input" ? "input-form-answer" : "multiple-choice-answer"}`,
+      question.type === "input" ? { questionId: question.id, studentAnswer: answer } : { questionId: question.id, selectedAnswer: answer },
+    ));
+    saveQueue.current[key] = save;
+    return save;
   };
 
-  const saveCurrentMCAnswerIfPending = () => {
-    if (currentQuestion?.type === "multiple_choice" && pendingMCAnswers[currentQuestion.id] !== undefined) {
-      saveMCAnswerMutation.mutate({ questionId: currentQuestion.id, selectedAnswer: pendingMCAnswers[currentQuestion.id] });
-      setPendingMCAnswers((prev) => { const u = { ...prev }; delete u[currentQuestion.id]; return u; });
-    }
+  const handleAnswerChange = (answer: string) => {
+    if (!currentQuestion || submitting.current) return;
+    const question = currentQuestion;
+    const key = answerKey(question);
+    answersRef.current = { ...answersRef.current, [key]: answer };
+    setAnswers(answersRef.current);
+    clearTimeout(saveTimers.current[key]);
+    saveTimers.current[key] = setTimeout(() => {
+      delete saveTimers.current[key];
+      queueAnswerSave(question, answer).catch(() => {
+        toast({ title: "Answer not saved yet", description: "Your answer is kept here. We'll retry when you submit or save your progress.", variant: "destructive" });
+      });
+    }, 500);
+  };
+
+  const flushAnswers = async () => {
+    Object.values(saveTimers.current).forEach(clearTimeout);
+    saveTimers.current = {};
+    await Promise.all(questions.filter(question => answersRef.current[answerKey(question)] !== undefined)
+      .map(question => queueAnswerSave(question, answersRef.current[answerKey(question)])));
   };
 
   const completeMutation = useMutation({
     mutationFn: async () => {
+      await flushAnswers();
       const response = await apiRequest("POST", `/api/submissions/${submissionId}/complete`);
       return response.json();
     },
     onSuccess: () => {
-      toast({ title: "Test submitted successfully!" });
+      toast({ title: "Checkup submitted and assessed!" });
       navigate(`/test-results/${submissionId}`);
     },
-    onError: () => {
-      toast({ title: "Error submitting test", variant: "destructive" });
+    onError: (error: Error) => {
+      let message = "Your answers are kept here. Please try submitting again.";
+      try { message = JSON.parse(error.message.replace(/^\d+:\s*/, "")).message || message; } catch {}
+      toast({ title: "Couldn't submit your checkup", description: message, variant: "destructive" });
     },
+    onSettled: () => { submitting.current = false; },
   });
 
-  const handleSubmit = async () => {
-    const pendingSaves: Promise<void>[] = [];
-    Object.entries(pendingMCAnswers).forEach(([qId, selectedAnswer]) => {
-      pendingSaves.push(new Promise<void>((resolve) => {
-        saveMCAnswerMutation.mutate({ questionId: parseInt(qId), selectedAnswer }, { onSettled: () => resolve() });
-      }));
-    });
-    setPendingMCAnswers({});
-    Object.entries(inputDebounceTimers).forEach(([qId, timer]) => {
-      clearTimeout(timer);
-      const answer = answers[parseInt(qId)];
-      if (answer !== undefined) {
-        pendingSaves.push(new Promise<void>((resolve) => {
-          saveInputAnswerMutation.mutate({ questionId: parseInt(qId), studentAnswer: answer }, { onSettled: () => resolve() });
-        }));
-      }
-    });
-    setInputDebounceTimers({});
-    await Promise.all(pendingSaves);
+  const handleSubmit = () => {
+    if (submitting.current) return;
+    submitting.current = true;
     completeMutation.mutate();
   };
 
@@ -278,50 +268,35 @@ export default function VocabularyCheckup() {
   });
 
   const handleSaveAndGoBack = async () => {
-    const pendingPromises: Promise<any>[] = [];
-    Object.entries(pendingMCAnswers).forEach(([qId, selectedAnswer]) => {
-      pendingPromises.push(apiRequest("POST", `/api/submissions/${submissionId}/multiple-choice-answer`, { questionId: parseInt(qId), selectedAnswer }));
-    });
-    setPendingMCAnswers({});
-    Object.entries(inputDebounceTimers).forEach(([qId, timer]) => {
-      clearTimeout(timer);
-      const answer = answers[parseInt(qId)];
-      if (answer) {
-        pendingPromises.push(apiRequest("POST", `/api/submissions/${submissionId}/input-form-answer`, { questionId: parseInt(qId), studentAnswer: answer }));
-      }
-    });
-    setInputDebounceTimers({});
+    if (submitting.current) return;
     try {
-      await Promise.all(pendingPromises);
+      await flushAnswers();
       toast({ title: "Progress saved!" });
+      navigate("/learner/dashboard");
     } catch {
-      toast({ title: "Some answers may not have been saved", variant: "destructive" });
+      toast({ title: "Couldn't save your progress", description: "Your answers are kept here. Please try again before leaving.", variant: "destructive" });
     }
-    navigate("/learner/dashboard");
   };
 
   const goToNext = () => {
     if (currentQuestionIndex < questions.length - 1) {
-      saveCurrentMCAnswerIfPending();
       setCurrentQuestionIndex((p) => p + 1);
     }
   };
 
   const goToPrevious = () => {
     if (currentQuestionIndex > 0) {
-      saveCurrentMCAnswerIfPending();
       setCurrentQuestionIndex((p) => p - 1);
     }
   };
 
   const goToQuestion = (index: number) => {
     if (index !== currentQuestionIndex) {
-      saveCurrentMCAnswerIfPending();
       setCurrentQuestionIndex(index);
     }
   };
 
-  const answeredCount = Object.keys(answers).length;
+  const answeredCount = questions.filter(question => answers[answerKey(question)]?.trim()).length;
   const progress = questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
 
   // ── Loading ─────────────────────────────────────────────────────────────────
@@ -462,6 +437,8 @@ export default function VocabularyCheckup() {
         </div>
       </header>
 
+      {completeMutation.isPending && <div role="status" className="mx-auto mt-4 w-full max-w-7xl px-6 text-sm text-emerald-300">Saving and assessing your answers with AI…</div>}
+
       {/* ── Main ────────────────────────────────────────────────────────────── */}
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-5 py-6">
         <div className={`grid gap-5 h-full ${passage ? "lg:grid-cols-[1fr_1.1fr]" : "max-w-2xl mx-auto"}`}>
@@ -517,7 +494,7 @@ export default function VocabularyCheckup() {
                 }`}>
                   {currentQuestion.type === "multiple_choice"
                     ? <><CheckCircle className="h-3 w-3" />Multiple Choice</>
-                    : <><PenLine className="h-3 w-3" />Written Answer</>
+                    : <><PenLine className="h-3 w-3" />Grid-in · AI assessed</>
                   }
                 </span>
                 <span className="text-slate-700 text-xs">•</span>
@@ -536,7 +513,7 @@ export default function VocabularyCheckup() {
                 {currentQuestion.type === "multiple_choice" && (
                   <div className="space-y-2.5">
                     {mcOptions.map((option) => {
-                      const isSelected = answers[currentQuestion.id] === option.value;
+                      const isSelected = answers[answerKey(currentQuestion)] === option.value;
                       const colors = optionColors[option.value];
                       return (
                         <button
@@ -575,17 +552,14 @@ export default function VocabularyCheckup() {
                   <div className="space-y-3">
                     <Input
                       type="text"
-                      placeholder="Type your answer here…"
-                      value={answers[currentQuestion.id] || ""}
+                      disabled={completeMutation.isPending}
+                      aria-label="Your answer"
+                      placeholder="Explain the meaning in your own words…"
+                      value={answers[answerKey(currentQuestion)] || ""}
                       onChange={(e) => handleAnswerChange(e.target.value)}
                       className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-600 focus:border-indigo-500 focus:ring-indigo-500/20 h-12 text-base rounded-xl"
                     />
-                    {currentQuestion.caseSensitive && (
-                      <p className="flex items-center gap-1.5 text-xs text-amber-400">
-                        <AlertTriangle className="h-3.5 w-3.5" />
-                        This answer is case-sensitive
-                      </p>
-                    )}
+                    <p className="text-xs text-slate-400">AI assesses the meaning of your answer when you submit. You can use your own words.</p>
                   </div>
                 )}
               </div>
@@ -609,7 +583,7 @@ export default function VocabularyCheckup() {
                       className={`h-1.5 rounded-full transition-all duration-300 ${
                         i === currentQuestionIndex
                           ? "w-6 bg-indigo-500"
-                          : answers[questions[i]?.id]
+                          : answers[answerKey(questions[i])]
                           ? "w-1.5 bg-emerald-500/60"
                           : "w-1.5 bg-slate-700"
                       }`}
@@ -648,7 +622,7 @@ export default function VocabularyCheckup() {
 
               <div className="flex flex-wrap gap-1.5">
                 {questions.map((q: Question, idx: number) => {
-                  const isAnswered = !!answers[q.id];
+                  const isAnswered = !!answers[answerKey(q)];
                   const isCurrent = currentQuestionIndex === idx;
                   return (
                     <button
@@ -773,7 +747,7 @@ export default function VocabularyCheckup() {
               disabled={completeMutation.isPending}
               className="bg-emerald-600 hover:bg-emerald-700 text-white"
             >
-              {completeMutation.isPending ? "Submitting…" : "Submit Test"}
+              {completeMutation.isPending ? "Assessing answers…" : "Submit Test"}
             </Button>
           </DialogFooter>
         </DialogContent>

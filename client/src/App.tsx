@@ -54,9 +54,11 @@ function Router() {
       <ProtectedRoute path="/test-results/:submissionId" component={withEmailVerification(TestResults)} />
       
       {/* All other routes with layout/sidebar */}
+      <Route>
       <SidebarProvider>
         <Layout>
           <EmailVerificationGuard showBanner={true}>
+            <Switch>
             <ProtectedRoute path="/home" component={HomePage} />
             <ProtectedRoute path="/educator/dashboard" component={withEmailVerification(EducatorDashboard)} />
             <ProtectedRoute path="/educator/statistics" component={withEmailVerification(EducatorStatisticsPage)} />
@@ -73,12 +75,12 @@ function Router() {
             <ProtectedRoute path="/explore" component={withEmailVerification(ExplorePage)} />
             <ProtectedRoute path="/sticky-notes" component={withEmailVerification(StickyNotesBoard)} />
             <ProtectedRoute path="/settings" component={SettingsPage} />
+            <Route component={NotFound} />
+            </Switch>
           </EmailVerificationGuard>
         </Layout>
       </SidebarProvider>
-      
-      {/* Catch all unmatched routes */}
-      <Route component={NotFound} />
+      </Route>
     </Switch>
   );
 }

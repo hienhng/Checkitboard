@@ -51,7 +51,7 @@ export function MultipleChoiceManager({ word }: MultipleChoiceManagerProps) {
     },
   });
 
-  const { data: questions = [], isLoading } = useQuery({
+  const { data: questions = [], isLoading } = useQuery<MultipleChoiceQuestion[]>({
     queryKey: [`/api/vocabulary-words/${word.id}/multiple-choice`],
     enabled: !!word.id,
   });
@@ -64,6 +64,7 @@ export function MultipleChoiceManager({ word }: MultipleChoiceManagerProps) {
     onSuccess: () => {
       toast({ title: "Multiple choice question created successfully" });
       queryClient.invalidateQueries({ queryKey: [`/api/vocabulary-words/${word.id}/multiple-choice`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/vocabulary-lists/${word.listId}/question-status`] });
       setIsDialogOpen(false);
       form.reset();
     },
@@ -84,6 +85,7 @@ export function MultipleChoiceManager({ word }: MultipleChoiceManagerProps) {
     onSuccess: () => {
       toast({ title: "Question updated successfully" });
       queryClient.invalidateQueries({ queryKey: [`/api/vocabulary-words/${word.id}/multiple-choice`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/vocabulary-lists/${word.listId}/question-status`] });
       setIsDialogOpen(false);
       setEditingQuestion(null);
       form.reset();
@@ -105,6 +107,7 @@ export function MultipleChoiceManager({ word }: MultipleChoiceManagerProps) {
     onSuccess: () => {
       toast({ title: "Question deleted successfully" });
       queryClient.invalidateQueries({ queryKey: [`/api/vocabulary-words/${word.id}/multiple-choice`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/vocabulary-lists/${word.listId}/question-status`] });
     },
     onError: (error: any) => {
       toast({
@@ -386,7 +389,7 @@ export function MultipleChoiceManager({ word }: MultipleChoiceManagerProps) {
                   setIsDialogOpen(true);
                   setTimeout(() => generateQuestionMutation.mutate(), 100);
                 }}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+                className="text-white bg-primary"
                 disabled={generateQuestionMutation.isPending}
               >
                 <Sparkles className="h-4 w-4 mr-2" />

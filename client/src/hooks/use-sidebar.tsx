@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
 interface SidebarContextType {
   collapsed: boolean;
@@ -9,9 +9,14 @@ interface SidebarContextType {
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem("lexible-sidebar-collapsed") === "true"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("lexible-sidebar-collapsed", String(collapsed)); } catch { /* Storage can be unavailable in private contexts. */ }
+  }, [collapsed]);
 
-  const toggleCollapsed = () => setCollapsed(!collapsed);
+  const toggleCollapsed = () => setCollapsed(value => !value);
 
   return (
     <SidebarContext.Provider value={{ collapsed, setCollapsed, toggleCollapsed }}>

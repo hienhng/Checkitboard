@@ -1,146 +1,38 @@
-import { useEffect } from "react";
-import { useLocation } from "wouter";
-import { Card, CardContent } from "@/components/ui/card";
+import { useState } from "react";
+import { Link, Redirect } from "wouter";
+import { ArrowUpRight, BookOpen, Check, Layers, Sparkles } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoginForm, RegisterForm } from "@/components/authForms";
+import { Brand } from "@/components/brand";
 import { useAuth } from "@/hooks/use-auth";
-import { BookOpen, Users, Brain, CheckCircle, Sparkles, GraduationCap } from "lucide-react";
 
 export default function AuthPage() {
-  const [, navigate] = useLocation();
   const { user } = useAuth();
-
-  // Redirect if user is already logged in
-  useEffect(() => {
-    if (user) {
-      if (user.role === "educator") {
-        navigate("/educator/dashboard");
-      } else if (user.role === "learner") {
-        navigate("/learner/dashboard");
-      }
-    }
-  }, [user, navigate]);
-
-  return (
-    <div className="min-h-screen w-full flex bg-gradient-to-br from-slate-50 via-white to-blue-50 relative overflow-hidden">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(120,119,198,0.3),rgba(255,255,255,0))]"></div>
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(59,130,246,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(59,130,246,0.05)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
-      
-      {/* Floating Elements */}
-      <div className="absolute top-20 left-10 w-16 h-16 bg-gradient-to-r from-blue-300 to-blue-500 rounded-full opacity-20 animate-pulse"></div>
-      <div className="absolute top-40 right-20 w-8 h-8 bg-gradient-to-r from-sky-300 to-blue-400 rounded-full opacity-30 animate-bounce"></div>
-      <div className="absolute bottom-32 left-20 w-12 h-12 bg-gradient-to-r from-blue-200 to-blue-400 rounded-full opacity-25 animate-pulse delay-300"></div>
-
-      {/* Left Column - Auth Forms */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8 relative z-10">
-        <Card className="w-full max-w-md backdrop-blur-sm bg-white/90 shadow-2xl border-0 rounded-3xl overflow-hidden">
-          <CardContent className="pt-10 px-8 pb-8">
-            {/* Logo Section */}
-            <div className="text-center mb-10">
-  
-              <h1 className="text-5xl font-brand font-light bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent tracking-wide">
-                lexible
-              </h1>
-              <p className="mt-3 text-base text-slate-600 font-medium">Welcome to your learning journey</p>
-            </div>
-
-            <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-8 bg-slate-100 p-1.5 rounded-2xl h-12">
-                <TabsTrigger 
-                  value="login" 
-                  className="rounded-xl text-sm font-semibold transition-all duration-300 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-lg data-[state=active]:shadow-slate-200/50"
-                >
-                  Sign In
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="register" 
-                  className="rounded-xl text-sm font-semibold transition-all duration-300 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-lg data-[state=active]:shadow-slate-200/50"
-                >
-                  Create Account
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="login" className="space-y-0">
-                <LoginForm />
-              </TabsContent>
-              <TabsContent value="register" className="space-y-0">
-                <RegisterForm />
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+  const [mode, setMode] = useState("login");
+  if (user) return <Redirect to={user.role === "educator" ? "/educator/dashboard" : "/learner/dashboard"} />;
+  return <main className="grid min-h-svh bg-card lg:grid-cols-[1fr_1fr]">
+    <section className="flex min-w-0 flex-col px-6 py-7 sm:px-12 lg:px-14 xl:px-20">
+      <Link to="/" aria-label="Checkit home" className="w-fit"><Brand /></Link>
+      <div className="mx-auto flex w-full max-w-[380px] flex-1 flex-col justify-center py-12 lg:py-16">
+        <p className="eyebrow text-primary">Your next chapter starts here</p>
+        <h1 className="mt-2 text-[34px] font-semibold leading-tight tracking-[-0.04em]">{mode === "login" ? "Welcome back." : "Room to grow."}</h1>
+        <p className="mb-7 mt-3 text-sm leading-6 text-muted-foreground">{mode === "login" ? "A few new words. A little more confidence. Pick up where you left off." : "Create your account and make every new word part of your story."}</p>
+        <Tabs value={mode} onValueChange={setMode} className="w-full"><TabsList aria-label="Account access" className="mb-7 grid w-full grid-cols-2"><TabsTrigger value="login">Sign in</TabsTrigger><TabsTrigger value="register">Create account</TabsTrigger></TabsList><TabsContent value="login"><LoginForm /></TabsContent><TabsContent value="register"><RegisterForm /></TabsContent></Tabs>
       </div>
-
-      {/* Right Column - Hero Section */}
-      <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 text-white relative overflow-hidden">
-        {/* Background Pattern for Right Side */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(255,255,255,0.1),transparent_70%)]"></div>
-        <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(-45deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:30px_30px]"></div>
-        
-        {/* Floating Shapes */}
-        <div className="absolute top-20 right-20 w-32 h-32 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-40 left-10 w-24 h-24 bg-sky-300/20 rounded-full blur-2xl animate-bounce"></div>
-        
-        <div className="relative z-10 h-full flex flex-col justify-center max-w-xl mx-auto p-12">
-          <div className="mb-8">
-            <div className="inline-flex items-center px-4 py-2 bg-white/20 rounded-full text-sm font-medium mb-6 backdrop-blur-sm">
-              <Sparkles className="h-4 w-4 mr-2" />
-              AI-Powered Learning Platform
-            </div>
-            <h2 className="text-5xl font-bold mb-6 leading-tight">
-              Master Vocabulary Through 
-              <span className="bg-gradient-to-r from-sky-200 to-white bg-clip-text text-transparent"> Smart Learning</span>
-            </h2>
-            <p className="text-xl text-blue-100 leading-relaxed">
-              Join thousands of educators and students using our intelligent platform to enhance vocabulary learning through interactive passages and personalized assessments.
-            </p>
-          </div>
-
-          <div className="grid gap-6">
-            <div className="flex items-start space-x-4 group">
-              <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-sky-400 to-blue-500 rounded-xl flex items-center justify-center transform transition-transform duration-300 group-hover:scale-110 shadow-lg">
-                <BookOpen className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold text-white mb-2">Interactive Reading Passages</h3>
-                <p className="text-blue-100 leading-relaxed">Create engaging vocabulary lists by highlighting words directly in context-rich reading materials.</p>
-              </div>
-            </div>
-
-            <div className="flex items-start space-x-4 group">
-              <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-blue-400 to-blue-600 rounded-xl flex items-center justify-center transform transition-transform duration-300 group-hover:scale-110 shadow-lg">
-                <CheckCircle className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold text-white mb-2">Smart Assessment Tools</h3>
-                <p className="text-blue-100 leading-relaxed">Streamlined grading system with AI assistance for quick and accurate vocabulary assessment.</p>
-              </div>
-            </div>
-
-            <div className="flex items-start space-x-4 group">
-              <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-sky-300 to-blue-500 rounded-xl flex items-center justify-center transform transition-transform duration-300 group-hover:scale-110 shadow-lg">
-                <Brain className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold text-white mb-2">Adaptive Learning Experience</h3>
-                <p className="text-blue-100 leading-relaxed">AI-powered flashcards and personalized study sessions that adapt to each student's learning pace.</p>
-              </div>
-            </div>
-
-            <div className="flex items-start space-x-4 group">
-              <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-blue-300 to-blue-600 rounded-xl flex items-center justify-center transform transition-transform duration-300 group-hover:scale-110 shadow-lg">
-                <Users className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold text-white mb-2">Collaborative Classrooms</h3>
-                <p className="text-blue-100 leading-relaxed">Seamless class management with real-time progress tracking and parent communication tools.</p>
-              </div>
-            </div>
-          </div>
-
-          
+      <p className="text-center text-[11px] text-muted-foreground sm:text-left">A place for educators. A space for learners.</p>
+    </section>
+    <aside className="auth-showcase relative hidden min-w-0 flex-col overflow-hidden p-10 lg:flex xl:p-14" aria-label="Learn with Checkit">
+      <div className="flex items-center justify-between"><span className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-card/70 px-3 py-1.5 text-[11px] font-medium text-primary"><Sparkles className="h-3.5 w-3.5" />A brighter way to learn</span><ArrowUpRight className="h-5 w-5 text-primary/60" /></div>
+      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center py-12">
+        <h2 className="max-w-md text-[clamp(2.5rem,3.8vw,4rem)] font-semibold leading-[1.12] tracking-[-0.055em]">Small words.<br />Big <span className="font-serif italic font-normal text-primary">possibilities.</span></h2>
+        <p className="mt-5 max-w-sm text-sm leading-7 text-muted-foreground">Turn what you read into what you know. Build vocabulary that stays with you, one discovery at a time.</p>
+        <div className="relative my-10 px-2 xl:px-5">
+          <div className="absolute inset-x-5 bottom-[-9px] top-5 rotate-[-4deg] rounded-2xl border border-primary/15 bg-[#dbe6fa] dark:bg-slate-800" />
+          <div className="auth-word-card relative rounded-2xl border border-border/70 bg-card p-7 xl:p-8"><div className="flex items-center justify-between"><span className="eyebrow mb-0 text-primary">A word to remember</span><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-primary"><BookOpen className="h-4 w-4" /></span></div><h3 className="mt-5 font-serif text-4xl font-normal tracking-tight">serendipity</h3><p className="mt-2 text-xs text-muted-foreground">/ˌser.ənˈdɪp.ə.ti/ <span className="ml-2 italic">noun</span></p><p className="mt-5 text-sm leading-6">The lovely art of finding something wonderful when you weren’t looking for it.</p><div className="mt-6 flex items-center gap-2 border-t pt-4 text-[11px] text-muted-foreground"><span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"><Check className="h-3 w-3" /></span>One word closer to a world of possibilities.</div></div>
         </div>
+        <div className="flex flex-wrap gap-2">{["Read in context", "Practice your way", "See your progress"].map((label, index) => <span key={label} className="inline-flex items-center gap-2 rounded-full border border-primary/10 bg-card/60 px-3 py-2 text-[11px] font-medium text-muted-foreground"><span className="text-primary">0{index + 1}</span>{label}</span>)}</div>
       </div>
-    </div>
-  );
+      <div className="flex items-center gap-2 text-xs text-muted-foreground"><Layers className="h-4 w-4 text-primary" />More than memorizing. Making connections.</div>
+    </aside>
+  </main>;
 }

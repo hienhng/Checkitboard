@@ -22,6 +22,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { User, Eye, EyeOff, Mail, Phone, Calendar, HelpCircle, Settings as SettingsIcon, Upload } from "lucide-react";
 import { useLocation } from "wouter";
+import { PageHeader } from "@/components/workspace-ui";
+import type { User as AppUser } from "@shared/schema";
 
 // Form schemas
 const personalInfoSchema = z.object({
@@ -55,7 +57,7 @@ export function SettingsPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   // Get user data
-  const { data: user, isLoading } = useQuery({
+  const { data: user, isLoading } = useQuery<Pick<AppUser, "id" | "name" | "email" | "role" | "profilePicture">>({
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "throw" }),
   });
@@ -251,7 +253,7 @@ export function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-full">
         <div className="text-center">
           <SettingsIcon className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
           <p className="text-neutral-dark">Loading settings...</p>
@@ -261,12 +263,9 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-light p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-neutral-dark mb-2">Settings</h1>
-          <p className="text-neutral-medium">Manage your account preferences and profile information</p>
-        </div>
+    <div className="workspace-page">
+      <div className="mx-auto max-w-4xl space-y-7">
+        <PageHeader eyebrow="Make yourself at home" title="Your account, your way." description="A few personal touches, a little peace of mind. Keep your details and preferences up to date." />
 
         <Tabs defaultValue="personal" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
@@ -339,14 +338,14 @@ export function SettingsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label>Email</Label>
-                        <Input value={user?.email} disabled className="bg-gray-50" />
+                        <Input value={user?.email} disabled className="bg-muted/60" />
                         <p className="text-sm text-neutral-medium mt-1">
                           Email cannot be changed
                         </p>
                       </div>
                       <div>
                         <Label>Role</Label>
-                        <Input value={user?.role} disabled className="bg-gray-50" />
+                        <Input value={user?.role} disabled className="bg-muted/60" />
                         <p className="text-sm text-neutral-medium mt-1">
                           Role is assigned by administrator
                         </p>
@@ -508,9 +507,9 @@ export function SettingsPage() {
             <div className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardDescription className="text-3xl text-black flex items-center gap-2">
+                  <CardDescription className="text-3xl text-foreground flex items-center gap-2">
                     <HelpCircle className="h-5 w-5" />
-                    How to Use <span className="font-brand">lexible</span>
+                    How to Use <span className="font-semibold">checkit</span>
                   </CardDescription>
                   <CardDescription>
                     Learn the basics of using our vocabulary learning platform
@@ -602,7 +601,7 @@ export function SettingsPage() {
           <TabsContent value="info">
             <Card>
               <CardHeader>
-                <CardDescription className ="text-3xl text-black">About <span className="font-brand">lexible</span></CardDescription>
+                <CardDescription className ="text-3xl text-black">About <span className="font-semibold">checkit</span></CardDescription>
                 <CardDescription>
                   Information about the platform and developer
                 </CardDescription>
@@ -683,7 +682,7 @@ export function SettingsPage() {
 
                 <div className="text-center py-4">
                   <p className="text-sm text-neutral-medium">
-                    Thank you for using <span className="font-brand">lexible</span>! We're committed to making vocabulary learning 
+                    Thank you for using <span className="font-semibold">checkit</span>! We're committed to making vocabulary learning
                     engaging and effective for educators and students alike.
                   </p>
                 </div>

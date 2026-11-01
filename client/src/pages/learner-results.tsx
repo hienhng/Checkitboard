@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/workspace-ui";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Navbar } from "@/components/navbar";
@@ -90,7 +91,7 @@ export default function LearnerResults() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-blue-950 dark:to-indigo-950">
+      <div className="workspace-page">
         <Navbar />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
@@ -103,41 +104,21 @@ export default function LearnerResults() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-blue-950 dark:to-indigo-950">
+    <div className="workspace-page">
       <Navbar />
       
-      <div className="flex-1 container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="workspace-page flex-1">
         {/* Header */}
-        <div className="mb-10">
-          <Button
-            variant="outline"
-            onClick={() => navigate("/learner/dashboard")}
-            className="mb-6 rounded-xl px-5 py-2.5 h-auto border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:bg-slate-50 dark:hover:bg-slate-700/80 shadow-sm hover:shadow-md transition-all duration-300 group"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform duration-300" />
-            Back to Dashboard
-          </Button>
-          
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 dark:from-white dark:via-slate-100 dark:to-slate-300 bg-clip-text text-transparent mb-3">
-                My Test Results
-              </h1>
-              <p className="text-lg text-muted-foreground dark:text-muted-foreground">
-                View all your completed tests and track your progress
-              </p>
-            </div>
-          </div>
-        </div>
+        <PageHeader eyebrow="Every attempt matters" title="Your learning, chapter by chapter." description="Look back at your completed checkups, celebrate your progress, and see what to practice next." />
 
         {/* Statistics Cards */}
         {totalTests > 0 && (
           <div className="grid gap-6 md:grid-cols-4 mb-10">
-            <Card className="group relative overflow-hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg hover:shadow-xl rounded-2xl transition-all duration-300 hover:-translate-y-1">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent dark:from-blue-500/10" />
+            <Card className="group relative overflow-hidden bg-card dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg shadow-sm rounded-2xl transition-all duration-300">
+              <div className="absolute inset-0 bg-muted/50" />
               <CardContent className="relative p-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/25 group-hover:scale-110 transition-transform duration-300">
+                  <div className="w-14 h-14 rounded-xl flex items-center justify-center   transition-transform duration-300 bg-primary">
                     <FileText className="h-7 w-7 text-white" />
                   </div>
                   <div>
@@ -148,11 +129,11 @@ export default function LearnerResults() {
               </CardContent>
             </Card>
 
-            <Card className="group relative overflow-hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg hover:shadow-xl rounded-2xl transition-all duration-300 hover:-translate-y-1">
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent dark:from-emerald-500/10" />
+            <Card className="group relative overflow-hidden bg-card dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg shadow-sm rounded-2xl transition-all duration-300">
+              <div className="absolute inset-0 bg-muted/50" />
               <CardContent className="relative p-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/25 group-hover:scale-110 transition-transform duration-300">
+                  <div className="w-14 h-14 rounded-xl flex items-center justify-center   transition-transform duration-300 bg-primary">
                     <TrendingUp className="h-7 w-7 text-white" />
                   </div>
                   <div>
@@ -165,11 +146,11 @@ export default function LearnerResults() {
               </CardContent>
             </Card>
 
-            <Card className="group relative overflow-hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg hover:shadow-xl rounded-2xl transition-all duration-300 hover:-translate-y-1">
-              <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent dark:from-amber-500/10" />
+            <Card className="group relative overflow-hidden bg-card dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg shadow-sm rounded-2xl transition-all duration-300">
+              <div className="absolute inset-0 bg-muted/50" />
               <CardContent className="relative p-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/25 group-hover:scale-110 transition-transform duration-300">
+                  <div className="w-14 h-14 rounded-xl flex items-center justify-center   transition-transform duration-300 bg-primary">
                     <Trophy className="h-7 w-7 text-white" />
                   </div>
                   <div>
@@ -182,11 +163,11 @@ export default function LearnerResults() {
               </CardContent>
             </Card>
 
-            <Card className="group relative overflow-hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg hover:shadow-xl rounded-2xl transition-all duration-300 hover:-translate-y-1">
-              <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent dark:from-violet-500/10" />
+            <Card className="group relative overflow-hidden bg-card dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg shadow-sm rounded-2xl transition-all duration-300">
+              <div className="absolute inset-0 bg-muted/50" />
               <CardContent className="relative p-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center shadow-lg shadow-violet-500/25 group-hover:scale-110 transition-transform duration-300">
+                  <div className="w-14 h-14 rounded-xl flex items-center justify-center   transition-transform duration-300 bg-primary">
                     <Award className="h-7 w-7 text-white" />
                   </div>
                   <div>
@@ -202,8 +183,8 @@ export default function LearnerResults() {
         )}
 
         {/* Results Table */}
-        <Card className="relative overflow-hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-xl rounded-2xl">
-          <CardHeader className="relative bg-gradient-to-r from-primary via-primary to-indigo-600 dark:from-primary dark:via-primary dark:to-indigo-700 text-white rounded-t-2xl px-8 py-6">
+        <Card className="relative overflow-hidden bg-card dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-sm rounded-2xl">
+          <CardHeader className="relative text-white rounded-t-2xl px-8 py-6 bg-primary">
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iNCIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
             <div className="relative flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
@@ -220,7 +201,7 @@ export default function LearnerResults() {
           <CardContent className="p-8">
             {submissions.length === 0 ? (
               <div className="text-center py-16">
-                <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center">
+                <div className="w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center bg-muted/50">
                   <FileText className="h-10 w-10 text-muted-foreground/50" />
                 </div>
                 <h3 className="text-xl font-semibold text-foreground dark:text-foreground mb-2">
@@ -231,7 +212,7 @@ export default function LearnerResults() {
                 </p>
                 <Button 
                   onClick={() => navigate("/learner/dashboard")}
-                  className="rounded-xl px-6 py-3 h-auto bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-600/90 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 hover:-translate-y-0.5"
+                  className="rounded-xl px-6 py-3 h-auto shadow-lg shadow-primary/25 shadow-sm hover:shadow-primary/30 transition-all duration-300 bg-muted/50"
                 >
                   Go to Dashboard
                 </Button>
@@ -240,7 +221,7 @@ export default function LearnerResults() {
               <div className="rounded-xl border border-slate-200/80 dark:border-slate-700/50 overflow-hidden shadow-sm">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-gradient-to-r from-slate-50 to-slate-100/80 dark:from-slate-800/80 dark:to-slate-800/50 border-b border-slate-200 dark:border-slate-700">
+                    <TableRow className="border-b border-border dark:border-slate-700 bg-muted/50">
                       <TableHead className="font-semibold text-foreground py-4">Test Name</TableHead>
                       <TableHead className="font-semibold text-foreground py-4">Type</TableHead>
                       <TableHead className="font-semibold text-foreground py-4">Date</TableHead>
@@ -260,7 +241,7 @@ export default function LearnerResults() {
                         <TableCell className="font-medium text-foreground dark:text-foreground py-4">
                           {submission.list.title}
                           {submission.isRedo && (
-                            <Badge variant="outline" className="ml-2 text-xs rounded-full px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600">
+                            <Badge variant="outline" className="ml-2 text-xs rounded-full px-2 py-0.5 bg-muted/60 dark:bg-slate-800 border-slate-300 dark:border-slate-600">
                               Retake
                             </Badge>
                           )}
@@ -277,8 +258,8 @@ export default function LearnerResults() {
                         </TableCell>
                         <TableCell className="text-muted-foreground dark:text-muted-foreground py-4">
                           <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                              <Calendar className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                            <div className="w-8 h-8 rounded-lg bg-muted/60 dark:bg-slate-800 flex items-center justify-center">
+                              <Calendar className="h-4 w-4 text-muted-foreground dark:text-slate-400" />
                             </div>
                             <span className="font-medium">{format(new Date(submission.submittedAt), 'MMM dd, yyyy')}</span>
                           </div>
@@ -293,12 +274,12 @@ export default function LearnerResults() {
                         </TableCell>
                         <TableCell className="py-4">
                           {submission.gradedAt ? (
-                            <Badge className="bg-gradient-to-r from-emerald-500 to-emerald-600 dark:from-emerald-600 dark:to-emerald-700 rounded-full px-3 py-1 shadow-sm">
+                            <Badge className="rounded-full px-3 py-1 shadow-sm bg-muted/50">
                               <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
                               Graded
                             </Badge>
                           ) : (
-                            <Badge className="bg-gradient-to-r from-amber-500 to-amber-600 dark:from-amber-600 dark:to-amber-700 rounded-full px-3 py-1 shadow-sm">
+                            <Badge className="rounded-full px-3 py-1 shadow-sm bg-muted/50">
                               <Clock className="h-3.5 w-3.5 mr-1.5" />
                               Pending
                             </Badge>
@@ -308,7 +289,7 @@ export default function LearnerResults() {
                           <Button
                             size="sm"
                             onClick={() => navigate(`/test-results/${submission.id}`)}
-                            className="rounded-xl px-4 py-2 h-auto bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-600/90 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/25 transition-all duration-300 hover:-translate-y-0.5"
+                            className="rounded-xl px-4 py-2 h-auto shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/25 transition-all duration-300 bg-muted/50"
                           >
                             <Eye className="h-4 w-4 mr-2" />
                             View Details

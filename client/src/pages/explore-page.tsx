@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/workspace-ui";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -126,14 +127,14 @@ export default function ExplorePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-indigo-50 dark:from-slate-950 dark:via-purple-950 dark:to-indigo-950">
-        <div className="container mx-auto p-6 max-w-6xl">
+      <div className="workspace-page">
+        <div className="workspace-page">
           <div className="flex items-center justify-center h-96">
             <div className="text-center">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-500/25">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/25 bg-muted/50">
                 <Brain className="h-10 w-10 text-white animate-pulse" />
               </div>
-              <p className="text-gray-600 dark:text-gray-400 font-medium">
+              <p className="text-muted-foreground dark:text-gray-400 font-medium">
                 Loading personalized vocabulary...
               </p>
             </div>
@@ -144,25 +145,11 @@ export default function ExplorePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-indigo-50 dark:from-slate-950 dark:via-purple-950 dark:to-indigo-950">
-      <div className="container mx-auto p-6 max-w-6xl">
+    <div className="workspace-page">
+      <div className="workspace-page">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-500/25">
-              <Lightbulb className="h-7 w-7 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-purple-800 to-indigo-900 dark:from-gray-100 dark:via-purple-200 dark:to-indigo-200 bg-clip-text text-transparent">
-                Glossary
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                {exploreData?.personalized
-                  ? "Personalized words based on your recent test performance"
-                  : "Discover new vocabulary words to expand your knowledge"}
-              </p>
-            </div>
-          </div>
+          <PageHeader eyebrow="Follow your curiosity" title="A world of words to discover." description="Find a new favorite, revisit something familiar, and add a little more meaning to your day." />
 
           {/* Personalization Alert */}
           {exploreData && (
@@ -199,11 +186,11 @@ export default function ExplorePage() {
         </div>
 
         {/* Search and Filters */}
-        <Card className="mb-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-white/20 dark:border-slate-700/50 shadow-lg">
+        <Card className="mb-6 bg-card dark:bg-slate-900/80 backdrop-blur-md border-white/20 dark:border-slate-700/50 shadow-lg">
           <CardContent className="p-4">
             <div className="flex flex-wrap gap-4 items-center">
               <div className="relative flex-1 min-w-64">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center bg-muted/50">
                   <Search className="h-4 w-4 text-white" />
                 </div>
                 <Input
@@ -216,7 +203,7 @@ export default function ExplorePage() {
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-muted/50">
                   <Filter className="h-4 w-4 text-white" />
                 </div>
                 <select
@@ -251,7 +238,7 @@ export default function ExplorePage() {
 
         {/* Results Count */}
         <div className="mb-6 flex items-center gap-2">
-          <Badge variant="secondary" className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm px-4 py-2 text-sm font-medium">
+          <Badge variant="secondary" className="bg-card dark:bg-slate-800/80 backdrop-blur-sm px-4 py-2 text-sm font-medium">
             <Sparkles className="h-4 w-4 mr-2 text-purple-500" />
             Showing {filteredWords.length} of {words.length} words
           </Badge>
@@ -259,16 +246,16 @@ export default function ExplorePage() {
 
         {/* Words Grid */}
         {filteredWords.length === 0 ? (
-          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-white/20 dark:border-slate-700/50 shadow-lg">
+          <Card className="bg-card dark:bg-slate-900/80 backdrop-blur-md border-white/20 dark:border-slate-700/50 shadow-lg">
             <CardContent className="py-16">
               <div className="text-center">
-                <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center">
-                  <BookOpen className="h-10 w-10 text-gray-500 dark:text-gray-400" />
+                <div className="w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center bg-muted/50">
+                  <BookOpen className="h-10 w-10 text-muted-foreground dark:text-gray-400" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                <h3 className="text-xl font-semibold text-muted-foreground dark:text-gray-300 mb-2">
                   No Words Found
                 </h3>
-                <p className="text-gray-500 dark:text-gray-500 max-w-md mx-auto">
+                <p className="text-muted-foreground dark:text-gray-500 max-w-md mx-auto">
                   {words.length === 0
                     ? "Complete some vocabulary tests to see personalized word suggestions here!"
                     : "Try adjusting your search or filters to find more words."}
@@ -281,21 +268,21 @@ export default function ExplorePage() {
             {filteredWords.map((word, index) => (
               <Card
                 key={`${word.word}-${index}`}
-                className="group relative bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-white/20 dark:border-slate-700/50 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 rounded-2xl overflow-hidden"
+                className="group relative bg-card dark:bg-slate-900/90 backdrop-blur-md border-white/20 dark:border-slate-700/50 shadow-lg shadow-sm transition-all duration-300 rounded-2xl overflow-hidden"
               >
                 {/* Gradient accent bar */}
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500"></div>
+                <div className="absolute top-0 left-0 right-0 h-1 bg-muted/50"></div>
                 
                 <CardHeader className="pb-3 pt-5">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <CardTitle className="text-xl mb-3 bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-400 dark:to-indigo-400 bg-clip-text text-transparent font-bold group-hover:from-indigo-600 group-hover:to-purple-600 transition-all duration-300">
+                      <CardTitle className="text-xl mb-3 font-bold group-hover:from-indigo-600 group-hover:to-purple-600 transition-all duration-300 text-foreground">
                         {word.word}
                       </CardTitle>
                       <div className="flex flex-wrap gap-2 mb-2">
                         <Badge 
                           variant="secondary" 
-                          className="text-xs bg-gradient-to-r from-slate-100 to-gray-100 dark:from-slate-800 dark:to-gray-800 border border-gray-200/50 dark:border-gray-700/50"
+                          className="text-xs border border-gray-200/50 dark:border-gray-700/50 bg-muted/50"
                         >
                           {word.category || "General"}
                         </Badge>
@@ -307,7 +294,7 @@ export default function ExplorePage() {
                         {word.listTitle === "AI Suggestions" && (
                           <Badge
                             variant="outline"
-                            className="text-xs bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700"
+                            className="text-xs text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700 bg-muted/50"
                           >
                             {exploreData?.personalized && exploreData.words.some(w => w.isCorrect === false) 
                               ? "🔗 Related Word" 
@@ -317,7 +304,7 @@ export default function ExplorePage() {
                         )}
                       </div>
                       {word.listTitle && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1">
+                        <p className="text-xs text-muted-foreground dark:text-gray-400 mb-2 flex items-center gap-1">
                           <BookOpen className="h-3 w-3" />
                           From: {word.listTitle}
                         </p>
@@ -325,7 +312,7 @@ export default function ExplorePage() {
                     </div>
                     {exploreData?.personalized && word.isCorrect === false && (
                       <div className="flex-shrink-0">
-                        <Badge className="text-xs bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-sm shadow-red-500/25">
+                        <Badge className="text-xs text-white shadow-sm shadow-red-500/25 bg-primary">
                           Review
                         </Badge>
                       </div>
@@ -333,13 +320,13 @@ export default function ExplorePage() {
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0 pb-5">
-                  <CardDescription className="mb-4 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+                  <CardDescription className="mb-4 text-sm leading-relaxed text-muted-foreground dark:text-gray-400">
                     {word.definition}
                   </CardDescription>
 
                   {word.example && (
-                    <div className="mb-4 p-4 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-xl border border-purple-100 dark:border-purple-800/30">
-                      <p className="text-sm italic text-gray-700 dark:text-gray-300">
+                    <div className="mb-4 p-4 rounded-xl border border-purple-100 dark:border-purple-800/30 bg-muted/50">
+                      <p className="text-sm italic text-muted-foreground dark:text-gray-300">
                         "{word.example}"
                       </p>
                     </div>
@@ -349,7 +336,7 @@ export default function ExplorePage() {
                     onClick={() => handleAddToStickyNotes(word)}
                     disabled={addToStickyNotesMutation.isPending}
                     size="sm"
-                    className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all duration-300 rounded-xl h-11"
+                    className="w-full text-white shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all duration-300 rounded-xl h-11 bg-primary"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     {addToStickyNotesMutation.isPending

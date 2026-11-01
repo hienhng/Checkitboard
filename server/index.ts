@@ -1,3 +1,4 @@
+import "./env";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
@@ -41,17 +42,17 @@ app.use((req, res, next) => {
   // Check AI service status on startup
   try {
     const { isAIConfigured, getPrimaryAIProvider } = await import("./ai");
-    const { isGroqConfigured } = await import("./groq");
+    const { isGeminiConfigured } = await import("./gemini");
     
     console.log("AI Service Status:");
     console.log("- AI Configured:", isAIConfigured());
     console.log("- Primary Provider:", getPrimaryAIProvider());
-    console.log("- Groq Configured:", isGroqConfigured());
+    console.log("- Gemini Configured:", isGeminiConfigured());
     
-    if (isGroqConfigured()) {
-      console.log("Groq API integration is ready!");
+    if (isGeminiConfigured()) {
+      console.log("Gemini API integration is ready!");
     } else {
-      console.log("Groq API key not found. AI features will use fallback providers.");
+      console.log("Gemini API key not found. AI features will use fallback providers.");
     }
   } catch (error) {
     console.error("Error checking AI service status:", error);
@@ -59,12 +60,8 @@ app.use((req, res, next) => {
 
   const server = await registerRoutes(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    throw err;
+  app.use("/api", (_req, res) => {
+    res.status(404).json({ message: "API route not found" });
   });
 
   // importantly only setup vite in development and after
@@ -76,14 +73,20 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
+  app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
+    console.error(err);
+    if (res.headersSent) {
+      return next(err);
+    }
+    const status = err.status || err.statusCode || 500;
+    res.status(status).json({ message: err.message || "Internal Server Error" });
+  });
+
+  // Serve the API and client together. Windows does not support reusePort.
+  const port = Number(process.env.PORT || 5000);
   server.listen({
     port,
     host: "0.0.0.0",
-    reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
   });

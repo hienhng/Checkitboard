@@ -278,7 +278,7 @@ export default function TestResults() {
                               <span className="font-medium">Your answer:</span>
                               <span>"{answer.studentAnswer}"</span>
                             </div>
-                            {!answer.isCorrect && data.list?.showCorrectAnswers && answer.question?.showAnswer && (
+                            {!answer.isCorrect && data.list?.showCorrectAnswers && answer.question?.showAnswer && answer.question?.correctAnswer && (
                               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm bg-emerald-50 text-emerald-800">
                                 <span className="font-medium">Correct:</span>
                                 <span>"{answer.question?.correctAnswer}"</span>

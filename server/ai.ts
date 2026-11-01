@@ -1,11 +1,10 @@
 import OpenAI from "openai";
 import { z } from "zod";
-import * as groqService from "./groq";
+import * as geminiService from "./gemini";
 import * as huggingfaceService from "./huggingface";
 
 // Check if API keys are available
 const openaiApiKey = process.env.OPENAI_API_KEY;
-const groqApiKey = process.env.GROQ_API_KEY;
 
 // Initialize the OpenAI client only if API key is available
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
@@ -26,7 +25,7 @@ try {
  * Check if any AI service is configured
  */
 export function isAIConfigured(): boolean {
-  return groqService.isGroqConfigured() || !!openai || huggingfaceService.isHuggingFaceConfigured();
+  return geminiService.isGeminiConfigured() || !!openai || huggingfaceService.isHuggingFaceConfigured();
 }
 
 /**
@@ -40,22 +39,22 @@ export function isOpenAIConfigured(): boolean {
  * Get the primary AI service provider name
  */
 export function getPrimaryAIProvider(): string {
-  if (groqService.isGroqConfigured()) return "Groq";
+  if (geminiService.isGeminiConfigured()) return "Gemini";
   if (!!openai) return "OpenAI";
   if (huggingfaceService.isHuggingFaceConfigured()) return "Hugging Face";
   return "None";
 }
 
 /**
- * Generate definitions for words using available AI services (Groq preferred)
+ * Generate definitions for words using available AI services (Gemini preferred)
  */
 export async function generateDefinitions(words: string[]): Promise<Record<string, string>> {
-  // Try Groq first
-  if (groqService.isGroqConfigured()) {
+  // Try Gemini first
+  if (geminiService.isGeminiConfigured()) {
     try {
-      return await groqService.generateDefinitions(words);
+      return await geminiService.generateDefinitions(words);
     } catch (error) {
-      console.warn("Groq failed, falling back to other providers:", error);
+      console.warn("Gemini failed, falling back to other providers:", error);
     }
   }
 
@@ -97,11 +96,11 @@ export async function generateDefinitions(words: string[]): Promise<Record<strin
     }
   }
 
-  throw new Error("No AI service is available. Please configure GROQ_API_KEY, OPENAI_API_KEY, or HUGGINGFACE_API_KEY.");
+  throw new Error("No AI service is available. Please configure GEMINI_API_KEY, OPENAI_API_KEY, or HUGGINGFACE_API_KEY.");
 }
 
 /**
- * Generate definition for a single word using available AI services (Groq preferred)
+ * Generate definition for a single word using available AI services (Gemini preferred)
  */
 export async function generateSingleDefinition(word: string): Promise<string> {
   try {
@@ -118,15 +117,15 @@ export async function generateSingleDefinition(word: string): Promise<string> {
 }
 
 /**
- * Analyze a passage and extract potential vocabulary words using available AI services (Groq preferred)
+ * Analyze a passage and extract potential vocabulary words using available AI services (Gemini preferred)
  */
 export async function analyzePassage(passage: string, count: number = 10): Promise<string[]> {
-  // Try Groq first
-  if (groqService.isGroqConfigured()) {
+  // Try Gemini first
+  if (geminiService.isGeminiConfigured()) {
     try {
-      return await groqService.analyzePassage(passage, count);
+      return await geminiService.analyzePassage(passage, count);
     } catch (error) {
-      console.warn("Groq failed, falling back to other providers:", error);
+      console.warn("Gemini failed, falling back to other providers:", error);
     }
   }
 
@@ -173,11 +172,11 @@ export async function analyzePassage(passage: string, count: number = 10): Promi
     }
   }
 
-  throw new Error("No AI service is available. Please configure GROQ_API_KEY, OPENAI_API_KEY, or HUGGINGFACE_API_KEY.");
+  throw new Error("No AI service is available. Please configure GEMINI_API_KEY, OPENAI_API_KEY, or HUGGINGFACE_API_KEY.");
 }
 
 /**
- * Grade a student's definition against the correct definition using available AI services (Groq preferred)
+ * Grade a student's definition against the correct definition using available AI services (Gemini preferred)
  */
 export async function gradeDefinition(
   word: string,
@@ -196,12 +195,12 @@ export async function gradeDefinition(
     definitionToCheck = definitions[word];
   }
 
-  // Try Groq first
-  if (groqService.isGroqConfigured()) {
+  // Try Gemini first
+  if (geminiService.isGeminiConfigured()) {
     try {
-      return await groqService.gradeDefinition(word, studentDefinition, definitionToCheck);
+      return await geminiService.gradeDefinition(word, studentDefinition, definitionToCheck);
     } catch (error) {
-      console.warn("Groq failed, falling back to other providers:", error);
+      console.warn("Gemini failed, falling back to other providers:", error);
     }
   }
 
@@ -269,12 +268,12 @@ export async function generateContextualSuggestions(wrongWords: string[]): Promi
   category: string;
   difficulty: 'easy' | 'medium' | 'hard';
 }>> {
-  // Try Groq first
-  if (groqService.isGroqConfigured()) {
+  // Try Gemini first
+  if (geminiService.isGeminiConfigured()) {
     try {
-      return await groqService.generateContextualSuggestions(wrongWords);
+      return await geminiService.generateContextualSuggestions(wrongWords);
     } catch (error) {
-      console.warn("Groq failed for contextual suggestions, falling back to other providers:", error);
+      console.warn("Gemini failed for contextual suggestions, falling back to other providers:", error);
     }
   }
 
@@ -362,12 +361,12 @@ export async function generateVocabularySuggestions(): Promise<Array<{
   category: string;
   difficulty: 'easy' | 'medium' | 'hard';
 }>> {
-  // Try Groq first
-  if (groqService.isGroqConfigured()) {
+  // Try Gemini first
+  if (geminiService.isGeminiConfigured()) {
     try {
-      return await groqService.generateVocabularySuggestions();
+      return await geminiService.generateVocabularySuggestions();
     } catch (error) {
-      console.warn("Groq failed for vocabulary suggestions, falling back to other providers:", error);
+      console.warn("Gemini failed for vocabulary suggestions, falling back to other providers:", error);
     }
   }
 
@@ -440,15 +439,15 @@ export async function generateVocabularySuggestions(): Promise<Array<{
 }
 
 /**
- * Generate example sentences for vocabulary words using available AI services (Groq preferred)
+ * Generate example sentences for vocabulary words using available AI services (Gemini preferred)
  */
 export async function generateExampleSentences(words: string[], count: number = 1): Promise<Record<string, string[]>> {
-  // Try Groq first
-  if (groqService.isGroqConfigured()) {
+  // Try Gemini first
+  if (geminiService.isGeminiConfigured()) {
     try {
-      return await groqService.generateExampleSentences(words, count);
+      return await geminiService.generateExampleSentences(words, count);
     } catch (error) {
-      console.warn("Groq failed, falling back to other providers:", error);
+      console.warn("Gemini failed, falling back to other providers:", error);
     }
   }
 
@@ -490,11 +489,11 @@ export async function generateExampleSentences(words: string[], count: number = 
     }
   }
 
-  throw new Error("No AI service is available. Please configure GROQ_API_KEY, OPENAI_API_KEY, or HUGGINGFACE_API_KEY.");
+  throw new Error("No AI service is available. Please configure GEMINI_API_KEY, OPENAI_API_KEY, or HUGGINGFACE_API_KEY.");
 }
 
 /**
- * Generate personalized learning suggestions based on student performance using available AI services (Groq preferred)
+ * Generate personalized learning suggestions based on student performance using available AI services (Gemini preferred)
  */
 export async function generateLearningStrategies(words: string[], studentPerformance: Record<string, boolean>): Promise<{
   difficultWords?: string[];
@@ -503,12 +502,12 @@ export async function generateLearningStrategies(words: string[], studentPerform
   strategies: string[];
   encouragement?: string;
 }> {
-  // Try Groq first
-  if (groqService.isGroqConfigured()) {
+  // Try Gemini first
+  if (geminiService.isGeminiConfigured()) {
     try {
-      return await groqService.generateLearningStrategies(words, studentPerformance);
+      return await geminiService.generateLearningStrategies(words, studentPerformance);
     } catch (error) {
-      console.warn("Groq failed, falling back to other providers:", error);
+      console.warn("Gemini failed, falling back to other providers:", error);
     }
   }
 
@@ -575,7 +574,7 @@ export async function generateLearningStrategies(words: string[], studentPerform
 }
 
 /**
- * Generate a passage that includes all the provided vocabulary words using available AI services (Groq preferred)
+ * Generate a passage that includes all the provided vocabulary words using available AI services (Gemini preferred)
  */
 export async function generatePassageFromWords(
   words: string[], 
@@ -587,29 +586,26 @@ export async function generatePassageFromWords(
   } = {}
 ): Promise<string> {
   console.log("generatePassageFromWords called with:", { words, options });
+  let lastError: unknown;
   
-  // Convert gradeLevel to difficulty format for Groq
-  const difficulty = options.gradeLevel === "elementary" ? "elementary" :
-                    options.gradeLevel === "high school" ? "high" : "middle";
+  console.log("Gemini configured?", geminiService.isGeminiConfigured());
 
-  console.log("Converted difficulty:", difficulty);
-  console.log("Groq configured?", groqService.isGroqConfigured());
-
-  // Try Groq first
-  if (groqService.isGroqConfigured()) {
+  // Try Gemini first
+  if (geminiService.isGeminiConfigured()) {
     try {
-      console.log("Attempting to generate passage using Groq API...");
-      const result = await groqService.generatePassageFromWords(words, difficulty, options.topic);
-      console.log("Groq API call successful! Generated passage length:", result.length);
+      console.log("Attempting to generate passage using Gemini API...");
+      const result = await geminiService.generatePassageFromWords(words, options);
+      console.log("Gemini API call successful! Generated passage length:", result.length);
       return result;
     } catch (error: any) {
-      console.error("Groq failed, falling back to other providers:");
+      lastError = error;
+      console.error("Gemini failed, falling back to other providers:");
       console.error("Error type:", typeof error);
       console.error("Error message:", error.message);
       console.error("Full error:", error);
     }
   } else {
-    console.log("Groq is not configured, skipping to next provider");
+    console.log("Gemini is not configured, skipping to next provider");
   }
 
   // Try OpenAI as fallback
@@ -646,6 +642,7 @@ export async function generatePassageFromWords(
 
       return content.trim();
     } catch (error: any) {
+      lastError = new Error("The backup AI service could not generate a passage. Please try again shortly.");
       console.warn("OpenAI failed, falling back to Hugging Face:", error);
     }
   }
@@ -653,25 +650,28 @@ export async function generatePassageFromWords(
   // Try Hugging Face as final fallback
   if (huggingfaceService.isHuggingFaceConfigured()) {
     try {
-      return await huggingfaceService.generatePassageFromWords(words, difficulty, options.topic);
+      return await huggingfaceService.generatePassageFromWords(words, options);
     } catch (error) {
+      lastError = new Error("The backup AI service could not generate a passage. Please try again shortly.");
       console.warn("Hugging Face failed:", error);
     }
   }
 
-  throw new Error("No AI service is available. Please configure GROQ_API_KEY, OPENAI_API_KEY, or HUGGINGFACE_API_KEY.");
+  if (lastError instanceof Error) throw lastError;
+  throw new Error("No AI service is available. Please configure GEMINI_API_KEY, OPENAI_API_KEY, or HUGGINGFACE_API_KEY.");
 }
 
 /**
- * Generate multiple choice questions with plausible distractors using available AI services (Groq preferred)
+ * Generate multiple choice questions with plausible distractors using available AI services (Gemini preferred)
  */
 export async function generateMultipleChoice(word: string, correctDefinition: string): Promise<{
   word: string;
   correctAnswer: string;
   options: string[];
 }> {
-  // Try Groq first
-  if (groqService.isGroqConfigured()) {
+  // Try Gemini first
+  const geminiClient = geminiService.gemini;
+  if (geminiClient) {
     try {
       const prompt = `
         Create a multiple choice question for the vocabulary word "${word}".
@@ -690,15 +690,17 @@ export async function generateMultipleChoice(word: string, correctDefinition: st
         - distractors: array of 3 incorrect but plausible definitions
       `;
 
-      const response = await groqService.groq.chat.completions.create({
-        model: "llama-3.1-70b-versatile",
+      const response = await geminiClient.chat.completions.create({
+        model: geminiService.GEMINI_MODEL,
+        reasoning_effort: "low",
+        max_tokens: 8192,
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
       });
 
       const content = response.choices[0].message.content;
       if (!content) {
-        throw new Error("No content returned from Groq");
+        throw new Error("No content returned from Gemini");
       }
 
       const questionData = JSON.parse(content);
@@ -713,7 +715,7 @@ export async function generateMultipleChoice(word: string, correctDefinition: st
         options: shuffledOptions
       };
     } catch (error) {
-      console.warn("Groq failed, falling back to other providers:", error);
+      console.warn("Gemini failed, falling back to other providers:", error);
     }
   }
 

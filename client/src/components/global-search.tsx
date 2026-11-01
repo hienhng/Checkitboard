@@ -119,22 +119,22 @@ export function GlobalSearch() {
             variant="outline"
             role="combobox"
             aria-expanded={open}
+            aria-label="Search your workspace"
             className={cn(
-              "w-full justify-start text-left font-normal h-9",
-              "bg-gray-50 hover:bg-gray-100 border-gray-200",
-              "text-gray-500 hover:text-gray-700"
+              "h-9 w-10 justify-center gap-0 rounded-lg border-border bg-background px-0 text-left text-xs font-normal sm:w-full sm:justify-start sm:gap-2 sm:px-3",
+              "text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
           >
-            <Search className="mr-2 h-4 w-4 shrink-0" />
-            <span className="truncate">Search everything...</span>
-            <div className="ml-auto flex items-center gap-1">
+            <Search className="h-3.5 w-3.5 shrink-0" />
+            <span className="hidden truncate sm:block">Search your workspace</span>
+            <div className="ml-auto hidden items-center gap-1 lg:flex">
               <kbd className="pointer-events-none hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
-                <span className="text-xs">⌘</span>K
+                <span>Ctrl</span>K
               </kbd>
             </div>
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[400px] p-0" align="start">
+        <PopoverContent className="w-[min(400px,calc(100vw-2rem))] p-0" align="end">
           <Command shouldFilter={false}>
             <CommandInput
               ref={inputRef}

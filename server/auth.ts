@@ -17,6 +17,8 @@ declare global {
       email: string;
       name: string;
       role: string;
+      profilePicture?: string | null;
+      emailVerified?: boolean;
       createdAt?: Date;
     }
   }
@@ -140,7 +142,7 @@ export function setupAuth(app: Express) {
         console.log(`Verification email sent successfully to ${user.email}`);
       } catch (emailError) {
         console.error("Error sending verification email:", emailError);
-        console.error("Email error details:", emailError.message);
+        console.error("Email error details:", emailError instanceof Error ? emailError.message : String(emailError));
         // Continue with registration even if email fails
       }
 

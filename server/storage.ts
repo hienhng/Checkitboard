@@ -12,6 +12,7 @@ import {
   notifications,
   fullscreenExits,
   multipleChoiceAnswers,
+  inputFormQuestions,
   stickyNotes,
   InsertUser,
   InsertVocabularyList,
@@ -27,6 +28,7 @@ import {
   InsertStickyNote,
 } from "@shared/schema";
 import { eq, and, desc, isNull, asc, count, sql, or, inArray } from "drizzle-orm";
+import { defaultGridInQuestion } from "../shared/grid-in";
 export class DatabaseStorage {
 
   // User methods
@@ -178,6 +180,7 @@ export class DatabaseStorage {
       SELECT 
         vl.id, vl.title, vl.due_date, vl.published, 
         vl.educator_id, vl.class_id, vl.created_at, vl.passage,
+        vl.grade_visibility, vl.grades_released,
         e.id as educator_id, e.name as educator_name,
         c.id as class_id, c.name as class_name
       FROM vocabulary_lists vl
@@ -207,6 +210,8 @@ export class DatabaseStorage {
       title: row.title,
       dueDate: row.due_date,
       published: row.published,
+      gradeVisibility: row.grade_visibility,
+      gradesReleased: row.grades_released,
       educatorId: row.educator_id,
       classId: row.class_id,
       createdAt: row.created_at,
@@ -252,8 +257,11 @@ export class DatabaseStorage {
   }
 
   async createVocabularyWord(wordData: InsertVocabularyWord) {
-    const [word] = await db.insert(vocabularyWords).values(wordData).returning();
-    return word;
+    return db.transaction(async tx => {
+      const [word] = await tx.insert(vocabularyWords).values(wordData).returning();
+      await tx.insert(inputFormQuestions).values(defaultGridInQuestion(word));
+      return word;
+    });
   }
 
   // Submission methods
@@ -269,6 +277,9 @@ export class DatabaseStorage {
         submittedAt: true,
         gradedAt: true,
         isRedo: true,
+        isDiscarded: true,
+        discardReason: true,
+        exitReason: true,
         createdAt: true
       }
     });
@@ -525,12 +536,9 @@ export class DatabaseStorage {
     return submission;
   }
 
-  async updateSubmission(id: number, data: { 
-    completed?: boolean, 
-    submittedAt?: Date, 
-    score?: number, 
-    gradedAt?: Date
-  }) {
+  async updateSubmission(id: number, data: Partial<Pick<typeof submissions.$inferInsert,
+    "completed" | "submittedAt" | "score" | "gradedAt" | "exitReason" | "isDiscarded" | "discardReason"
+  >>) {
     const [updatedSubmission] = await db
       .update(submissions)
       .set(data)
@@ -754,15 +762,10 @@ export class DatabaseStorage {
     // Get all list IDs for this class
     const listIds = classData.vocabularyLists.map(list => list.id);
     
-    // Get all student IDs in this class
-    const studentIds = classData.students.map(student => student.student.id);
-    
     // For each student, get their submissions and calculate stats
     const studentPerformance = await Promise.all(
-      studentIds.map(async (studentId) => {
-        // Get student info
-        const student = classData.students.find(s => s.student.id === studentId)?.student;
-        
+      classData.students.map(async ({ student, createdAt: joinedAt }) => {
+        const studentId = student.id;
         // Skip if no lists in this class
         if (listIds.length === 0) {
           return {
@@ -770,7 +773,7 @@ export class DatabaseStorage {
             studentName: student.name,
             studentEmail: student.email,
             averageScore: null,
-            joinedAt: classData.students.find(s => s.student.id === studentId)?.createdAt,
+            joinedAt,
             submissions: [],
           };
         }

@@ -5,10 +5,10 @@ export default {
   content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"],
   theme: {
     fontFamily: {
-      sans: ["Poppins", "system-ui", "sans-serif"],
-      serif: ["Poppins", "system-ui", "sans-serif"],
+      sans: ["DM Sans", "Segoe UI", "system-ui", "sans-serif"],
+      serif: ["Georgia", "serif"],
       mono: ["JetBrains Mono", "monospace"],
-      brand: ["Climate Crisis", "sans-serif"],
+      brand: ["DM Sans", "Segoe UI", "sans-serif"],
     },
     extend: {
       borderRadius: {
@@ -17,6 +17,7 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       colors: {
+        neutral: { light: "hsl(var(--background))", dark: "hsl(var(--foreground))" },
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         card: {

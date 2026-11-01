@@ -61,7 +61,7 @@ export function StudentProgressChart({
     },
     onSuccess: (data) => {
       // Process the data returned from the API
-      let formattedData = [];
+      let formattedData: SubmissionData[] = [];
       
       if (Array.isArray(data)) {
         // Handle the case where the API returns an array directly

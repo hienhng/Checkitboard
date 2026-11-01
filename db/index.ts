@@ -1,3 +1,4 @@
+import '../server/env';
 import pkg from 'pg';
 const { Pool } = pkg;
 import { drizzle } from 'drizzle-orm/node-postgres';

@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, json, unique, type AnyPgColumn } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { relations } from "drizzle-orm";
 import { z } from "zod";
@@ -59,12 +59,13 @@ export const vocabularyLists = pgTable("vocabulary_lists", {
   dueDate: timestamp("due_date"),
   // Assignment-specific settings
   gradeVisibility: text("grade_visibility", { enum: ["immediate", "afterDue", "manual"] }).default("immediate").notNull(),
+  gradesReleased: boolean("grades_released").default(false).notNull(),
   timeLimit: integer("time_limit"), // in minutes, null means no time limit
   shuffleQuestions: boolean("shuffle_questions").default(false).notNull(),
   showCorrectAnswers: boolean("show_correct_answers").default(true).notNull(),
   allowRedos: boolean("allow_redos").default(true).notNull(),
   maxRedoAttempts: integer("max_redo_attempts").default(3).notNull(),
-  parentListId: integer("parent_list_id").references(() => vocabularyLists.id), // For tracking duplicates created during multi-class publishing
+  parentListId: integer("parent_list_id").references((): AnyPgColumn => vocabularyLists.id), // For tracking duplicates created during multi-class publishing
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -457,7 +458,7 @@ export const insertMultipleChoiceAnswerSchema = createInsertSchema(multipleChoic
 
 export const insertInputFormQuestionSchema = createInsertSchema(inputFormQuestions, {
   question: (schema) => schema.min(5, "Question must be at least 5 characters"),
-  correctAnswer: (schema) => schema.min(1, "Correct answer cannot be empty"),
+  correctAnswer: (schema) => schema.default(""),
 }).omit({ id: true, createdAt: true });
 
 export const insertInputFormAnswerSchema = createInsertSchema(inputFormAnswers, {

@@ -56,7 +56,10 @@ const classSettingsSchema = z.object({
   emailNotifications: z.boolean().default(true),
   autoApproveRequests: z.boolean().default(false),
   allowStudentSelfEnroll: z.boolean().default(true),
-  defaultDueDate: z.number().min(1).max(30).default(7), // days
+  defaultDueDate: z.number().min(1).max(30).default(7),
+  gradeVisibility: z.enum(["immediate", "afterDue", "manual"]).default("afterDue"),
+  allowRedos: z.boolean().default(false),
+  maxRedoAttempts: z.number().min(1).max(10).default(3),
 });
 
 type ClassFormData = z.infer<typeof classSchema>;
@@ -487,7 +490,7 @@ function ClassCodeDisplay({ classCode }: { classCode: string }) {
 
   return (
     <div className="flex items-center space-x-2">
-      <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">{classCode}</code>
+      <code className="px-2 py-1 bg-muted/60 rounded text-sm font-mono">{classCode}</code>
       <Button
         variant="ghost"
         size="sm"
@@ -535,13 +538,13 @@ function StudentProgressDialog({ classData, open, onOpenChange }: StudentProgres
           {isLoading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-2 text-sm text-gray-500">Loading student data...</p>
+              <p className="mt-2 text-sm text-muted-foreground">Loading student data...</p>
             </div>
           ) : studentProgress.length === 0 ? (
             <div className="text-center py-12">
               <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No students enrolled</h3>
-              <p className="text-sm text-gray-500">
+              <h3 className="text-lg font-medium text-foreground mb-2">No students enrolled</h3>
+              <p className="text-sm text-muted-foreground">
                 Students can join this class using the class code: <strong>{classData.classCode}</strong>
               </p>
             </div>
@@ -555,8 +558,8 @@ function StudentProgressDialog({ classData, open, onOpenChange }: StudentProgres
                         <Users className="h-6 w-6 text-blue-600" />
                       </div>
                       <div>
-                        <h4 className="font-medium text-gray-900">{student.studentName}</h4>
-                        <div className="flex items-center space-x-4 text-sm text-gray-500">
+                        <h4 className="font-medium text-foreground">{student.studentName}</h4>
+                        <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                           <div className="flex items-center">
                             <Mail className="h-4 w-4 mr-1" />
                             {student.studentEmail}
@@ -576,7 +579,7 @@ function StudentProgressDialog({ classData, open, onOpenChange }: StudentProgres
                           {student.averageScore !== null ? `${Math.round(student.averageScore)}%` : 'No scores yet'}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         Joined: {new Date(student.joinedAt).toLocaleDateString()}
                       </p>
                     </div>
@@ -585,7 +588,7 @@ function StudentProgressDialog({ classData, open, onOpenChange }: StudentProgres
                   {student.submissions && student.submissions.length > 0 ? (
                     <div className="mt-4 space-y-2">
                       <div className="flex items-center justify-between">
-                        <h5 className="text-sm font-medium text-gray-700">Recent Submissions:</h5>
+                        <h5 className="text-sm font-medium text-muted-foreground">Recent Submissions:</h5>
                         <Button 
                           variant="ghost" 
                           size="sm" 
@@ -603,10 +606,10 @@ function StudentProgressDialog({ classData, open, onOpenChange }: StudentProgres
                       </div>
                       <div className="space-y-2">
                         {student.submissions.slice(0, 3).map((submission: any) => (
-                          <div key={submission.id} className="flex items-center justify-between bg-gray-50 rounded p-3 hover:bg-gray-100 transition-colors">
+                          <div key={submission.id} className="flex items-center justify-between bg-muted/60 rounded p-3 hover:bg-gray-100 transition-colors">
                             <div className="flex-1">
                               <p className="text-sm font-medium">{submission.listTitle}</p>
-                              <div className="flex items-center gap-4 text-xs text-gray-500 mt-1">
+                              <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
                                 <span>Submitted: {new Date(submission.submittedAt).toLocaleDateString()}</span>
                                 {submission.gradedAt && (
                                   <span>Graded: {new Date(submission.gradedAt).toLocaleDateString()}</span>
@@ -641,9 +644,9 @@ function StudentProgressDialog({ classData, open, onOpenChange }: StudentProgres
                       </div>
                     </div>
                   ) : (
-                    <div className="mt-4 text-center py-4 bg-gray-50 rounded">
+                    <div className="mt-4 text-center py-4 bg-muted/60 rounded">
                       <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-sm text-gray-500">No submissions yet</p>
+                      <p className="text-sm text-muted-foreground">No submissions yet</p>
                       <p className="text-xs text-gray-400">Student hasn't completed any vocabulary check-ups</p>
                     </div>
                   )}
@@ -689,7 +692,7 @@ export function ClassManagement() {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-medium">Class Management</h3>
-            <p className="text-sm text-gray-500">Loading your classes...</p>
+            <p className="text-sm text-muted-foreground">Loading your classes...</p>
           </div>
         </div>
       </div>
@@ -715,7 +718,7 @@ export function ClassManagement() {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-medium">Class Management</h3>
-          <p className="text-sm text-gray-500">Manage your classes and students</p>
+          <p className="text-sm text-muted-foreground">Manage your classes and students</p>
         </div>
         <div className="flex items-center space-x-3">
           <RequestApprovalButton requestCount={pendingRequestsCount} />
@@ -727,8 +730,8 @@ export function ClassManagement() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Users className="h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No classes yet</h3>
-            <p className="text-sm text-gray-500 text-center mb-4">
+            <h3 className="text-lg font-medium text-foreground mb-2">No classes yet</h3>
+            <p className="text-sm text-muted-foreground text-center mb-4">
               Create your first class to start organizing students and assignments.
             </p>
             <CreateClassDialog 
@@ -762,11 +765,11 @@ export function ClassManagement() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-700 mb-2">Class Code:</p>
+                  <p className="text-sm font-medium text-muted-foreground mb-2">Class Code:</p>
                   <ClassCodeDisplay classCode={cls.classCode} />
                 </div>
                 
-                <div className="flex items-center justify-between text-sm text-gray-600">
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
                   <div className="flex items-center">
                     <Users className="h-4 w-4 mr-1" />
                     <span>{cls.students?.length || 0} students</span>
@@ -777,7 +780,7 @@ export function ClassManagement() {
                   </div>
                 </div>
 
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-muted-foreground">
                   Created: {new Date(cls.createdAt).toLocaleDateString()}
                 </div>
 
@@ -840,7 +843,7 @@ export function ClassManagement() {
                         {cls.active ? "Active" : "Inactive"}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-sm text-gray-500">
+                    <TableCell className="text-sm text-muted-foreground">
                       {new Date(cls.createdAt).toLocaleDateString()}
                     </TableCell>
                   </TableRow>

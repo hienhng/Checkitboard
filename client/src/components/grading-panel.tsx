@@ -32,6 +32,10 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { formatDate, createMarkup } from "@/lib/utils";
+import type { DatabaseStorage } from "../../../server/storage";
+import type { FullscreenExit } from "@shared/schema";
+
+type GradingSubmission = NonNullable<Awaited<ReturnType<DatabaseStorage["getSubmissionWithDefinitions"]>>>;
 
 interface GradingPanelProps {
   submissionId: number;
@@ -62,13 +66,13 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
   const [aiGradingLoading, setAiGradingLoading] = useState(false);
 
   // Get submission with definitions
-  const { data: submission, isLoading } = useQuery({
+  const { data: submission, isLoading } = useQuery<GradingSubmission>({
     queryKey: [`/api/submissions/${submissionId}`],
     queryFn: getQueryFn({ on401: "throw" }),
   });
   
   // Fetch fullscreen exit events for this submission
-  const { data: fullscreenExits = [], isLoading: isLoadingExits } = useQuery({
+  const { data: fullscreenExits = [], isLoading: isLoadingExits } = useQuery<FullscreenExit[]>({
     queryKey: [`/api/submissions/${submissionId}/fullscreen-exits`],
     queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!submissionId,
@@ -172,7 +176,7 @@ export function GradingPanel({ submissionId, onComplete }: GradingPanelProps) {
       const multipleChoiceAnswers = submission.multipleChoiceAnswers?.map((answer) => ({
         answerId: answer.id,
         isCorrect: answer.isCorrect ?? false,
-        addToFlashcards: answer.addedToFlashcards ?? false,
+        addToFlashcards: false,
       })) || [];
       
       setGradingData({ definitions, multipleChoiceAnswers });

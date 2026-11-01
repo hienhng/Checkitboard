@@ -18,6 +18,9 @@ import {
 } from "./ai";
 import * as ai from "./ai";
 import { generateMultipleChoiceQuestion } from "./ai-questions";
+import { ensureDefaultGridInQuestions } from "./grid-in";
+import { completeQuestionSubmission } from "./submission-assessment";
+import { AIAssessmentError } from "./ai-assessment";
 import { eq, and, desc, isNull, asc, not, inArray, sql } from "drizzle-orm";
 
 import { db, pool } from "../db";
@@ -229,7 +232,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             dueDate: list.dueDate,
             published: list.published,
             class: className,
-            words: listWithWords.words || []
+            words: listWithWords?.words || []
           };
         })
       );
@@ -504,6 +507,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // 3. Delete multiple choice questions related to words in this list
       await db.execute(sql`
+        DELETE FROM input_form_answers WHERE question_id IN (
+          SELECT q.id FROM input_form_questions q
+          JOIN vocabulary_words w ON w.id = q.word_id WHERE w.list_id = ${listId}
+        )
+      `);
+      await db.execute(sql`
+        DELETE FROM input_form_questions WHERE word_id IN (
+          SELECT id FROM vocabulary_words WHERE list_id = ${listId}
+        )
+      `);
+      await db.execute(sql`
         DELETE FROM multiple_choice_questions 
         WHERE word_id IN (
           SELECT id FROM vocabulary_words WHERE list_id = ${listId}
@@ -615,32 +629,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        // Check that all words have at least one question
-        const wordsWithoutQuestions = [];
-        
-        for (const word of listWithWords.words) {
-          // Count multiple choice questions
-          const multipleChoiceResults = await db.query.multipleChoiceQuestions.findMany({
-            where: eq(multipleChoiceQuestions.wordId, word.id)
-          });
-
-          // Count input form questions
-          const inputFormResults = await db.query.inputFormQuestions.findMany({
-            where: eq(inputFormQuestions.wordId, word.id)
-          });
-
-          const hasQuestions = multipleChoiceResults.length > 0 || inputFormResults.length > 0;
-          
-          if (!hasQuestions) {
-            wordsWithoutQuestions.push(word.word);
-          }
-        }
-
-        if (wordsWithoutQuestions.length > 0) {
-          return res.status(400).json({ 
-            message: `Cannot publish vocabulary list. The following words need questions: ${wordsWithoutQuestions.join(', ')}` 
-          });
-        }
+        await ensureDefaultGridInQuestions(listId);
       }
 
       // First update the basic list details
@@ -660,8 +649,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Remove words that are no longer in the list
           for (const word of wordsToRemove) {
-            await db.delete(vocabularyWords)
-              .where(eq(vocabularyWords.id, word.id));
+            await db.transaction(async tx => {
+              const questionIds = tx.select({ id: inputFormQuestions.id }).from(inputFormQuestions)
+                .where(eq(inputFormQuestions.wordId, word.id));
+              await tx.delete(inputFormAnswers).where(inArray(inputFormAnswers.questionId, questionIds));
+              await tx.delete(inputFormQuestions).where(eq(inputFormQuestions.wordId, word.id));
+              await tx.delete(vocabularyWords).where(eq(vocabularyWords.id, word.id));
+            });
           }
           
           // Add new words to the list
@@ -735,6 +729,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Wrap all publishing operations in a transaction for data consistency
+      if (!originalList.words.length) {
+        return res.status(400).json({ message: "Cannot publish a vocabulary list without words" });
+      }
+      await ensureDefaultGridInQuestions(listId);
       const result = await db.transaction(async (tx) => {
         // Publish to first class (update existing list)
         const firstClassId = classIds[0];
@@ -770,6 +768,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const [newWord] = await tx.insert(vocabularyWords).values({
               listId: newList.id,
               word: word.word,
+              definition: word.definition,
             }).returning();
 
             // Copy multiple choice questions
@@ -795,6 +794,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 wordId: newWord.id,
                 question: inputQ.question,
                 correctAnswer: inputQ.correctAnswer,
+                caseSensitive: inputQ.caseSensitive,
+                showAnswer: inputQ.showAnswer,
               });
             }
           }
@@ -848,6 +849,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get question counts for each word
+      await ensureDefaultGridInQuestions(listId);
       const questionStatuses = await Promise.all(
         list.words.map(async (word) => {
           // Count multiple choice questions
@@ -923,6 +925,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Fetch all questions for all words in the list
+      await ensureDefaultGridInQuestions(listId);
       const allQuestions = [];
       
       for (const word of list.words) {
@@ -934,8 +937,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Add MC questions to the array with type indicator
         for (const mcq of mcQuestions) {
+          const { correctAnswer, ...learnerQuestion } = mcq;
           allQuestions.push({
-            ...mcq,
+            ...(req.user.role === "educator" ? mcq : learnerQuestion),
             type: 'multiple_choice',
             wordId: word.id,
             word: word.word
@@ -950,8 +954,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Add input questions to the array with type indicator
         for (const inputQ of inputQuestions) {
+          const { correctAnswer, ...learnerQuestion } = inputQ;
           allQuestions.push({
-            ...inputQ,
+            ...(req.user.role === "educator" ? inputQ : learnerQuestion),
             type: 'input',
             wordId: word.id,
             word: word.word
@@ -960,7 +965,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Fetch saved answers if submissionId is provided
-      let savedAnswers: Record<number, string> = {};
+      let savedAnswers: Record<string, string> = {};
       const submissionId = req.query.submissionId ? parseInt(req.query.submissionId as string) : null;
       
       // Shuffle if required - use submission ID as seed for consistent ordering
@@ -979,6 +984,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       if (submissionId && !isNaN(submissionId)) {
+        const savedSubmission = await storage.getSubmission(submissionId);
+        if (!savedSubmission || savedSubmission.listId !== listId ||
+            (req.user.role === "learner" && savedSubmission.studentId !== req.user.id)) {
+          return res.status(403).json({ message: "You don't have permission to view these saved answers" });
+        }
         // Get saved MC answers
         const mcAnswers = await db.query.multipleChoiceAnswers.findMany({
           where: eq(multipleChoiceAnswers.submissionId, submissionId)
@@ -991,11 +1001,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Map answers by question ID
         mcAnswers.forEach(answer => {
-          savedAnswers[answer.questionId] = answer.selectedAnswer;
+          savedAnswers[`multiple_choice:${answer.questionId}`] = answer.selectedAnswer;
         });
 
         inputAnswers.forEach(answer => {
-          savedAnswers[answer.questionId] = answer.studentAnswer;
+          savedAnswers[`input:${answer.questionId}`] = answer.studentAnswer;
         });
       }
 
@@ -1415,10 +1425,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.user.role === "educator" && word.list.educatorId === req.user.id) {
         hasAccess = true;
       } else if (req.user.role === "learner" && word.list.class) {
-        const membership = await db.query.classMembers.findFirst({
+        const membership = await db.query.studentClass.findFirst({
           where: and(
-            eq(classMembers.classId, word.list.class.id),
-            eq(classMembers.studentId, req.user.id)
+            eq(studentClass.classId, word.list.class.id),
+            eq(studentClass.studentId, req.user.id), eq(studentClass.status, "approved")
           )
         });
         hasAccess = !!membership;
@@ -1821,7 +1831,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ...submissionWithoutGrades,
           gradesHidden: true,
           gradeVisibilityReason: gradeVisibility === "afterDue" 
-            ? `Grades will be available after ${new Date(list?.dueDate).toLocaleDateString()}`
+            ? `Grades will be available after ${new Date(list!.dueDate!).toLocaleDateString()}`
             : "Grades will be released manually by your instructor"
         });
       }
@@ -2214,48 +2224,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "This submission is already completed" });
       }
 
-      // Calculate score based on MC and input answers
-      const list = await storage.getVocabularyListWithWords(submission.listId);
-      
-      // Get all questions for this list
-      let totalQuestions = 0;
-      let correctAnswers = 0;
-
-      // Get all MC answers for this submission
-      const mcAnswers = await db.query.multipleChoiceAnswers.findMany({
-        where: eq(multipleChoiceAnswers.submissionId, submissionId)
-      });
-
-      // Get all input answers for this submission
-      const inputAnswers = await db.query.inputFormAnswers.findMany({
-        where: eq(inputFormAnswers.submissionId, submissionId)
-      });
-
-      // Count correct MC answers
-      for (const answer of mcAnswers) {
-        totalQuestions++;
-        if (answer.isCorrect) {
-          correctAnswers++;
-        }
-      }
-
-      // Count correct input answers
-      for (const answer of inputAnswers) {
-        totalQuestions++;
-        if (answer.isCorrect) {
-          correctAnswers++;
-        }
-      }
-
-      // Calculate percentage score
-      const score = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
-
-      const updatedSubmission = await storage.updateSubmission(submissionId, {
-        completed: true,
-        submittedAt: new Date(),
-        gradedAt: new Date(), // Auto-graded
-        score: score,
-      });
+      await ensureDefaultGridInQuestions(submission.listId);
+      const updatedSubmission = await completeQuestionSubmission(submissionId, req.user.id);
       
       // Get full information about the list to use in notification
       const fullList = await storage.getVocabularyList(submission.listId);
@@ -2267,7 +2237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           fullList.educatorId,
           'new_submission',
           'New Submission Ready to Grade',
-          `${student.name} has completed the vocabulary check-up for "${fullList.title}".`,
+          `${student?.name || "Student"} has completed the vocabulary check-up for "${fullList.title}".`,
           'submission',
           submissionId
         );
@@ -2275,6 +2245,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(updatedSubmission);
     } catch (error) {
+      if (error instanceof AIAssessmentError) {
+        return res.status(503).json({ message: error.message });
+      }
       console.error("Error completing submission:", error);
       res.status(500).json({ message: "Error completing submission" });
     }
@@ -2347,7 +2320,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           list.educatorId,
           'test_exit',
           'Student Exited Test',
-          `${student.name} has exited the test "${list.title}". Reason: ${validatedPayload.exitReason}`,
+          `${student?.name || "Student"} has exited the test "${list.title}". Reason: ${validatedPayload.exitReason}`,
           'submission',
           submissionId
         );
@@ -2500,7 +2473,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           fullList.educatorId,
           'discard_test',
           'Discarded Submission',
-          `${student.name} has discarded their vocabulary check-up for "${fullList.title}". Reason: ${discardReason}`,
+          `${student?.name || "Student"} has discarded their vocabulary check-up for "${fullList.title}". Reason: ${discardReason}`,
           'submission',
           submissionId
         );
@@ -3160,7 +3133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         studentId,
         'class_removal',
         'Removed from Class',
-        `You have been removed from the class "${fullClassInfo.name}".`,
+        `You have been removed from the class "${fullClassInfo?.name || "class"}".`,
         'class',
         classId
       );
@@ -3497,10 +3470,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const schema = z.object({
-        words: z.array(z.string()).nonempty("At least one word is required"),
+        words: z.array(z.string().trim().min(1)).nonempty("At least one word is required"),
         topic: z.string().optional(),
         gradeLevel: z.string().optional(),
-        paragraphCount: z.number().min(1).max(5).optional(),
+        paragraphCount: z.number().int().min(1).max(5).optional(),
         style: z.string().optional()
       });
 
@@ -3521,7 +3494,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ errors: error.errors });
       }
       console.error("Error generating passage:", error);
-      res.status(500).json({ message: "Error generating passage" });
+      res.status(503).json({ message: error instanceof Error ? error.message : "Unable to generate a passage. Please try again shortly." });
     }
   });
 
@@ -3820,75 +3793,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const submissionId = parseInt(req.params.submissionId);
-      const { questionId, studentAnswer } = req.body;
-
-      if (isNaN(submissionId) || !questionId || studentAnswer === undefined) {
-        return res.status(400).json({ message: "Valid submission ID, question ID, and answer are required" });
+      const answerSchema = z.object({ questionId: z.number().int().positive(), studentAnswer: z.string().max(10000) });
+      const parsed = answerSchema.safeParse(req.body);
+      if (isNaN(submissionId) || !parsed.success) {
+        return res.status(400).json({ message: "A valid submission ID, question ID, and text answer are required" });
       }
-
-      // Verify the submission belongs to the current user
-      const submission = await db.query.submissions.findFirst({
-        where: eq(submissions.id, submissionId)
+      const { questionId, studentAnswer } = parsed.data;
+      const result = await db.transaction(async tx => {
+        const [submission] = await tx.select().from(submissions)
+          .where(eq(submissions.id, submissionId)).for("update");
+        if (!submission) return { status: 404, message: "Submission not found" };
+        if (submission.studentId !== req.user.id) return { status: 403, message: "You don't have permission to submit these answers" };
+        if (submission.completed) return { status: 400, message: "Cannot submit answers for a completed submission" };
+        const [question] = await tx.select({ listId: vocabularyWords.listId }).from(inputFormQuestions)
+          .innerJoin(vocabularyWords, eq(inputFormQuestions.wordId, vocabularyWords.id))
+          .where(eq(inputFormQuestions.id, questionId));
+        if (!question || question.listId !== submission.listId) return { status: 400, message: "Question does not belong to this submission" };
+        const [answer] = await tx.insert(inputFormAnswers).values({
+          submissionId, questionId, studentAnswer, isCorrect: false,
+        }).onConflictDoUpdate({
+          target: [inputFormAnswers.submissionId, inputFormAnswers.questionId],
+          set: { studentAnswer, isCorrect: false },
+        }).returning();
+        return { answer };
       });
-
-      if (!submission) {
-        return res.status(404).json({ message: "Submission not found" });
-      }
-
-      if (submission.studentId !== req.user.id) {
-        return res.status(403).json({ message: "You don't have permission to submit answers for this submission" });
-      }
-
-      if (submission.completed) {
-        return res.status(400).json({ message: "Cannot submit answers for a completed submission" });
-      }
-
-      // Get the question to validate and check correctness
-      const question = await db.query.inputFormQuestions.findFirst({
-        where: eq(inputFormQuestions.id, questionId)
-      });
-
-      if (!question) {
-        return res.status(404).json({ message: "Question not found" });
-      }
-
-      // Check correctness based on case sensitivity
-      let isCorrect = false;
-      if (question.caseSensitive) {
-        isCorrect = question.correctAnswer.trim() === studentAnswer.trim();
-      } else {
-        isCorrect = question.correctAnswer.trim().toLowerCase() === studentAnswer.trim().toLowerCase();
-      }
-
-      // Check if an answer already exists for this question and submission
-      const existingAnswer = await db.query.inputFormAnswers.findFirst({
-        where: and(
-          eq(inputFormAnswers.submissionId, submissionId),
-          eq(inputFormAnswers.questionId, questionId)
-        )
-      });
-
-      let answerRecord;
-      if (existingAnswer) {
-        // Update existing answer
-        [answerRecord] = await db.update(inputFormAnswers)
-          .set({
-            studentAnswer,
-            isCorrect
-          })
-          .where(eq(inputFormAnswers.id, existingAnswer.id))
-          .returning();
-      } else {
-        // Create new answer
-        [answerRecord] = await db.insert(inputFormAnswers)
-          .values({
-            submissionId,
-            questionId,
-            studentAnswer,
-            isCorrect
-          })
-          .returning();
-      }
+      if (!result.answer) return res.status(result.status!).json({ message: result.message });
+      // Answers are assessed on submission, never during autosave.
+      const answerRecord = { ...result.answer, isCorrect: null };
 
       res.status(201).json(answerRecord);
     } catch (error) {
@@ -4048,7 +3979,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ 
         success: true,
-        message: "Email verified successfully! Welcome to Lexible!",
+        message: "Email verified successfully! Welcome to Checkit!",
         user: {
           id: user.id,
           email: user.email,
@@ -4254,7 +4185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create email content
       const emailContent = `
-        <h2>New Support Request from Lexible</h2>
+        <h2>New Support Request from Checkit</h2>
         <p><strong>From:</strong> ${req.user.name} (${req.user.email})</p>
         <p><strong>Role:</strong> ${req.user.role}</p>
         <p><strong>User ID:</strong> ${req.user.id}</p>
@@ -4264,7 +4195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ${validatedData.message.replace(/\n/g, '<br>')}
         </div>
         <hr>
-        <p><small>This message was sent from the Lexible platform on ${new Date().toLocaleString()}.</small></p>
+        <p><small>This message was sent from the Checkit platform on ${new Date().toLocaleString()}.</small></p>
       `;
 
       // Use the same email transporter configuration from other email functions
@@ -4274,7 +4205,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         throw new Error('Email configuration is missing. Please check EMAIL_USER and EMAIL_APP_PASSWORD environment variables.');
       }
 
-      const transporter = nodemailer.createTransporter({
+      const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
           user: process.env.EMAIL_USER,
@@ -4285,7 +4216,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const mailOptions = {
         from: process.env.EMAIL_USER,
         to: 'giahienhn@gmail.com',
-        subject: `Lexible Support: ${validatedData.subject}`,
+        subject: `Checkit Support: ${validatedData.subject}`,
         html: emailContent,
         replyTo: req.user.email,
       };
@@ -4395,7 +4326,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const nodemailer = await import("nodemailer");
       
-      const transporter = nodemailer.createTransporter({
+      const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
           user: process.env.EMAIL_USER,
@@ -4406,14 +4337,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await transporter.sendMail({
         from: process.env.EMAIL_USER,
         to: req.body.email || 'checkitdev1@gmail.com',
-        subject: 'Lexible Email Test',
+        subject: 'Checkit Email Test',
         html: '<h1>Email Test Successful!</h1><p>Your Gmail configuration is working properly.</p>',
       });
 
       res.json({ message: "Test email sent successfully!" });
     } catch (error) {
       console.error("Email test failed:", error);
-      res.status(500).json({ message: "Email test failed", error: error.message });
+      res.status(500).json({ message: "Email test failed", error: error instanceof Error ? error.message : String(error) });
     }
   });
 
@@ -4537,7 +4468,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await storage.createFullscreenExit({
         submissionId: parseInt(submissionId),
-        exitedAt: new Date(exitedAt)
+        timestamp: new Date(exitedAt).toISOString()
       });
 
       res.json({ message: "Fullscreen exit logged successfully" });
@@ -4549,8 +4480,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // #region AI Service Testing Routes
 
-  // Test Groq AI service endpoint
-  app.post("/api/test-groq", async (req, res) => {
+  // Test Gemini AI service endpoint
+  app.post("/api/test-gemini", async (req, res) => {
     try {
       if (!req.isAuthenticated()) {
         return res.status(401).json({ message: "Not authenticated" });
@@ -4571,7 +4502,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!isAIConfigured()) {
         return res.status(503).json({ 
-          message: "No AI service is configured. Please configure GROQ_API_KEY, OPENAI_API_KEY, or HUGGINGFACE_API_KEY." 
+          message: "No AI service is configured. Please configure GEMINI_API_KEY, OPENAI_API_KEY, or HUGGINGFACE_API_KEY."
         });
       }
 
@@ -4625,14 +4556,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { isAIConfigured, getPrimaryAIProvider } = await import("./ai");
-      const { isGroqConfigured } = await import("./groq");
+      const { isGeminiConfigured } = await import("./gemini");
       const { isHuggingFaceConfigured } = await import("./huggingface");
 
       res.json({
         isConfigured: isAIConfigured(),
         primaryProvider: getPrimaryAIProvider(),
         providers: {
-          groq: isGroqConfigured(),
+          gemini: isGeminiConfigured(),
           openai: process.env.OPENAI_API_KEY ? true : false,
           huggingface: isHuggingFaceConfigured()
         }
@@ -5075,11 +5006,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             sql`LOWER(${users.name}) LIKE ${`%${query}%`}`
           ),
           with: {
-            studentClasses: {
+            enrolledClasses: {
+              where: eq(studentClass.status, "approved"),
               with: {
-                class: {
-                  where: eq(classes.educatorId, req.user.id)
-                }
+                class: true
               }
             }
           },
@@ -5087,8 +5017,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         studentResults.forEach(student => {
-          if (student.studentClasses.length > 0) {
-            const classNames = student.studentClasses.map(sc => sc.class?.name).filter(Boolean).join(', ');
+          const matchingClasses = student.enrolledClasses.filter(sc => sc.class.educatorId === req.user.id);
+          if (matchingClasses.length > 0) {
+            const classNames = matchingClasses.map(sc => sc.class.name).join(', ');
             results.push({
               id: student.id,
               title: student.name,

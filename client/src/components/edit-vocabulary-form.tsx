@@ -217,12 +217,12 @@ export function EditVocabularyForm({ vocabularyList, classes, onSuccess, onCance
                 rows={8}
                 className="mb-2"
               />
-              <p className="text-xs text-gray-500 mb-2">
+              <p className="text-xs text-muted-foreground mb-2">
                 Click on words in the preview below to select vocabulary words
               </p>
               {passage && (
                 <div 
-                  className="border rounded-md p-3 bg-gray-50 cursor-text text-sm leading-relaxed"
+                  className="border rounded-md p-3 bg-muted/60 cursor-text text-sm leading-relaxed"
                   onMouseUp={handlePassageSelection}
                 >
                   {createClickablePassage(passage)}
@@ -233,7 +233,7 @@ export function EditVocabularyForm({ vocabularyList, classes, onSuccess, onCance
 
           {/* Selected Vocabulary Words */}
           <div>
-            <Label className="block text-sm font-medium text-gray-700">
+            <Label className="block text-sm font-medium text-muted-foreground">
               Selected Vocabulary Words ({selectedWords.length})
             </Label>
             <div className="mt-1 flex flex-wrap gap-2">
@@ -251,7 +251,7 @@ export function EditVocabularyForm({ vocabularyList, classes, onSuccess, onCance
                 </Badge>
               ))}
               {selectedWords.length === 0 && (
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   No words selected yet. Click on words in the passage above.
                 </p>
               )}

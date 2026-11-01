@@ -355,11 +355,11 @@ export default function StickyNotesBoard() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6 max-w-7xl">
+      <div className="workspace-page ">
         <div className="flex items-center justify-center h-96">
           <div className="text-center">
             <StickyNoteIcon className="h-12 w-12 mx-auto mb-4 text-gray-400 animate-pulse" />
-            <p className="text-gray-600 dark:text-gray-400">Loading your sticky notes...</p>
+            <p className="text-muted-foreground dark:text-gray-400">Loading your sticky notes...</p>
           </div>
         </div>
       </div>
@@ -367,38 +367,38 @@ export default function StickyNotesBoard() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-3rem)] w-full flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-slate-50 via-blue-50/70 to-indigo-100/80 shadow-sm dark:border-slate-700/80 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950/50">
+    <div className="flex min-h-[calc(100vh-3rem)] w-full flex-col overflow-hidden rounded-3xl border border-slate-200/80 shadow-sm dark:border-slate-700/80 bg-muted/50">
       {/* Header */}
       <div className="shrink-0 border-b border-slate-200/80 bg-white/75 p-5 backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-950/65 lg:p-6">
         <div className="mx-auto max-w-7xl">
           <div className="mb-5 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-orange-500/20">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl text-white shadow-lg shadow-orange-500/20 bg-primary">
                 <StickyNoteIcon className="h-6 w-6" />
               </div>
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">My Canvas</h1>
+                  <h1 className="text-2xl font-bold tracking-tight text-foreground dark:text-slate-50">My Canvas</h1>
                   <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-300">
                     Study space
                   </span>
                 </div>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                <p className="mt-1 text-sm text-muted-foreground dark:text-slate-400">
                   Arrange your vocabulary notes and build connections.
                 </p>
               </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <div className="rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-xs dark:border-slate-700 dark:bg-slate-900/70">
-                <span className="font-semibold text-slate-900 dark:text-slate-100">{totalCount}</span>
-                <span className="ml-1 text-slate-500 dark:text-slate-400">notes</span>
+              <div className="rounded-xl border border-border bg-card px-3 py-2 text-xs dark:border-slate-700 dark:bg-slate-900/70">
+                <span className="font-semibold text-foreground dark:text-slate-100">{totalCount}</span>
+                <span className="ml-1 text-muted-foreground dark:text-slate-400">notes</span>
               </div>
               <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-3 py-2 text-xs dark:border-emerald-900/60 dark:bg-emerald-950/30">
                 <span className="font-semibold text-emerald-700 dark:text-emerald-300">{learnedCount}</span>
                 <span className="ml-1 text-emerald-700/70 dark:text-emerald-300/70">learned</span>
               </div>
-              <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white/80 p-1 dark:border-slate-700 dark:bg-slate-900/70">
+              <div className="flex items-center gap-1 rounded-xl border border-border bg-card p-1 dark:border-slate-700 dark:bg-slate-900/70">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -409,7 +409,7 @@ export default function StickyNotesBoard() {
                 >
                   <ZoomOut className="h-4 w-4" />
                 </Button>
-                <span className="w-12 text-center text-xs font-semibold text-slate-600 dark:text-slate-300">
+                <span className="w-12 text-center text-xs font-semibold text-muted-foreground dark:text-slate-300">
                   {Math.round(zoom * 100)}%
                 </span>
                 <Button
@@ -438,12 +438,12 @@ export default function StickyNotesBoard() {
                 placeholder="Search words or definitions..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-10 border-slate-200 bg-white pl-10 shadow-none dark:border-slate-700 dark:bg-slate-950"
+                className="h-10 border-border bg-card pl-10 shadow-none dark:border-slate-700 dark:bg-slate-950"
               />
             </div>
             
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="h-10 w-full border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950 md:w-44">
+              <SelectTrigger className="h-10 w-full border-border bg-card dark:border-slate-700 dark:bg-slate-950 md:w-44">
                 <SelectValue placeholder="Filter by category" />
               </SelectTrigger>
               <SelectContent>
@@ -456,7 +456,7 @@ export default function StickyNotesBoard() {
             </Select>
 
             <Select value={showLearnedFilter} onValueChange={(value: "all" | "learned" | "learning") => setShowLearnedFilter(value)}>
-              <SelectTrigger className="h-10 w-full border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950 md:w-36">
+              <SelectTrigger className="h-10 w-full border-border bg-card dark:border-slate-700 dark:bg-slate-950 md:w-36">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
@@ -466,7 +466,7 @@ export default function StickyNotesBoard() {
               </SelectContent>
             </Select>
 
-            <Button variant="outline" className="h-10 border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950" onClick={handleAutoArrange}>
+            <Button variant="outline" className="h-10 border-border bg-card dark:border-slate-700 dark:bg-slate-950" onClick={handleAutoArrange}>
               <LayoutGrid className="h-4 w-4 mr-2" />
               Auto Arrange
             </Button>
@@ -594,7 +594,7 @@ export default function StickyNotesBoard() {
       <div className="min-h-0 flex-1 overflow-auto overscroll-contain">
         <div 
           ref={boardRef}
-          className="relative min-h-full bg-gradient-to-br from-amber-50/60 via-yellow-50/30 to-orange-50/50 dark:from-slate-900/80 dark:via-slate-800/70 dark:to-indigo-950/40"
+          className="relative min-h-full bg-muted/50"
           style={{
             minWidth: zoom > 1 ? `${zoom * 100}%` : '100%',
             minHeight: `${Math.max(720, Math.ceil(filteredNotes.length / 4) * 220 + 300)}px`,
@@ -614,8 +614,8 @@ export default function StickyNotesBoard() {
                 <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 text-amber-600 dark:bg-amber-400/15 dark:text-amber-300">
                   <StickyNoteIcon className="h-8 w-8" />
                 </div>
-                <h3 className="mb-2 text-xl font-semibold text-slate-800 dark:text-slate-100">Your canvas is ready</h3>
-                <p className="mb-6 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                <h3 className="mb-2 text-xl font-semibold text-foreground dark:text-slate-100">Your canvas is ready</h3>
+                <p className="mb-6 text-sm leading-6 text-muted-foreground dark:text-slate-400">
                   {stickyNotes.length === 0 
                     ? "Add a vocabulary note to start building your personal study space."
                     : "Try adjusting your search or filters to find your notes."
@@ -813,7 +813,7 @@ export default function StickyNotesBoard() {
                     onPointerDown={(e) => handlePointerDown(e, note.id, 'resize', 'se')}
                     style={{ cursor: 'nwse-resize' }}
                   >
-                    <Maximize2 className="h-3 w-3 text-gray-600 opacity-50" />
+                    <Maximize2 className="h-3 w-3 text-muted-foreground opacity-50" />
                   </div>
                   <div
                     className="absolute bottom-0 left-0 h-5 w-5 cursor-nesw-resize"

@@ -1,4 +1,4 @@
-import { db } from "./index";
+import { db, pool } from "./index";
 import * as schema from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { scrypt, randomBytes } from "crypto";
@@ -30,6 +30,7 @@ async function seed() {
       password: educatorPassword,
       name: "Jane Doe",
       role: "educator",
+      emailVerified: true,
     }).returning();
     console.log("Created educator:", educator.email);
 
@@ -39,6 +40,7 @@ async function seed() {
       password: learnerPassword,
       name: "Tyler Smith",
       role: "learner",
+      emailVerified: true,
     }).returning();
     console.log("Created learner:", learner.email);
 
@@ -196,6 +198,9 @@ async function seed() {
     console.log("Database seed completed successfully");
   } catch (error) {
     console.error("Error seeding database:", error);
+    process.exitCode = 1;
+  } finally {
+    await pool.end();
   }
 }
 

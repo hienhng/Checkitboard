@@ -14,6 +14,7 @@ import { TestMode } from "@/components/flashcard-modes/test-mode";
 import { MatchMode } from "@/components/flashcard-modes/match-mode";
 import { SpellMode } from "@/components/flashcard-modes/spell-mode";
 import { StudyStats } from "@/components/study-stats";
+import { PageHeader, StatCard } from "@/components/workspace-ui";
 import { 
   Brain, 
   Target, 
@@ -52,11 +53,11 @@ const ModeDescriptionCard = ({
             <h3 className="font-medium">
               {currentMode?.name}
             </h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               {currentMode?.description}
             </p>
           </div>
-          <div className="ml-auto flex items-center space-x-4 text-sm text-gray-500">
+          <div className="ml-auto flex items-center space-x-4 text-sm text-muted-foreground">
             <div className="flex items-center space-x-1">
               <Clock className="h-4 w-4" />
               <span>~{currentMode?.estimatedTime}min</span>
@@ -100,13 +101,13 @@ export default function FlashcardsPage() {
   });
 
   // Fetch learner's flashcards
-  const { data: flashcards, isLoading: flashcardsLoading } = useQuery({
+  const { data: flashcards, isLoading: flashcardsLoading } = useQuery<Flashcard[]>({
     queryKey: ["/api/learner/flashcards"],
     queryFn: getQueryFn({ on401: "throw" }),
   });
 
   // Fetch study progress/stats
-  const { data: studyStats, isLoading: statsLoading } = useQuery({
+  const { data: studyStats, isLoading: statsLoading } = useQuery<React.ComponentProps<typeof StudyStats>["stats"]>({
     queryKey: ["/api/learner/study-stats"],
     queryFn: getQueryFn({ on401: "throw" }),
   });
@@ -175,7 +176,7 @@ export default function FlashcardsPage() {
           <CardContent>
             <Trophy className="h-16 w-16 mx-auto text-yellow-500 mb-4" />
             <h3 className="text-xl font-semibold mb-2">All caught up!</h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-muted-foreground mb-4">
               You don't have any flashcards to study right now. Get words wrong on vocabulary tests to add them here.
             </p>
             <Button onClick={() => window.location.href = "/learner/dashboard"}>
@@ -228,51 +229,27 @@ export default function FlashcardsPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col min-h-full bg-background">
       <Navbar />
       
       <div className="flex-1">
-        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="workspace-page">
           {/* Header with Stats */}
-          <div className="px-4 py-5 sm:px-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                  Study Center
-                </h1>
-                <p className="text-gray-600">
-                  Master your vocabulary with multiple study modes
-                </p>
-              </div>
-              
-              {/* Quick Stats */}
-              <div className="flex space-x-6">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{totalCards}</div>
-                  <div className="text-sm text-gray-500">Total Cards</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">{masteredCount}</div>
-                  <div className="text-sm text-gray-500">Mastered</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-orange-600">{learningCards.length}</div>
-                  <div className="text-sm text-gray-500">Learning</div>
-                </div>
-              </div>
-            </div>
+          <div className="space-y-6">
+            <PageHeader eyebrow="A little practice, a lasting connection" title="Make these words yours." description="Flip, match, spell, or test yourself. Find the rhythm that helps you remember." />
+            <div className="grid grid-cols-3 gap-3"><StatCard label="Your cards" value={totalCards} icon={BookOpen} /><StatCard label="Mastered" value={masteredCount} icon={CheckCircle} tone="green" /><StatCard label="Still learning" value={learningCards.length} icon={Brain} tone="amber" /></div>
 
             {/* Overall Progress */}
-            <div className="bg-white rounded-lg p-4 shadow-sm border">
+            <div className="bg-card rounded-lg p-4 shadow-sm border">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-700">Overall Progress</span>
-                <span className="text-sm text-gray-500">{Math.round(overallProgress)}%</span>
+                <span className="text-sm font-medium text-muted-foreground">Overall Progress</span>
+                <span className="text-sm text-muted-foreground">{Math.round(overallProgress)}%</span>
               </div>
               <Progress value={overallProgress} className="h-2" />
             </div>
           </div>
           
-          <div className="px-4 sm:px-6 lg:px-8">
+          <div className="min-w-0">
             <Tabs value={activeMode} onValueChange={(value) => setActiveMode(value as StudyMode)}>
               {/* Mode Selection */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">

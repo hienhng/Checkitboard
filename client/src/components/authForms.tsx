@@ -1,282 +1,48 @@
-import { useState } from "react";
+import { forwardRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { ArrowRight, Eye, EyeOff, GraduationCap, BookOpen, Loader2 } from "lucide-react";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input, type InputProps } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/hooks/use-auth";
 import { insertUserSchema, loginUserSchema } from "@shared/schema";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Mail, Lock, User, GraduationCap, BookOpen } from "lucide-react";
-import { Link } from "wouter";
+import { cn } from "@/lib/utils";
+
+const PasswordInput = forwardRef<HTMLInputElement, InputProps>((props, ref) => {
+  const [visible, setVisible] = useState(false);
+  return <div className="relative"><Input {...props} ref={ref} type={visible ? "text" : "password"} className="pr-11" /><button type="button" onClick={() => setVisible(value => !value)} aria-label={visible ? "Hide password" : "Show password"} aria-pressed={visible} className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-lg text-muted-foreground hover:text-foreground">{visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div>;
+});
+PasswordInput.displayName = "PasswordInput";
+const errorMessage = (error: Error | null) => error?.message.replace(/^\d+:\s*/, "").replace(/^\{"message":"(.*)"\}$/, "$1");
 
 export function LoginForm() {
   const { loginMutation } = useAuth();
-  
-  const form = useForm<z.infer<typeof loginUserSchema>>({
-    resolver: zodResolver(loginUserSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-  });
-
-  async function onSubmit(values: z.infer<typeof loginUserSchema>) {
-    await loginMutation.mutateAsync(values);
-  }
-
-  return (
-    <div className="space-y-6">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-slate-700 font-medium">Email Address</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
-                    <Input 
-                      type="email" 
-                      placeholder="Enter your email" 
-                      className="pl-11 h-12 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200"
-                      {...field} 
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-slate-700 font-medium">Password</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
-                    <Input 
-                      type="password" 
-                      placeholder="Enter your password" 
-                      className="pl-11 h-12 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200"
-                      {...field} 
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <Button
-            type="submit"
-            className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300 mt-6"
-            disabled={loginMutation.isPending}
-          >
-            {loginMutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Signing in...
-              </>
-            ) : (
-              "Sign In"
-            )}
-          </Button>
-        </form>
-      </Form>
-      
-      <div className="text-center">
-        <Button variant="link" asChild className="text-slate-600 hover:text-blue-600 transition-colors duration-200">
-          <Link to="/forgot-password">
-            Forgot your password?
-          </Link>
-        </Button>
-      </div>
-    </div>
-  );
+  const form = useForm<z.infer<typeof loginUserSchema>>({ resolver: zodResolver(loginUserSchema), defaultValues: { email: "", password: "" } });
+  return <Form {...form}><form onSubmit={form.handleSubmit(values => loginMutation.mutate(values))} className="space-y-5">
+    {loginMutation.isError && <Alert variant="destructive" role="alert"><AlertDescription>{errorMessage(loginMutation.error)}</AlertDescription></Alert>}
+    <FormField control={form.control} name="email" render={({ field }) => <FormItem><FormLabel>Email address</FormLabel><FormControl><Input {...field} type="email" autoComplete="email" placeholder="you@example.com" disabled={loginMutation.isPending} /></FormControl><FormMessage /></FormItem>} />
+    <FormField control={form.control} name="password" render={({ field }) => <FormItem><div className="flex items-center justify-between gap-3"><FormLabel>Password</FormLabel><Link to="/forgot-password" className="text-xs font-medium text-primary hover:underline">Forgot password?</Link></div><FormControl><PasswordInput {...field} autoComplete="current-password" placeholder="Enter your password" disabled={loginMutation.isPending} /></FormControl><FormMessage /></FormItem>} />
+    <Button type="submit" size="lg" className="w-full" disabled={loginMutation.isPending}>{loginMutation.isPending ? <><Loader2 className="animate-spin" />Signing in…</> : <>Sign in to your workspace<ArrowRight className="ml-auto" /></>}</Button>
+    <p className="pt-1 text-center text-[11px] leading-5 text-muted-foreground">Your words, your progress, your pace.</p>
+  </form></Form>;
 }
 
+const registerSchema = insertUserSchema.extend({ confirmPassword: z.string().min(1, "Confirm your password") }).refine(data => data.password === data.confirmPassword, { message: "Passwords don't match", path: ["confirmPassword"] });
 export function RegisterForm() {
   const { registerMutation } = useAuth();
-  
-  const registerSchema = insertUserSchema.extend({
-    confirmPassword: z.string().min(1, "Confirm your password"),
-  }).refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
-
-  const form = useForm<z.infer<typeof registerSchema>>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-      confirmPassword: "",
-      name: "",
-      role: "learner",
-    },
-  });
-
-  async function onSubmit(values: z.infer<typeof registerSchema>) {
-    const { confirmPassword, ...userData } = values;
-    await registerMutation.mutateAsync(userData);
-  }
-
-  return (
-    <div className="space-y-6">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-slate-700 font-medium">Full Name</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
-                    <Input 
-                      placeholder="Enter your full name" 
-                      className="pl-11 h-12 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200"
-                      {...field} 
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-slate-700 font-medium">Email Address</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
-                    <Input 
-                      type="email" 
-                      placeholder="Enter your email" 
-                      className="pl-11 h-12 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200"
-                      {...field} 
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="role"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-slate-700 font-medium">I am a</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <div className="relative">
-                      <GraduationCap className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400 z-10" />
-                      <SelectTrigger className="pl-11 h-12 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200">
-                        <SelectValue placeholder="Select your role" />
-                      </SelectTrigger>
-                    </div>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="learner">
-                      <div className="flex items-center">
-                        <BookOpen className="h-4 w-4 mr-2" />
-                        Student
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="educator">
-                      <div className="flex items-center">
-                        <GraduationCap className="h-4 w-4 mr-2" />
-                        Teacher
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-slate-700 font-medium">Password</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
-                    <Input 
-                      type="password" 
-                      placeholder="Create a strong password" 
-                      className="pl-11 h-12 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200"
-                      {...field} 
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="confirmPassword"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-slate-700 font-medium">Confirm Password</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
-                    <Input 
-                      type="password" 
-                      placeholder="Confirm your password" 
-                      className="pl-11 h-12 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200"
-                      {...field} 
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <Button
-            type="submit"
-            className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300 mt-6"
-            disabled={registerMutation.isPending}
-          >
-            {registerMutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Creating account...
-              </>
-            ) : (
-              "Create Account"
-            )}
-          </Button>
-        </form>
-      </Form>
-    </div>
-  );
+  const form = useForm<z.infer<typeof registerSchema>>({ resolver: zodResolver(registerSchema), defaultValues: { email: "", password: "", confirmPassword: "", name: "", role: "learner" } });
+  return <Form {...form}><form onSubmit={form.handleSubmit(({ confirmPassword, ...values }) => registerMutation.mutate(values))} className="space-y-4">
+    {registerMutation.isError && <Alert variant="destructive" role="alert"><AlertDescription>{errorMessage(registerMutation.error)}</AlertDescription></Alert>}
+    <FormField control={form.control} name="role" render={({ field }) => <FormItem><FormLabel>I’m here to</FormLabel><FormControl><RadioGroup value={field.value} onValueChange={field.onChange} className="grid grid-cols-2 gap-3" disabled={registerMutation.isPending}>{[{ value: "learner", title: "Learn", icon: BookOpen }, { value: "educator", title: "Teach", icon: GraduationCap }].map(({ value, title, icon: Icon }) => <label key={value} className={cn("flex cursor-pointer items-center gap-2.5 rounded-lg border p-3 text-sm transition-colors", field.value === value ? "border-primary bg-accent text-accent-foreground" : "bg-card text-muted-foreground hover:border-input")}><RadioGroupItem value={value} aria-label={title} /><Icon className="h-4 w-4" /><span className="font-medium">{title}</span></label>)}</RadioGroup></FormControl><FormMessage /></FormItem>} />
+    <FormField control={form.control} name="name" render={({ field }) => <FormItem><FormLabel>Full name</FormLabel><FormControl><Input {...field} autoComplete="name" placeholder="Your name" disabled={registerMutation.isPending} /></FormControl><FormMessage /></FormItem>} />
+    <FormField control={form.control} name="email" render={({ field }) => <FormItem><FormLabel>Email address</FormLabel><FormControl><Input {...field} type="email" autoComplete="email" placeholder="you@example.com" disabled={registerMutation.isPending} /></FormControl><FormMessage /></FormItem>} />
+    <FormField control={form.control} name="password" render={({ field }) => <FormItem><FormLabel>Password</FormLabel><FormControl><PasswordInput {...field} autoComplete="new-password" placeholder="At least 6 characters" disabled={registerMutation.isPending} /></FormControl><FormMessage /></FormItem>} />
+    <FormField control={form.control} name="confirmPassword" render={({ field }) => <FormItem><FormLabel>Confirm password</FormLabel><FormControl><PasswordInput {...field} autoComplete="new-password" placeholder="Re-enter your password" disabled={registerMutation.isPending} /></FormControl><FormMessage /></FormItem>} />
+    <Button type="submit" size="lg" className="w-full" disabled={registerMutation.isPending}>{registerMutation.isPending ? <><Loader2 className="animate-spin" />Creating your account…</> : <>Create your account<ArrowRight className="ml-auto" /></>}</Button>
+  </form></Form>;
 }

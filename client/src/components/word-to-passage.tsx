@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,6 @@ export function WordToPassage({ onPassageGenerated }: WordToPassageProps) {
   const [words, setWords] = useState<string[]>([]);
   const [currentWord, setCurrentWord] = useState("");
   const [generatedPassage, setGeneratedPassage] = useState("");
-  const [isPassageReady, setIsPassageReady] = useState(false);
   
   // Generation options
   const [topic, setTopic] = useState("general knowledge");
@@ -48,31 +47,17 @@ export function WordToPassage({ onPassageGenerated }: WordToPassageProps) {
         style
       }
     ),
+    onMutate: () => setGeneratedPassage(""),
     onSuccess: (data) => {
-      // Check if the passage contains a fallback message indicating it's using the simple format
-      const isFallbackPassage = data.passage.includes("This educational passage about") && 
-                               data.passage.includes("is an important vocabulary word to understand");
-      
-      if (isFallbackPassage) {
-        toast({
-          title: "Basic passage generated",
-          description: "Using a simplified format with your vocabulary words.",
-        });
-      } else {
-        toast({
-          title: "Passage generated successfully",
-          description: "The passage contains all your vocabulary words."
-        });
-      }
+      toast({
+        title: "Passage generated successfully",
+        description: "Your passage is ready to review."
+      });
       
       setGeneratedPassage(data.passage);
-      setIsPassageReady(true);
     },
     onError: (error: Error) => {
-      // Create a fallback passage if there's an error
-      const fallbackPassage = `Vocabulary study list containing the words: ${words.join(", ")}.`;
-      setGeneratedPassage(fallbackPassage);
-      setIsPassageReady(true);
+      setGeneratedPassage("");
       
       toast({
         title: "Error generating passage",
@@ -171,7 +156,6 @@ export function WordToPassage({ onPassageGenerated }: WordToPassageProps) {
       setGeneratedPassage("");
       setWords([]);
       setCurrentWord("");
-      setIsPassageReady(false);
       
       // Use setTimeout to ensure state updates complete before callback
       setTimeout(() => {
@@ -231,6 +215,7 @@ export function WordToPassage({ onPassageGenerated }: WordToPassageProps) {
               />
             </div>
             <Button 
+              type="button"
               onClick={handleAddWord} 
               disabled={!currentWord.trim() || isPending}
               aria-label = "Add"
@@ -246,6 +231,7 @@ export function WordToPassage({ onPassageGenerated }: WordToPassageProps) {
               </Label>
               {words.length > 0 && (
                 <Button 
+                  type="button"
                   variant="ghost" 
                   size="sm" 
                   onClick={() => setWords([])}
@@ -354,6 +340,7 @@ export function WordToPassage({ onPassageGenerated }: WordToPassageProps) {
       </Tabs>
       
       <Button
+        type="button"
         className="w-full"
         onClick={handleGeneratePassage}
         disabled={words.length < 3 || isPending}
@@ -377,31 +364,20 @@ export function WordToPassage({ onPassageGenerated }: WordToPassageProps) {
           <AlertDescription className="space-y-2">
             <p>{error instanceof Error ? error.message : "Failed to generate passage"}</p>
             <p className="text-sm">
-              {error instanceof Error && error.message.includes("API quota exceeded") ? (
-                "The AI service has reached its quota limit. This is common with free tier accounts. You can still use the vocabulary words you've entered to create a list."
-              ) : (
-                "Try using fewer words or simpler terms. You can still use the vocabulary words you've entered to create a list."
-              )}
+              Your words and options are saved here. You can retry generation or continue with just these words.
             </p>
             <div className="mt-2">
               <Button 
+                type="button"
                 size="sm" 
                 onClick={() => {
                   try {
-                    // Use the already created fallback passage from the onError handler
-                    if (generatedPassage) {
-                      onPassageGenerated(generatedPassage, words);
-                    } else {
-                      // Create a fallback passage as a backup
-                      const fallbackPassage = `Vocabulary study list containing the words: ${words.join(", ")}.`;
-                      onPassageGenerated(fallbackPassage, words);
-                    }
+                    onPassageGenerated(`Vocabulary study list containing the words: ${words.join(", ")}.`, words);
                     
                     // Reset state
                     setWords([]);
                     setCurrentWord("");
                     setGeneratedPassage("");
-                    setIsPassageReady(false);
                     
                     toast({
                       title: "Words added to list",
@@ -438,7 +414,7 @@ export function WordToPassage({ onPassageGenerated }: WordToPassageProps) {
             </div>
           </CardContent>
           <CardFooter className="justify-between">
-            <Button variant="outline" onClick={() => setGeneratedPassage("")}>
+            <Button type="button" variant="outline" disabled={isPending} onClick={() => handleGeneratePassage()}>
               Regenerate
             </Button>
             <Button 

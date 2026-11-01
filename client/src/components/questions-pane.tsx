@@ -1,33 +1,18 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertCircle, Plus, Edit, HelpCircle, FileText, CheckCircle, XCircle } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { CheckCircle, Edit, FileText } from "lucide-react";
 import { MultipleChoiceManager } from "@/components/multiple-choice-manager";
 import { InputFormManager } from "@/components/input-form-manager";
+import { defaultGridInQuestion } from "@shared/grid-in";
 import type { VocabularyWord } from "@shared/schema";
 
-interface VocabularyList {
-  id: number;
-  title: string;
-  passage?: string;
-  dueDate?: string;
-  words: VocabularyWord[];
-  educator?: {
-    id: number;
-    name: string;
-  };
-}
-
 interface QuestionsPaneProps {
-  vocabularyList: VocabularyList;
+  vocabularyList: { id: number; words: VocabularyWord[]; published?: boolean };
 }
-
 interface WordQuestionStatus {
   wordId: number;
   hasMultipleChoice: boolean;
@@ -37,179 +22,49 @@ interface WordQuestionStatus {
 }
 
 export function QuestionsPane({ vocabularyList }: QuestionsPaneProps) {
-  const [selectedQuestionType, setSelectedQuestionType] = useState<Record<number, "multiple-choice" | "input-form">>({});
-  const [dialogOpen, setDialogOpen] = useState<Record<number, boolean>>({});
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  // Fetch question status for all words
-  const { data: questionStatuses = [], isLoading } = useQuery<WordQuestionStatus[]>({
+  const [editing, setEditing] = useState<{ word: VocabularyWord; type: "input" | "multiple_choice" } | null>(null);
+  const { data: statuses = [], isLoading, isError } = useQuery<WordQuestionStatus[]>({
     queryKey: [`/api/vocabulary-lists/${vocabularyList.id}/question-status`],
     enabled: !!vocabularyList.id,
   });
-
-  const openDialog = (wordId: number) => {
-    setDialogOpen(prev => ({ ...prev, [wordId]: true }));
-  };
-
-  const closeDialog = (wordId: number) => {
-    setDialogOpen(prev => ({ ...prev, [wordId]: false }));
-  };
-
-  const getQuestionStatus = (wordId: number) => {
-    const status = questionStatuses.find(s => s.wordId === wordId);
-    if (!status) return { hasQuestions: false, type: "none", count: 0 };
-    
-    if (status.hasMultipleChoice && status.hasInputForm) {
-      return { hasQuestions: true, type: "both", count: status.multipleChoiceCount + status.inputFormCount };
-    } else if (status.hasMultipleChoice) {
-      return { hasQuestions: true, type: "multiple-choice", count: status.multipleChoiceCount };
-    } else if (status.hasInputForm) {
-      return { hasQuestions: true, type: "input-form", count: status.inputFormCount };
-    }
-    
-    return { hasQuestions: false, type: "none", count: 0 };
-  };
-
-  const getStatusBadge = (wordId: number) => {
-    const status = getQuestionStatus(wordId);
-    
-    if (!status.hasQuestions) {
-      return (
-        <Badge variant="destructive" className="flex items-center">
-          <XCircle className="mr-1 h-3 w-3" />
-          No Questions
-        </Badge>
-      );
-    }
-    
-    return (
-      <Badge variant="default" className="flex items-center">
-        <CheckCircle className="mr-1 h-3 w-3" />
-        {status.count} Question{status.count > 1 ? 's' : ''}
-      </Badge>
-    );
-  };
-
-  const handleQuestionTypeChange = (wordId: number, questionType: "multiple-choice" | "input-form") => {
-    setSelectedQuestionType(prev => ({ ...prev, [wordId]: questionType }));
-    openDialog(wordId);
-  };
-
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-        </div>
-      </div>
-    );
-  }
-
-  const wordsWithoutQuestions = vocabularyList.words.filter(word => !getQuestionStatus(word.id).hasQuestions);
-
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h3 className="text-lg font-medium">Question Management</h3>
-          <p className="text-sm text-muted-foreground">
-            Create and manage questions for each vocabulary word. All words must have at least one question before publishing.
-          </p>
-        </div>
-        
-        {wordsWithoutQuestions.length > 0 && (
-          <Badge variant="destructive" className="flex items-center">
-            <AlertCircle className="mr-1 h-3 w-3" />
-            {wordsWithoutQuestions.length} word{wordsWithoutQuestions.length > 1 ? 's' : ''} need questions
-          </Badge>
-        )}
+      <div>
+        <h3 className="text-lg font-medium">Vocabulary questions</h3>
+        <p className="mt-1 text-sm text-muted-foreground">Each new word automatically gets a grid-in question. Learners explain its meaning in their own words, and AI assesses their answers when they submit.</p>
+        <p className="mt-2 text-sm text-muted-foreground">You can continue to publishing without generating any questions.</p>
       </div>
-
+      {isLoading && <p role="status" className="text-sm text-muted-foreground">Preparing your questions…</p>}
+      {isError && <p role="alert" className="text-sm text-destructive">Couldn't load question details. Refresh to try again.</p>}
       <div className="space-y-4">
-        {vocabularyList.words.map((word) => {
-          const status = getQuestionStatus(word.id);
-          
+        {vocabularyList.words.map(word => {
+          const status = statuses.find(item => item.wordId === word.id);
           return (
             <Card key={word.id}>
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <CardTitle className="text-base font-medium">{word.word}</CardTitle>
-                  {getStatusBadge(word.id)}
+                  <Badge variant="secondary"><CheckCircle className="mr-1 h-3 w-3" />{status?.hasInputForm || !status?.hasMultipleChoice ? "Grid-in · AI assessed" : "Multiple choice"}</Badge>
                 </div>
               </CardHeader>
-              
-              <CardContent className="pt-0">
-                <div className="flex items-center gap-3">
-                  <Select
-                    value={selectedQuestionType[word.id] || ""}
-                    onValueChange={(value: "multiple-choice" | "input-form") => 
-                      handleQuestionTypeChange(word.id, value)
-                    }
-                  >
-                    <SelectTrigger className="w-48">
-                      <SelectValue placeholder="Choose question type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="multiple-choice">
-                        <div className="flex items-center">
-                          <HelpCircle className="mr-2 h-4 w-4" />
-                          Multiple Choice
-                        </div>
-                      </SelectItem>
-                      {/* Temporarily disabled - Input Form questions are being improved */}
-                      {/* <SelectItem value="input-form">
-                        <div className="flex items-center">
-                          <FileText className="mr-2 h-4 w-4" />
-                          Input Form
-                        </div>
-                      </SelectItem> */}
-                    </SelectContent>
-                  </Select>
-                  
-                  {status.hasQuestions && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openDialog(word.id)}
-                    >
-                      <Edit className="mr-2 h-4 w-4" />
-                      Manage Questions
-                    </Button>
-                  )}
-                </div>
+              <CardContent className="space-y-3 pt-0">
+                {(status?.hasInputForm || !status?.hasMultipleChoice) && <p className="text-sm text-muted-foreground">{defaultGridInQuestion(word).question}</p>}
+                {!isLoading && !isError && !vocabularyList.published && <div className="flex flex-wrap gap-2">
+                  {status?.hasInputForm && <Button type="button" variant="outline" size="sm" onClick={() => setEditing({ word, type: "input" })}><Edit className="mr-2 h-4 w-4" />Customize question</Button>}
+                  {status?.hasMultipleChoice && <Button type="button" variant="outline" size="sm" onClick={() => setEditing({ word, type: "multiple_choice" })}><FileText className="mr-2 h-4 w-4" />Manage existing questions</Button>}
+                </div>}
               </CardContent>
             </Card>
           );
         })}
       </div>
-
-      {/* Question Management Dialogs */}
-      {vocabularyList.words.map((word) => (
-        <Dialog 
-          key={`dialog-${word.id}`} 
-          open={dialogOpen[word.id] || false} 
-          onOpenChange={(open) => open ? openDialog(word.id) : closeDialog(word.id)}
-        >
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                Manage Questions for "{word.word}"
-              </DialogTitle>
-            </DialogHeader>
-            
-            <div className="mt-4">
-              {selectedQuestionType[word.id] === "multiple-choice" && (
-                <MultipleChoiceManager word={word} />
-              )}
-              
-              {selectedQuestionType[word.id] === "input-form" && (
-                <InputFormManager word={word} />
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-      ))}
+      <Dialog open={!!editing} onOpenChange={open => { if (!open) setEditing(null); }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Questions for “{editing?.word.word}”</DialogTitle></DialogHeader>
+          {editing?.type === "input" && <InputFormManager word={editing.word} />}
+          {editing?.type === "multiple_choice" && <MultipleChoiceManager word={editing.word} />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

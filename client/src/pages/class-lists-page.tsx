@@ -86,7 +86,7 @@ export default function ClassListsPage() {
 
   if (classLoading || listsLoading) {
     return (
-      <div className="container py-8 max-w-5xl mx-auto">
+      <div className="workspace-page">
         <div className="mb-8">
           <Button variant="ghost" asChild>
             <Link to="/learner/dashboard">
@@ -118,7 +118,7 @@ export default function ClassListsPage() {
   }
 
   return (
-    <div className="container py-8 max-w-5xl mx-auto">
+    <div className="workspace-page">
       <div className="mb-8">
         <Button variant="ghost" asChild>
           <Link to="/learner/dashboard">
@@ -126,7 +126,7 @@ export default function ClassListsPage() {
             Back to Dashboard
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold tracking-tight mt-4 text-center">
+        <h1 className="page-title">
           {classData?.name} Vocabulary Lists
         </h1>
         <p className="text-muted-foreground text-center mt-2">

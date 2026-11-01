@@ -114,7 +114,7 @@ export function LearnMode({ cards, onSessionComplete }: LearnModeProps) {
   });
 
   const handleSubmitAnswer = () => {
-    const correctAnswer = currentCard.definition.correctDefinition;
+    const correctAnswer = currentCard.definition.correctDefinition || "";
     const isCorrect = questionType === "multiple-choice" 
       ? selectedAnswer === correctAnswer
       : writtenAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
@@ -290,7 +290,7 @@ export function LearnMode({ cards, onSessionComplete }: LearnModeProps) {
               <div className="flex items-start space-x-3">
                 {(questionType === "multiple-choice" 
                     ? selectedAnswer === currentCard.definition.correctDefinition
-                    : writtenAnswer.toLowerCase().trim() === currentCard.definition.correctDefinition.toLowerCase().trim()
+                    : writtenAnswer.toLowerCase().trim() === (currentCard.definition.correctDefinition || "").toLowerCase().trim()
                   ) ? (
                   <CheckCircle className="h-6 w-6 text-green-500 flex-shrink-0 mt-0.5" />
                 ) : (
@@ -300,7 +300,7 @@ export function LearnMode({ cards, onSessionComplete }: LearnModeProps) {
                   <div className="font-medium text-gray-900 mb-2">
                     {(questionType === "multiple-choice" 
                         ? selectedAnswer === currentCard.definition.correctDefinition
-                        : writtenAnswer.toLowerCase().trim() === currentCard.definition.correctDefinition.toLowerCase().trim()
+                        : writtenAnswer.toLowerCase().trim() === (currentCard.definition.correctDefinition || "").toLowerCase().trim()
                       ) ? "Correct!" : "Not quite right"}
                   </div>
                   <div className="text-sm text-gray-600">

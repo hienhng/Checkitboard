@@ -2,6 +2,6 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 
-document.title = "Lexible";
+document.title = "Checkit";
 
 createRoot(document.getElementById("root")!).render(<App />);

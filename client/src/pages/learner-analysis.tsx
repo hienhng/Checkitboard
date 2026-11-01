@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/workspace-ui";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
@@ -187,29 +188,15 @@ export default function LearnerAnalysis() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-blue-950 dark:to-indigo-950">
-      <div className="container py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="workspace-page">
+      <div className="workspace-page">
         {/* Header */}
-        <div className="mb-10">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center shadow-lg shadow-primary/25">
-              <Activity className="h-7 w-7 text-white" />
-            </div>
-            <div>
-              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 dark:from-white dark:via-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
-                Learning Progress
-              </h1>
-              <p className="text-lg text-muted-foreground mt-1">
-                Track your vocabulary mastery journey and achievements
-              </p>
-            </div>
-          </div>
-        </div>
+        <PageHeader eyebrow="Look how far you’ve come" title="Small steps. Real progress." description="Every practice session tells a story. See the words you’re mastering and where you can grow next." />
 
         {isLoading ? (
           <div className="flex items-center justify-center py-24">
             <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center shadow-lg shadow-primary/25 animate-pulse">
+              <div className="w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center   animate-pulse bg-primary">
                 <Activity className="h-8 w-8 text-white" />
               </div>
               <p className="text-muted-foreground text-lg">Loading your progress data...</p>
@@ -217,20 +204,20 @@ export default function LearnerAnalysis() {
           </div>
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4 lg:w-[650px] p-1.5 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-slate-200/80 dark:border-slate-700/50 shadow-lg rounded-xl">
-              <TabsTrigger value="overview" className="flex items-center gap-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200 -translate-y-0.5">
+            <TabsList className="inline-flex w-full lg:w-[650px] p-1.5 bg-card dark:bg-slate-800/80 backdrop-blur-sm border border-slate-200/80 dark:border-slate-700/50 shadow-lg rounded-xl">
+              <TabsTrigger value="overview" className="flex items-center gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200">
                 <Activity className="h-4 w-4" />
                 Overview
               </TabsTrigger>
-              <TabsTrigger value="analytics" className="flex items-center gap-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200  -translate-y-0.5">
+              <TabsTrigger value="analytics" className="flex items-center gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200">
                 <BarChart3 className="h-4 w-4" />
                 Analytics
               </TabsTrigger>
-              <TabsTrigger value="achievements" className="flex items-center gap-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200  -translate-y-0.5">
+              <TabsTrigger value="achievements" className="flex items-center gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200">
                 <Award className="h-4 w-4" />
                 Achievements
               </TabsTrigger>
-              <TabsTrigger value="history" className="flex items-center gap-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200  -translate-y-0.5">
+              <TabsTrigger value="history" className="flex items-center gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200">
                 <Clock className="h-4 w-4" />
                 History
               </TabsTrigger>
@@ -240,11 +227,11 @@ export default function LearnerAnalysis() {
           <TabsContent value="overview" className="space-y-6">
             {/* Key Stats Cards */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-              <Card className="group relative overflow-hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg hover:shadow-xl rounded-2xl transition-all duration-300 hover:-translate-y-1">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent dark:from-blue-500/10" />
+              <Card className="group relative overflow-hidden bg-card dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg shadow-sm rounded-2xl transition-all duration-300">
+                <div className="absolute inset-0 bg-muted/50" />
                 <CardContent className="relative p-6">
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/25 group-hover:scale-110 transition-transform duration-300">
+                    <div className="w-14 h-14 rounded-xl flex items-center justify-center   transition-transform duration-300 bg-primary">
                       <Target className="h-7 w-7 text-white" />
                     </div>
                     <div className="flex-1">
@@ -259,11 +246,11 @@ export default function LearnerAnalysis() {
                 </CardContent>
               </Card>
 
-              <Card className="group relative overflow-hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg hover:shadow-xl rounded-2xl transition-all duration-300 hover:-translate-y-1">
-                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent dark:from-emerald-500/10" />
+              <Card className="group relative overflow-hidden bg-card dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg shadow-sm rounded-2xl transition-all duration-300">
+                <div className="absolute inset-0 bg-muted/50" />
                 <CardContent className="relative p-6">
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/25 group-hover:scale-110 transition-transform duration-300">
+                    <div className="w-14 h-14 rounded-xl flex items-center justify-center   transition-transform duration-300 bg-primary">
                       <Trophy className="h-7 w-7 text-white" />
                     </div>
                     <div className="flex-1">
@@ -278,11 +265,11 @@ export default function LearnerAnalysis() {
                 </CardContent>
               </Card>
 
-              <Card className="group relative overflow-hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg hover:shadow-xl rounded-2xl transition-all duration-300 hover:-translate-y-1">
-                <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent dark:from-violet-500/10" />
+              <Card className="group relative overflow-hidden bg-card dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg shadow-sm rounded-2xl transition-all duration-300">
+                <div className="absolute inset-0 bg-muted/50" />
                 <CardContent className="relative p-6">
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center shadow-lg shadow-violet-500/25 group-hover:scale-110 transition-transform duration-300">
+                    <div className="w-14 h-14 rounded-xl flex items-center justify-center   transition-transform duration-300 bg-primary">
                       <Zap className="h-7 w-7 text-white" />
                     </div>
                     <div className="flex-1">
@@ -297,11 +284,11 @@ export default function LearnerAnalysis() {
                 </CardContent>
               </Card>
 
-              <Card className="group relative overflow-hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg hover:shadow-xl rounded-2xl transition-all duration-300 hover:-translate-y-1">
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent dark:from-amber-500/10" />
+              <Card className="group relative overflow-hidden bg-card dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg shadow-sm rounded-2xl transition-all duration-300">
+                <div className="absolute inset-0 bg-muted/50" />
                 <CardContent className="relative p-6">
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/25 group-hover:scale-110 transition-transform duration-300">
+                    <div className="w-14 h-14 rounded-xl flex items-center justify-center   transition-transform duration-300 bg-primary">
                       <TrendingUp className="h-7 w-7 text-white" />
                     </div>
                     <div className="flex-1">
@@ -327,8 +314,8 @@ export default function LearnerAnalysis() {
             </div>
 
             {/* Progress Chart */}
-            <Card className="relative overflow-hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-xl rounded-2xl">
-              <CardHeader className="relative bg-gradient-to-r from-primary via-primary to-indigo-600 dark:from-primary dark:via-primary dark:to-indigo-700 text-white rounded-t-2xl px-8 py-6">
+            <Card className="relative overflow-hidden bg-card dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-sm rounded-2xl">
+              <CardHeader className="relative text-white rounded-t-2xl px-8 py-6 bg-primary">
                 <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iNCIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
                 <div className="relative flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
@@ -388,7 +375,7 @@ export default function LearnerAnalysis() {
                   </div>
                 ) : (
                   <div className="text-center py-16">
-                    <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center">
+                    <div className="w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center bg-muted/50">
                       <LineChartIcon className="h-10 w-10 text-muted-foreground/50" />
                     </div>
                     <h3 className="text-xl font-semibold text-foreground dark:text-foreground mb-2">
@@ -407,10 +394,10 @@ export default function LearnerAnalysis() {
           <TabsContent value="analytics" className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2">
               {/* Performance Distribution */}
-              <Card className="group relative overflow-hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg hover:shadow-xl rounded-2xl transition-all duration-300">
+              <Card className="group relative overflow-hidden bg-card dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg shadow-sm rounded-2xl transition-all duration-300">
                 <CardHeader className="pb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/25">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/25 bg-muted/50">
                       <PieChartIcon className="h-6 w-6 text-white" />
                     </div>
                     <div>
@@ -456,7 +443,7 @@ export default function LearnerAnalysis() {
                     </div>
                   ) : (
                     <div className="text-center py-12">
-                      <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center">
+                      <div className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-primary">
                         <PieChartIcon className="h-8 w-8 text-muted-foreground/50" />
                       </div>
                       <p className="text-muted-foreground">No performance data available</p>
@@ -466,10 +453,10 @@ export default function LearnerAnalysis() {
               </Card>
 
               {/* Monthly Trends */}
-              <Card className="group relative overflow-hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg hover:shadow-xl rounded-2xl transition-all duration-300">
+              <Card className="group relative overflow-hidden bg-card dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg shadow-sm rounded-2xl transition-all duration-300">
                 <CardHeader className="pb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-cyan-500/25">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/25 bg-muted/50">
                       <BarChart3 className="h-6 w-6 text-white" />
                     </div>
                     <div>
@@ -503,7 +490,7 @@ export default function LearnerAnalysis() {
                     </div>
                   ) : (
                     <div className="text-center py-12">
-                      <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center">
+                      <div className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-primary">
                         <BarChart3 className="h-8 w-8 text-muted-foreground/50" />
                       </div>
                       <p className="text-muted-foreground">No monthly data available</p>
@@ -514,10 +501,10 @@ export default function LearnerAnalysis() {
             </div>
 
             {/* Performance Summary */}
-            <Card className="relative overflow-hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg rounded-2xl">
+            <Card className="relative overflow-hidden bg-card dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg rounded-2xl">
               <CardHeader className="pb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/25 bg-muted/50">
                     <Activity className="h-6 w-6 text-white" />
                   </div>
                   <div>
@@ -530,19 +517,19 @@ export default function LearnerAnalysis() {
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4 md:grid-cols-4">
-                  <div className="group text-center p-5 bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/30 dark:to-emerald-800/30 rounded-xl border border-emerald-200 dark:border-emerald-700/50 hover:shadow-lg hover:shadow-emerald-500/10 transition-all duration-300 hover:-translate-y-0.5">
+                  <div className="group text-center p-5 rounded-xl border border-emerald-200 dark:border-emerald-700/50 hover:shadow-lg hover:shadow-emerald-500/10 transition-all duration-300 bg-muted/50">
                     <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{excellentCount}</div>
                     <div className="text-sm font-medium text-emerald-700 dark:text-emerald-300 mt-1">Excellent (90-100%)</div>
                   </div>
-                  <div className="group text-center p-5 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 rounded-xl border border-blue-200 dark:border-blue-700/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 hover:-translate-y-0.5">
+                  <div className="group text-center p-5 rounded-xl border border-blue-200 dark:border-blue-700/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 bg-muted/50">
                     <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{goodCount}</div>
                     <div className="text-sm font-medium text-blue-700 dark:text-blue-300 mt-1">Good (70-89%)</div>
                   </div>
-                  <div className="group text-center p-5 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/30 dark:to-amber-800/30 rounded-xl border border-amber-200 dark:border-amber-700/50 hover:shadow-lg hover:shadow-amber-500/10 transition-all duration-300 hover:-translate-y-0.5">
+                  <div className="group text-center p-5 rounded-xl border border-amber-200 dark:border-amber-700/50 hover:shadow-lg hover:shadow-amber-500/10 transition-all duration-300 bg-muted/50">
                     <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">{averageCount}</div>
                     <div className="text-sm font-medium text-amber-700 dark:text-amber-300 mt-1">Average (50-69%)</div>
                   </div>
-                  <div className="group text-center p-5 bg-gradient-to-br from-rose-50 to-rose-100 dark:from-rose-900/30 dark:to-rose-800/30 rounded-xl border border-rose-200 dark:border-rose-700/50 hover:shadow-lg hover:shadow-rose-500/10 transition-all duration-300 hover:-translate-y-0.5">
+                  <div className="group text-center p-5 rounded-xl border border-rose-200 dark:border-rose-700/50 hover:shadow-lg hover:shadow-rose-500/10 transition-all duration-300 bg-muted/50">
                     <div className="text-3xl font-bold text-rose-600 dark:text-rose-400">{needsImprovementCount}</div>
                     <div className="text-sm font-medium text-rose-700 dark:text-rose-300 mt-1">Needs Work (&lt;50%)</div>
                   </div>
@@ -575,7 +562,7 @@ export default function LearnerAnalysis() {
                           <IconComponent className={`h-7 w-7 ${achievement.earned ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
                         </div>
                         {achievement.earned && (
-                          <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 rounded-full px-3 py-1 shadow-md">
+                          <Badge className="text-white border-0 rounded-full px-3 py-1 shadow-md bg-primary">
                             <Star className="h-3 w-3 mr-1" />
                             Earned
                           </Badge>
@@ -589,7 +576,7 @@ export default function LearnerAnalysis() {
                       </p>
                     </CardContent>
                     {achievement.earned && (
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-amber-400/20 via-yellow-400/10 to-transparent rounded-bl-[3rem]"></div>
+                      <div className="absolute top-0 right-0 w-24 h-24 rounded-bl-[3rem] bg-muted/50"></div>
                     )}
                   </Card>
                 );
@@ -597,10 +584,10 @@ export default function LearnerAnalysis() {
             </div>
 
             {earnedAchievements.length > 0 && (
-              <Card className="relative overflow-hidden bg-gradient-to-r from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-900/30 dark:via-yellow-900/20 dark:to-orange-900/30 border-amber-200/80 dark:border-amber-700/50 shadow-lg rounded-2xl">
+              <Card className="relative overflow-hidden border-amber-200/80 dark:border-amber-700/50 shadow-lg rounded-2xl bg-muted/50">
                 <CardHeader className="pb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/25">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/25 bg-muted/50">
                       <Trophy className="h-6 w-6 text-white" />
                     </div>
                     <div>
@@ -627,8 +614,8 @@ export default function LearnerAnalysis() {
 
           {/* History Tab */}
           <TabsContent value="history" className="space-y-6">
-            <Card className="relative overflow-hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-xl rounded-2xl">
-              <CardHeader className="relative bg-gradient-to-r from-primary via-primary to-indigo-600 dark:from-primary dark:via-primary dark:to-indigo-700 text-white rounded-t-2xl px-8 py-6">
+            <Card className="relative overflow-hidden bg-card dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-sm rounded-2xl">
+              <CardHeader className="relative text-white rounded-t-2xl px-8 py-6 bg-primary">
                 <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iNCIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
                 <div className="relative flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
@@ -648,10 +635,10 @@ export default function LearnerAnalysis() {
                     {chartData.slice().reverse().map((submission: any, index: number) => (
                       <div 
                         key={submission.id} 
-                        className="group flex items-center p-5 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border border-slate-200/80 dark:border-slate-700/50 rounded-xl hover:bg-white dark:hover:bg-slate-800 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 hover:-translate-y-0.5"
+                        className="group flex items-center p-5 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border border-slate-200/80 dark:border-slate-700/50 rounded-xl hover:bg-white dark:hover:bg-slate-800 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
                       >
                         <div className="flex-shrink-0 mr-5">
-                          <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-primary to-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-lg shadow-primary/25 group-hover:scale-105 transition-transform duration-300">
+                          <div className="h-14 w-14 rounded-xl text-white flex items-center justify-center font-bold text-lg shadow-lg shadow-primary/25 transition-transform duration-300 bg-primary">
                             #{chartData.length - index}
                           </div>
                         </div>
@@ -664,8 +651,8 @@ export default function LearnerAnalysis() {
                           </div>
                           <div className="flex items-center text-sm text-muted-foreground space-x-4">
                             <div className="flex items-center">
-                              <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center mr-2">
-                                <Calendar className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                              <div className="w-7 h-7 rounded-lg bg-muted/60 dark:bg-slate-700 flex items-center justify-center mr-2">
+                                <Calendar className="h-3.5 w-3.5 text-muted-foreground dark:text-slate-400" />
                               </div>
                               <span className="font-medium">{submission.fullDate}</span>
                             </div>
@@ -677,7 +664,7 @@ export default function LearnerAnalysis() {
                   </div>
                 ) : (
                   <div className="text-center py-16">
-                    <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center">
+                    <div className="w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center bg-muted/50">
                       <Clock className="h-10 w-10 text-muted-foreground/50" />
                     </div>
                     <h3 className="text-xl font-semibold text-foreground dark:text-foreground mb-2">

@@ -1,26 +1,5 @@
 import { apiRequest } from "./queryClient";
 
-// Helper function to create a fallback passage from words
-function createFallbackPassage(words: string[], topic: string = "general knowledge", style: string = "educational"): string {
-  // Create sentences using each word
-  const sentences: string[] = [];
-  
-  // Add introduction
-  sentences.push(`This ${style} passage about ${topic} is designed for students.`);
-  
-  // Create sentences using each word
-  for (const word of words) {
-    const capitalizedWord = word.charAt(0).toUpperCase() + word.slice(1);
-    sentences.push(`${capitalizedWord} is an important vocabulary word to understand.`);
-  }
-  
-  // Add a concluding sentence
-  sentences.push(`Learning these vocabulary words will enhance your understanding of ${topic}.`);
-  
-  // Organize into paragraphs (for simplicity, just use one paragraph)
-  return sentences.join(' ');
-}
-
 /**
  * Special safe fetch that won't cause auth redirects with error handling for AI services
  */
@@ -269,31 +248,21 @@ export async function generatePassageFromWords(
     style?: string;
   }
 ): Promise<{ passage: string }> {
-  // Set defaults for options
-  const topic = options?.topic || "general knowledge";
-  const style = options?.style || "educational";
-  
-  try {
-    const response = await safeAIRequest(
-      "POST",
-      "/api/ai/generate-passage",
-      { words, ...options }
-    );
-    const data = await response.json();
-    
-    // Check if we got a fallback response
-    if (data.fallback) {
-      // Create fallback passage
-      const fallbackPassage = createFallbackPassage(words, topic, style);
-      return { passage: fallbackPassage };
+  const response = await fetch("/api/ai/generate-passage", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ words, ...options }),
+    credentials: "include",
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error("Your session has expired. Please sign in again to generate a passage.");
     }
-    
-    return data;
-  } catch (error) {
-    console.error("Error generating passage:", error);
-    
-    // Create fallback passage
-    const fallbackPassage = createFallbackPassage(words, topic, style);
-    return { passage: fallbackPassage };
+    throw new Error(data.message || "Unable to generate a passage. Please try again.");
   }
+  if (data.fallback || typeof data.passage !== "string" || !data.passage.trim()) {
+    throw new Error("The AI service returned no passage. Please try again.");
+  }
+  return { passage: data.passage.trim() };
 }

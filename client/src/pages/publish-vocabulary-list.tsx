@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { CheckupSteps } from "@/components/checkup-steps";
+import { format } from "date-fns";
 import {
   Form,
   FormControl,
@@ -45,22 +47,33 @@ import {
   Calendar,
   Users,
   ArrowLeft,
+  ArrowRight,
   BookOpen,
   Send,
   CheckCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { Class, VocabularyList, VocabularyWord } from "@shared/schema";
+
+type PublishList = Omit<VocabularyList, "dueDate"> & {
+  dueDate: string | null;
+  words: VocabularyWord[];
+};
 
 const publishConfigSchema = z.object({
   type: z.enum(["test", "practice"]).default("practice"),
-  dueDate: z.string().optional(),
+  dueDate: z.string().refine(value => !value || !Number.isNaN(new Date(value).getTime()), "Choose a valid due date").optional(),
   gradeVisibility: z.enum(["immediate", "afterDue", "manual"]).default("immediate"),
-  timeLimit: z.number().min(1).max(300).optional(),
+  timeLimit: z.number().int().min(1).max(300).optional(),
   shuffleQuestions: z.boolean().default(false),
   showCorrectAnswers: z.boolean().default(true),
   allowRedos: z.boolean().default(true),
-  maxRedoAttempts: z.number().min(1).max(10).default(3),
+  maxRedoAttempts: z.number().int().min(1).max(10).default(3),
   selectedClasses: z.array(z.number()).min(1, "Please select at least one class"),
+}).superRefine((data, context) => {
+  if (data.gradeVisibility === "afterDue" && !data.dueDate) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ["dueDate"], message: "Add a due date to release grades after the deadline." });
+  }
 });
 
 type PublishConfigForm = z.infer<typeof publishConfigSchema>;
@@ -71,17 +84,23 @@ export default function PublishVocabularyList() {
   const { toast } = useToast();
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [publishedCount, setPublishedCount] = useState(0);
+  const [step, setStep] = useState(0);
+  const [furthestStep, setFurthestStep] = useState(0);
+  const stepHeading = useRef<HTMLHeadingElement>(null);
+  const publishingSteps = ["Settings", "Classes", "Review"] as const;
+
+  useEffect(() => { stepHeading.current?.focus(); }, [step]);
 
   const listId = parseInt(id || "0");
 
   // Fetch vocabulary list
-  const { data: vocabularyList, isLoading: loadingList } = useQuery({
-    queryKey: ["/api/educator/vocabulary-lists", listId],
+  const { data: vocabularyList, isLoading: loadingList } = useQuery<PublishList>({
+    queryKey: [`/api/vocabulary-lists/${listId}`],
     enabled: !!listId,
   });
 
   // Fetch educator's classes
-  const { data: classes = [], isLoading: loadingClasses } = useQuery({
+  const { data: classes = [], isLoading: loadingClasses } = useQuery<Class[]>({
     queryKey: ["/api/educator/classes"],
   });
 
@@ -105,7 +124,7 @@ export default function PublishVocabularyList() {
     if (vocabularyList) {
       form.reset({
         type: vocabularyList.type || "practice",
-        dueDate: vocabularyList.dueDate || "",
+        dueDate: vocabularyList.dueDate ? format(new Date(vocabularyList.dueDate), "yyyy-MM-dd'T'HH:mm") : "",
         gradeVisibility: vocabularyList.gradeVisibility || "immediate",
         timeLimit: vocabularyList.timeLimit || undefined,
         shuffleQuestions: vocabularyList.shuffleQuestions ?? false,
@@ -122,7 +141,7 @@ export default function PublishVocabularyList() {
       const response = await apiRequest("POST", `/api/vocabulary-lists/${listId}/publish-multi`, {
         classIds: data.selectedClasses,
         type: data.type,
-        dueDate: data.dueDate || null,
+        dueDate: data.dueDate ? new Date(data.dueDate).toISOString() : null,
         gradeVisibility: data.gradeVisibility,
         timeLimit: data.timeLimit || null,
         shuffleQuestions: data.shuffleQuestions,
@@ -152,6 +171,19 @@ export default function PublishVocabularyList() {
     publishMutation.mutate(data);
   };
 
+  const goToStep = async (next: number) => {
+    if (next > step) {
+      const fields: (keyof PublishConfigForm)[] = ["type", "dueDate", "gradeVisibility", "timeLimit", "shuffleQuestions", "showCorrectAnswers", "allowRedos", "maxRedoAttempts"];
+      if (next === 2) fields.push("selectedClasses");
+      if (!await form.trigger(fields, { shouldFocus: true })) return;
+    }
+    setStep(next);
+    setFurthestStep(previous => Math.max(previous, next));
+  };
+
+  const values = form.watch();
+  const selectedClassNames = classes.filter(cls => values.selectedClasses.includes(cls.id)).map(cls => cls.name);
+
   const handleConfirmationClose = () => {
     setShowConfirmation(false);
     navigate("/educator/assignments");
@@ -159,11 +191,11 @@ export default function PublishVocabularyList() {
 
   if (loadingList || loadingClasses) {
     return (
-      <div className="container mx-auto p-6 max-w-5xl">
+      <div className="workspace-page">
         <div className="flex items-center justify-center h-96">
           <div className="text-center">
             <BookOpen className="h-12 w-12 mx-auto mb-4 text-gray-400 animate-pulse" />
-            <p className="text-gray-600 dark:text-gray-400">Loading configuration...</p>
+            <p className="text-muted-foreground dark:text-gray-400">Loading configuration...</p>
           </div>
         </div>
       </div>
@@ -172,9 +204,9 @@ export default function PublishVocabularyList() {
 
   if (!vocabularyList) {
     return (
-      <div className="container mx-auto p-6 max-w-5xl">
+      <div className="workspace-page">
         <div className="text-center py-12">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+          <h2 className="text-2xl font-bold text-foreground dark:text-gray-100 mb-2">
             Vocabulary List Not Found
           </h2>
           <Button onClick={() => navigate("/educator/assignments")} className="mt-4">
@@ -187,8 +219,8 @@ export default function PublishVocabularyList() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700">
-      <div className="container mx-auto p-6 max-w-5xl">
+    <div className="workspace-page">
+      <div className="workspace-page">
         {/* Header */}
         <div className="mb-6">
           <Button
@@ -200,14 +232,14 @@ export default function PublishVocabularyList() {
             Back to Assignments
           </Button>
           
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="bg-card dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-border dark:border-gray-700">
             <div className="flex items-start justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                  Publish Assignment
+                <h1 className="page-title">
+                  Publish your checkup
                 </h1>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Configure settings and assign to classes
+                <p className="text-muted-foreground dark:text-gray-400">
+                  Set up the student experience, choose classes, then review before sharing.
                 </p>
               </div>
               <div className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-4 py-2 rounded-lg">
@@ -218,8 +250,19 @@ export default function PublishVocabularyList() {
           </div>
         </div>
 
+        <div className="mb-6"><CheckupSteps steps={publishingSteps} currentStep={step} onStepChange={next => { void goToStep(next); }} canVisitStep={index => index <= furthestStep} disabled={publishMutation.isPending} /></div>
+        <div className="mb-5" aria-live="polite">
+          <p className="text-xs font-medium text-primary">Step {step + 1} of {publishingSteps.length}</p>
+          <h2 ref={stepHeading} tabIndex={-1} className="mt-2 text-xl font-semibold outline-none">{["Set the student experience", "Choose your classes", "Ready to share?"][step]}</h2>
+          <p className="mt-2 text-sm text-muted-foreground">{["Choose how students complete this checkup and see their results.", "Select at least one class. Only these classes will receive the checkup.", "Check the details below. Publishing makes this checkup available to the selected classes."][step]}</p>
+        </div>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={event => {
+            event.preventDefault();
+            if (step < 2) { void goToStep(step + 1); return; }
+            void form.handleSubmit(onSubmit, errors => setStep(errors.selectedClasses ? 1 : 0))(event);
+          }} className="space-y-6">
+            <div hidden={step !== 0} className="space-y-5">
             {/* Assignment Type & Due Date */}
             <Card>
               <CardHeader>
@@ -477,6 +520,9 @@ export default function PublishVocabularyList() {
               </CardContent>
             </Card>
 
+            </div>
+
+            <div hidden={step !== 1}>
             {/* Class Assignment */}
             <Card>
               <CardHeader>
@@ -496,9 +542,7 @@ export default function PublishVocabularyList() {
                     <FormItem>
                       <div className="space-y-3">
                         {classes.length === 0 ? (
-                          <p className="text-sm text-gray-500">
-                            No classes found. Create a class first before publishing.
-                          </p>
+                          <div className="space-y-3"><p className="text-sm text-muted-foreground">You'll need a class before publishing. Your checkup is already saved as a draft.</p><Button type="button" variant="outline" onClick={() => navigate("/educator/classes")}>Create a class<ArrowRight /></Button></div>
                         ) : (
                           classes.map((cls: any) => (
                             <FormField
@@ -546,18 +590,39 @@ export default function PublishVocabularyList() {
                 />
               </CardContent>
             </Card>
+            </div>
+
+            {step === 2 && <Card>
+              <CardHeader><CardTitle>{vocabularyList.title}</CardTitle><CardDescription>{vocabularyList.words.length} vocabulary words · {values.type === "test" ? "Test" : "Practice"}</CardDescription></CardHeader>
+              <CardContent className="space-y-5">
+                <div className="rounded-xl border p-4"><div className="mb-3 flex items-center justify-between gap-3"><h3 className="text-sm font-semibold">Assigned classes</h3><Button type="button" variant="ghost" size="sm" onClick={() => { void goToStep(1); }}>Edit classes</Button></div><p className="text-sm text-muted-foreground">{selectedClassNames.join(", ")}</p></div>
+                <div className="rounded-xl border p-4"><div className="mb-3 flex items-center justify-between gap-3"><h3 className="text-sm font-semibold">Student experience</h3><Button type="button" variant="ghost" size="sm" onClick={() => { void goToStep(0); }}>Edit settings</Button></div>
+                  <dl className="grid gap-4 text-sm sm:grid-cols-2">
+                    {[
+                      ["Due date", values.dueDate ? format(new Date(values.dueDate), "MMM d, yyyy · h:mm a") : "No deadline"],
+                      ["Grades", { immediate: "Visible immediately", afterDue: "Visible after the due date", manual: "Released manually" }[values.gradeVisibility]],
+                      ["Time limit", values.timeLimit ? `${values.timeLimit} minutes` : "No time limit"],
+                      ["Question order", values.shuffleQuestions ? "Shuffled for each student" : "Original order"],
+                      ["Correct answers", values.showCorrectAnswers ? "Shown after submission" : "Hidden"],
+                      ["Retakes", values.allowRedos ? `Up to ${values.maxRedoAttempts} attempts` : "Not allowed"],
+                    ].map(([label, value]) => <div key={label}><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 font-medium">{value}</dd></div>)}
+                  </dl>
+                </div>
+                <p className="text-xs leading-5 text-muted-foreground">This checkup will be available to {selectedClassNames.length} {selectedClassNames.length === 1 ? "class" : "classes"} when you publish.</p>
+              </CardContent>
+            </Card>}
 
             {/* Action Buttons */}
-            <div className="flex justify-end space-x-4 sticky bottom-0 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t bg-card py-5">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate("/educator/assignments")}
+                onClick={() => step > 0 ? void goToStep(step - 1) : navigate(`/educator/vocabulary/${listId}?setup=1`)}
                 disabled={publishMutation.isPending}
               >
-                Cancel
+                <ArrowLeft />{step > 0 ? "Back" : "Back to checkup"}
               </Button>
-              <Button
+              {step < 2 ? <Button type="submit" disabled={publishMutation.isPending || (step === 1 && classes.length === 0)}>Continue to {publishingSteps[step + 1].toLowerCase()}<ArrowRight /></Button> : <Button
                 type="submit"
                 disabled={publishMutation.isPending || classes.length === 0}
                 className="bg-green-600 hover:bg-green-700 text-white"
@@ -570,16 +635,16 @@ export default function PublishVocabularyList() {
                 ) : (
                   <>
                     <Send className="mr-2 h-4 w-4" />
-                    Publish Assignment
+                    Publish to {selectedClassNames.length} {selectedClassNames.length === 1 ? "class" : "classes"}
                   </>
                 )}
-              </Button>
+              </Button>}
             </div>
           </form>
         </Form>
 
         {/* Success Confirmation Dialog */}
-        <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
+        <Dialog open={showConfirmation} onOpenChange={open => { if (!open) handleConfirmationClose(); }}>
           <DialogContent>
             <DialogHeader>
               <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-green-100 dark:bg-green-900 rounded-full">
@@ -595,7 +660,7 @@ export default function PublishVocabularyList() {
             </DialogHeader>
             <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 my-4">
               <h4 className="font-medium text-sm mb-2">Assignment Details:</h4>
-              <ul className="text-sm space-y-1 text-gray-700 dark:text-gray-300">
+              <ul className="text-sm space-y-1 text-muted-foreground dark:text-gray-300">
                 <li>• Type: {form.getValues("type") === "test" ? "Test Mode" : "Practice Mode"}</li>
                 <li>• Vocabulary Words: {vocabularyList.words?.length || 0}</li>
                 <li>• Classes: {publishedCount}</li>

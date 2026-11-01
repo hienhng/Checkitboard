@@ -1,4 +1,5 @@
-import { useParams, useLocation } from "wouter";
+import { useParams, useLocation, useSearch } from "wouter";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/navbar";
 import { QuestionsPane } from "@/components/questions-pane";
@@ -8,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest } from "@/lib/queryClient";
 import { formatDate, createMarkup } from "@/lib/utils";
-import { ChevronLeft, BookOpen, Calendar, School, HelpCircle, Users } from "lucide-react";
+import { ArrowRight, ChevronLeft, BookOpen, Calendar, School, HelpCircle, Users } from "lucide-react";
 import type { VocabularyList, VocabularyWord } from "@shared/schema";
 
 interface VocabularyListWithDetails extends VocabularyList {
@@ -26,6 +27,18 @@ interface VocabularyListWithDetails extends VocabularyList {
 export default function VocabularyDetails() {
   const { listId } = useParams();
   const [, navigate] = useLocation();
+  const search = useSearch();
+  const isSetup = new URLSearchParams(search).has("setup");
+  const [activeTab, setActiveTab] = useState(isSetup ? "words" : "overview");
+
+  const { data: questionStatuses = [], isLoading: loadingQuestions, isError: questionStatusError } = useQuery<{
+    wordId: number;
+    hasMultipleChoice: boolean;
+    hasInputForm: boolean;
+  }[]>({
+    queryKey: [`/api/vocabulary-lists/${listId}/question-status`],
+    enabled: !!listId,
+  });
   
   // Fetch vocabulary list with words for educator
   const { data: list, isLoading } = useQuery<VocabularyListWithDetails | null>({
@@ -40,9 +53,9 @@ export default function VocabularyDetails() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col min-h-screen">
+      <div className="flex flex-col min-h-full">
         <Navbar />
-        <div className="container max-w-6xl mx-auto py-8">
+        <div className="workspace-page">
           <div className="animate-pulse">
             <div className="h-8 w-48 bg-gray-200 rounded mb-4"></div>
             <div className="h-4 w-full bg-gray-200 rounded mb-2"></div>
@@ -56,10 +69,10 @@ export default function VocabularyDetails() {
 
   if (!list) {
     return (
-      <div className="flex flex-col min-h-screen">
+      <div className="flex flex-col min-h-full">
         <Navbar />
-        <div className="container max-w-6xl mx-auto py-8 text-center">
-          <h1 className="text-2xl font-bold mb-4">Vocabulary List Not Found</h1>
+        <div className="workspace-page text-center">
+          <h1 className="page-title">Vocabulary List Not Found</h1>
           <p className="text-muted-foreground mb-6">The vocabulary list you're looking for doesn't exist or you don't have access to it.</p>
           <Button onClick={() => navigate("/educator/assignments")}>Return to Vocabulary Management</Button>
         </div>
@@ -67,10 +80,13 @@ export default function VocabularyDetails() {
     );
   }
 
+  const readyWords = list.words.filter(word => questionStatuses.some(status => status.wordId === word.id && (status.hasMultipleChoice || status.hasInputForm))).length;
+  const readyToPublish = list.words.length > 0 && readyWords === list.words.length && !loadingQuestions && !questionStatusError;
+
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-full">
       <Navbar />
-      <div className="container max-w-6xl mx-auto py-8">
+      <div className="workspace-page">
         <div className="mb-6">
           <Button variant="ghost" onClick={() => navigate("/educator/assignments")} className="mb-4">
             <ChevronLeft className="mr-2 h-4 w-4" />
@@ -79,7 +95,7 @@ export default function VocabularyDetails() {
 
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
-              <h1 className="text-3xl font-bold tracking-tight">{list.title}</h1>
+              <h1 className="page-title">{list.title}</h1>
               <div className="flex items-center gap-2">
                 <Badge variant={list.published ? "default" : "secondary"}>
                   {list.published ? "Published" : "Draft"}
@@ -108,7 +124,19 @@ export default function VocabularyDetails() {
           </div>
         </div>
 
-        <Tabs defaultValue="overview" className="space-y-6">
+        {!list.published && <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-primary/20 bg-primary/5 p-5">
+          <div>
+            <p className="text-xs font-medium text-primary">{isSetup ? "Draft saved · Ready to publish" : "Prepare your checkup"}</p>
+            <h2 className="mt-1 text-base font-semibold">{readyToPublish ? "Your grid-in questions are ready" : "Preparing your vocabulary questions"}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{loadingQuestions ? "Checking your questions…" : questionStatusError ? "Couldn't check question progress. Refresh to try again." : `${readyWords} of ${list.words.length} words have questions ready for learners.`} Then choose classes and review your publishing settings.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {!readyToPublish && activeTab !== "words" && <Button variant="outline" onClick={() => setActiveTab("words")}>Add questions<HelpCircle /></Button>}
+            <Button disabled={!readyToPublish} onClick={() => navigate(`/educator/publish/${list.id}`)}>Continue to publishing<ArrowRight /></Button>
+          </div>
+        </div>}
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="words">Words & Questions</TabsTrigger>
@@ -132,8 +160,8 @@ export default function VocabularyDetails() {
                   <CardTitle className="text-base">Questions</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">-</div>
-                  <p className="text-xs text-muted-foreground">multiple choice</p>
+                  <div className="text-2xl font-bold">{readyWords}</div>
+                  <p className="text-xs text-muted-foreground">grid-in questions assessed by AI</p>
                 </CardContent>
               </Card>
 
@@ -199,7 +227,7 @@ export default function VocabularyDetails() {
               <CardContent>
                 {list.passage ? (
                   <div 
-                    className="prose prose-sm max-w-none leading-relaxed text-gray-700 dark:text-gray-300"
+                    className="prose prose-sm max-w-none leading-relaxed text-muted-foreground dark:text-gray-300"
                     dangerouslySetInnerHTML={createMarkup(list.passage)}
                   />
                 ) : (

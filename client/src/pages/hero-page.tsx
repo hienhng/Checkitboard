@@ -48,7 +48,7 @@ export default function HeroPage() {
               <div className="flex items-center space-x-3">
                 
                 <span className="text-3xl font-brand font-light bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent tracking-wide">
-                  lexible
+                  checkit
                 </span>
               </div>
             </div>
@@ -294,7 +294,7 @@ export default function HeroPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-4">
-              How Lexible Works
+              How Checkit Works
             </h2>
             <p className="text-xl text-blue-100 max-w-3xl mx-auto">
               A simple 3-step process to transform vocabulary learning in your classroom.
@@ -336,7 +336,7 @@ export default function HeroPage() {
               Core Features
             </div>
             <h2 className="text-5xl md:text-6xl font-bold text-slate-900 mb-8 leading-tight">
-              What Makes Lexible
+              What Makes Checkit
               <span className="block text-blue-600">Different</span>
             </h2>
           </div>
@@ -510,7 +510,7 @@ export default function HeroPage() {
                 <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
                   <BookOpen className="h-6 w-6 text-white" />
                 </div>
-                <span className="text-3xl font-brand font-light tracking-wide">lexible</span>
+                <span className="text-3xl font-brand font-light tracking-wide">checkit</span>
               </div>
               <p className="text-slate-400 mb-8 max-w-md text-lg leading-relaxed">
                 Empowering educators and students with intelligent vocabulary learning tools that make a real difference in academic success.
@@ -545,7 +545,7 @@ export default function HeroPage() {
           <div className="border-t border-slate-800 pt-12 mt-16">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <div className="text-slate-400 text-lg">
-                © 2024 Lexible. All rights reserved.
+                © 2024 Checkit. All rights reserved.
               </div>
               <div className="flex space-x-8 mt-6 md:mt-0">
                 <Link to="/auth" className="text-slate-400 hover:text-blue-400 text-lg transition-colors duration-200">Privacy Policy</Link>

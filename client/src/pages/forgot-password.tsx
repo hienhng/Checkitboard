@@ -1,3 +1,4 @@
+import { Brand } from "@/components/brand";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -51,8 +52,8 @@ export default function ForgotPassword() {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-light px-4">
-        <Card className="w-full max-w-md">
+      <div className="auth-recovery flex min-h-svh flex-col items-center justify-center gap-8 bg-background px-4 py-10"><a href="/auth" aria-label="Back to Checkit"><Brand /></a>
+        <Card className="w-full max-w-md shadow-sm">
           <CardHeader className="text-center space-y-4">
             <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
               <Mail className="h-6 w-6 text-green-600" />
@@ -85,10 +86,10 @@ export default function ForgotPassword() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-neutral-light px-4">
-      <Card className="w-full max-w-md">
+    <div className="auth-recovery flex min-h-svh flex-col items-center justify-center gap-8 bg-background px-4 py-10"><a href="/auth" aria-label="Back to Checkit"><Brand /></a>
+      <Card className="w-full max-w-md shadow-sm">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Forgot Password</CardTitle>
+          <CardTitle className="text-2xl font-semibold tracking-tight">Forgot Password</CardTitle>
           <CardDescription>
             Enter your email address and we'll send you instructions to reset your password.
           </CardDescription>

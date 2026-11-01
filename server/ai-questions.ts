@@ -1,4 +1,4 @@
-import { groq } from "./groq";
+import { gemini, GEMINI_MODEL } from "./gemini";
 import OpenAI from "openai";
 
 interface QuestionGenerationData {
@@ -36,26 +36,32 @@ Respond in this exact JSON format:
 Make sure the question is clear, educational, and appropriate for vocabulary learning.`;
 
   try {
-    // Try Groq first
-    if (groq && process.env.GROQ_API_KEY) {
-      const response = await groq.chat.completions.create({
-        model: "llama-3.1-8b-instant",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.7,
-        max_tokens: 500,
-      });
+    // Try Gemini first
+    if (gemini) {
+      try {
+        const response = await gemini.chat.completions.create({
+          model: GEMINI_MODEL,
+          reasoning_effort: "low",
+          response_format: { type: "json_object" },
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.7,
+          max_tokens: 8192,
+        });
 
-      const content = response.choices[0]?.message?.content;
-      if (content) {
-        const parsed = JSON.parse(content);
-        return {
-          question: parsed.question,
-          optionA: parsed.optionA,
-          optionB: parsed.optionB,
-          optionC: parsed.optionC,
-          optionD: parsed.optionD,
-          correctAnswer: parsed.correctAnswer,
-        };
+        const content = response.choices[0]?.message?.content;
+        if (content) {
+          const parsed = JSON.parse(content);
+          return {
+            question: parsed.question,
+            optionA: parsed.optionA,
+            optionB: parsed.optionB,
+            optionC: parsed.optionC,
+            optionD: parsed.optionD,
+            correctAnswer: parsed.correctAnswer,
+          };
+        }
+      } catch (error) {
+        console.warn("Gemini question generation failed, falling back to OpenAI:", error);
       }
     }
 
