@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn, apiRequest } from "@/lib/queryClient";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -20,6 +19,9 @@ import {
   Zap,
   XCircle,
   PenLine,
+  ArrowRight,
+  Type,
+  Loader2,
 } from "lucide-react";
 import {
   Dialog,
@@ -58,15 +60,16 @@ export default function VocabularyCheckup() {
   const [showSaveProgressDialog, setShowSaveProgressDialog] = useState(false);
   const [exitReason, setExitReason] = useState("");
   const [fullscreenWarning, setFullscreenWarning] = useState(false);
-  const [showTestModeDialog, setShowTestModeDialog] = useState(false);
   const [testStarted, setTestStarted] = useState(false);
+  const [mobilePanel, setMobilePanel] = useState<"questions" | "passage">("questions");
+  const [readingSize, setReadingSize] = useState(1);
   const answersRef = useRef<Record<string, string>>({});
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const saveQueue = useRef<Record<string, Promise<unknown>>>({});
   const submitting = useRef(false);
   const checkupRef = useRef<HTMLDivElement>(null);
 
-  const { data: submission, isLoading: submissionLoading } = useQuery({
+  const { data: submission, isError: submissionError } = useQuery({
     queryKey: [`/api/submissions/${submissionId}`],
     queryFn: getQueryFn({ on401: "throw" }),
     enabled: submissionId > 0,
@@ -75,13 +78,13 @@ export default function VocabularyCheckup() {
   const submissionData = submission as any;
   const listId = submissionData?.listId;
 
-  const { data: listData } = useQuery({
+  const { data: listData, isError: listError } = useQuery({
     queryKey: [`/api/vocabulary-lists/${listId}`],
     queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!listId,
   });
 
-  const { data: questionsData, isLoading: questionsLoading } = useQuery({
+  const { data: questionsData, isError: questionsError } = useQuery({
     queryKey: [`/api/vocabulary-lists/${listId}/questions?submissionId=${submissionId}`],
     queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!listId,
@@ -95,7 +98,7 @@ export default function VocabularyCheckup() {
   const currentQuestion = questions[currentQuestionIndex] as Question | undefined;
   const checkupType = (listData as any)?.type || "practice";
   const isTestMode = checkupType === "test";
-  const isContentLoaded = !submissionLoading && !questionsLoading && !!listData && questions.length > 0;
+  const isContentLoaded = !!submission && !!listData && !!questionsData;
 
   useEffect(() => {
     if (savedAnswers && Object.keys(savedAnswers).length > 0 && Object.keys(answers).length === 0) {
@@ -106,9 +109,7 @@ export default function VocabularyCheckup() {
 
   useEffect(() => {
     if (!isContentLoaded) return;
-    if (isTestMode && !testStarted) {
-      setShowTestModeDialog(true);
-    } else if (!isTestMode && !testStarted) {
+    if (!isTestMode && !testStarted) {
       setTestStarted(true);
     }
   }, [isContentLoaded, isTestMode, testStarted]);
@@ -120,7 +121,7 @@ export default function VocabularyCheckup() {
   }, [listSettings.timeLimit]);
 
   useEffect(() => {
-    if (timeRemaining === null || timeRemaining <= 0) return;
+    if (!testStarted || !isContentLoaded || questions.length === 0 || timeRemaining === null || timeRemaining <= 0) return;
     const timer = setInterval(() => {
       setTimeRemaining((prev) => {
         if (prev === null || prev <= 1) { handleSubmit(); return 0; }
@@ -128,7 +129,7 @@ export default function VocabularyCheckup() {
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [timeRemaining]);
+  }, [timeRemaining, testStarted, isContentLoaded, questions.length]);
 
   useEffect(() => {
     if (!isTestMode || !testStarted) return;
@@ -190,7 +191,6 @@ export default function VocabularyCheckup() {
   const timerUrgent = timeRemaining !== null && timeRemaining < 300;
 
   const handleStartTest = () => {
-    setShowTestModeDialog(false);
     setTestStarted(true);
   };
 
@@ -299,20 +299,33 @@ export default function VocabularyCheckup() {
   const answeredCount = questions.filter(question => answers[answerKey(question)]?.trim()).length;
   const progress = questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
 
-  // ── Loading ─────────────────────────────────────────────────────────────────
-  if (!isContentLoaded || !testStarted) {
+  if (submissionId <= 0 || submissionError || listError || questionsError) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div role="alert" className="bg-card border border-border rounded-2xl p-8 max-w-sm w-full text-center">
+          <XCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-foreground mb-2">Couldn't load your checkup</h2>
+          <p className="text-muted-foreground mb-6">Please return to your dashboard and try opening the checkup again.</p>
+          <Button onClick={() => navigate("/learner/dashboard")} className="bg-primary hover:bg-primary/90 text-primary-foreground">Back to Dashboard</Button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Loading ─────────────────────────────────────────────────────────────────
+  if (!isContentLoaded) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-5">
           <div className="relative w-20 h-20 mx-auto">
-            <div className="absolute inset-0 rounded-full border-4 border-slate-800" />
-            <div className="absolute inset-0 rounded-full border-4 border-t-indigo-500 animate-spin" />
+            <div className="absolute inset-0 rounded-full border-4 border-border" />
+            <div className="absolute inset-0 rounded-full border-4 border-t-primary animate-spin" />
           </div>
           <div>
-            <p className="text-white font-semibold text-lg">
-              {!isContentLoaded ? "Loading questions" : "Preparing your test"}
+            <p className="text-foreground font-semibold text-lg">
+              Loading questions
             </p>
-            <p className="text-slate-500 text-sm mt-1">Please wait a moment…</p>
+            <p className="text-muted-foreground text-sm mt-1">Please wait a moment…</p>
           </div>
         </div>
       </div>
@@ -321,13 +334,53 @@ export default function VocabularyCheckup() {
 
   if (!currentQuestion) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 max-w-sm w-full text-center">
-          <XCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-white mb-2">No Questions</h2>
-          <p className="text-slate-400 mb-6">This assignment doesn't have any questions yet.</p>
-          <Button onClick={() => navigate("/learner/dashboard")} className="bg-indigo-600 hover:bg-indigo-700">Back to Dashboard</Button>
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="bg-card border border-border rounded-2xl p-8 max-w-sm w-full text-center">
+          <XCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-foreground mb-2">No Questions</h2>
+          <p className="text-muted-foreground mb-6">This assignment doesn't have any questions yet.</p>
+          <Button onClick={() => navigate("/learner/dashboard")} className="bg-primary hover:bg-primary/90 text-primary-foreground">Back to Dashboard</Button>
         </div>
+      </div>
+    );
+  }
+
+  if (isTestMode && !testStarted) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <section aria-labelledby="test-rules-title" className="bg-card border border-border rounded-2xl p-6 sm:p-8 max-w-md w-full space-y-6 text-foreground">
+          <h1 id="test-rules-title" className="flex items-center gap-3 text-xl font-bold">
+            <Shield className="h-6 w-6 text-amber-700 dark:text-amber-400" />
+            Monitored Test
+          </h1>
+          <p className="text-foreground/80 font-medium">Please read before starting:</p>
+          <ul className="space-y-3">
+            {[
+              "Fullscreen mode will be activated and enforced",
+              "Tab switching is detected and logged",
+              "All violations are reported to your teacher",
+              "Stay in fullscreen for the full duration",
+            ].map((rule, i) => (
+              <li key={i} className="flex items-start gap-3 text-sm text-muted-foreground">
+                <span className="w-5 h-5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                  {i + 1}
+                </span>
+                {rule}
+              </li>
+            ))}
+          </ul>
+          <p className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3.5 text-sm text-amber-800 dark:text-amber-300">
+            By clicking "I Understand — Start", you agree to follow all test rules. Your timer starts when you begin.
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button variant="outline" onClick={() => navigate("/learner/dashboard")} className="flex-1 border-input text-foreground/80 hover:bg-muted">
+              Cancel
+            </Button>
+            <Button onClick={handleStartTest} className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground">
+              I Understand — Start
+            </Button>
+          </div>
+        </section>
       </div>
     );
   }
@@ -339,415 +392,240 @@ export default function VocabularyCheckup() {
     { value: "D", label: currentQuestion.optionD },
   ];
 
-  const optionColors: Record<string, { idle: string; selected: string; letter: string }> = {
-    A: { idle: "hover:border-violet-500/50 hover:bg-violet-500/5", selected: "border-violet-500 bg-violet-500/10", letter: "bg-violet-500 text-white" },
-    B: { idle: "hover:border-blue-500/50 hover:bg-blue-500/5", selected: "border-blue-500 bg-blue-500/10", letter: "bg-blue-500 text-white" },
-    C: { idle: "hover:border-emerald-500/50 hover:bg-emerald-500/5", selected: "border-emerald-500 bg-emerald-500/10", letter: "bg-emerald-500 text-white" },
-    D: { idle: "hover:border-amber-500/50 hover:bg-amber-500/5", selected: "border-amber-500 bg-amber-500/10", letter: "bg-amber-500 text-white" },
-  };
+  const unansweredCount = questions.length - answeredCount;
+  const selectedAnswer = answers[answerKey(currentQuestion)] || "";
+  const sessionTitle = title || (listData as any)?.title || "Vocabulary checkup";
 
   return (
-    <div ref={checkupRef} className="min-h-screen bg-slate-950 flex flex-col">
-
-      {/* ── Fullscreen Warning ──────────────────────────────────────────────── */}
+    <div ref={checkupRef} className="test-player min-h-screen bg-background text-foreground flex flex-col">
       {isTestMode && fullscreenWarning && (
-        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-red-500/30 rounded-2xl max-w-sm w-full p-8 text-center shadow-2xl shadow-red-500/10">
-            <div className="w-16 h-16 rounded-full bg-red-500/15 border border-red-500/30 flex items-center justify-center mx-auto mb-5">
-              <AlertTriangle className="h-8 w-8 text-red-400" />
+        <div role="alertdialog" aria-modal="true" aria-labelledby="interrupted-title" aria-describedby="interrupted-description" className="fixed inset-0 z-[100] bg-background/95 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card border rounded-2xl max-w-sm w-full p-8 text-center shadow-xl">
+            <div className="w-14 h-14 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto mb-5">
+              <AlertTriangle className="h-7 w-7 text-destructive" />
             </div>
-            <h3 className="text-xl font-bold text-white mb-2">Test Interrupted</h3>
-            <p className="text-slate-400 text-sm mb-1">You exited fullscreen or switched tabs.</p>
-            <p className="text-red-400 text-sm font-medium mb-6">This violation has been logged and reported to your teacher.</p>
-            <Button
-              className="w-full bg-indigo-600 hover:bg-indigo-700 h-11"
-              onClick={async () => {
-                try {
-                  if (checkupRef.current) await checkupRef.current.requestFullscreen();
-                } catch {
-                  toast({ title: "Cannot enter fullscreen", description: "Please allow fullscreen access.", variant: "destructive" });
-                }
-              }}
-            >
-              Return to Fullscreen
-            </Button>
+            <h2 id="interrupted-title" className="text-xl font-bold mb-2">Return to your test</h2>
+            <p id="interrupted-description" className="text-muted-foreground text-sm leading-6 mb-6">You left fullscreen or switched tabs. This has been reported to your teacher. Return to fullscreen to continue; your timer is still running.</p>
+            <Button className="w-full" autoFocus onClick={async () => {
+              try {
+                if (checkupRef.current) await checkupRef.current.requestFullscreen();
+                setFullscreenWarning(false);
+              } catch {
+                toast({ title: "Cannot enter fullscreen", description: "Please allow fullscreen access.", variant: "destructive" });
+              }
+            }}>Return to fullscreen</Button>
           </div>
         </div>
       )}
 
-      {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <header className="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-5 h-14 flex items-center gap-4">
-
-          {/* Left */}
-          <div className="flex items-center gap-3 flex-shrink-0">
-            <button
-              onClick={() => isTestMode ? setShowExitDialog(true) : setShowSaveProgressDialog(true)}
-              className="flex items-center gap-1.5 text-slate-400 hover:text-white text-sm font-medium transition-colors px-2 py-1 rounded-lg hover:bg-white/5"
-            >
-              <LogOut className="h-3.5 w-3.5" />
-              {isTestMode ? "Exit" : "Save & Exit"}
-            </button>
-
-            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold tracking-wide ${
-              isTestMode
-                ? "bg-red-500/10 text-red-400 ring-1 ring-red-500/30"
-                : "bg-indigo-500/10 text-indigo-400 ring-1 ring-indigo-500/30"
-            }`}>
+      <header className="sticky top-0 z-20 border-b bg-card/95 backdrop-blur-md">
+        <div className="mx-auto flex max-w-[1440px] items-center gap-3 px-4 py-3 sm:gap-5 sm:px-8">
+          <div className="hidden items-center gap-2.5 border-r pr-5 md:flex">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground"><BookOpen className="h-[19px] w-[19px]" /></span>
+            <span className="text-lg font-bold tracking-tight">checkit<span className="text-primary">.</span></span>
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="mb-1 flex items-center gap-2 text-[11px] font-medium text-muted-foreground">
               {isTestMode ? <Shield className="h-3 w-3" /> : <Zap className="h-3 w-3" />}
-              {isTestMode ? "TEST" : "PRACTICE"}
+              <span>{isTestMode ? "Monitored test" : "Practice session"}</span>
             </div>
+            <h1 className="truncate text-sm font-semibold sm:text-base" title={sessionTitle}>{sessionTitle}</h1>
           </div>
-
-          {/* Center — progress bar */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between text-xs text-slate-500 mb-1.5">
-              <span className="font-medium text-slate-300">
-                Q {currentQuestionIndex + 1} <span className="text-slate-600">/ {questions.length}</span>
-              </span>
-              <span>{answeredCount} answered</span>
-            </div>
-            <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-500 ease-out"
-                style={{
-                  width: `${progress}%`,
-                  background: "linear-gradient(90deg, #6366f1, #818cf8)",
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Right — timer */}
-          <div className="flex items-center gap-3 flex-shrink-0">
-            {timeRemaining !== null && (
-              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-mono font-bold transition-colors ${
-                timerUrgent
-                  ? "bg-red-500/15 text-red-400 ring-1 ring-red-500/30"
-                  : "bg-slate-800 text-slate-200"
-              }`}>
-                <Clock className={`h-3.5 w-3.5 ${timerUrgent ? "animate-pulse" : "text-slate-500"}`} />
-                {formatTime(timeRemaining)}
+          {timeRemaining !== null && (
+            <div role="timer" aria-label={`${formatTime(timeRemaining)} remaining`} className={`flex shrink-0 items-center gap-2 rounded-xl border px-3 py-2 sm:px-4 ${timerUrgent ? "border-destructive/25 bg-destructive/5 text-destructive" : "bg-muted/50"}`}>
+              <Clock className="h-4 w-4" />
+              <div>
+                <p className="hidden text-[10px] font-medium text-muted-foreground sm:block">Time remaining</p>
+                <p className="text-base font-semibold tabular-nums leading-5">{formatTime(timeRemaining)}</p>
               </div>
-            )}
-            <div className="text-xs text-slate-500 hidden sm:block">
-              <span className="text-emerald-400 font-semibold">{answeredCount}</span>/{questions.length}
             </div>
-          </div>
+          )}
+          <Button variant="ghost" size="icon" aria-label={isTestMode ? "Exit test" : "Save and exit practice"} title={isTestMode ? "Exit test" : "Save and exit"} disabled={completeMutation.isPending} onClick={() => isTestMode ? setShowExitDialog(true) : setShowSaveProgressDialog(true)}><LogOut /></Button>
+          <Button className="hidden sm:inline-flex" disabled={completeMutation.isPending} onClick={() => setShowSubmitDialog(true)}>
+            {completeMutation.isPending ? <Loader2 className="animate-spin" /> : <CheckCircle />}<span>{completeMutation.isPending ? "Submitting…" : "Finish session"}</span>
+          </Button>
         </div>
       </header>
 
-      {completeMutation.isPending && <div role="status" className="mx-auto mt-4 w-full max-w-7xl px-6 text-sm text-emerald-300">Saving and assessing your answers with AI…</div>}
+      <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-5 sm:px-8 sm:py-7">
+        <div className="mb-5 flex flex-wrap items-center gap-x-6 gap-y-3 sm:mb-6">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary"><PenLine className="h-3 w-3" /></span>
+            Your progress
+          </div>
+          <div className="flex min-w-[100px] flex-1 items-center gap-3 sm:max-w-xs">
+            <div role="progressbar" aria-label="Questions answered" aria-valuemin={0} aria-valuemax={questions.length} aria-valuenow={answeredCount} className="h-1.5 flex-1 overflow-hidden rounded-full bg-border">
+              <div className="h-full rounded-full bg-primary transition-[width] duration-300" style={{ width: `${progress}%` }} />
+            </div>
+            <span className="whitespace-nowrap text-xs text-muted-foreground"><span className="font-semibold text-foreground">{answeredCount}</span> of {questions.length}</span>
+          </div>
+          <p className="ml-auto hidden items-center gap-1.5 text-xs text-muted-foreground sm:flex"><Save className="h-3.5 w-3.5" />Answers save automatically</p>
+        </div>
 
-      {/* ── Main ────────────────────────────────────────────────────────────── */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-5 py-6">
-        <div className={`grid gap-5 h-full ${passage ? "lg:grid-cols-[1fr_1.1fr]" : "max-w-2xl mx-auto"}`}>
+        {completeMutation.isPending && <div role="status" className="mb-5 flex items-center gap-2 rounded-xl border border-primary/20 bg-accent px-4 py-3 text-sm text-accent-foreground"><Loader2 className="h-4 w-4 animate-spin" />Saving and assessing your answers. This may take a moment.</div>}
 
-          {/* Reading Passage Panel */}
+        {passage && (
+          <div role="group" aria-label="Player view" className="mb-4 grid grid-cols-2 gap-1 rounded-xl border bg-muted p-1 lg:hidden">
+            <button type="button" aria-pressed={mobilePanel === "questions"} onClick={() => setMobilePanel("questions")} className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${mobilePanel === "questions" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}><PenLine className="h-4 w-4" />Questions</button>
+            <button type="button" aria-pressed={mobilePanel === "passage"} onClick={() => setMobilePanel("passage")} className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${mobilePanel === "passage" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}><BookOpen className="h-4 w-4" />Reading passage</button>
+          </div>
+        )}
+
+        <div className={`grid items-start gap-6 ${passage ? "lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]" : "mx-auto max-w-3xl"}`}>
           {passage && (
-            <aside className="lg:sticky lg:top-[calc(3.5rem+1.25rem)] self-start">
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
-                {/* Panel header */}
-                <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-800">
-                  <div className="w-7 h-7 rounded-lg bg-indigo-500/15 flex items-center justify-center flex-shrink-0">
-                    <BookOpen className="h-3.5 w-3.5 text-indigo-400" />
+            <aside aria-labelledby="passage-heading" className={`min-w-0 lg:sticky lg:top-24 ${mobilePanel === "passage" ? "block" : "hidden lg:block"}`}>
+              <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+                <div className="flex items-center justify-between gap-3 border-b px-5 py-4 sm:px-7">
+                  <h2 id="passage-heading" className="flex items-center gap-2.5 text-sm font-semibold"><BookOpen className="h-4 w-4 text-primary" />Reading passage</h2>
+                  <div role="group" aria-label="Reading text size" className="flex items-center gap-0.5 rounded-lg border p-0.5">
+                    {[0, 1, 2].map(size => <button key={size} type="button" aria-label={`${["Small", "Medium", "Large"][size]} reading text`} aria-pressed={readingSize === size} onClick={() => setReadingSize(size)} className={`flex h-7 w-8 items-center justify-center rounded-md transition-colors ${readingSize === size ? "bg-accent text-primary" : "text-muted-foreground hover:bg-muted"}`}><Type style={{ width: 12 + size * 3, height: 12 + size * 3 }} /></button>)}
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Reading Passage</p>
-                    <p className="text-sm font-semibold text-white truncate">{title}</p>
-                  </div>
-                  {currentQuestion.word && (
-                    <span className="ml-auto flex-shrink-0 bg-yellow-400/10 text-yellow-400 ring-1 ring-yellow-400/30 text-xs px-2.5 py-1 rounded-full font-semibold">
-                      {currentQuestion.word}
-                    </span>
-                  )}
                 </div>
-                {/* Passage text */}
-                <div
-                  className="px-5 py-4 text-[0.9rem] text-slate-300 leading-[1.85] max-h-[calc(100vh-12rem)] overflow-y-auto"
-                  style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
-                  dangerouslySetInnerHTML={{
-                    __html: currentQuestion?.word
-                      ? passage.replace(
-                          new RegExp(`(<mark[^>]*>)?\\b(${currentQuestion.word})\\b(</mark>)?`, "gi"),
-                          `<mark style="background:rgba(250,204,21,0.18);color:#fde68a;padding:1px 3px;border-radius:3px;font-weight:600">$2</mark>`,
-                        )
+                <div className="test-player-reading max-h-[65svh] overflow-y-auto px-5 py-6 sm:px-8 sm:py-8 lg:max-h-[calc(100dvh-15rem)]">
+                  <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Read & understand</p>
+                  <h3 className="mb-6 font-serif text-2xl leading-snug tracking-tight sm:text-[1.75rem]">{sessionTitle}</h3>
+                  <div className="test-player-passage whitespace-pre-wrap break-words font-serif leading-[1.95] text-foreground/80" style={{ fontSize: [15, 17, 19][readingSize] }} dangerouslySetInnerHTML={{
+                    __html: currentQuestion.word
+                      ? passage.replace(new RegExp(`(<mark[^>]*>)?\\b(${currentQuestion.word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})\\b(</mark>)?`, "gi"), '<mark class="test-player-highlight">$2</mark>')
                       : passage,
-                  }}
-                />
+                  }} />
+                </div>
+                <div className="flex items-start gap-2 border-t bg-muted/30 px-5 py-3.5 text-xs leading-5 text-muted-foreground sm:px-7">
+                  <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-sm bg-amber-300" />
+                  {currentQuestion.word ? <span><span className="font-semibold text-foreground">{currentQuestion.word}</span> is highlighted so you can find it in context.</span> : <span>Refer to this passage as you work through the questions.</span>}
+                </div>
               </div>
             </aside>
           )}
 
-          {/* Question + Navigator */}
-          <div className="flex flex-col gap-4">
-
-            {/* Question Card */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col">
-
-              {/* Question Meta Bar */}
-              <div className="flex items-center gap-3 px-5 py-3 border-b border-slate-800 bg-slate-900/50">
-                <span className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-md ${
-                  currentQuestion.type === "multiple_choice"
-                    ? "bg-violet-500/10 text-violet-400"
-                    : "bg-emerald-500/10 text-emerald-400"
-                }`}>
-                  {currentQuestion.type === "multiple_choice"
-                    ? <><CheckCircle className="h-3 w-3" />Multiple Choice</>
-                    : <><PenLine className="h-3 w-3" />Grid-in · AI assessed</>
-                  }
-                </span>
-                <span className="text-slate-700 text-xs">•</span>
-                <span className="text-xs text-slate-500">
-                  Question {currentQuestionIndex + 1} of {questions.length}
-                </span>
+          <div className={`min-w-0 space-y-5 ${passage && mobilePanel !== "questions" ? "hidden lg:block" : "block"}`}>
+            <section aria-labelledby="question-heading" className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4 sm:px-7">
+                <p className="text-sm font-semibold">Question {currentQuestionIndex + 1}<span className="ml-1 font-normal text-muted-foreground">/ {questions.length}</span></p>
+                <span className="flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground">{currentQuestion.type === "multiple_choice" ? <><CheckCircle className="h-3 w-3" />Multiple choice</> : <><PenLine className="h-3 w-3" />Written answer</>}</span>
               </div>
+              <div key={answerKey(currentQuestion)} className="px-5 py-7 sm:px-7 sm:py-8">
+                {currentQuestion.word && <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">{currentQuestion.word}</p>}
+                <h2 id="question-heading" className="break-words text-xl font-semibold leading-[1.5] tracking-tight sm:text-[22px]">{currentQuestion.question}</h2>
+                <p className="mb-6 mt-2 text-sm leading-6 text-muted-foreground">{currentQuestion.type === "multiple_choice" ? "Choose the answer that best fits the passage." : "Explain the meaning in your own words."}</p>
 
-              {/* Question Body */}
-              <div className="px-6 py-6 flex-1">
-                <p className="text-[1.05rem] font-semibold text-white leading-relaxed mb-6">
-                  {currentQuestion.question}
-                </p>
-
-                {/* Multiple Choice */}
                 {currentQuestion.type === "multiple_choice" && (
-                  <div className="space-y-2.5">
-                    {mcOptions.map((option) => {
-                      const isSelected = answers[answerKey(currentQuestion)] === option.value;
-                      const colors = optionColors[option.value];
-                      return (
-                        <button
-                          key={option.value}
-                          onClick={() => handleAnswerChange(option.value)}
-                          className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl border transition-all duration-150 text-left group ${
-                            isSelected
-                              ? `${colors.selected} shadow-sm`
-                              : `border-slate-800 bg-slate-800/40 ${colors.idle}`
-                          }`}
-                        >
-                          {/* Letter badge */}
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-sm font-bold transition-all duration-150 ${
-                            isSelected ? colors.letter : "bg-slate-700 text-slate-400 group-hover:bg-slate-600"
-                          }`}>
-                            {option.value}
-                          </div>
-                          {/* Label */}
-                          <span className={`flex-1 text-sm leading-snug transition-colors duration-150 ${
-                            isSelected ? "text-white font-medium" : "text-slate-300"
-                          }`}>
-                            {option.label}
-                          </span>
-                          {/* Checkmark */}
-                          {isSelected && (
-                            <CheckCircle className="h-4 w-4 flex-shrink-0 text-current opacity-80" />
-                          )}
-                        </button>
-                      );
+                  <fieldset aria-labelledby="question-heading" disabled={completeMutation.isPending} className="space-y-3">
+                    <legend className="sr-only">Choose one answer</legend>
+                    {mcOptions.filter(option => option.label != null).map(option => {
+                      const isSelected = selectedAnswer === option.value;
+                      return <label key={option.value} className={`flex cursor-pointer items-center gap-3.5 rounded-xl border p-3.5 text-left transition-colors focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-card sm:p-4 ${isSelected ? "border-primary bg-accent" : "border-border hover:border-primary/40 hover:bg-muted/50"} ${completeMutation.isPending ? "pointer-events-none opacity-60" : ""}`}>
+                        <input type="radio" name={`question-${answerKey(currentQuestion)}`} value={option.value} checked={isSelected} onChange={() => handleAnswerChange(option.value)} className="sr-only" />
+                        <span aria-hidden="true" className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border text-xs font-semibold ${isSelected ? "border-primary bg-primary text-primary-foreground" : "bg-card text-muted-foreground"}`}>{option.value}</span>
+                        <span className={`min-w-0 flex-1 break-words text-sm leading-6 ${isSelected ? "font-medium text-accent-foreground" : "text-foreground/80"}`}>{option.label}</span>
+                        <span aria-hidden="true" className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border ${isSelected ? "border-primary bg-primary text-primary-foreground" : "border-input"}`}>{isSelected && <CheckCircle className="h-[18px] w-[18px]" />}</span>
+                      </label>;
                     })}
-                  </div>
+                  </fieldset>
                 )}
 
-                {/* Input / Written Answer */}
                 {currentQuestion.type === "input" && (
-                  <div className="space-y-3">
-                    <Input
-                      type="text"
-                      disabled={completeMutation.isPending}
-                      aria-label="Your answer"
-                      placeholder="Explain the meaning in your own words…"
-                      value={answers[answerKey(currentQuestion)] || ""}
-                      onChange={(e) => handleAnswerChange(e.target.value)}
-                      className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-600 focus:border-indigo-500 focus:ring-indigo-500/20 h-12 text-base rounded-xl"
-                    />
-                    <p className="text-xs text-slate-400">AI assesses the meaning of your answer when you submit. You can use your own words.</p>
+                  <div>
+                    <label htmlFor="written-answer" className="mb-2 block text-sm font-medium">Your answer</label>
+                    <Textarea id="written-answer" disabled={completeMutation.isPending} placeholder="Write your answer here…" value={selectedAnswer} onChange={e => handleAnswerChange(e.target.value)} rows={5} aria-describedby="written-answer-hint" className="min-h-36 resize-y rounded-xl bg-background/40 p-4 text-base leading-7 placeholder:text-muted-foreground/70 focus-visible:ring-primary/25" />
+                    <p id="written-answer-hint" className="mt-3 text-xs leading-5 text-muted-foreground">Your answer is assessed for meaning when you submit. Exact wording is not required.</p>
                   </div>
                 )}
               </div>
-
-              {/* Navigation footer */}
-              <div className="px-5 py-4 border-t border-slate-800 flex items-center justify-between bg-slate-900/50">
-                <Button
-                  variant="ghost"
-                  onClick={goToPrevious}
-                  disabled={currentQuestionIndex === 0}
-                  className="text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-25 h-9 px-3"
-                >
-                  <ChevronLeft className="h-4 w-4 mr-1" />
-                  Back
+              <div className="flex items-center justify-between gap-2 border-t bg-muted/20 px-4 py-4 sm:px-6">
+                <Button variant="outline" className="px-3 sm:px-4" onClick={goToPrevious} disabled={currentQuestionIndex === 0 || completeMutation.isPending}>
+                  <ChevronLeft />
+                  <span className="sm:hidden">Back</span>
+                  <span className="hidden sm:inline">Previous</span>
                 </Button>
-
-                <div className="flex gap-1.5">
-                  {questions.map((_: any, i: number) => (
-                    <div
-                      key={i}
-                      className={`h-1.5 rounded-full transition-all duration-300 ${
-                        i === currentQuestionIndex
-                          ? "w-6 bg-indigo-500"
-                          : answers[answerKey(questions[i])]
-                          ? "w-1.5 bg-emerald-500/60"
-                          : "w-1.5 bg-slate-700"
-                      }`}
-                    />
-                  ))}
-                </div>
-
+                <span className="hidden text-xs text-muted-foreground sm:block">{currentQuestionIndex + 1} of {questions.length}</span>
                 {currentQuestionIndex === questions.length - 1 ? (
-                  <Button
-                    onClick={() => setShowSubmitDialog(true)}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white h-9 px-4 font-semibold"
-                  >
-                    <Send className="h-3.5 w-3.5 mr-1.5" />
-                    Submit
+                  <Button className="px-3 sm:px-4" disabled={completeMutation.isPending} onClick={() => setShowSubmitDialog(true)}>
+                    <span className="sm:hidden">Review</span>
+                    <span className="hidden sm:inline">Review & submit</span>
+                    <CheckCircle />
                   </Button>
                 ) : (
-                  <Button
-                    onClick={goToNext}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white h-9 px-4"
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4 ml-1" />
+                  <Button className="px-3 sm:px-4" disabled={completeMutation.isPending} onClick={goToNext}>
+                    <span className="sm:hidden">Next</span>
+                    <span className="hidden sm:inline">Next question</span>
+                    <ArrowRight />
                   </Button>
                 )}
               </div>
-            </div>
+            </section>
 
-            {/* Question Navigator */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Jump to question</p>
-                <p className="text-xs text-slate-600">
-                  <span className="text-emerald-400 font-semibold">{answeredCount}</span> / {questions.length}
-                </p>
+            <nav aria-labelledby="navigator-heading" className="rounded-2xl border bg-card p-5 shadow-sm sm:p-6">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h2 id="navigator-heading" className="text-sm font-semibold">Question overview</h2>
+                <span className="text-xs text-muted-foreground">{unansweredCount === 0 ? "All answered" : `${unansweredCount} remaining`}</span>
               </div>
-
-              <div className="flex flex-wrap gap-1.5">
-                {questions.map((q: Question, idx: number) => {
-                  const isAnswered = !!answers[answerKey(q)];
-                  const isCurrent = currentQuestionIndex === idx;
-                  return (
-                    <button
-                      key={q.id}
-                      onClick={() => goToQuestion(idx)}
-                      title={`Question ${idx + 1}`}
-                      className={`w-8 h-8 rounded-lg text-xs font-bold transition-all duration-150 ${
-                        isCurrent
-                          ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/30 scale-105"
-                          : isAnswered
-                          ? "bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30 hover:bg-emerald-500/25"
-                          : "bg-slate-800 text-slate-500 hover:bg-slate-700 hover:text-slate-300"
-                      }`}
-                    >
-                      {idx + 1}
-                    </button>
-                  );
+              <div className="flex max-h-44 flex-wrap gap-2 overflow-y-auto p-1 -m-1">
+                {questions.map((question, index) => {
+                  const isAnswered = !!answers[answerKey(question)]?.trim();
+                  const isCurrent = currentQuestionIndex === index;
+                  return <button key={answerKey(question)} type="button" onClick={() => goToQuestion(index)} aria-label={`Question ${index + 1}, ${isAnswered ? "answered" : "unanswered"}${isCurrent ? ", current" : ""}`} aria-current={isCurrent ? "step" : undefined} className={`relative flex h-10 w-10 items-center justify-center rounded-lg border text-xs font-semibold transition-colors ${isCurrent ? "border-primary bg-primary text-primary-foreground" : isAnswered ? "border-primary/20 bg-accent text-accent-foreground hover:border-primary/50" : "bg-card text-muted-foreground hover:border-primary/40 hover:text-primary"}`}>
+                    {index + 1}{isAnswered && <span aria-hidden="true" className={`absolute bottom-1 h-1 w-1 rounded-full ${isCurrent ? "bg-primary-foreground" : "bg-primary"}`} />}
+                  </button>;
                 })}
               </div>
-
-              <div className="flex items-center gap-5 mt-3 pt-3 border-t border-slate-800">
-                <span className="flex items-center gap-1.5 text-xs text-slate-600">
-                  <span className="w-3 h-3 rounded-sm bg-emerald-500/20 ring-1 ring-emerald-500/40 inline-block" />
-                  Answered
-                </span>
-                <span className="flex items-center gap-1.5 text-xs text-slate-600">
-                  <span className="w-3 h-3 rounded-sm bg-indigo-600 inline-block" />
-                  Current
-                </span>
-                <span className="flex items-center gap-1.5 text-xs text-slate-600">
-                  <span className="w-3 h-3 rounded-sm bg-slate-800 ring-1 ring-slate-700 inline-block" />
-                  Unanswered
-                </span>
+              <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-t pt-4 text-[11px] text-muted-foreground">
+                <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-primary" />Current</span>
+                <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm border border-primary/20 bg-accent" />Answered</span>
+                <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm border bg-card" />Unanswered</span>
               </div>
+            </nav>
+            <div className="flex flex-wrap items-center justify-between gap-3 px-1 text-xs leading-5 text-muted-foreground">
+              <p className="flex items-center gap-1.5"><Shield className="h-3.5 w-3.5" />{isTestMode ? "Stay in fullscreen until you finish." : "Take your time. You can revisit any question."}</p>
+              <button disabled={completeMutation.isPending} onClick={() => setShowSubmitDialog(true)} className="font-medium text-primary underline-offset-4 hover:underline disabled:opacity-50">Finish session<ChevronRight className="ml-0.5 inline h-3 w-3" /></button>
             </div>
-
           </div>
         </div>
       </main>
 
-      {/* ── Test Mode Dialog ─────────────────────────────────────────────────── */}
-      <Dialog open={showTestModeDialog} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-md bg-slate-900 border-slate-800 text-white">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3 text-white">
-              <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center">
-                <Shield className="h-4.5 w-4.5 text-amber-400" />
-              </div>
-              Monitored Test
-            </DialogTitle>
-            <DialogDescription className="space-y-4 pt-3">
-              <p className="text-slate-300 font-medium">Please read before starting:</p>
-              <ul className="space-y-3">
-                {[
-                  "Fullscreen mode will be activated and enforced",
-                  "Tab switching is detected and logged",
-                  "All violations are reported to your teacher",
-                  "Stay in fullscreen for the full duration",
-                ].map((rule, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm text-slate-400">
-                    <span className="w-5 h-5 rounded-full bg-amber-500/15 text-amber-400 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
-                      {i + 1}
-                    </span>
-                    {rule}
-                  </li>
-                ))}
-              </ul>
-              <div className="bg-amber-500/8 border border-amber-500/20 rounded-xl p-3.5 text-sm text-amber-300/80">
-                By clicking "Start Test", you agree to follow all test rules.
-              </div>
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 mt-2">
-            <Button variant="outline" onClick={() => navigate("/learner/dashboard")} className="flex-1 border-slate-700 text-slate-300 hover:bg-slate-800">
-              Cancel
-            </Button>
-            <Button onClick={handleStartTest} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white">
-              I Understand — Start
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* ── Submit Dialog ────────────────────────────────────────────────────── */}
       <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
-        <DialogContent className="sm:max-w-sm bg-slate-900 border-slate-800 text-white">
+        <DialogContent container={checkupRef.current} className="sm:max-w-sm bg-card border-border text-foreground">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2.5 text-white">
+            <DialogTitle className="flex items-center gap-2.5 text-foreground">
               <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center">
-                <Send className="h-4 w-4 text-emerald-400" />
+                <Send className="h-4 w-4 text-emerald-700 dark:text-emerald-400" />
               </div>
-              Submit Test?
+              Ready to submit?
             </DialogTitle>
+            <DialogDescription>Review your progress before finishing. You won’t be able to change your answers after submitting.</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 text-center">
-              <p className="text-2xl font-black text-emerald-400">{answeredCount}</p>
-              <p className="text-xs text-slate-500 mt-0.5">Answered</p>
+              <p className="text-2xl font-black text-emerald-700 dark:text-emerald-400">{answeredCount}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Answered</p>
             </div>
             <div className={`border rounded-xl p-4 text-center ${
               questions.length - answeredCount > 0
                 ? "bg-amber-500/10 border-amber-500/20"
-                : "bg-slate-800 border-slate-700"
+                : "bg-muted border-input"
             }`}>
-              <p className={`text-2xl font-black ${questions.length - answeredCount > 0 ? "text-amber-400" : "text-slate-400"}`}>
+              <p className={`text-2xl font-black ${questions.length - answeredCount > 0 ? "text-amber-700 dark:text-amber-400" : "text-muted-foreground"}`}>
                 {questions.length - answeredCount}
               </p>
-              <p className="text-xs text-slate-500 mt-0.5">Unanswered</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Unanswered</p>
             </div>
           </div>
           {questions.length - answeredCount > 0 && (
-            <div className="text-sm text-amber-300/80 bg-amber-500/8 border border-amber-500/20 rounded-xl px-4 py-3">
+            <div className="text-sm text-amber-800 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3">
               Unanswered questions will be marked incorrect.
             </div>
           )}
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setShowSubmitDialog(false)} className="border-slate-700 text-slate-300 hover:bg-slate-800">
+            <Button variant="outline" onClick={() => setShowSubmitDialog(false)} className="border-input text-foreground/80 hover:bg-muted">
               Keep Going
             </Button>
             <Button
               onClick={() => { setShowSubmitDialog(false); handleSubmit(); }}
               disabled={completeMutation.isPending}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
             >
-              {completeMutation.isPending ? "Assessing answers…" : "Submit Test"}
+              {completeMutation.isPending ? "Assessing answers…" : "Submit answers"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -755,13 +633,13 @@ export default function VocabularyCheckup() {
 
       {/* ── Exit Test Dialog ─────────────────────────────────────────────────── */}
       <Dialog open={showExitDialog} onOpenChange={setShowExitDialog}>
-        <DialogContent className="sm:max-w-sm bg-slate-900 border-slate-800 text-white">
+        <DialogContent container={checkupRef.current} className="sm:max-w-sm bg-card border-border text-foreground">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2.5 text-red-400">
+            <DialogTitle className="flex items-center gap-2.5 text-destructive">
               <AlertTriangle className="h-5 w-5" />
               Exit Test
             </DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogDescription className="text-muted-foreground">
               Provide a reason for exiting. This will be shared with your teacher.
             </DialogDescription>
           </DialogHeader>
@@ -770,10 +648,10 @@ export default function VocabularyCheckup() {
             value={exitReason}
             onChange={(e) => setExitReason(e.target.value)}
             rows={3}
-            className="resize-none bg-slate-800 border-slate-700 text-white placeholder:text-slate-600 focus:border-red-500/50"
+            className="resize-none bg-muted border-input text-foreground placeholder:text-muted-foreground focus:border-red-500/50"
           />
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => { setShowExitDialog(false); setExitReason(""); }} className="border-slate-700 text-slate-300 hover:bg-slate-800">
+            <Button variant="outline" onClick={() => { setShowExitDialog(false); setExitReason(""); }} className="border-input text-foreground/80 hover:bg-muted">
               Cancel
             </Button>
             <Button
@@ -789,23 +667,23 @@ export default function VocabularyCheckup() {
 
       {/* ── Save & Exit Dialog ───────────────────────────────────────────────── */}
       <Dialog open={showSaveProgressDialog} onOpenChange={setShowSaveProgressDialog}>
-        <DialogContent className="sm:max-w-sm bg-slate-900 border-slate-800 text-white">
+        <DialogContent container={checkupRef.current} className="sm:max-w-sm bg-card border-border text-foreground">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2.5 text-white">
+            <DialogTitle className="flex items-center gap-2.5 text-foreground">
               <div className="w-8 h-8 rounded-lg bg-indigo-500/15 flex items-center justify-center">
-                <Save className="h-4 w-4 text-indigo-400" />
+                <Save className="h-4 w-4 text-primary" />
               </div>
               Save Progress?
             </DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogDescription className="text-muted-foreground">
               Your progress is automatically saved. You can return to this practice checkup anytime from your dashboard.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setShowSaveProgressDialog(false)} className="border-slate-700 text-slate-300 hover:bg-slate-800">
+            <Button variant="outline" onClick={() => setShowSaveProgressDialog(false)} className="border-input text-foreground/80 hover:bg-muted">
               Continue
             </Button>
-            <Button onClick={handleSaveAndGoBack} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+            <Button onClick={handleSaveAndGoBack} className="bg-primary hover:bg-primary/90 text-primary-foreground">
               <Save className="h-3.5 w-3.5 mr-1.5" />
               Save & Exit
             </Button>

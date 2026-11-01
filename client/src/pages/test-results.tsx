@@ -13,7 +13,6 @@ import {
   Target,
   TrendingUp,
   BookOpen,
-  RotateCcw,
 } from "lucide-react";
 
 export default function TestResults() {
@@ -317,11 +316,11 @@ export default function TestResults() {
           </Button>
           {data.list?.id && (
             <Button
-              onClick={() => navigate(`/test-preview/${data.list.id}`)}
+              onClick={() => navigate(`/learner/test-preview/${data.list.id}`)}
               className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
             >
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Try Again
+              <BookOpen className="h-4 w-4 mr-2" />
+              View Test Preview
             </Button>
           )}
         </div>

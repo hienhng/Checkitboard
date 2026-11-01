@@ -39,18 +39,21 @@ export default function TestPreview() {
     queryKey: [`/api/vocabulary-lists/${listId}/submission`],
     queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!listId,
+    staleTime: 0,
   });
 
   const { data: existingSubmission } = useQuery({
     queryKey: [`/api/submissions/check/${listId}`],
     queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!listId,
+    staleTime: 0,
   });
 
   const { data: attemptInfo } = useQuery({
     queryKey: [`/api/vocabulary-lists/${listId}/attempts`],
     queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!listId,
+    staleTime: 0,
   });
 
   const listData = vocabularyList as any;
@@ -118,6 +121,9 @@ export default function TestPreview() {
   const hasGradedResult = submissionData && (submissionData as any)?.gradedAt;
   const hasDoneIt = existingSubmission && (existingSubmission as any)?.exists && (!attemptInfo || !(attemptInfo as any)?.canAttempt);
   const attemptData = attemptInfo as any;
+  const hasCompletedAttempt = Boolean(
+    hasGradedResult || (existingSubmission as any)?.completed || attemptData?.attemptCount > 0
+  );
 
   const passageWords = (listData.passage || "").split(" ");
   const midPoint = Math.floor(passageWords.length / 3);
@@ -197,21 +203,29 @@ export default function TestPreview() {
                 </div>
                 <div>
                   <h2 className="font-semibold text-slate-800">Passage Preview</h2>
-                  <p className="text-xs text-slate-400">Start to see the full passage</p>
+                  <p className="text-xs text-slate-400">
+                    {hasCompletedAttempt ? "Review the passage from your completed assignment" : "Start to see the full passage"}
+                  </p>
                 </div>
               </div>
 
               <div className="relative overflow-hidden rounded-xl bg-slate-50 p-4 text-sm text-slate-700 leading-relaxed min-h-[200px]">
-                <p>{visiblePart}</p>
-                <div className="relative mt-2">
-                  <p className="blur-sm select-none pointer-events-none text-slate-400">{blurredPart}</p>
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-50/95" />
-                  <div className="absolute bottom-4 left-0 right-0 flex justify-center">
-                    <div className="bg-white rounded-full px-4 py-2 shadow-md border border-slate-200 text-xs font-semibold text-slate-600">
-                      🔒 Start assignment to read full passage
+                {hasCompletedAttempt ? (
+                  <p className="whitespace-pre-wrap">{listData.passage}</p>
+                ) : (
+                  <>
+                    <p>{visiblePart}</p>
+                    <div className="relative mt-2">
+                      <p className="blur-sm select-none pointer-events-none text-slate-400">{blurredPart}</p>
+                      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-50/95" />
+                      <div className="absolute bottom-4 left-0 right-0 flex justify-center">
+                        <div className="bg-white rounded-full px-4 py-2 shadow-md border border-slate-200 text-xs font-semibold text-slate-600">
+                          🔒 Start assignment to read full passage
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
