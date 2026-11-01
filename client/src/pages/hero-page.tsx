@@ -1,560 +1,209 @@
+import { useState } from "react";
+import { AnimatePresence, motion, MotionConfig, useMotionValue, useReducedMotion, useSpring, useTransform } from "framer-motion";
+import { Link, Redirect } from "wouter";
+import { ArrowLeft, ArrowRight, ArrowUpRight, BookOpen, Check, ChevronRight, GraduationCap, Layers, RotateCcw, Sparkles, TrendingUp, Users, PenLine, Plus, MoveUpRight, Pause, Play } from "lucide-react";
+import { Brand } from "@/components/brand";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { BrandLogo } from "@/components/brand";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { Redirect } from "wouter";
-import { 
-  BookOpen, 
-  Users, 
-  Brain, 
-  CheckCircle, 
-  GraduationCap, 
-  Sparkles, 
-  ArrowRight,
-  Star,
-  Play,
-  Target,
-  TrendingUp,
-  Globe,
-  Zap,
-  Shield,
-  Award,
-  ChevronRight,
-  BarChart3,
-  MessageSquare,
-  Clock,
-  Lightbulb
-} from "lucide-react";
+import "./hero-page.css";
+
+const words = [
+  { word: "serendipity", pronunciation: "/ˌser.ənˈdɪp.ə.ti/", type: "noun", definition: "The chance discovery of something wonderful when you weren’t looking for it.", example: "Finding her favorite book in the little café was pure serendipity.", options: ["A carefully planned event", "An unexpected, happy discovery", "A familiar daily routine"], answer: 1 },
+  { word: "resilient", pronunciation: "/rɪˈzɪl.i.ənt/", type: "adjective", definition: "Able to recover and keep going after something difficult.", example: "Like a tree after a storm, she stayed resilient and began again.", options: ["Able to recover from difficulty", "Unwilling to try new things", "Easily distracted"], answer: 0 },
+  { word: "curiosity", pronunciation: "/ˌkjʊr.iˈɑː.sə.ti/", type: "noun", definition: "A strong desire to learn, explore, or understand something new.", example: "His curiosity turned a simple question into a whole afternoon of discovery.", options: ["A feeling of certainty", "A wish to be alone", "A desire to learn and discover"], answer: 2 },
+];
+
+const features = [
+  { icon: BookOpen, title: "Find meaning in context", description: "Turn reading passages into words worth remembering." },
+  { icon: Layers, title: "Make practice personal", description: "Build confidence with flashcards and vocabulary check-ups." },
+  { icon: TrendingUp, title: "See learning take shape", description: "Follow progress and discover what needs a little more practice." },
+];
+
+const steps = [
+  { icon: BookOpen, title: "Start with a little reading.", description: "Bring a passage you love, a classroom text, or something that sparks curiosity. Educators can turn it into a vocabulary assignment.", detail: "A story. An article. A new perspective." },
+  { icon: Layers, title: "Give new words a home.", description: "Explore meanings in context, revisit them with flashcards, and put your understanding into practice with vocabulary check-ups.", detail: "Read it. Recall it. Make it yours." },
+  { icon: TrendingUp, title: "Watch understanding grow.", description: "Review results, find the words that need another look, and return to practice with a clearer idea of what comes next.", detail: "Small discoveries add up." },
+];
+
+const questions = [
+  { question: "Who is Checkit for?", answer: "Checkit brings educators and learners together. Educators organize classes and vocabulary assignments, while learners practice words, complete check-ups, and follow their progress." },
+  { question: "Can I use my own reading passages?", answer: "Yes. Educators can write or paste a reading passage, select vocabulary, and build an assignment around the material their class is already exploring." },
+  { question: "How can learners practice?", answer: "Learners can revisit their vocabulary with flashcards and practice modes, then complete assigned check-ups to see how well they understand the words." },
+  { question: "How do I get started?", answer: "Create an account, choose your educator or learner role, and verify your email. Educators can then set up a class and create assignments; learners can join their class with a class code." },
+];
+
+function VocabularyPreview() {
+  const [index, setIndex] = useState(0);
+  const [mode, setMode] = useState("flashcards");
+  const [revealed, setRevealed] = useState(false);
+  const [answers, setAnswers] = useState<Record<number, number>>({});
+  const [discovered, setDiscovered] = useState<number[]>([]);
+  const [direction, setDirection] = useState(1);
+  const [motionPaused, setMotionPaused] = useState(false);
+  const [celebration, setCelebration] = useState(0);
+  const prefersReducedMotion = useReducedMotion();
+  const reduceMotion = prefersReducedMotion || motionPaused;
+  const pointerX = useMotionValue(0);
+  const pointerY = useMotionValue(0);
+  const rotateX = useSpring(useTransform(pointerY, [-0.5, 0.5], [3, -3]), { stiffness: 180, damping: 24 });
+  const rotateY = useSpring(useTransform(pointerX, [-0.5, 0.5], [-4, 4]), { stiffness: 180, damping: 24 });
+  const word = words[index];
+  const selected = answers[index] ?? null;
+  const complete = discovered.length === words.length;
+  const transition = { duration: reduceMotion ? 0 : 0.22 };
+
+  function discoverWord() {
+    setDiscovered((current) => current.includes(index) ? current : [...current, index]);
+  }
+
+  function goToWord(next: number, nextDirection: number) {
+    setDirection(nextDirection);
+    setIndex(next);
+    setRevealed(false);
+  }
+
+  function changeWord(direction: number) {
+    goToWord((index + direction + words.length) % words.length, direction);
+  }
+
+  function restart() {
+    setIndex(0);
+    setRevealed(false);
+    setAnswers({});
+    setDiscovered([]);
+    setCelebration(0);
+  }
+
+  return <MotionConfig reducedMotion={reduceMotion ? "always" : "never"}>
+    <div className="hero-preview-scene" data-motion={reduceMotion ? "off" : "on"}>
+    <div className="hero-orbit hero-orbit-one" aria-hidden="true" />
+    <div className="hero-orbit hero-orbit-two" aria-hidden="true" />
+    <div className="hero-spark hero-spark-one" aria-hidden="true">✳</div>
+    <div className="hero-spark hero-spark-two" aria-hidden="true">✧</div>
+    <div className="hero-preview-note"><span className="hero-note-icon"><Sparkles size={15} /></span>A little practice. A lasting connection.</div>
+    <div className="hero-demo-perspective" onPointerMove={(event) => {
+      if (reduceMotion || event.pointerType !== "mouse") return;
+      const bounds = event.currentTarget.getBoundingClientRect();
+      pointerX.set((event.clientX - bounds.left) / bounds.width - 0.5);
+      pointerY.set((event.clientY - bounds.top) / bounds.height - 0.5);
+    }} onPointerLeave={() => { pointerX.set(0); pointerY.set(0); }}>
+    <div className="hero-card-back" aria-hidden="true" />
+    <motion.section className="hero-demo" aria-label="Interactive vocabulary demo" style={reduceMotion ? { rotateX: 0, rotateY: 0 } : { rotateX, rotateY }}>
+      <div className="hero-demo-header"><span className="flex items-center gap-2 text-xs font-semibold"><span className="hero-live-dot" />Your daily discovery</span><button type="button" className="hero-motion-toggle" aria-label={motionPaused ? "Resume preview animations" : "Pause preview animations"} aria-pressed={motionPaused} onClick={() => setMotionPaused((current) => !current)}>{motionPaused ? <Play size={12} /> : <Pause size={12} />}<span>LIVE PREVIEW</span></button></div>
+      <div className="hero-demo-tabs" role="tablist" aria-label="Preview study mode">
+        {[{ value: "flashcards", label: "Flashcards", icon: Layers }, { value: "checkup", label: "Quick check", icon: Check }].map(({ value, label, icon: Icon }) => <button key={value} type="button" id={`preview-tab-${value}`} role="tab" aria-selected={mode === value} aria-controls="preview-panel" tabIndex={mode === value ? 0 : -1} onKeyDown={(event) => {
+          if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
+            event.preventDefault();
+            const next = event.key === "Home" ? "flashcards" : event.key === "End" ? "checkup" : mode === "flashcards" ? "checkup" : "flashcards";
+            setMode(next);
+            document.getElementById(`preview-tab-${next}`)?.focus();
+          }
+        }} onClick={() => setMode(value)}>{mode === value && <motion.span className="hero-tab-indicator" layoutId="hero-study-tab" transition={transition} />}<Icon size={14} /><span>{label}</span></button>)}
+      </div>
+      <div id="preview-panel" role="tabpanel" aria-labelledby={`preview-tab-${mode}`} className="hero-preview-panel" tabIndex={0} onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return;
+        if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+          event.preventDefault();
+          changeWord(event.key === "ArrowRight" ? 1 : -1);
+        }
+      }}>
+      <AnimatePresence initial={false} mode="wait" custom={direction}>
+      <motion.div key={index} className="hero-word-content" custom={direction} variants={{ enter: (travel: number) => ({ opacity: 0, x: reduceMotion ? 0 : travel * 25 }), center: { opacity: 1, x: 0 }, exit: (travel: number) => ({ opacity: 0, x: reduceMotion ? 0 : travel * -20 }) }} initial="enter" animate="center" exit="exit" transition={transition}>
+        <div className="flex items-center justify-between"><span className="hero-word-label">A WORD TO REMEMBER</span><BookOpen className="h-5 w-5 text-primary/60" /></div>
+        <h2 className="hero-word">{word.word}</h2>
+        <p className="mt-2 text-xs text-muted-foreground">{word.pronunciation}<span className="ml-3 font-serif italic">{word.type}</span></p>
+        <div className="hero-definition-space"><AnimatePresence initial={false} mode="wait">
+          <motion.div key={`${mode}-${revealed}`} initial={{ opacity: 0, y: reduceMotion ? 0 : 9 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: reduceMotion ? 0 : -6 }} transition={transition}>
+          {mode === "flashcards" ? revealed ? <div aria-live="polite"><p className="text-sm leading-7">{word.definition}</p><p className="hero-example">“{word.example}”</p><button type="button" className="hero-hide-meaning" onClick={() => setRevealed(false)}><RotateCcw size={11} />Try recalling it again</button></div> : <div className="hero-reveal-prompt"><div className="hero-recall-icon" aria-hidden="true"><Layers size={22} strokeWidth={1.5} /></div><p>You might know the word.<br />Can you find its meaning?</p><button type="button" className="hero-reveal-button" onClick={() => { setRevealed(true); discoverWord(); }}>Reveal meaning<Sparkles size={13} /></button></div> : <><p className="mb-3 text-xs text-muted-foreground">Which meaning fits this word?</p><div className="space-y-2">{word.options.map((option, optionIndex) => <motion.button type="button" key={option} disabled={selected !== null} whileHover={reduceMotion ? undefined : { x: 3 }} whileTap={reduceMotion ? undefined : { scale: 0.98 }} transition={transition} className={`hero-answer ${selected !== null && optionIndex === word.answer ? "hero-answer-correct" : selected === optionIndex ? "hero-answer-incorrect" : ""}`} onClick={() => { setAnswers((current) => ({ ...current, [index]: optionIndex })); discoverWord(); if (optionIndex === word.answer) setCelebration((current) => current + 1); }}>{option}<span>{selected !== null && optionIndex === word.answer ? <Check size={14} /> : String.fromCharCode(65 + optionIndex)}</span></motion.button>)}</div><motion.p key={selected ?? "unanswered"} role="status" className={`hero-answer-feedback ${selected === word.answer ? "hero-feedback-correct" : ""}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={transition}>{selected === null ? "Choose an answer to check your understanding." : selected === word.answer ? "You’ve got it! That’s a word worth keeping." : "A little discovery: the right meaning is highlighted."}</motion.p></>}
+          </motion.div>
+        </AnimatePresence></div>
+      </motion.div>
+      </AnimatePresence>
+      </div>
+      <div className="hero-demo-footer"><span className="text-xs text-muted-foreground" aria-live="polite">0{index + 1}<span className="mx-2 opacity-50">/</span>0{words.length}</span><div className="hero-word-dots" aria-label="Preview words">{words.map((item, wordIndex) => <button key={item.word} type="button" aria-label={`Study ${item.word}`} aria-current={index === wordIndex ? "step" : undefined} className={discovered.includes(wordIndex) ? "hero-dot-discovered" : ""} onClick={() => goToWord(wordIndex, wordIndex >= index ? 1 : -1)}><span /></button>)}</div><div className="flex gap-2"><button type="button" aria-label="Previous word" onClick={() => changeWord(-1)}><ArrowLeft size={15} /></button><button type="button" aria-label="Next word" onClick={() => changeWord(1)}><ArrowRight size={15} /></button></div></div>
+      <div className="hero-discovery-track" role="progressbar" aria-label="Words discovered" aria-valuemin={0} aria-valuemax={words.length} aria-valuenow={discovered.length}><motion.span animate={{ width: `${discovered.length / words.length * 100}%` }} transition={{ duration: reduceMotion ? 0 : 0.5 }} /></div>
+      <div className="hero-celebration" aria-hidden="true">{celebration > 0 && !reduceMotion && <div key={celebration}>{Array.from({ length: 9 }, (_, particle) => <motion.span key={particle} style={{ left: `${15 + particle * 8}%`, backgroundColor: ["#7aa5ff", "#67bf9b", "#e9c46b"][particle % 3] }} initial={{ opacity: 1, y: 0, rotate: 0, scale: 0.5 }} animate={{ opacity: 0, y: -100 - (particle % 3) * 25, x: (particle - 4) * 12, rotate: particle * 55, scale: 1 }} transition={{ duration: 0.9, ease: "easeOut" }} />)}</div>}</div>
+    </motion.section>
+    </div>
+    <div className="hero-progress-note" data-complete={complete}><motion.span className="hero-progress-icon" key={discovered.length} initial={{ scale: reduceMotion ? 1 : 0.7 }} animate={{ scale: 1 }} transition={transition}>{complete ? <Check size={18} /> : <TrendingUp size={18} />}</motion.span><div aria-live="polite"><p className="text-xs font-semibold">{complete ? "Three words. New possibilities." : discovered.length ? `${discovered.length} ${discovered.length === 1 ? "word" : "words"} discovered. Keep going!` : "Your next discovery awaits."}</p><p className="mt-1 text-[10px] text-muted-foreground">{complete ? "A little curiosity goes a long way." : `${discovered.length} of ${words.length} words explored in this preview`}</p></div><button type="button" className="hero-restart-preview" aria-label="Restart vocabulary preview" onClick={restart}><RotateCcw size={14} /></button></div>
+    <p className="hero-preview-caption">Go ahead, try a word. Curiosity looks good on you.</p>
+  </div></MotionConfig>;
+}
 
 export default function HeroPage() {
   const { user } = useAuth();
+  if (user) return <Redirect to={user.role === "educator" ? "/educator/dashboard" : "/learner/dashboard"} />;
 
-  // Redirect authenticated users to their dashboard
-  if (user) {
-    if (user.role === "educator") {
-      return <Redirect to="/educator/dashboard" />;
-    } else if (user.role === "learner") {
-      return <Redirect to="/learner/dashboard" />;
-    }
-  }
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      {/* Navigation */}
-      <nav className="relative z-50 bg-white/80 backdrop-blur-md border-b border-blue-100/50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            <div className="flex items-center">
-              <div className="flex items-center space-x-3">
-                <BrandLogo alt="" className="h-10 w-10" />
-                <span className="text-3xl font-brand font-light bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent tracking-wide">
-                  checkit
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center space-x-6">
-              <Button variant="ghost" className="text-slate-600 hover:text-blue-600 hover:bg-blue-50 font-medium" asChild>
-                <Link to="/auth">Sign In</Link>
-              </Button>
-              <Button asChild className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-300 font-medium">
-                <Link to="/auth">
-                  Get Started Free
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </div>
+  return <div className="hero-landing">
+    <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-card focus:p-4">Skip to content</a>
+    <header className="hero-nav">
+      <Link to="/" aria-label="Checkit home"><Brand /></Link>
+      <nav aria-label="Main navigation" className="flex items-center gap-3 sm:gap-8">
+        <a href="#features" className="hidden text-xs font-medium text-muted-foreground transition-colors hover:text-primary sm:block">Why Checkit</a>
+        <a href="#how-it-works" className="hidden text-xs font-medium text-muted-foreground transition-colors hover:text-primary md:block">How it works</a>
+        <ThemeToggle />
+        <Link to="/auth" className="text-xs font-medium text-muted-foreground transition-colors hover:text-primary max-[380px]:hidden">Sign in</Link>
+        <Button asChild className="h-10 rounded-full px-4 text-xs sm:px-5"><Link to="/auth?mode=register">Get started<ArrowUpRight size={14} className="ml-2 hidden sm:block" /></Link></Button>
       </nav>
-
-      {/* Hero Section */}
-      <section className="relative overflow-hidden pt-16 pb-20">
-        {/* Modern Background Elements */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-transparent to-indigo-50/30"></div>
-        <div className="absolute top-10 left-1/4 w-72 h-72 bg-gradient-to-r from-blue-400/10 to-blue-600/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-gradient-to-r from-indigo-400/10 to-blue-500/10 rounded-full blur-3xl animate-pulse delay-700"></div>
-        
-        {/* Floating UI Elements */}
-        <div className="absolute top-32 left-8 hidden lg:block">
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-xl border border-blue-100">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-green-500 rounded-lg flex items-center justify-center">
-                <CheckCircle className="h-4 w-4 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-slate-800">Auto Grading</p>
-                <p className="text-xs text-slate-600">Instant feedback</p>
-              </div>
-            </div>
-          </div>
+    </header>
+    <main id="main">
+      <section className="hero-main" aria-labelledby="hero-heading">
+        <div className="hero-copy">
+          <div className="hero-eyebrow"><span className="h-1.5 w-1.5 rounded-full bg-primary" />LESS MEMORIZING. MORE DISCOVERING.</div>
+          <h1 id="hero-heading">Small words.<br />Big <span className="hero-headline-accent">possibilities.</span></h1>
+          <p className="hero-description">Turn what you read into what you know. A brighter way to build vocabulary, grow confidence, and make every new word your own.</p>
+          <div className="hero-actions"><Button asChild className="h-12 rounded-full px-7 text-sm"><Link to="/auth?mode=register">Start your next chapter<ArrowRight size={16} className="ml-3" /></Link></Button><a href="#preview" className="hero-try-link">Try a little learning<ChevronRight size={15} /></a></div>
+          <div className="hero-audience"><span className="hero-audience-icon"><GraduationCap size={18} /></span><p>Made for curious learners.<br /><span className="text-foreground font-medium">And the educators who inspire them.</span></p></div>
         </div>
-        
-        <div className="absolute top-48 right-12 hidden lg:block">
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-xl border border-blue-100">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                <Zap className="h-4 w-4 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-slate-800">AI-Powered</p>
-                <p className="text-xs text-slate-600">Smart analysis</p>
-              </div>
-            </div>
+        <div id="preview" className="hero-preview-anchor"><VocabularyPreview /></div>
+      </section>
+      <section id="features" className="hero-features" aria-label="Why learn with Checkit">
+        {features.map(({ icon: Icon, title, description }, index) => <article key={title} className="hero-feature"><div className={`hero-feature-icon hero-feature-icon-${index}`}><Icon size={21} strokeWidth={1.6} /></div><div><h2 className="text-sm font-semibold tracking-[-0.02em]">{title}</h2><p className="mt-2 max-w-[270px] text-xs leading-6 text-muted-foreground">{description}</p></div></article>)}
+      </section>
+      <section className="landing-section landing-context" aria-labelledby="context-heading">
+        <div className="landing-passage-scene">
+          <div className="landing-passage">
+            <div className="landing-preview-label"><BookOpen size={15} /><span>A MOMENT IN A STORY</span><span className="ml-auto text-muted-foreground">Sample passage</span></div>
+            <h3>The unexpected detour</h3>
+            <p>She took the long way home, following her <mark>curiosity</mark> down a quiet street. A tiny bookshop stood between the trees, its windows full of stories.</p>
+            <p>Inside, she found the very book her grandmother used to read. It was a moment of pure <mark className="landing-mark-blue">serendipity</mark>.</p>
+            <div className="landing-passage-bottom"><span className="flex items-center gap-2"><PenLine size={13} />Every word has a story.</span><span>02 words to explore</span></div>
           </div>
+          <div className="landing-definition"><span className="hero-feature-icon"><Sparkles size={19} /></span><div><h4>serendipity <span>noun</span></h4><p>An unexpected, happy discovery.</p></div><Check size={17} className="ml-auto shrink-0 text-primary" /></div>
         </div>
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16">
-          <div className="text-center">
-            {/* Hero Badge */}
-            <div className="inline-flex items-center px-6 py-3 bg-blue-50 border border-blue-200 rounded-full text-sm font-semibold text-blue-700 mb-8 shadow-sm">
-              <Sparkles className="h-4 w-4 mr-2 text-blue-500" />
-              AI-Powered Vocabulary Learning Platform
-            </div>
-            
-            {/* Main Headline */}
-            <h1 className="text-6xl md:text-8xl font-bold text-slate-900 mb-8 leading-tight">
-              Vocabulary Learning
-              <span className="block bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 bg-clip-text text-transparent">
-                Made Simple
-              </span>
-            </h1>
-            
-            {/* Subheading */}
-            <p className="text-xl md:text-2xl text-slate-600 mb-12 max-w-4xl mx-auto leading-relaxed font-medium">
-              Empower your students with AI-driven vocabulary mastery. Create interactive lessons, 
-              track progress in real-time, and watch comprehension soar.
-            </p>
-            
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
-              <Button size="lg" asChild className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-lg px-10 py-6 shadow-xl hover:shadow-2xl transition-all duration-300 group">
-                <Link to="/auth">
-                  Start Free Trial
-                  <ArrowRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </Button>
-              <Button variant="outline" size="lg" className="border-2 border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 text-lg px-10 py-6 shadow-lg hover:shadow-xl transition-all duration-300">
-                <Play className="mr-3 h-5 w-5" />
-                Watch 2-min Demo
-              </Button>
-            </div>
-
-            {/* Feature Highlights */}
-            <div className="flex flex-wrap items-center justify-center gap-8 text-slate-500 text-sm font-medium">
-              <div className="flex items-center">
-                <Shield className="h-4 w-4 mr-2 text-green-500" />
-                Secure & Private
-              </div>
-              <div className="flex items-center">
-                <Clock className="h-4 w-4 mr-2 text-blue-500" />
-                Quick Setup
-              </div>
-              <div className="flex items-center">
-                <Brain className="h-4 w-4 mr-2 text-blue-500" />
-                AI-Enhanced Learning
-              </div>
-            </div>
-          </div>
+        <div className="landing-section-copy">
+          <p className="hero-eyebrow">BEYOND THE DEFINITION</p>
+          <h2 id="context-heading">Words mean more<br />when they <em>belong.</em></h2>
+          <p>A word on a list is a starting point. A word in a story is a connection. Checkit brings vocabulary back to the passages, ideas, and moments that give it meaning.</p>
+          <ul className="landing-checklist"><li><Check size={15} />Learn from real reading passages</li><li><Check size={15} />Connect definitions to the bigger picture</li><li><Check size={15} />Build understanding you can return to</li></ul>
+          <a href="#preview" className="landing-text-link">Discover a word for yourself<ArrowRight size={15} /></a>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-32 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Section Header */}
-          <div className="text-center mb-24">
-            <div className="inline-flex items-center px-4 py-2 bg-blue-50 border border-blue-200 rounded-full text-sm font-semibold text-blue-700 mb-6">
-              <Lightbulb className="h-4 w-4 mr-2" />
-              Platform Features
-            </div>
-            <h2 className="text-5xl md:text-6xl font-bold text-slate-900 mb-8 leading-tight">
-              Built for Modern
-              <span className="block text-blue-600">Education</span>
-            </h2>
-            <p className="text-xl text-slate-600 max-w-4xl mx-auto leading-relaxed">
-              Comprehensive tools designed to make vocabulary learning engaging, measurable, and effective for both educators and students.
-            </p>
-          </div>
-
-          {/* Features Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {/* Feature 1 */}
-            <div className="group">
-              <Card className="border-0 bg-gradient-to-br from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 transition-all duration-500 hover:shadow-2xl hover:-translate-y-2">
-                <CardContent className="p-8">
-                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                    <BookOpen className="h-8 w-8 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-slate-900 mb-4">Interactive Passages</h3>
-                  <p className="text-slate-600 leading-relaxed text-lg mb-4">
-                    Transform static text into dynamic learning experiences with contextual word highlighting and instant definitions.
-                  </p>
-                  <div className="flex items-center text-blue-600 font-semibold">
-                    Learn more <ChevronRight className="h-4 w-4 ml-1" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Feature 2 */}
-            <div className="group">
-              <Card className="border-0 bg-gradient-to-br from-indigo-50 to-blue-50 hover:from-indigo-100 hover:to-blue-100 transition-all duration-500 hover:shadow-2xl hover:-translate-y-2">
-                <CardContent className="p-8">
-                  <div className="w-16 h-16 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                    <Zap className="h-8 w-8 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-slate-900 mb-4">AI-Powered Grading</h3>
-                  <p className="text-slate-600 leading-relaxed text-lg mb-4">
-                    Save hours with intelligent assessment tools that provide instant, accurate feedback to students.
-                  </p>
-                  <div className="flex items-center text-blue-600 font-semibold">
-                    Learn more <ChevronRight className="h-4 w-4 ml-1" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="group">
-              <Card className="border-0 bg-gradient-to-br from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 transition-all duration-500 hover:shadow-2xl hover:-translate-y-2">
-                <CardContent className="p-8">
-                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                    <Brain className="h-8 w-8 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-slate-900 mb-4">Adaptive Learning</h3>
-                  <p className="text-slate-600 leading-relaxed text-lg mb-4">
-                    Personalized study paths that adjust to each student's learning style and progress pace.
-                  </p>
-                  <div className="flex items-center text-blue-600 font-semibold">
-                    Learn more <ChevronRight className="h-4 w-4 ml-1" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Feature 4 */}
-            <div className="group">
-              <Card className="border-0 bg-gradient-to-br from-cyan-50 to-blue-50 hover:from-cyan-100 hover:to-blue-100 transition-all duration-500 hover:shadow-2xl hover:-translate-y-2">
-                <CardContent className="p-8">
-                  <div className="w-16 h-16 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                    <Users className="h-8 w-8 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-slate-900 mb-4">Class Management</h3>
-                  <p className="text-slate-600 leading-relaxed text-lg mb-4">
-                    Effortless classroom organization with real-time progress tracking and parent notifications.
-                  </p>
-                  <div className="flex items-center text-blue-600 font-semibold">
-                    Learn more <ChevronRight className="h-4 w-4 ml-1" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Feature 5 */}
-            <div className="group">
-              <Card className="border-0 bg-gradient-to-br from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 transition-all duration-500 hover:shadow-2xl hover:-translate-y-2">
-                <CardContent className="p-8">
-                  <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                    <BarChart3 className="h-8 w-8 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-slate-900 mb-4">Analytics Dashboard</h3>
-                  <p className="text-slate-600 leading-relaxed text-lg mb-4">
-                    Comprehensive insights into student performance with detailed progress reports and trends.
-                  </p>
-                  <div className="flex items-center text-blue-600 font-semibold">
-                    Learn more <ChevronRight className="h-4 w-4 ml-1" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Feature 6 */}
-            <div className="group">
-              <Card className="border-0 bg-gradient-to-br from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 transition-all duration-500 hover:shadow-2xl hover:-translate-y-2">
-                <CardContent className="p-8">
-                  <div className="w-16 h-16 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                    <MessageSquare className="h-8 w-8 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-slate-900 mb-4">Smart Feedback</h3>
-                  <p className="text-slate-600 leading-relaxed text-lg mb-4">
-                    Instant, contextual feedback that helps students understand mistakes and improve faster.
-                  </p>
-                  <div className="flex items-center text-blue-600 font-semibold">
-                    Learn more <ChevronRight className="h-4 w-4 ml-1" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+      <section id="how-it-works" className="landing-workflow" aria-labelledby="workflow-heading">
+        <div className="landing-section">
+          <div className="landing-section-heading"><p className="hero-eyebrow">A LITTLE RHYTHM TO YOUR LEARNING</p><h2 id="workflow-heading">From “new to me” to <em>“I know this.”</em></h2><p>No complicated routine. Just a simple path from your first encounter with a word to a little more confidence using it.</p></div>
+          <ol className="landing-steps">{steps.map(({ icon: Icon, title, description, detail }, index) => <li key={title}><div className="landing-step-top"><span className="landing-step-number">0{index + 1}</span><Icon size={25} strokeWidth={1.5} /></div><h3>{title}</h3><p>{description}</p><span className="landing-step-detail">{detail}</span></li>)}</ol>
+          <div className="landing-workflow-bottom"><span className="flex items-center gap-2"><Sparkles size={15} />A few new words can change how you see a whole story.</span><a href="/auth?mode=register" className="landing-text-link">Let’s get started<ArrowUpRight size={15} /></a></div>
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section className="py-24 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">
-              How Checkit Works
-            </h2>
-            <p className="text-xl text-blue-100 max-w-3xl mx-auto">
-              A simple 3-step process to transform vocabulary learning in your classroom.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            <div className="text-center">
-              <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <BookOpen className="h-10 w-10 text-white" />
-              </div>
-              <div className="text-2xl font-bold text-white mb-4">1. Create Passages</div>
-              <div className="text-blue-100 text-lg">Upload or write reading passages and highlight vocabulary words students need to learn</div>
-            </div>
-            <div className="text-center">
-              <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <Users className="h-10 w-10 text-white" />
-              </div>
-              <div className="text-2xl font-bold text-white mb-4">2. Assign to Classes</div>
-              <div className="text-blue-100 text-lg">Publish assignments to your classes and track student progress in real-time</div>
-            </div>
-            <div className="text-center">
-              <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <Brain className="h-10 w-10 text-white" />
-              </div>
-              <div className="text-2xl font-bold text-white mb-4">3. AI Assessment</div>
-              <div className="text-blue-100 text-lg">Students complete tests, receive instant AI-powered feedback and adaptive flashcards</div>
-            </div>
-          </div>
+      <section id="for-you" className="landing-section landing-for-you" aria-labelledby="audience-heading">
+        <div className="landing-section-heading"><p className="hero-eyebrow">BETTER TOGETHER</p><h2 id="audience-heading">A place to teach.<br />A space to <em>grow.</em></h2><p>Different sides of the classroom. The same spark of discovery.</p></div>
+        <div className="landing-audience-grid">
+          <article className="landing-audience-card landing-educator"><span className="landing-audience-tag"><Users size={15} />FOR EDUCATORS</span><h3>More teaching moments.<br />Less busywork.</h3><p>Bring your reading material, your classes, and your vocabulary assignments together in one thoughtful workspace.</p><ul className="landing-checklist"><li><Check size={15} />Create and share vocabulary assignments</li><li><Check size={15} />Organize classes in one place</li><li><Check size={15} />Review results and guide the next step</li></ul><Link to="/auth?mode=register" className="landing-text-link">Make room for discovery<ArrowUpRight size={15} /></Link><div className="landing-class-preview" aria-label="Example class overview"><div className="flex items-center gap-3"><span className="hero-feature-icon"><Users size={18} /></span><div><p className="font-semibold">Your classroom, connected.</p><span className="text-[10px] text-muted-foreground">An example of what you can organize</span></div></div><div className="landing-class-row"><span><BookOpen size={14} />Reading & discovery</span><span className="landing-small-tag">Vocabulary</span></div><div className="landing-class-row"><span><Layers size={14} />Words to revisit</span><span className="landing-small-tag">Practice</span></div></div></article>
+          <article className="landing-audience-card landing-learner"><span className="landing-audience-tag"><GraduationCap size={15} />FOR LEARNERS</span><h3>Your pace.<br />Your next possibility.</h3><p>Make unfamiliar words feel familiar. Explore, practice, and find a study rhythm that works for you.</p><ul className="landing-checklist"><li><Check size={15} />Revisit words with interactive flashcards</li><li><Check size={15} />Put your knowledge into practice</li><li><Check size={15} />See your results and keep moving forward</li></ul><Link to="/auth?mode=register" className="landing-text-link">Find your learning rhythm<ArrowUpRight size={15} /></Link><div className="landing-word-preview" aria-label="Example study words"><span className="landing-small-tag">A LITTLE COLLECTION OF POSSIBILITIES</span><div><span>curiosity</span><span>resilient</span><span>serendipity</span></div><p><Sparkles size={13} />Words to learn. Ideas to carry with you.</p></div></article>
         </div>
       </section>
 
-      {/* Feature Details Section */}
-      <section className="py-32 bg-gradient-to-br from-slate-50 to-blue-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-20">
-            <div className="inline-flex items-center px-4 py-2 bg-blue-50 border border-blue-200 rounded-full text-sm font-semibold text-blue-700 mb-6">
-              <Target className="h-4 w-4 mr-2" />
-              Core Features
-            </div>
-            <h2 className="text-5xl md:text-6xl font-bold text-slate-900 mb-8 leading-tight">
-              What Makes Checkit
-              <span className="block text-blue-600">Different</span>
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            {/* Feature 1 */}
-            <div>
-              <h3 className="text-3xl font-bold text-slate-900 mb-6">Interactive Reading Passages</h3>
-              <p className="text-xl text-slate-600 mb-8 leading-relaxed">
-                Transform any text into an interactive learning experience. Highlight vocabulary words directly within reading passages, 
-                and students can click for instant AI-generated definitions and context.
-              </p>
-              <div className="space-y-4">
-                <div className="flex items-center text-slate-700">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  Highlight words directly in text
-                </div>
-                <div className="flex items-center text-slate-700">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  AI-generated definitions and examples
-                </div>
-                <div className="flex items-center text-slate-700">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  Context-aware explanations
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-2xl p-8 shadow-xl">
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6">
-                <div className="text-slate-800 text-lg leading-relaxed">
-                  "The <span className="bg-blue-200 px-2 py-1 rounded cursor-pointer">protagonist</span> faced many <span className="bg-blue-200 px-2 py-1 rounded cursor-pointer">obstacles</span> during their journey through the <span className="bg-blue-200 px-2 py-1 rounded cursor-pointer">treacherous</span> mountain pass."
-                </div>
-                <div className="mt-4 text-sm text-slate-600">
-                  Click highlighted words for definitions
-                </div>
-              </div>
-            </div>
-
-            {/* Feature 2 */}
-            <div className="bg-white rounded-2xl p-8 shadow-xl lg:order-first">
-              <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="text-lg font-semibold text-slate-800">Student Progress</div>
-                  <div className="text-sm text-slate-600">Real-time</div>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-700">Emma Thompson</span>
-                    <div className="w-24 bg-gray-200 rounded-full h-2">
-                      <div className="bg-green-500 h-2 rounded-full" style={{width: '85%'}}></div>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-700">Marcus Johnson</span>
-                    <div className="w-24 bg-gray-200 rounded-full h-2">
-                      <div className="bg-blue-500 h-2 rounded-full" style={{width: '72%'}}></div>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-700">Sarah Chen</span>
-                    <div className="w-24 bg-gray-200 rounded-full h-2">
-                      <div className="bg-yellow-500 h-2 rounded-full" style={{width: '91%'}}></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div>
-              <h3 className="text-3xl font-bold text-slate-900 mb-6">Real-Time Progress Tracking</h3>
-              <p className="text-xl text-slate-600 mb-8 leading-relaxed">
-                Monitor student progress instantly. See which words students struggle with, track completion rates, 
-                and identify students who need additional support.
-              </p>
-              <div className="space-y-4">
-                <div className="flex items-center text-slate-700">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  Live progress dashboard
-                </div>
-                <div className="flex items-center text-slate-700">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  Individual student analytics
-                </div>
-                <div className="flex items-center text-slate-700">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  Automated parent notifications
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      <section className="landing-section landing-faq" aria-labelledby="faq-heading">
+        <div className="landing-section-copy"><p className="hero-eyebrow">A FEW THINGS YOU MIGHT WONDER</p><h2 id="faq-heading">Curiosity<br />starts with <em>questions.</em></h2><p>Here are a few answers to help you find your feet.</p><a href="#how-it-works" className="landing-text-link">Take another look around<ArrowRight size={15} /></a></div>
+        <div className="landing-questions">{questions.map(({ question, answer }) => <details key={question}><summary>{question}<Plus size={17} aria-hidden="true" /></summary><p>{answer}</p></details>)}</div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-32 bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 text-white relative overflow-hidden">
-        {/* Background Elements */}
-        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_35%,rgba(68,196,255,0.1)_45%,rgba(68,196,255,0.1)_55%,transparent_65%)]"></div>
-        <div className="absolute top-20 left-10 w-40 h-40 bg-gradient-to-r from-blue-400/20 to-indigo-400/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-20 w-60 h-60 bg-gradient-to-r from-indigo-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse delay-700"></div>
-        
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="mb-12">
-            <div className="inline-flex items-center px-6 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-sm font-semibold text-white mb-8">
-              <Sparkles className="h-4 w-4 mr-2 text-blue-300" />
-              Start Your Free Trial Today
-            </div>
-            
-            <h2 className="text-5xl md:text-7xl font-bold mb-8 leading-tight">
-              Ready to Revolutionize
-              <span className="block bg-gradient-to-r from-blue-300 to-white bg-clip-text text-transparent">
-                Vocabulary Learning?
-              </span>
-            </h2>
-            
-            <p className="text-xl md:text-2xl text-blue-100 mb-16 max-w-4xl mx-auto leading-relaxed">
-              Start using AI-powered vocabulary learning today. 
-              Setup takes just minutes and you can begin creating engaging lessons immediately.
-            </p>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-8 justify-center items-center mb-16">
-            <Button size="lg" asChild className="bg-white text-blue-900 hover:bg-blue-50 text-xl px-12 py-8 shadow-2xl hover:shadow-3xl transition-all duration-300 group font-semibold">
-              <Link to="/auth">
-                Start Free Trial
-                <ArrowRight className="ml-3 h-6 w-6 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </Button>
-            <Button size="lg" variant="outline" className="border-2 border-white/30 text-white hover:bg-white/10 backdrop-blur-sm text-xl px-12 py-8 font-semibold">
-              Schedule Demo Call
-            </Button>
-          </div>
-
-          {/* Platform Benefits */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            <div className="flex items-center justify-center">
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 flex items-center space-x-4">
-                <Shield className="h-8 w-8 text-green-300" />
-                <div className="text-left">
-                  <div className="font-semibold text-white">Secure Platform</div>
-                  <div className="text-blue-200 text-sm">Privacy focused</div>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center justify-center">
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 flex items-center space-x-4">
-                <Clock className="h-8 w-8 text-blue-300" />
-                <div className="text-left">
-                  <div className="font-semibold text-white">Quick Start</div>
-                  <div className="text-blue-200 text-sm">Easy setup process</div>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center justify-center">
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 flex items-center space-x-4">
-                <Zap className="h-8 w-8 text-yellow-300" />
-                <div className="text-left">
-                  <div className="font-semibold text-white">AI-Enhanced</div>
-                  <div className="text-blue-200 text-sm">Smart technology</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-slate-900 text-white py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
-            <div className="col-span-1 md:col-span-2">
-              <div className="flex items-center mb-8">
-                <BrandLogo alt="" className="mr-3 h-10 w-10" />
-                <span className="text-3xl font-brand font-light tracking-wide">checkit</span>
-              </div>
-              <p className="text-slate-400 mb-8 max-w-md text-lg leading-relaxed">
-                Empowering educators and students with intelligent vocabulary learning tools that make a real difference in academic success.
-              </p>
-              <div className="flex items-center text-slate-400 bg-slate-800 rounded-lg px-4 py-3 inline-flex">
-                <Globe className="h-5 w-5 mr-3 text-blue-400" />
-                <span className="font-medium">AI-powered vocabulary learning platform</span>
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="font-bold mb-6 text-xl text-white">Platform</h3>
-              <ul className="space-y-4 text-slate-400">
-                <li><Link to="/auth" className="hover:text-blue-400 transition-colors duration-200 text-lg">For Educators</Link></li>
-                <li><Link to="/auth" className="hover:text-blue-400 transition-colors duration-200 text-lg">For Students</Link></li>
-                <li><Link to="/auth" className="hover:text-blue-400 transition-colors duration-200 text-lg">Pricing</Link></li>
-                <li><Link to="/auth" className="hover:text-blue-400 transition-colors duration-200 text-lg">Features</Link></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="font-bold mb-6 text-xl text-white">Support</h3>
-              <ul className="space-y-4 text-slate-400">
-                <li><Link to="/auth" className="hover:text-blue-400 transition-colors duration-200 text-lg">Help Center</Link></li>
-                <li><Link to="/auth" className="hover:text-blue-400 transition-colors duration-200 text-lg">Contact Us</Link></li>
-                <li><Link to="/auth" className="hover:text-blue-400 transition-colors duration-200 text-lg">Community</Link></li>
-                <li><Link to="/auth" className="hover:text-blue-400 transition-colors duration-200 text-lg">Training</Link></li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="border-t border-slate-800 pt-12 mt-16">
-            <div className="flex flex-col md:flex-row justify-between items-center">
-              <div className="text-slate-400 text-lg">
-                © 2024 Checkit. All rights reserved.
-              </div>
-              <div className="flex space-x-8 mt-6 md:mt-0">
-                <Link to="/auth" className="text-slate-400 hover:text-blue-400 text-lg transition-colors duration-200">Privacy Policy</Link>
-                <Link to="/auth" className="text-slate-400 hover:text-blue-400 text-lg transition-colors duration-200">Terms of Service</Link>
-                <Link to="/auth" className="text-slate-400 hover:text-blue-400 text-lg transition-colors duration-200">Cookie Policy</Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
+      <section className="landing-section landing-closing" aria-labelledby="closing-heading"><span className="landing-closing-spark" aria-hidden="true">✳</span><p className="hero-eyebrow">THERE’S A WHOLE WORLD IN A WORD</p><h2 id="closing-heading">Your next chapter<br />starts with <em>one word.</em></h2><p>A little curiosity today. A little more confidence tomorrow.<br />Let’s see where learning takes you.</p><Button asChild className="h-12 rounded-full bg-white px-7 text-sm text-blue-700 hover:bg-blue-50"><Link to="/auth?mode=register">Find your first discovery<MoveUpRight size={16} className="ml-3" /></Link></Button><span className="landing-closing-caption">For the ones who teach. For the ones who never stop learning.</span></section>
+    </main>
+    <footer className="hero-footer"><div><Link to="/" aria-label="Checkit home"><Brand /></Link><p className="mt-3">Good words take you places.</p></div><nav aria-label="Footer navigation" className="flex flex-wrap justify-center gap-5"><a href="#features">Why Checkit</a><a href="#how-it-works">How it works</a><a href="#for-you">Made for you</a><Link to="/auth">Sign in</Link></nav><span className="flex items-center gap-2"><Sparkles size={12} className="text-primary" />A little more curious, every day.</span></footer>
+  </div>;
 }

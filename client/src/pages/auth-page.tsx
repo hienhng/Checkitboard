@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/use-auth";
 
 export default function AuthPage() {
   const { user } = useAuth();
-  const [mode, setMode] = useState("login");
+  const [mode, setMode] = useState(() => new URLSearchParams(window.location.search).get("mode") === "register" ? "register" : "login");
   if (user) return <Redirect to={user.role === "educator" ? "/educator/dashboard" : "/learner/dashboard"} />;
   return <main className="grid min-h-svh bg-card lg:grid-cols-[1fr_1fr]">
     <section className="flex min-w-0 flex-col px-6 py-7 sm:px-12 lg:px-14 xl:px-20">
